@@ -1,0 +1,84 @@
+package com.ugurbuga.stackshift.presentation.game
+
+import com.ugurbuga.stackshift.game.logic.GameLogic
+import com.ugurbuga.stackshift.game.model.GameConfig
+import com.ugurbuga.stackshift.game.model.GameState
+import com.ugurbuga.stackshift.game.model.GridPoint
+import com.ugurbuga.stackshift.game.model.PlacementPreview
+import com.ugurbuga.stackshift.platform.feedback.GameHaptic
+import com.ugurbuga.stackshift.platform.feedback.GameSound
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+
+class GameViewModel(
+    private val gameLogic: GameLogic = GameLogic(),
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
+) {
+    private val store = GameStore(gameLogic = gameLogic, scope = scope)
+    private val feedbackMapper = GameFeedbackMapper()
+
+    val uiState: StateFlow<GameUiState> = store.uiState
+
+    init {
+        startGameLoop()
+    }
+
+    fun previewPlacement(column: Int): PlacementPreview? {
+        return store.previewPlacement(column)
+    }
+
+    fun previewImpactPoints(preview: PlacementPreview?): Set<GridPoint> {
+        return store.previewImpactPoints(preview)
+    }
+
+    fun placePiece(column: Int): InteractionFeedback = dispatch(GameIntent.LaunchColumn(column))
+
+    fun holdPiece(): InteractionFeedback = dispatch(GameIntent.HoldPiece)
+
+    fun togglePause(): InteractionFeedback {
+        return dispatch(GameIntent.TogglePause)
+    }
+
+    fun restart(config: GameConfig = uiState.value.gameState.config): InteractionFeedback {
+        return dispatch(GameIntent.Restart(config))
+    }
+
+    fun dispose() {
+        store.dispose()
+        scope.cancel()
+    }
+
+    fun dispatch(intent: GameIntent): InteractionFeedback {
+        return feedbackMapper.map(store.dispatch(intent))
+    }
+
+    private fun startGameLoop() {
+        scope.launch {
+            while (isActive) {
+                delay(1_000)
+                store.tick()
+            }
+        }
+    }
+}
+
+data class GameUiState(
+    val gameState: GameState,
+)
+
+
+data class InteractionFeedback(
+    val sounds: Set<GameSound> = emptySet(),
+    val haptics: Set<GameHaptic> = emptySet(),
+) {
+    companion object {
+        val None = InteractionFeedback()
+    }
+}
+
