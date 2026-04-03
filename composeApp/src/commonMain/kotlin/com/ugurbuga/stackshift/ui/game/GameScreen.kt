@@ -22,11 +22,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.ViewModule
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -53,12 +57,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -72,6 +77,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ugurbuga.stackshift.StackShiftTheme
+import com.ugurbuga.stackshift.settings.AppSettings
 import com.ugurbuga.stackshift.game.model.FeedbackEmphasis
 import com.ugurbuga.stackshift.game.model.BoardMatrix
 import com.ugurbuga.stackshift.game.model.CellTone
@@ -111,7 +117,9 @@ private const val NextPieceScale = 0.5f
 private val BottomDockHeight = 148.dp
 private val TopBarVerticalPadding = 6.dp
 private val TopBarRowSpacing = 4.dp
-private val TopBarIconSpacing = 16.dp
+private val TopBarIconSpacing = 12.dp
+private val TopBarActionButtonSize = 38.dp
+private val TopBarActionIconSize = 22.dp
 
 @Composable
 private fun resolveActivePieceProperties(
@@ -148,6 +156,7 @@ fun StackShiftGameApp(
     modifier: Modifier = Modifier,
     soundPlayer: SoundEffectPlayer = NoOpSoundEffectPlayer,
     viewModel: GameViewModel = remember { GameViewModel() },
+    onOpenSettings: () -> Unit = {},
 ) {
     DisposableEffect(viewModel) {
         onDispose(viewModel::dispose)
@@ -180,6 +189,7 @@ fun StackShiftGameApp(
             onHoldPiece = viewModel::holdPiece,
             onPauseToggle = viewModel::togglePause,
             onRestart = { viewModel.restart(uiState.gameState.config) },
+            onOpenSettings = onOpenSettings,
             onBlockProperties = { showBlockProperties = true },
             soundPlayer = soundPlayer,
             haptics = haptics,
@@ -197,6 +207,7 @@ fun GameScreen(
     onHoldPiece: () -> InteractionFeedback,
     onPauseToggle: () -> InteractionFeedback,
     onRestart: () -> InteractionFeedback,
+    onOpenSettings: () -> Unit,
     onBlockProperties: () -> Unit,
     soundPlayer: SoundEffectPlayer,
     haptics: GameHaptics,
@@ -406,6 +417,7 @@ fun GameScreen(
                         onHoldPiece = { dispatchFeedback(updatedHoldPiece(), soundPlayer, haptics) },
                         onPauseToggle = { dispatchFeedback(updatedPauseToggle(), soundPlayer, haptics) },
                         onRestart = { showRestartDialog = true },
+                        onOpenSettings = onOpenSettings,
                         onBlockProperties = onBlockProperties,
                     )
 
@@ -555,12 +567,13 @@ fun GameScreen(
                                     },
                                 )
                             },
-                        alpha = when {
-                            gameState.status == GameStatus.Paused -> 0.42f
-                            isLaunching -> 0.92f
-                            else -> 1f
-                        },
-                    )
+                            alpha = when {
+                                gameState.status == GameStatus.Paused -> 0.42f
+                                isLaunching -> 0.92f
+                                else -> 1f
+                            },
+                        )
+                    }
                 }
 
                 if (gameState.status != GameStatus.Running) {
@@ -572,7 +585,7 @@ fun GameScreen(
                             } else {
                                 dispatchFeedback(updatedPauseToggle(), soundPlayer, haptics)
                             }
-                        }
+                        },
                     )
                 }
 
@@ -605,7 +618,6 @@ fun GameScreen(
             }
         }
     }
-}
 
 @Composable
 private fun MinimalTopBar(
@@ -614,6 +626,7 @@ private fun MinimalTopBar(
     onHoldPiece: () -> Unit,
     onPauseToggle: () -> Unit,
     onRestart: () -> Unit,
+    onOpenSettings: () -> Unit,
     onBlockProperties: () -> Unit,
 ) {
     val pressureCount = gameState.columnPressure.count { it.level == PressureLevel.Critical || it.level == PressureLevel.Overflow }
@@ -655,9 +668,9 @@ private fun MinimalTopBar(
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(TopBarIconSpacing)) {
                     CompactActionIconButton(
-                        icon = Icons.Filled.ViewModule,
+                        icon = Icons.Filled.Settings,
                         contentDescription = stringResource(Res.string.block_properties_title),
-                        onClick = onBlockProperties,
+                        onClick = onOpenSettings,
                     )
                     CompactActionIconButton(
                         icon = Icons.Filled.SwapHoriz,
@@ -870,7 +883,7 @@ private fun CompactActionIconButton(
         onClick = onClick,
         enabled = enabled,
         modifier = Modifier
-            .size(34.dp)
+            .size(TopBarActionButtonSize)
             .clip(RoundedCornerShape(10.dp))
             .background(if (enabled) Color(0xFF26304F) else Color(0xFF26304F).copy(alpha = 0.35f)),
     ) {
@@ -878,6 +891,7 @@ private fun CompactActionIconButton(
             imageVector = icon,
             contentDescription = contentDescription,
             tint = if (enabled) Color.White else Color.White.copy(alpha = 0.45f),
+            modifier = Modifier.size(TopBarActionIconSize),
         )
     }
 }
@@ -1068,6 +1082,14 @@ private fun SpecialBlockType.shortLabel(): GameText = when (this) {
     SpecialBlockType.Heavy -> gameText(GameTextKey.SpecialHeavy)
 }
 
+private fun specialIcon(type: SpecialBlockType) = when (type) {
+    SpecialBlockType.ColumnClearer -> Icons.Filled.SwapVert
+    SpecialBlockType.RowClearer -> Icons.Filled.SwapHoriz
+    SpecialBlockType.Ghost -> Icons.Filled.ViewModule
+    SpecialBlockType.Heavy -> Icons.Filled.FitnessCenter
+    SpecialBlockType.None -> Icons.Filled.ViewModule
+}
+
 private fun GameTextKey.stringResourceId(): StringResource = when (this) {
     GameTextKey.AppTitle -> Res.string.app_title
     GameTextKey.Hold -> Res.string.hold
@@ -1227,7 +1249,7 @@ private fun GridPoint.toTopLeft(
 @Preview
 @Composable
 private fun GameScreenRunningPreview() {
-    StackShiftTheme {
+    StackShiftTheme(settings = AppSettings()) {
         GameScreen(
             gameState = previewGameState(),
             onRequestPreview = { previewPlacementPreview() },
@@ -1236,6 +1258,7 @@ private fun GameScreenRunningPreview() {
             onHoldPiece = { InteractionFeedback.None },
             onPauseToggle = { InteractionFeedback.None },
             onRestart = { InteractionFeedback.None },
+            onOpenSettings = {},
             onBlockProperties = {},
             soundPlayer = NoOpSoundEffectPlayer,
             haptics = NoOpGameHaptics,
@@ -1247,7 +1270,7 @@ private fun GameScreenRunningPreview() {
 @Preview
 @Composable
 private fun GameScreenPausedPreview() {
-    StackShiftTheme {
+    StackShiftTheme(settings = AppSettings()) {
         GameScreen(
             gameState = previewGameState(status = GameStatus.Paused),
             onRequestPreview = { previewPlacementPreview() },
@@ -1256,6 +1279,7 @@ private fun GameScreenPausedPreview() {
             onHoldPiece = { InteractionFeedback.None },
             onPauseToggle = { InteractionFeedback.None },
             onRestart = { InteractionFeedback.None },
+            onOpenSettings = {},
             onBlockProperties = {},
             soundPlayer = NoOpSoundEffectPlayer,
             haptics = NoOpGameHaptics,
@@ -1267,7 +1291,7 @@ private fun GameScreenPausedPreview() {
 @Preview
 @Composable
 private fun GameScreenGameOverPreview() {
-    StackShiftTheme {
+    StackShiftTheme(settings = AppSettings()) {
         GameScreen(
             gameState = previewGameState(status = GameStatus.GameOver),
             onRequestPreview = { previewPlacementPreview() },
@@ -1276,6 +1300,7 @@ private fun GameScreenGameOverPreview() {
             onHoldPiece = { InteractionFeedback.None },
             onPauseToggle = { InteractionFeedback.None },
             onRestart = { InteractionFeedback.None },
+            onOpenSettings = {},
             onBlockProperties = {},
             soundPlayer = NoOpSoundEffectPlayer,
             haptics = NoOpGameHaptics,

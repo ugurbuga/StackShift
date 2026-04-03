@@ -18,6 +18,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.HelpOutline
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -42,7 +46,6 @@ import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
 import stackshift.composeapp.generated.resources.block_properties_column_clearer_desc
 import stackshift.composeapp.generated.resources.block_properties_column_clearer_title
-import stackshift.composeapp.generated.resources.block_properties_dot_desc
 import stackshift.composeapp.generated.resources.block_properties_ghost_desc
 import stackshift.composeapp.generated.resources.block_properties_ghost_title
 import stackshift.composeapp.generated.resources.block_properties_heavy_desc
@@ -57,7 +60,7 @@ import stackshift.composeapp.generated.resources.block_properties_title
 private val BlockSampleSize = 78.dp
 private val BlockCornerRadius = 18.dp
 private val BlockBorderWidth = 2.dp
-private val BlockDotSize = 10.dp
+private val BlockSpecialIconSize = 22.dp
 
 @Composable
 fun BlockPropertiesScreen(
@@ -137,7 +140,6 @@ fun BlockPropertiesScreen(
                             special = selected,
                         )
                         BlockTitleAndDesc(special = selected)
-                        DotLegend()
                     }
                 }
 
@@ -155,34 +157,6 @@ fun BlockPropertiesScreen(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun DotLegend() {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.Top,
-    ) {
-        Box(
-            modifier = Modifier
-                .padding(top = 2.dp)
-                .size(18.dp)
-                .background(Color.White.copy(alpha = 0.08f), RoundedCornerShape(99.dp)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(BlockDotSize)
-                    .background(color = Color(0xFFFFD166), shape = RoundedCornerShape(99.dp)),
-            )
-        }
-        Text(
-            text = stringResource(Res.string.block_properties_dot_desc),
-            style = MaterialTheme.typography.labelSmall,
-            color = Color(0xFFC7D0EC),
-        )
     }
 }
 
@@ -257,11 +231,14 @@ private fun BlockSample(
         contentAlignment = Alignment.TopEnd,
     ) {
         if (special != SpecialBlockType.None) {
-            Box(
+            Icon(
+                imageVector = specialIcon(special),
+                contentDescription = null,
+                tint = Color.White,
                 modifier = Modifier
-                    .padding(10.dp)
-                    .size(BlockDotSize)
-                    .background(color = specialColor(special).copy(alpha = 0.9f), shape = RoundedCornerShape(99.dp)),
+                    .align(Alignment.TopEnd)
+                    .padding(6.dp)
+                    .size(BlockSpecialIconSize),
             )
         }
     }
@@ -290,11 +267,14 @@ private fun BlockMiniIcon(
         contentAlignment = Alignment.TopEnd,
     ) {
         if (special != SpecialBlockType.None) {
-            Box(
+            Icon(
+                imageVector = specialIcon(special),
+                contentDescription = null,
+                tint = Color.White,
                 modifier = Modifier
-                    .padding(4.dp)
-                    .size(6.dp)
-                    .background(color = specialColor(special).copy(alpha = 0.9f), shape = RoundedCornerShape(99.dp)),
+                    .align(Alignment.TopEnd)
+                    .padding(2.dp)
+                    .size(14.dp),
             )
         }
     }
@@ -357,4 +337,12 @@ private fun specialColor(type: SpecialBlockType): Color {
         SpecialBlockType.Heavy -> Color(0xFFFF7A90)
         SpecialBlockType.None -> Color.Transparent
     }
+}
+
+private fun specialIcon(type: SpecialBlockType) = when (type) {
+    SpecialBlockType.ColumnClearer -> Icons.Filled.SwapVert
+    SpecialBlockType.RowClearer -> Icons.Filled.SwapHoriz
+    SpecialBlockType.Ghost -> Icons.Filled.HelpOutline
+    SpecialBlockType.Heavy -> Icons.Filled.FitnessCenter
+    SpecialBlockType.None -> Icons.Filled.HelpOutline
 }

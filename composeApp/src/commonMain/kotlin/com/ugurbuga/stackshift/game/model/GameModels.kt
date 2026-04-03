@@ -3,6 +3,54 @@ package com.ugurbuga.stackshift.game.model
 import androidx.compose.runtime.Immutable
 import kotlin.math.max
 
+enum class AppLanguage(
+    val localeTag: String,
+    val endonym: String,
+) {
+    English(localeTag = "en", endonym = "English"),
+    Turkish(localeTag = "tr", endonym = "Türkçe"),
+    Spanish(localeTag = "es", endonym = "Español"),
+    French(localeTag = "fr", endonym = "Français"),
+    German(localeTag = "de", endonym = "Deutsch"),
+    Russian(localeTag = "ru", endonym = "Русский"),
+}
+
+enum class AppThemeMode(
+    val isDark: Boolean?,
+) {
+    System(isDark = null),
+    Light(isDark = false),
+    Dark(isDark = true),
+}
+
+enum class AppColorPalette {
+    Classic,
+    Aurora,
+    Sunset,
+}
+
+enum class BlockColorPalette {
+    Classic,
+    Candy,
+    Neon,
+    Earth,
+}
+
+enum class BlockVisualStyle {
+    Flat,
+    Bubble,
+    Outline,
+    Sharp3D,
+    Wood,
+    LiquidGlass,
+    Neon,
+}
+
+enum class BoardBlockStyleMode {
+    AlwaysFlat,
+    MatchSelectedBlockStyle,
+}
+
 @Immutable
 data class GridPoint(
     val column: Int,
