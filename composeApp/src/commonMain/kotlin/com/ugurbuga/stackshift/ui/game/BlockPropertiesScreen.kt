@@ -1,10 +1,7 @@
 package com.ugurbuga.stackshift.ui.game
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,15 +10,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.FitnessCenter
-import androidx.compose.material.icons.filled.HelpOutline
-import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -36,12 +27,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ugurbuga.stackshift.game.model.CellTone
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
+import com.ugurbuga.stackshift.localization.LocalAppSettings
+import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
 import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
 import stackshift.composeapp.generated.resources.block_properties_column_clearer_desc
@@ -58,20 +50,17 @@ import stackshift.composeapp.generated.resources.block_properties_select_hint
 import stackshift.composeapp.generated.resources.block_properties_title
 
 private val BlockSampleSize = 78.dp
-private val BlockCornerRadius = 18.dp
-private val BlockBorderWidth = 2.dp
-private val BlockSpecialIconSize = 22.dp
-
 @Composable
 fun BlockPropertiesScreen(
     modifier: Modifier = Modifier,
     onBack: () -> Unit,
 ) {
     var selected by remember { mutableStateOf(SpecialBlockType.None) }
+    val uiColors = StackShiftThemeTokens.uiColors
 
     Surface(
         modifier = modifier.fillMaxSize(),
-        color = Color(0xFF070B14),
+        color = MaterialTheme.colorScheme.background,
     ) {
         Column(
             modifier = Modifier
@@ -80,7 +69,8 @@ fun BlockPropertiesScreen(
                 .padding(horizontal = 12.dp, vertical = 10.dp),
         ) {
             Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF10192A).copy(alpha = 0.94f)),
+                colors = CardDefaults.cardColors(containerColor = uiColors.panel),
+                border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
             ) {
                 Row(
                     modifier = Modifier
@@ -92,7 +82,7 @@ fun BlockPropertiesScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(Res.string.block_properties_title),
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                     Spacer(modifier = Modifier.width(6.dp))
@@ -100,7 +90,7 @@ fun BlockPropertiesScreen(
                         Text(
                             text = stringResource(Res.string.block_properties_title),
                             style = MaterialTheme.typography.headlineSmall,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.SemiBold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -109,8 +99,8 @@ fun BlockPropertiesScreen(
                         Text(
                             text = stringResource(Res.string.block_properties_select_hint),
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFFC7D0EC),
-                            maxLines = 1,
+                            color = uiColors.subtitle,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
@@ -126,7 +116,8 @@ fun BlockPropertiesScreen(
             ) {
                 Card(
                     modifier = Modifier.width(132.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.06f)),
+                    colors = CardDefaults.cardColors(containerColor = uiColors.panelMuted),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.72f)),
                 ) {
                     Column(
                         modifier = Modifier
@@ -166,10 +157,11 @@ private fun BlockTypeRow(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
+    val uiColors = StackShiftThemeTokens.uiColors
     val background = if (selected) {
-        Color(0xFF1A2A46).copy(alpha = 0.85f)
+        uiColors.panelHighlight
     } else {
-        Color.White.copy(alpha = 0.06f)
+        uiColors.panelMuted
     }
 
     Card(
@@ -177,6 +169,7 @@ private fun BlockTypeRow(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = background),
+        border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = if (selected) 0.92f else 0.68f)),
     ) {
         Row(
             modifier = Modifier
@@ -190,7 +183,7 @@ private fun BlockTypeRow(
                 Text(
                     text = resolveBlockTitle(special),
                     style = MaterialTheme.typography.titleSmall,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -199,8 +192,8 @@ private fun BlockTypeRow(
                 Text(
                     text = resolveBlockDesc(special),
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFFC7D0EC),
-                    maxLines = 2,
+                    color = uiColors.subtitle,
+                    maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
@@ -213,35 +206,14 @@ private fun BlockSample(
     tone: CellTone,
     special: SpecialBlockType,
 ) {
-    Box(
-        modifier = Modifier
-            .size(BlockSampleSize)
-            .background(color = tone.color().copy(alpha = 0.95f), shape = RoundedCornerShape(BlockCornerRadius))
-            .then(
-                if (special == SpecialBlockType.None) {
-                    Modifier
-                } else {
-                    Modifier.border(
-                        width = BlockBorderWidth,
-                        color = specialColor(special).copy(alpha = 0.65f),
-                        shape = RoundedCornerShape(BlockCornerRadius),
-                    )
-                },
-            ),
-        contentAlignment = Alignment.TopEnd,
-    ) {
-        if (special != SpecialBlockType.None) {
-            Icon(
-                imageVector = specialIcon(special),
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(6.dp)
-                    .size(BlockSpecialIconSize),
-            )
-        }
-    }
+    val settings = LocalAppSettings.current
+    BlockCellPreview(
+        tone = tone,
+        palette = settings.blockColorPalette,
+        style = settings.blockVisualStyle,
+        size = BlockSampleSize,
+        special = special,
+    )
 }
 
 @Composable
@@ -249,43 +221,23 @@ private fun BlockMiniIcon(
     tone: CellTone,
     special: SpecialBlockType,
 ) {
-    Box(
-        modifier = Modifier
-            .size(28.dp)
-            .background(color = tone.color().copy(alpha = 0.92f), shape = RoundedCornerShape(10.dp))
-            .then(
-                if (special == SpecialBlockType.None) {
-                    Modifier
-                } else {
-                    Modifier.border(
-                        width = 1.5.dp,
-                        color = specialColor(special).copy(alpha = 0.7f),
-                        shape = RoundedCornerShape(10.dp),
-                    )
-                },
-            ),
-        contentAlignment = Alignment.TopEnd,
-    ) {
-        if (special != SpecialBlockType.None) {
-            Icon(
-                imageVector = specialIcon(special),
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(2.dp)
-                    .size(14.dp),
-            )
-        }
-    }
+    val settings = LocalAppSettings.current
+    BlockCellPreview(
+        tone = tone,
+        palette = settings.blockColorPalette,
+        style = settings.blockVisualStyle,
+        size = 28.dp,
+        special = special,
+    )
 }
 
 @Composable
 private fun BlockTitleAndDesc(special: SpecialBlockType) {
+    val uiColors = StackShiftThemeTokens.uiColors
     Text(
         text = resolveBlockTitle(special),
         style = MaterialTheme.typography.titleMedium,
-        color = Color.White,
+        color = MaterialTheme.colorScheme.onSurface,
         fontWeight = FontWeight.SemiBold,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
@@ -293,7 +245,7 @@ private fun BlockTitleAndDesc(special: SpecialBlockType) {
     Text(
         text = resolveBlockDesc(special),
         style = MaterialTheme.typography.bodySmall,
-        color = Color(0xFFC7D0EC),
+        color = uiColors.subtitle,
     )
 }
 
@@ -329,20 +281,4 @@ private fun sampleToneFor(special: SpecialBlockType): CellTone {
     }
 }
 
-private fun specialColor(type: SpecialBlockType): Color {
-    return when (type) {
-        SpecialBlockType.ColumnClearer -> Color(0xFF57E389)
-        SpecialBlockType.RowClearer -> Color(0xFFFFD166)
-        SpecialBlockType.Ghost -> Color(0xFF9B8CFF)
-        SpecialBlockType.Heavy -> Color(0xFFFF7A90)
-        SpecialBlockType.None -> Color.Transparent
-    }
-}
 
-private fun specialIcon(type: SpecialBlockType) = when (type) {
-    SpecialBlockType.ColumnClearer -> Icons.Filled.SwapVert
-    SpecialBlockType.RowClearer -> Icons.Filled.SwapHoriz
-    SpecialBlockType.Ghost -> Icons.Filled.HelpOutline
-    SpecialBlockType.Heavy -> Icons.Filled.FitnessCenter
-    SpecialBlockType.None -> Icons.Filled.HelpOutline
-}

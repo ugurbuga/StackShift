@@ -10,6 +10,10 @@
     <string name="settings_board_block_style">Board Block Style</string>
     <string name="app_language_english">English</string>
     <string name="app_language_turkish">Türkçe</string>
+    <string name="app_language_spanish">Español</string>
+    <string name="app_language_french">Français</string>
+    <string name="app_language_german">Deutsch</string>
+    <string name="app_language_russian">Русский</string>
     <string name="app_theme_system">System</string>
     <string name="app_theme_light">Light</string>
     <string name="app_theme_dark">Dark</string>

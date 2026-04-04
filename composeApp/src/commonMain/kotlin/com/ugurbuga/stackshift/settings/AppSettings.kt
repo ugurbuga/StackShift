@@ -13,5 +13,5 @@ data class AppSettings(
     val themeColorPalette: AppColorPalette = AppColorPalette.Classic,
     val blockColorPalette: BlockColorPalette = BlockColorPalette.Classic,
     val blockVisualStyle: BlockVisualStyle = BlockVisualStyle.Flat,
-    val boardBlockStyleMode: BoardBlockStyleMode = BoardBlockStyleMode.AlwaysFlat,
+    val boardBlockStyleMode: BoardBlockStyleMode = BoardBlockStyleMode.MatchSelectedBlockStyle,
 )

@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -17,14 +17,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ugurbuga.stackshift.game.model.Piece
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
+import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
 import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
 import stackshift.composeapp.generated.resources.piece_properties_active
@@ -48,9 +47,10 @@ fun PiecePropertiesScreen(
     activePiece: Piece?,
     onBack: () -> Unit,
 ) {
+    val uiColors = StackShiftThemeTokens.uiColors
     Surface(
         modifier = modifier.fillMaxSize(),
-        color = Color(0xFF070B14),
+        color = MaterialTheme.colorScheme.background,
     ) {
         Column(
             modifier = Modifier
@@ -59,7 +59,8 @@ fun PiecePropertiesScreen(
                 .padding(horizontal = 12.dp, vertical = 10.dp),
         ) {
             Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF10192A).copy(alpha = 0.94f)),
+                colors = CardDefaults.cardColors(containerColor = uiColors.panel),
+                border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
             ) {
                 Column(
                     modifier = Modifier
@@ -68,22 +69,22 @@ fun PiecePropertiesScreen(
                 ) {
                     IconButton(onClick = onBack) {
                         Icon(
-                            imageVector = Icons.Filled.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(Res.string.piece_properties_title),
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                     Text(
                         text = stringResource(Res.string.piece_properties_title),
                         style = MaterialTheme.typography.headlineSmall,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
                         text = stringResource(Res.string.piece_properties_active),
                         style = MaterialTheme.typography.labelLarge,
-                        color = Color(0xFFC7D0EC),
+                        color = uiColors.subtitle,
                     )
                 }
             }
@@ -92,14 +93,15 @@ fun PiecePropertiesScreen(
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.06f)),
+                colors = CardDefaults.cardColors(containerColor = uiColors.panelMuted),
+                border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.72f)),
             ) {
                 Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
                     if (activePiece == null) {
                         Text(
                             text = stringResource(Res.string.queue_empty),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Color.White.copy(alpha = 0.7f),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                         )
                         return@Column
                     }
@@ -143,17 +145,18 @@ private fun PropertyRow(
     label: String,
     value: String,
 ) {
+    val uiColors = StackShiftThemeTokens.uiColors
     Spacer(modifier = Modifier.height(6.dp))
     Text(
         text = label,
         style = MaterialTheme.typography.labelSmall,
-        color = Color(0xFFC7D0EC),
+        color = uiColors.subtitle,
     )
     Text(
         text = value,
         style = MaterialTheme.typography.bodyLarge,
-        color = Color.White,
-        maxLines = 1,
+        color = MaterialTheme.colorScheme.onSurface,
+        maxLines = 2,
         overflow = TextOverflow.Ellipsis,
         fontWeight = FontWeight.Medium,
     )

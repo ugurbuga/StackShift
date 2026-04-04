@@ -22,19 +22,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FitnessCenter
-import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.ViewModule
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -59,7 +57,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
@@ -102,6 +99,7 @@ import com.ugurbuga.stackshift.platform.feedback.NoOpSoundEffectPlayer
 import com.ugurbuga.stackshift.platform.feedback.SoundEffectPlayer
 import com.ugurbuga.stackshift.presentation.game.GameViewModel
 import com.ugurbuga.stackshift.presentation.game.InteractionFeedback
+import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.StringResource
@@ -216,6 +214,8 @@ fun GameScreen(
 ) {
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
+    val colorScheme = MaterialTheme.colorScheme
+    val uiColors = StackShiftThemeTokens.uiColors
     val updatedPreviewProvider by rememberUpdatedState(onRequestPreview)
     val updatedPreviewImpactProvider by rememberUpdatedState(onResolvePreviewImpact)
     val updatedPlacePiece by rememberUpdatedState(onPlacePiece)
@@ -379,7 +379,7 @@ fun GameScreen(
 
     Surface(
         modifier = modifier.fillMaxSize(),
-        color = Color(0xFF070B14),
+        color = colorScheme.background,
     ) {
         Box(
             modifier = Modifier
@@ -391,9 +391,9 @@ fun GameScreen(
                 .background(
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            Color(0xFF121934),
-                            Color(0xFF090D1C),
-                            Color(0xFF060A13),
+                            uiColors.screenGradientTop,
+                            uiColors.screenGradientMiddle,
+                            uiColors.screenGradientBottom,
                         ),
                     ),
                 )
@@ -629,13 +629,15 @@ private fun MinimalTopBar(
     onOpenSettings: () -> Unit,
     onBlockProperties: () -> Unit,
 ) {
+    val uiColors = StackShiftThemeTokens.uiColors
     val pressureCount = gameState.columnPressure.count { it.level == PressureLevel.Critical || it.level == PressureLevel.Overflow }
     val holdLabel = resolveGameText(gameText(GameTextKey.Hold))
     val pauseLabel = resolveGameText(gameText(if (gameState.status == GameStatus.Paused) GameTextKey.Resume else GameTextKey.Pause))
     val restartLabel = resolveGameText(gameText(GameTextKey.Restart))
     Card(
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF10192A).copy(alpha = 0.94f)),
+        colors = CardDefaults.cardColors(containerColor = uiColors.panel),
+        border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
     ) {
         Column(
             modifier = Modifier
@@ -655,22 +657,27 @@ private fun MinimalTopBar(
                     Text(
                         text = resolveGameText(gameText(GameTextKey.AppTitle)),
                         style = MaterialTheme.typography.titleMedium,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
                         text = resolveGameText(gameState.message),
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color(0xFFC7D0EC),
-                        maxLines = 1,
+                        color = uiColors.subtitle,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(TopBarIconSpacing)) {
                     CompactActionIconButton(
                         icon = Icons.Filled.Settings,
-                        contentDescription = stringResource(Res.string.block_properties_title),
+                        contentDescription = stringResource(Res.string.settings_title),
                         onClick = onOpenSettings,
+                    )
+                    CompactActionIconButton(
+                        icon = Icons.Filled.ViewModule,
+                        contentDescription = stringResource(Res.string.block_properties_title),
+                        onClick = onBlockProperties,
                     )
                     CompactActionIconButton(
                         icon = Icons.Filled.SwapHoriz,
@@ -715,6 +722,7 @@ private fun MinimalBottomDock(
     modifier: Modifier = Modifier,
 ) {
     val density = LocalDensity.current
+    val uiColors = StackShiftThemeTokens.uiColors
     val queuePieces = gameState.nextQueue.take(1)
     val railWidth = with(density) {
         (((gameState.activePiece?.width ?: 3) + 1) * cellSizePx)
@@ -723,13 +731,14 @@ private fun MinimalBottomDock(
     }
     val dockMessage = resolveActivePieceProperties(piece = gameState.activePiece)
     val dockDetail = resolveBlockDetail(piece = gameState.activePiece)
-    val dockMessageColor = Color.White.copy(alpha = 0.92f)
-    val dockDetailColor = Color(0xFFC7D0EC)
+    val dockMessageColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.92f)
+    val dockDetailColor = uiColors.subtitle
 
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF10192A).copy(alpha = 0.94f)),
+        colors = CardDefaults.cardColors(containerColor = uiColors.panel),
+        border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
     ) {
         Row(
             modifier = Modifier
@@ -745,14 +754,14 @@ private fun MinimalBottomDock(
                     .fillMaxHeight()
                     .padding(start = 10.dp)
                     .clip(RoundedCornerShape(18.dp))
-                    .background(Color.White.copy(alpha = 0.035f))
+                    .background(uiColors.panelMuted)
                     .padding(horizontal = 12.dp, vertical = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
                     text = resolveGameText(gameText(GameTextKey.LaunchBar)),
                     style = MaterialTheme.typography.labelMedium,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Medium,
                 )
                 LaunchBarView(gameState = gameState)
@@ -770,7 +779,7 @@ private fun MinimalBottomDock(
                         text = dockDetail,
                         style = MaterialTheme.typography.labelSmall,
                         color = dockDetailColor,
-                        maxLines = 2,
+                            maxLines = 3,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
@@ -804,34 +813,53 @@ private fun PauseOverlay(
     gameState: GameState,
     onPrimaryAction: () -> Unit,
 ) {
+    val uiColors = StackShiftThemeTokens.uiColors
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xC40D1220)),
+            .background(uiColors.overlay),
         contentAlignment = Alignment.Center,
     ) {
         Card(
             shape = RoundedCornerShape(30.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF141A2D)),
+            colors = CardDefaults.cardColors(containerColor = uiColors.panel),
+            border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
         ) {
             Column(
-                modifier = Modifier.padding(horizontal = 28.dp, vertical = 24.dp),
+                modifier = Modifier
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                uiColors.dialogStart,
+                                uiColors.dialogEnd,
+                            ),
+                        ),
+                    )
+                    .padding(horizontal = 28.dp, vertical = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
                     text = resolveGameText(gameText(if (gameState.status == GameStatus.GameOver) GameTextKey.GameOverTitle else GameTextKey.PauseTitle)),
                     style = MaterialTheme.typography.headlineSmall,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
                     text = resolveGameText(gameState.message),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFFD6DDF7),
+                    color = uiColors.subtitle,
                     textAlign = TextAlign.Center,
+                    maxLines = 4,
+                    overflow = TextOverflow.Ellipsis,
                 )
-                Button(onClick = onPrimaryAction) {
+                Button(
+                    onClick = onPrimaryAction,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = uiColors.actionButton,
+                        contentColor = uiColors.actionIcon,
+                    ),
+                ) {
                     Text(resolveGameText(gameText(if (gameState.status == GameStatus.GameOver) GameTextKey.PlayAgain else GameTextKey.Continue)))
                 }
             }
@@ -845,10 +873,12 @@ private fun MetricChip(
     value: String,
     modifier: Modifier = Modifier,
 ) {
+    val uiColors = StackShiftThemeTokens.uiColors
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.08f)),
+        colors = CardDefaults.cardColors(containerColor = uiColors.metricCard),
+        border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.72f)),
     ) {
         Column(
             modifier = Modifier
@@ -860,12 +890,12 @@ private fun MetricChip(
             Text(
                 text = title,
                 style = MaterialTheme.typography.labelSmall,
-                color = Color(0xFFC7D0EC),
+                color = uiColors.subtitle,
             )
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyLarge,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.SemiBold,
             )
         }
@@ -879,18 +909,19 @@ private fun CompactActionIconButton(
     onClick: () -> Unit,
     enabled: Boolean = true,
 ) {
+    val uiColors = StackShiftThemeTokens.uiColors
     IconButton(
         onClick = onClick,
         enabled = enabled,
         modifier = Modifier
             .size(TopBarActionButtonSize)
             .clip(RoundedCornerShape(10.dp))
-            .background(if (enabled) Color(0xFF26304F) else Color(0xFF26304F).copy(alpha = 0.35f)),
+            .background(if (enabled) uiColors.actionButton else uiColors.actionButtonDisabled),
     ) {
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            tint = if (enabled) Color.White else Color.White.copy(alpha = 0.45f),
+            tint = if (enabled) uiColors.actionIcon else uiColors.actionIconDisabled,
             modifier = Modifier.size(TopBarActionIconSize),
         )
     }
@@ -898,6 +929,7 @@ private fun CompactActionIconButton(
 
 @Composable
 private fun LaunchBarView(gameState: GameState) {
+    val uiColors = StackShiftThemeTokens.uiColors
     val progressPercent = (gameState.launchBar.progress * 100).roundToInt()
     val isBoostActive = gameState.launchBar.boostTurnsRemaining > 0
     val animatedProgress by animateFloatAsState(
@@ -916,7 +948,7 @@ private fun LaunchBarView(gameState: GameState) {
                 .fillMaxWidth()
                 .height(18.dp)
                 .clip(RoundedCornerShape(999.dp))
-                .background(Color.White.copy(alpha = 0.08f)),
+                .background(uiColors.launchTrack),
         ) {
             Box(
                 modifier = Modifier
@@ -926,8 +958,9 @@ private fun LaunchBarView(gameState: GameState) {
                     .background(
                         Brush.horizontalGradient(
                             colors = listOf(
-                                Color(0xFF57E389).copy(alpha = boostGlow),
-                                Color(0xFFFFD166),
+                                uiColors.launchGlow.copy(alpha = boostGlow),
+                                uiColors.success.copy(alpha = 0.92f),
+                                uiColors.launchAccent,
                             ),
                         ),
                     ),
@@ -942,13 +975,14 @@ private fun LaunchBarView(gameState: GameState) {
                 Text(
                     text = if (isBoostActive) resolveGameText(gameText(GameTextKey.Boost)) else resolveGameText(gameText(GameTextKey.Launch)),
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color.White.copy(alpha = 0.9f),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f),
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     text = if (isBoostActive) "x${gameState.launchBar.boostTurnsRemaining}" else "%$progressPercent",
                     style = MaterialTheme.typography.labelMedium,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                 )
@@ -961,7 +995,9 @@ private fun LaunchBarView(gameState: GameState) {
                 resolveGameText(gameText(GameTextKey.LaunchSpecialChance, progressPercent))
             },
             style = MaterialTheme.typography.labelSmall,
-            color = Color(0xFFC7D0EC),
+            color = uiColors.subtitle,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
@@ -993,9 +1029,10 @@ private fun QueueSlot(
     cellSizePx: Float,
     density: androidx.compose.ui.unit.Density,
 ) {
+    val uiColors = StackShiftThemeTokens.uiColors
     Card(
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.06f)),
+        colors = CardDefaults.cardColors(containerColor = uiColors.panelMuted),
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
@@ -1006,7 +1043,7 @@ private fun QueueSlot(
                 Text(
                     text = title,
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFFC7D0EC),
+                    color = uiColors.subtitle,
                 )
             }
             if (piece != null) {
@@ -1016,13 +1053,13 @@ private fun QueueSlot(
                     alpha = 0.92f,
                 )
             } else {
-                Text(resolveGameText(gameText(GameTextKey.QueueEmpty)), color = Color.White.copy(alpha = 0.5f))
+                Text(resolveGameText(gameText(GameTextKey.QueueEmpty)), color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
             }
             if (piece?.special != null && piece.special != SpecialBlockType.None) {
                 Text(
                     text = resolveGameText(piece.special.shortLabel()),
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFFFFD166),
+                    color = uiColors.warning,
                 )
             }
         }
@@ -1037,6 +1074,7 @@ private fun FloatingFeedbackBubble(
     alpha: Float,
     driftY: Float,
 ) {
+    val uiColors = StackShiftThemeTokens.uiColors
     val pulse by animateFloatAsState(
         targetValue = if (isBonus) 1f else 0.92f,
         animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing),
@@ -1051,13 +1089,13 @@ private fun FloatingFeedbackBubble(
         ),
         shape = RoundedCornerShape(999.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isBonus) Color(0xFF16311F) else Color(0xFF172234),
+            containerColor = if (isBonus) uiColors.panelHighlight else uiColors.panel,
         ),
     ) {
         Text(
             text = text,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-            color = if (isBonus) Color(0xFF7CFFB2) else Color.White,
+            color = if (isBonus) uiColors.success else MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.SemiBold,
         )
@@ -1082,13 +1120,6 @@ private fun SpecialBlockType.shortLabel(): GameText = when (this) {
     SpecialBlockType.Heavy -> gameText(GameTextKey.SpecialHeavy)
 }
 
-private fun specialIcon(type: SpecialBlockType) = when (type) {
-    SpecialBlockType.ColumnClearer -> Icons.Filled.SwapVert
-    SpecialBlockType.RowClearer -> Icons.Filled.SwapHoriz
-    SpecialBlockType.Ghost -> Icons.Filled.ViewModule
-    SpecialBlockType.Heavy -> Icons.Filled.FitnessCenter
-    SpecialBlockType.None -> Icons.Filled.ViewModule
-}
 
 private fun GameTextKey.stringResourceId(): StringResource = when (this) {
     GameTextKey.AppTitle -> Res.string.app_title
