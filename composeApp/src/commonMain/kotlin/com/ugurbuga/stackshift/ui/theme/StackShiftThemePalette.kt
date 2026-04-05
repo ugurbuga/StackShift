@@ -1,6 +1,7 @@
 package com.ugurbuga.stackshift.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -16,6 +17,7 @@ data class StackShiftUiColors(
 	val screenGradientTop: Color,
 	val screenGradientMiddle: Color,
 	val screenGradientBottom: Color,
+	val gameSurface: Color,
 	val settingsHeroStart: Color,
 	val settingsHeroEnd: Color,
 	val boardGradientTop: Color,
@@ -72,6 +74,14 @@ object StackShiftThemeTokens {
 @Composable
 fun isStackShiftDarkTheme(settings: AppSettings): Boolean = settings.themeMode.isDark ?: isSystemInDarkTheme()
 
+fun appBackgroundBrush(uiColors: StackShiftUiColors): Brush = Brush.verticalGradient(
+    colors = listOf(
+        uiColors.screenGradientTop,
+        uiColors.screenGradientMiddle,
+        uiColors.screenGradientBottom,
+    ),
+)
+
 fun stackShiftThemeSpec(
 	settings: AppSettings,
 	darkTheme: Boolean,
@@ -99,6 +109,11 @@ fun stackShiftThemeSpec(
 			screenGradientTop = gradients.screenTop,
 			screenGradientMiddle = gradients.screenMiddle,
 			screenGradientBottom = gradients.screenBottom,
+			gameSurface = mixColors(
+				first = gradients.boardTop,
+				second = gradients.boardBottom,
+				fraction = if (darkTheme) 0.42f else 0.34f,
+			),
 			settingsHeroStart = colorScheme.primaryContainer,
 			settingsHeroEnd = colorScheme.secondaryContainer,
 			boardGradientTop = gradients.boardTop,
@@ -130,8 +145,16 @@ fun stackShiftThemeSpec(
 			boardOutlineGlow = colorScheme.primary.copy(alpha = if (darkTheme) 0.22f else 0.12f),
 			boardSignaturePrimary = boardSignature.primary,
 			boardSignatureSecondary = boardSignature.secondary,
-			boardEmptyCell = colorScheme.surfaceVariant.copy(alpha = if (darkTheme) 0.36f else 0.56f),
-			boardEmptyCellBorder = colorScheme.outlineVariant.copy(alpha = if (darkTheme) 0.46f else 0.34f),
+			boardEmptyCell = mixColors(
+				first = gradients.boardTop,
+				second = colorScheme.surfaceVariant,
+				fraction = if (darkTheme) 0.34f else 0.44f,
+			).copy(alpha = if (darkTheme) 0.54f else 0.76f),
+			boardEmptyCellBorder = mixColors(
+				first = gradients.boardBottom,
+				second = colorScheme.outlineVariant,
+				fraction = if (darkTheme) 0.62f else 0.56f,
+			).copy(alpha = if (darkTheme) 0.62f else 0.46f),
 		),
 	)
 }
@@ -161,26 +184,26 @@ private fun classicColorScheme(darkTheme: Boolean): ColorScheme = if (darkTheme)
 	)
 } else {
 	lightColorScheme(
-		primary = Color(0xFF10B0A4),
+		primary = Color(0xFF0EAAA0),
 		onPrimary = Color.White,
-		primaryContainer = Color(0xFFD8F7F5),
+		primaryContainer = Color(0xFFDBF7F4),
 		onPrimaryContainer = Color(0xFF002623),
-		secondary = Color(0xFF897CF2),
+		secondary = Color(0xFF8276EE),
 		onSecondary = Color.White,
-		secondaryContainer = Color(0xFFEFEAFF),
+		secondaryContainer = Color(0xFFF0EBFF),
 		onSecondaryContainer = Color(0xFF251C52),
-		tertiary = Color(0xFFB98916),
+		tertiary = Color(0xFFB98510),
 		onTertiary = Color.White,
-		tertiaryContainer = Color(0xFFFFEDC9),
+		tertiaryContainer = Color(0xFFFFEECB),
 		onTertiaryContainer = Color(0xFF352200),
-		background = Color(0xFFF7FAFE),
-		onBackground = Color(0xFF203043),
+		background = Color(0xFFF5F8FC),
+		onBackground = Color(0xFF1C2D3E),
 		surface = Color(0xFFFFFFFF),
-		onSurface = Color(0xFF203043),
-		surfaceVariant = Color(0xFFDDE9F6),
-		onSurfaceVariant = Color(0xFF5A6D81),
-		outline = Color(0xFF98B1CA),
-		outlineVariant = Color(0xFFD6E3F0),
+		onSurface = Color(0xFF1C2D3E),
+		surfaceVariant = Color(0xFFE5EDF6),
+		onSurfaceVariant = Color(0xFF566A7D),
+		outline = Color(0xFF8EA6BD),
+		outlineVariant = Color(0xFFD4E1ED),
 	)
 }
 
@@ -209,26 +232,26 @@ private fun auroraColorScheme(darkTheme: Boolean): ColorScheme = if (darkTheme) 
 	)
 } else {
 	lightColorScheme(
-		primary = Color(0xFF006A81),
+		primary = Color(0xFF006F86),
 		onPrimary = Color.White,
-		primaryContainer = Color(0xFFD6F4FA),
+		primaryContainer = Color(0xFFD9F5FB),
 		onPrimaryContainer = Color(0xFF001F27),
-		secondary = Color(0xFF6258D6),
+		secondary = Color(0xFF6158D4),
 		onSecondary = Color.White,
 		secondaryContainer = Color(0xFFE9E7FF),
 		onSecondaryContainer = Color(0xFF1C1544),
-		tertiary = Color(0xFF0E8E6C),
+		tertiary = Color(0xFF118D6D),
 		onTertiary = Color.White,
 		tertiaryContainer = Color(0xFFD6FAEE),
 		onTertiaryContainer = Color(0xFF002117),
-		background = Color(0xFFF4F9FF),
-		onBackground = Color(0xFF152432),
-		surface = Color(0xFFFCFDFF),
-		onSurface = Color(0xFF152432),
-		surfaceVariant = Color(0xFFE7EFF8),
-		onSurfaceVariant = Color(0xFF445766),
-		outline = Color(0xFF698194),
-		outlineVariant = Color(0xFFCFD7E2),
+		background = Color(0xFFF2F8FE),
+		onBackground = Color(0xFF132432),
+		surface = Color(0xFFFCFEFF),
+		onSurface = Color(0xFF132432),
+		surfaceVariant = Color(0xFFE4EEF7),
+		onSurfaceVariant = Color(0xFF435867),
+		outline = Color(0xFF6B8396),
+		outlineVariant = Color(0xFFCEDAE5),
 	)
 }
 
@@ -257,26 +280,26 @@ private fun sunsetColorScheme(darkTheme: Boolean): ColorScheme = if (darkTheme) 
 	)
 } else {
 	lightColorScheme(
-		primary = Color(0xFFC45834),
+		primary = Color(0xFFC75D39),
 		onPrimary = Color.White,
-		primaryContainer = Color(0xFFFFE1D8),
+		primaryContainer = Color(0xFFFFE3DA),
 		onPrimaryContainer = Color(0xFF3B0F00),
-		secondary = Color(0xFF8058D3),
+		secondary = Color(0xFF7F59D1),
 		onSecondary = Color.White,
-		secondaryContainer = Color(0xFFF0E2FF),
+		secondaryContainer = Color(0xFFF1E4FF),
 		onSecondaryContainer = Color(0xFF271244),
-		tertiary = Color(0xFFB86A00),
+		tertiary = Color(0xFFBB7004),
 		onTertiary = Color.White,
-		tertiaryContainer = Color(0xFFFFE7C2),
+		tertiaryContainer = Color(0xFFFFE8C7),
 		onTertiaryContainer = Color(0xFF341A00),
-		background = Color(0xFFFFF8F7),
-		onBackground = Color(0xFF2B2130),
-		surface = Color(0xFFFFFFFF),
-		onSurface = Color(0xFF2B2130),
-		surfaceVariant = Color(0xFFF8EBEE),
+		background = Color(0xFFFFF7F4),
+		onBackground = Color(0xFF2C2130),
+		surface = Color(0xFFFFFEFD),
+		onSurface = Color(0xFF2C2130),
+		surfaceVariant = Color(0xFFF6EAEF),
 		onSurfaceVariant = Color(0xFF675861),
-		outline = Color(0xFF8B7682),
-		outlineVariant = Color(0xFFE0CCD4),
+		outline = Color(0xFF8D7783),
+		outlineVariant = Color(0xFFE3D2D9),
 	)
 }
 
@@ -302,53 +325,53 @@ private fun gradientStops(
 ): GradientStops = when (palette) {
 	AppColorPalette.Classic -> if (darkTheme) {
 		GradientStops(
-			screenTop = Color(0xFF162638),
-			screenMiddle = Color(0xFF0A1420),
-			screenBottom = Color(0xFF050B12),
-			boardTop = Color(0xFF172636),
-			boardBottom = Color(0xFF0A1220),
+			screenTop = Color(0xFF152434),
+			screenMiddle = Color(0xFF0C1621),
+			screenBottom = Color(0xFF070D14),
+			boardTop = Color(0xFF0D1621),
+			boardBottom = Color(0xFF0B121A),
 		)
 	} else {
 		GradientStops(
-			screenTop = Color(0xFFE1F1FD),
-			screenMiddle = Color(0xFFF3F8FE),
+			screenTop = Color(0xFFE6F1FA),
+			screenMiddle = Color(0xFFF3F7FC),
 			screenBottom = Color(0xFFFFFFFF),
-			boardTop = Color(0xFFE0ECF8),
-			boardBottom = Color(0xFFD4E2F1),
+			boardTop = Color(0xFFF1F6FB),
+			boardBottom = Color(0xFFEAF1F8),
 		)
 	}
 	AppColorPalette.Aurora -> if (darkTheme) {
 		GradientStops(
-			screenTop = Color(0xFF182A46),
-			screenMiddle = Color(0xFF0B1728),
-			screenBottom = Color(0xFF060C16),
-			boardTop = Color(0xFF18263C),
-			boardBottom = Color(0xFF0B1220),
+			screenTop = Color(0xFF172A43),
+			screenMiddle = Color(0xFF0C1727),
+			screenBottom = Color(0xFF070D15),
+			boardTop = Color(0xFF0D1724),
+			boardBottom = Color(0xFF0A121A),
 		)
 	} else {
 		GradientStops(
-			screenTop = Color(0xFFE4F6FF),
-			screenMiddle = Color(0xFFF2F8FF),
+			screenTop = Color(0xFFE7F5FD),
+			screenMiddle = Color(0xFFF2F8FD),
 			screenBottom = Color(0xFFFFFFFF),
-			boardTop = Color(0xFFEAF5FF),
-			boardBottom = Color(0xFFDDEAF7),
+			boardTop = Color(0xFFF0F7FC),
+			boardBottom = Color(0xFFE7F1F8),
 		)
 	}
 	AppColorPalette.Sunset -> if (darkTheme) {
 		GradientStops(
-			screenTop = Color(0xFF311B32),
-			screenMiddle = Color(0xFF1A1020),
-			screenBottom = Color(0xFF0D0711),
-			boardTop = Color(0xFF332135),
-			boardBottom = Color(0xFF170E1B),
+			screenTop = Color(0xFF301C30),
+			screenMiddle = Color(0xFF1A111E),
+			screenBottom = Color(0xFF0F0912),
+			boardTop = Color(0xFF1C131E),
+			boardBottom = Color(0xFF130D14),
 		)
 	} else {
 		GradientStops(
-			screenTop = Color(0xFFFFF0EA),
-			screenMiddle = Color(0xFFFFF7F4),
-			screenBottom = Color(0xFFFFFFFF),
-			boardTop = Color(0xFFFFF2EC),
-			boardBottom = Color(0xFFF4E3EA),
+			screenTop = Color(0xFFFFF1EB),
+			screenMiddle = Color(0xFFFFF7F3),
+			screenBottom = Color(0xFFFFFEFD),
+			boardTop = Color(0xFFFFF5F1),
+			boardBottom = Color(0xFFF7EDF1),
 		)
 	}
 }
@@ -395,6 +418,20 @@ private fun boardSignatureColors(
 	AppColorPalette.Sunset -> BoardSignatureColors(
 		primary = if (darkTheme) Color(0x33FF8C73) else Color(0x33FF9D7C),
 		secondary = if (darkTheme) Color(0x22D48BFF) else Color(0x22D18DFF),
+	)
+}
+
+private fun mixColors(
+	first: Color,
+	second: Color,
+	fraction: Float,
+): Color {
+	val t = fraction.coerceIn(0f, 1f)
+	return Color(
+		red = first.red + ((second.red - first.red) * t),
+		green = first.green + ((second.green - first.green) * t),
+		blue = first.blue + ((second.blue - first.blue) * t),
+		alpha = first.alpha + ((second.alpha - first.alpha) * t),
 	)
 }
 

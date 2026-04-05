@@ -18,6 +18,7 @@ import com.ugurbuga.stackshift.game.model.PressureLevel
 import com.ugurbuga.stackshift.game.model.SoftLockState
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
 import com.ugurbuga.stackshift.game.model.gameText
+import com.ugurbuga.stackshift.settings.GameSessionCodec
 import kotlin.math.min
 import kotlin.random.Random
 
@@ -25,6 +26,11 @@ class GameLogic(
     private val random: Random = Random.Default,
 ) {
     private var nextPieceId: Long = 1L
+
+    fun restoreGame(state: GameState): GameState {
+        nextPieceId = maxOf(nextPieceId, GameSessionCodec.maxPieceId(state) + 1L)
+        return state
+    }
 
     fun newGame(config: GameConfig = GameConfig()): GameState {
         val level = 1

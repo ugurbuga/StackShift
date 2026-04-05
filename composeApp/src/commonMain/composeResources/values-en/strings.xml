@@ -63,6 +63,7 @@
     <string name="game_over_title">Game Over</string>
     <string name="continue_label">Continue</string>
     <string name="play_again">Play again</string>
+    <string name="game_over_new_high_score">New high score!</string>
     <string name="game_message_select_column">Drag the piece horizontally, choose the column, and launch upward.</string>
     <string name="game_message_no_opening">No valid opening column. Restart.</string>
     <string name="game_message_soft_lock">Short adjustment window is open. Micro-adjust the column.</string>

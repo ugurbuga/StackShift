@@ -1,11 +1,12 @@
 package com.ugurbuga.stackshift.ui.game
 
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,25 +23,23 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ViewModule
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.ViewModule
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -50,7 +49,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -74,11 +72,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ugurbuga.stackshift.StackShiftTheme
-import com.ugurbuga.stackshift.settings.AppSettings
-import com.ugurbuga.stackshift.game.model.FeedbackEmphasis
 import com.ugurbuga.stackshift.game.model.BoardMatrix
 import com.ugurbuga.stackshift.game.model.CellTone
 import com.ugurbuga.stackshift.game.model.ComboState
+import com.ugurbuga.stackshift.game.model.FeedbackEmphasis
 import com.ugurbuga.stackshift.game.model.GameConfig
 import com.ugurbuga.stackshift.game.model.GameState
 import com.ugurbuga.stackshift.game.model.GameStatus
@@ -99,13 +96,86 @@ import com.ugurbuga.stackshift.platform.feedback.NoOpSoundEffectPlayer
 import com.ugurbuga.stackshift.platform.feedback.SoundEffectPlayer
 import com.ugurbuga.stackshift.presentation.game.GameViewModel
 import com.ugurbuga.stackshift.presentation.game.InteractionFeedback
+import com.ugurbuga.stackshift.settings.AppSettings
+import com.ugurbuga.stackshift.settings.HighScoreStorage
 import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
-import stackshift.composeapp.generated.resources.*
+import stackshift.composeapp.generated.resources.app_title
+import stackshift.composeapp.generated.resources.block_properties_column_clearer_desc
+import stackshift.composeapp.generated.resources.block_properties_ghost_desc
+import stackshift.composeapp.generated.resources.block_properties_heavy_desc
+import stackshift.composeapp.generated.resources.block_properties_row_clearer_desc
+import stackshift.composeapp.generated.resources.block_properties_title
+import stackshift.composeapp.generated.resources.boost
+import stackshift.composeapp.generated.resources.continue_label
+import stackshift.composeapp.generated.resources.danger
+import stackshift.composeapp.generated.resources.danger_none
+import stackshift.composeapp.generated.resources.feedback_chain
+import stackshift.composeapp.generated.resources.feedback_clear
+import stackshift.composeapp.generated.resources.feedback_hold_armed
+import stackshift.composeapp.generated.resources.feedback_micro_adjust
+import stackshift.composeapp.generated.resources.feedback_overflow
+import stackshift.composeapp.generated.resources.feedback_perfect
+import stackshift.composeapp.generated.resources.feedback_perfect_lane
+import stackshift.composeapp.generated.resources.feedback_score_only
+import stackshift.composeapp.generated.resources.feedback_soft_lock
+import stackshift.composeapp.generated.resources.feedback_special
+import stackshift.composeapp.generated.resources.feedback_special_chain
+import stackshift.composeapp.generated.resources.feedback_swap
+import stackshift.composeapp.generated.resources.game_message_chain_lines
+import stackshift.composeapp.generated.resources.game_message_good_shot
+import stackshift.composeapp.generated.resources.game_message_hold_updated
+import stackshift.composeapp.generated.resources.game_message_lines_cleared
+import stackshift.composeapp.generated.resources.game_message_no_opening
+import stackshift.composeapp.generated.resources.game_message_overflow
+import stackshift.composeapp.generated.resources.game_message_paused
+import stackshift.composeapp.generated.resources.game_message_perfect_drop
+import stackshift.composeapp.generated.resources.game_message_pressure_game_over
+import stackshift.composeapp.generated.resources.game_message_resumed
+import stackshift.composeapp.generated.resources.game_message_select_column
+import stackshift.composeapp.generated.resources.game_message_soft_lock
+import stackshift.composeapp.generated.resources.game_message_special_chain_board
+import stackshift.composeapp.generated.resources.game_message_special_lines
+import stackshift.composeapp.generated.resources.game_message_special_triggered
+import stackshift.composeapp.generated.resources.game_message_tempo_critical
+import stackshift.composeapp.generated.resources.game_message_tempo_up
+import stackshift.composeapp.generated.resources.game_over_new_high_score
+import stackshift.composeapp.generated.resources.game_over_title
+import stackshift.composeapp.generated.resources.high_score
+import stackshift.composeapp.generated.resources.hold
+import stackshift.composeapp.generated.resources.launch
+import stackshift.composeapp.generated.resources.launch_bar
+import stackshift.composeapp.generated.resources.launch_boost_active
+import stackshift.composeapp.generated.resources.launch_chain_message
+import stackshift.composeapp.generated.resources.launch_drag_hint
+import stackshift.composeapp.generated.resources.launch_game_over
+import stackshift.composeapp.generated.resources.launch_paused
+import stackshift.composeapp.generated.resources.launch_soft_lock_message
+import stackshift.composeapp.generated.resources.launch_special_chance
+import stackshift.composeapp.generated.resources.lines
+import stackshift.composeapp.generated.resources.pause
+import stackshift.composeapp.generated.resources.pause_title
+import stackshift.composeapp.generated.resources.piece_size_format
+import stackshift.composeapp.generated.resources.play_again
+import stackshift.composeapp.generated.resources.queue_empty
+import stackshift.composeapp.generated.resources.queue_hold
+import stackshift.composeapp.generated.resources.queue_next_short
+import stackshift.composeapp.generated.resources.restart
+import stackshift.composeapp.generated.resources.restart_cancel
+import stackshift.composeapp.generated.resources.restart_confirm
+import stackshift.composeapp.generated.resources.restart_confirm_body
+import stackshift.composeapp.generated.resources.restart_confirm_title
+import stackshift.composeapp.generated.resources.resume
+import stackshift.composeapp.generated.resources.score
+import stackshift.composeapp.generated.resources.settings_title
+import stackshift.composeapp.generated.resources.special_column_clearer
+import stackshift.composeapp.generated.resources.special_ghost
+import stackshift.composeapp.generated.resources.special_heavy
+import stackshift.composeapp.generated.resources.special_row_clearer
 import kotlin.math.roundToInt
 
 private const val LaunchAnimationMillis = 140L
@@ -115,9 +185,8 @@ private const val NextPieceScale = 0.5f
 private val BottomDockHeight = 148.dp
 private val TopBarVerticalPadding = 6.dp
 private val TopBarRowSpacing = 4.dp
-private val TopBarIconSpacing = 12.dp
-private val TopBarActionButtonSize = 38.dp
-private val TopBarActionIconSize = 22.dp
+private val TopBarIconSpacing = 4.dp
+private val TopBarActionIconSize = 28.dp
 
 @Composable
 private fun resolveActivePieceProperties(
@@ -156,17 +225,25 @@ fun StackShiftGameApp(
     viewModel: GameViewModel = remember { GameViewModel() },
     onOpenSettings: () -> Unit = {},
 ) {
-    DisposableEffect(viewModel) {
-        onDispose(viewModel::dispose)
-    }
-
     val haptics = rememberGameHaptics()
     val uiState by viewModel.uiState.collectAsState()
 
-    var highestScore by rememberSaveable { mutableIntStateOf(0) }
+    var highestScore by remember { mutableIntStateOf(HighScoreStorage.load()) }
+    var newHighScoreReached by remember { mutableStateOf(false) }
     LaunchedEffect(uiState.gameState.score) {
         if (uiState.gameState.score > highestScore) {
             highestScore = uiState.gameState.score
+            HighScoreStorage.save(highestScore)
+            newHighScoreReached = true
+        }
+    }
+    LaunchedEffect(
+        uiState.gameState.status,
+        uiState.gameState.score,
+        uiState.gameState.linesCleared
+    ) {
+        if (uiState.gameState.status == GameStatus.Running && uiState.gameState.score == 0 && uiState.gameState.linesCleared == 0) {
+            newHighScoreReached = false
         }
     }
 
@@ -192,6 +269,7 @@ fun StackShiftGameApp(
             soundPlayer = soundPlayer,
             haptics = haptics,
             highestScore = highestScore,
+            showNewHighScoreMessage = newHighScoreReached,
         )
     }
 }
@@ -210,6 +288,7 @@ fun GameScreen(
     soundPlayer: SoundEffectPlayer,
     haptics: GameHaptics,
     highestScore: Int,
+    showNewHighScoreMessage: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -248,7 +327,11 @@ fun GameScreen(
             if (boardRect.width == 0f) 0f else boardRect.width / gameState.config.columns
         }
     }
-    val spawnColumn by remember(activePiece?.id, gameState.lastPlacementColumn, gameState.config.columns) {
+    val spawnColumn by remember(
+        activePiece?.id,
+        gameState.lastPlacementColumn,
+        gameState.config.columns
+    ) {
         derivedStateOf {
             resolveSpawnColumn(
                 piece = activePiece,
@@ -259,7 +342,10 @@ fun GameScreen(
     }
     val spawnTopLeft by remember(activePiece?.id, trayRect, boardRect, cellSizePx, spawnColumn) {
         derivedStateOf {
-            gameState.softLock?.preview?.landingAnchor?.toTopLeft(boardRect = boardRect, cellSizePx = cellSizePx)
+            gameState.softLock?.preview?.landingAnchor?.toTopLeft(
+                boardRect = boardRect,
+                cellSizePx = cellSizePx
+            )
                 ?: pieceSpawnTopLeft(
                     piece = activePiece,
                     trayRect = trayRect,
@@ -290,7 +376,12 @@ fun GameScreen(
         }
     }
 
-    val placementPreview by remember(selectedColumn, activePiece?.id, gameState.status, gameState.board) {
+    val placementPreview by remember(
+        selectedColumn,
+        activePiece?.id,
+        gameState.status,
+        gameState.board
+    ) {
         derivedStateOf {
             if (gameState.status != GameStatus.Running) return@derivedStateOf null
             if (gameState.softLock != null && !isDragging) {
@@ -301,7 +392,12 @@ fun GameScreen(
         }
     }
 
-    val previewImpactPoints by remember(placementPreview, activePiece?.id, gameState.board, gameState.status) {
+    val previewImpactPoints by remember(
+        placementPreview,
+        activePiece?.id,
+        gameState.board,
+        gameState.status
+    ) {
         derivedStateOf {
             if (gameState.status != GameStatus.Running || placementPreview == null) {
                 emptySet()
@@ -331,12 +427,18 @@ fun GameScreen(
 
     val overlayX by animateFloatAsState(
         targetValue = displayOverlayTopLeft?.x ?: 0f,
-        animationSpec = if (isDragging) snap() else tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        animationSpec = if (isDragging) snap() else tween(
+            durationMillis = 180,
+            easing = FastOutSlowInEasing
+        ),
         label = "overlayX",
     )
     val overlayY by animateFloatAsState(
         targetValue = displayOverlayTopLeft?.y ?: 0f,
-        animationSpec = if (isDragging) snap() else tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        animationSpec = if (isDragging) snap() else tween(
+            durationMillis = 180,
+            easing = FastOutSlowInEasing
+        ),
         label = "overlayY",
     )
     val overlayScale by animateFloatAsState(
@@ -355,7 +457,10 @@ fun GameScreen(
         screenShakeY.snapTo(0f)
         listOf(14f, -10f, 8f, -6f, 3f, 0f).forEachIndexed { index, value ->
             screenShakeX.animateTo(value, animationSpec = tween(durationMillis = 34))
-            screenShakeY.animateTo(if (index % 2 == 0) 3f else -2f, animationSpec = tween(durationMillis = 34))
+            screenShakeY.animateTo(
+                if (index % 2 == 0) 3f else -2f,
+                animationSpec = tween(durationMillis = 34)
+            )
         }
         screenShakeY.animateTo(0f, animationSpec = tween(durationMillis = 40))
     }
@@ -363,7 +468,10 @@ fun GameScreen(
     LaunchedEffect(gameState.impactFlashToken) {
         if (gameState.impactFlashToken == 0L) return@LaunchedEffect
         impactFlashAlpha.snapTo(0.22f)
-        impactFlashAlpha.animateTo(0f, animationSpec = tween(durationMillis = 320, easing = FastOutSlowInEasing))
+        impactFlashAlpha.animateTo(
+            0f,
+            animationSpec = tween(durationMillis = 320, easing = FastOutSlowInEasing)
+        )
     }
 
     LaunchedEffect(gameState.comboPopupToken, gameState.floatingFeedback?.token) {
@@ -372,9 +480,15 @@ fun GameScreen(
         comboAlpha.snapTo(0f)
         comboAlpha.animateTo(1f, animationSpec = tween(durationMillis = 120))
         launch {
-            comboDriftY.animateTo(-22f, animationSpec = tween(durationMillis = 760, easing = FastOutSlowInEasing))
+            comboDriftY.animateTo(
+                -22f,
+                animationSpec = tween(durationMillis = 760, easing = FastOutSlowInEasing)
+            )
         }
-        comboAlpha.animateTo(0f, animationSpec = tween(durationMillis = 760, easing = FastOutSlowInEasing))
+        comboAlpha.animateTo(
+            0f,
+            animationSpec = tween(durationMillis = 760, easing = FastOutSlowInEasing)
+        )
     }
 
     Surface(
@@ -388,15 +502,7 @@ fun GameScreen(
                     translationX = screenShakeX.value,
                     translationY = screenShakeY.value,
                 )
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            uiColors.screenGradientTop,
-                            uiColors.screenGradientMiddle,
-                            uiColors.screenGradientBottom,
-                        ),
-                    ),
-                )
+                .background(uiColors.gameSurface)
                 .safeDrawingPadding()
                 .padding(horizontal = 12.dp, vertical = 10.dp),
         ) {
@@ -414,8 +520,20 @@ fun GameScreen(
                     MinimalTopBar(
                         gameState = gameState,
                         highestScore = highestScore,
-                        onHoldPiece = { dispatchFeedback(updatedHoldPiece(), soundPlayer, haptics) },
-                        onPauseToggle = { dispatchFeedback(updatedPauseToggle(), soundPlayer, haptics) },
+                        onHoldPiece = {
+                            dispatchFeedback(
+                                updatedHoldPiece(),
+                                soundPlayer,
+                                haptics
+                            )
+                        },
+                        onPauseToggle = {
+                            dispatchFeedback(
+                                updatedPauseToggle(),
+                                soundPlayer,
+                                haptics
+                            )
+                        },
                         onRestart = { showRestartDialog = true },
                         onOpenSettings = onOpenSettings,
                         onBlockProperties = onBlockProperties,
@@ -545,15 +663,24 @@ fun GameScreen(
                                         }
 
                                         if (gameState.softLock != null) {
-                                            overlayTopLeft = preview.landingAnchor.toTopLeft(boardRect = boardRect, cellSizePx = cellSizePx)
+                                            overlayTopLeft = preview.landingAnchor.toTopLeft(
+                                                boardRect = boardRect,
+                                                cellSizePx = cellSizePx
+                                            )
                                             val feedback = updatedPlacePiece(column)
                                             dispatchFeedback(feedback, soundPlayer, haptics)
                                         } else {
                                             isLaunching = true
-                                            overlayTopLeft = preview.entryAnchor.toTopLeft(boardRect = boardRect, cellSizePx = cellSizePx)
+                                            overlayTopLeft = preview.entryAnchor.toTopLeft(
+                                                boardRect = boardRect,
+                                                cellSizePx = cellSizePx
+                                            )
                                             coroutineScope.launch {
                                                 delay(EntryAnimationMillis)
-                                                overlayTopLeft = preview.landingAnchor.toTopLeft(boardRect = boardRect, cellSizePx = cellSizePx)
+                                                overlayTopLeft = preview.landingAnchor.toTopLeft(
+                                                    boardRect = boardRect,
+                                                    cellSizePx = cellSizePx
+                                                )
                                                 delay(LaunchAnimationMillis)
                                                 val feedback = updatedPlacePiece(column)
                                                 dispatchFeedback(feedback, soundPlayer, haptics)
@@ -567,57 +694,58 @@ fun GameScreen(
                                     },
                                 )
                             },
-                            alpha = when {
-                                gameState.status == GameStatus.Paused -> 0.42f
-                                isLaunching -> 0.92f
-                                else -> 1f
-                            },
-                        )
-                    }
-                }
-
-                if (gameState.status != GameStatus.Running) {
-                    PauseOverlay(
-                        gameState = gameState,
-                        onPrimaryAction = {
-                            if (gameState.status == GameStatus.GameOver) {
-                                dispatchFeedback(updatedRestart(), soundPlayer, haptics)
-                            } else {
-                                dispatchFeedback(updatedPauseToggle(), soundPlayer, haptics)
-                            }
-                        },
-                    )
-                }
-
-                if (showRestartDialog) {
-                    AlertDialog(
-                        onDismissRequest = { showRestartDialog = false },
-                        title = {
-                            Text(resolveGameText(gameText(GameTextKey.RestartConfirmTitle)))
-                        },
-                        text = {
-                            Text(resolveGameText(gameText(GameTextKey.RestartConfirmBody)))
-                        },
-                        confirmButton = {
-                            TextButton(
-                                onClick = {
-                                    showRestartDialog = false
-                                    dispatchFeedback(updatedRestart(), soundPlayer, haptics)
-                                },
-                            ) {
-                                Text(resolveGameText(gameText(GameTextKey.RestartConfirm)))
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { showRestartDialog = false }) {
-                                Text(resolveGameText(gameText(GameTextKey.RestartCancel)))
-                            }
+                        alpha = when {
+                            gameState.status == GameStatus.Paused -> 0.42f
+                            isLaunching -> 0.92f
+                            else -> 1f
                         },
                     )
                 }
             }
+
+            if (gameState.status != GameStatus.Running) {
+                PauseOverlay(
+                    gameState = gameState,
+                    showNewHighScoreMessage = showNewHighScoreMessage,
+                    onPrimaryAction = {
+                        if (gameState.status == GameStatus.GameOver) {
+                            dispatchFeedback(updatedRestart(), soundPlayer, haptics)
+                        } else {
+                            dispatchFeedback(updatedPauseToggle(), soundPlayer, haptics)
+                        }
+                    },
+                )
+            }
+
+            if (showRestartDialog) {
+                AlertDialog(
+                    onDismissRequest = { showRestartDialog = false },
+                    title = {
+                        Text(resolveGameText(gameText(GameTextKey.RestartConfirmTitle)))
+                    },
+                    text = {
+                        Text(resolveGameText(gameText(GameTextKey.RestartConfirmBody)))
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                showRestartDialog = false
+                                dispatchFeedback(updatedRestart(), soundPlayer, haptics)
+                            },
+                        ) {
+                            Text(resolveGameText(gameText(GameTextKey.RestartConfirm)))
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showRestartDialog = false }) {
+                            Text(resolveGameText(gameText(GameTextKey.RestartCancel)))
+                        }
+                    },
+                )
+            }
         }
     }
+}
 
 @Composable
 private fun MinimalTopBar(
@@ -630,9 +758,11 @@ private fun MinimalTopBar(
     onBlockProperties: () -> Unit,
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
-    val pressureCount = gameState.columnPressure.count { it.level == PressureLevel.Critical || it.level == PressureLevel.Overflow }
+    val pressureCount =
+        gameState.columnPressure.count { it.level == PressureLevel.Critical || it.level == PressureLevel.Overflow }
     val holdLabel = resolveGameText(gameText(GameTextKey.Hold))
-    val pauseLabel = resolveGameText(gameText(if (gameState.status == GameStatus.Paused) GameTextKey.Resume else GameTextKey.Pause))
+    val pauseLabel =
+        resolveGameText(gameText(if (gameState.status == GameStatus.Paused) GameTextKey.Resume else GameTextKey.Pause))
     val restartLabel = resolveGameText(gameText(GameTextKey.Restart))
     Card(
         shape = RoundedCornerShape(20.dp),
@@ -664,6 +794,7 @@ private fun MinimalTopBar(
                         text = resolveGameText(gameState.message),
                         style = MaterialTheme.typography.labelSmall,
                         color = uiColors.subtitle,
+                        minLines = 2,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -702,9 +833,21 @@ private fun MinimalTopBar(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                MetricChip(title = resolveGameText(gameText(GameTextKey.Score)), value = gameState.score.toString(), modifier = Modifier.weight(1f))
-                MetricChip(title = resolveGameText(gameText(GameTextKey.HighScore)), value = highestScore.toString(), modifier = Modifier.weight(1f))
-                MetricChip(title = resolveGameText(gameText(GameTextKey.Lines)), value = gameState.linesCleared.toString(), modifier = Modifier.weight(1f))
+                MetricChip(
+                    title = resolveGameText(gameText(GameTextKey.Score)),
+                    value = gameState.score.toString(),
+                    modifier = Modifier.weight(1f)
+                )
+                MetricChip(
+                    title = resolveGameText(gameText(GameTextKey.HighScore)),
+                    value = highestScore.toString(),
+                    modifier = Modifier.weight(1f)
+                )
+                MetricChip(
+                    title = resolveGameText(gameText(GameTextKey.Lines)),
+                    value = gameState.linesCleared.toString(),
+                    modifier = Modifier.weight(1f)
+                )
                 MetricChip(
                     title = resolveGameText(gameText(GameTextKey.Danger)),
                     value = if (pressureCount == 0) resolveGameText(gameText(GameTextKey.DangerNone)) else pressureCount.toString(),
@@ -779,7 +922,7 @@ private fun MinimalBottomDock(
                         text = dockDetail,
                         style = MaterialTheme.typography.labelSmall,
                         color = dockDetailColor,
-                            maxLines = 3,
+                        maxLines = 3,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
@@ -811,6 +954,7 @@ private fun MinimalBottomDock(
 @Composable
 private fun PauseOverlay(
     gameState: GameState,
+    showNewHighScoreMessage: Boolean,
     onPrimaryAction: () -> Unit,
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
@@ -850,9 +994,19 @@ private fun PauseOverlay(
                     style = MaterialTheme.typography.bodyMedium,
                     color = uiColors.subtitle,
                     textAlign = TextAlign.Center,
-                    maxLines = 4,
+                    minLines = 2,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
+                if (gameState.status == GameStatus.GameOver && showNewHighScoreMessage) {
+                    Text(
+                        text = resolveGameText(gameText(GameTextKey.GameOverNewHighScore)),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
                 Button(
                     onClick = onPrimaryAction,
                     colors = ButtonDefaults.buttonColors(
@@ -878,7 +1032,10 @@ private fun MetricChip(
         modifier = modifier,
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = uiColors.metricCard),
-        border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.72f)),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            uiColors.panelStroke.copy(alpha = 0.72f)
+        ),
     ) {
         Column(
             modifier = Modifier
@@ -910,21 +1067,21 @@ private fun CompactActionIconButton(
     enabled: Boolean = true,
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
-    IconButton(
-        onClick = onClick,
-        enabled = enabled,
+    Icon(
+        imageVector = icon,
+        contentDescription = contentDescription,
+        tint = if (enabled) uiColors.actionIcon else uiColors.actionIconDisabled,
         modifier = Modifier
-            .size(TopBarActionButtonSize)
+            .size(TopBarActionIconSize)
             .clip(RoundedCornerShape(10.dp))
-            .background(if (enabled) uiColors.actionButton else uiColors.actionButtonDisabled),
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            tint = if (enabled) uiColors.actionIcon else uiColors.actionIconDisabled,
-            modifier = Modifier.size(TopBarActionIconSize),
-        )
-    }
+            .clickable {
+                if (enabled) {
+                    onClick.invoke()
+                }
+            }
+            .background(if (enabled) uiColors.actionButton else uiColors.actionButtonDisabled)
+            .padding(4.dp)
+    )
 }
 
 @Composable
@@ -973,7 +1130,9 @@ private fun LaunchBarView(gameState: GameState) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = if (isBoostActive) resolveGameText(gameText(GameTextKey.Boost)) else resolveGameText(gameText(GameTextKey.Launch)),
+                    text = if (isBoostActive) resolveGameText(gameText(GameTextKey.Boost)) else resolveGameText(
+                        gameText(GameTextKey.Launch)
+                    ),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f),
                     maxLines = 1,
@@ -990,7 +1149,12 @@ private fun LaunchBarView(gameState: GameState) {
         }
         Text(
             text = if (isBoostActive) {
-                resolveGameText(gameText(GameTextKey.LaunchBoostActive, gameState.launchBar.boostTurnsRemaining))
+                resolveGameText(
+                    gameText(
+                        GameTextKey.LaunchBoostActive,
+                        gameState.launchBar.boostTurnsRemaining
+                    )
+                )
             } else {
                 resolveGameText(gameText(GameTextKey.LaunchSpecialChance, progressPercent))
             },
@@ -1053,7 +1217,10 @@ private fun QueueSlot(
                     alpha = 0.92f,
                 )
             } else {
-                Text(resolveGameText(gameText(GameTextKey.QueueEmpty)), color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                Text(
+                    resolveGameText(gameText(GameTextKey.QueueEmpty)),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                )
             }
             if (piece?.special != null && piece.special != SpecialBlockType.None) {
                 Text(
@@ -1133,6 +1300,7 @@ private fun GameTextKey.stringResourceId(): StringResource = when (this) {
     GameTextKey.RestartCancel -> Res.string.restart_cancel
     GameTextKey.Score -> Res.string.score
     GameTextKey.HighScore -> Res.string.high_score
+    GameTextKey.GameOverNewHighScore -> Res.string.game_over_new_high_score
     GameTextKey.Lines -> Res.string.lines
     GameTextKey.Boost -> Res.string.boost
     GameTextKey.Danger -> Res.string.danger
@@ -1444,7 +1612,11 @@ private fun previewGameState(status: GameStatus = GameStatus.Running): GameState
         secondsUntilDifficultyIncrease = 9,
         combo = ComboState(chain = 2, best = 4),
         perfectDropStreak = 2,
-        launchBar = com.ugurbuga.stackshift.game.model.LaunchBarState(progress = 0.76f, boostTurnsRemaining = 1, lastGain = 0.22f),
+        launchBar = com.ugurbuga.stackshift.game.model.LaunchBarState(
+            progress = 0.76f,
+            boostTurnsRemaining = 1,
+            lastGain = 0.22f
+        ),
         columnPressure = (0 until 10).map { column ->
             com.ugurbuga.stackshift.game.model.ColumnPressure(
                 column = column,

@@ -63,6 +63,7 @@
     <string name="game_over_title">Spiel vorbei</string>
     <string name="continue_label">Weiter</string>
     <string name="play_again">Nochmal spielen</string>
+    <string name="game_over_new_high_score">Neuer Bestwert!</string>
     <string name="game_message_select_column">Ziehe das Teil horizontal, wähle die Spalte und starte nach oben.</string>
     <string name="game_message_no_opening">Keine gültige Startspalte. Starte neu.</string>
     <string name="game_message_soft_lock">Das kurze Anpassungsfenster ist offen. Passe die Spalte fein an.</string>

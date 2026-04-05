@@ -15,7 +15,7 @@ class MainActivity : ComponentActivity() {
         AppContextHolder.context = applicationContext
 
         setContent {
-            App()
+            AndroidApp()
         }
     }
 }
@@ -23,5 +23,5 @@ class MainActivity : ComponentActivity() {
 @Preview
 @Composable
 fun AppAndroidPreview() {
-    App()
+    AndroidApp()
 }

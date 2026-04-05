@@ -63,6 +63,7 @@
     <string name="game_over_title">Partie terminée</string>
     <string name="continue_label">Continuer</string>
     <string name="play_again">Rejouer</string>
+    <string name="game_over_new_high_score">Nouveau meilleur score !</string>
     <string name="game_message_select_column">Faites glisser la pièce horizontalement, choisissez une colonne et lancez vers le haut.</string>
     <string name="game_message_no_opening">Aucune colonne d'entrée valide. Redémarrez.</string>
     <string name="game_message_soft_lock">La fenêtre d'ajustement courte est ouverte. Ajustez la colonne avec précision.</string>

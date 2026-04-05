@@ -63,6 +63,7 @@
     <string name="game_over_title">Игра окончена</string>
     <string name="continue_label">Продолжить</string>
     <string name="play_again">Играть снова</string>
+    <string name="game_over_new_high_score">Новый рекорд!</string>
     <string name="game_message_select_column">Перетащите фигуру по горизонтали, выберите колонку и запустите вверх.</string>
     <string name="game_message_no_opening">Нет подходящей стартовой колонки. Перезапустите.</string>
     <string name="game_message_soft_lock">Открыто короткое окно корректировки. Точно подстройте колонку.</string>

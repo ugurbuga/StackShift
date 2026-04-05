@@ -127,6 +127,7 @@ enum class GameTextKey {
     GameOverTitle,
     Continue,
     PlayAgain,
+    GameOverNewHighScore,
     GameMessageSelectColumn,
     GameMessageNoOpening,
     GameMessageSoftLock,

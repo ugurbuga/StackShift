@@ -97,3 +97,9 @@ compose.desktop {
         }
     }
 }
+
+tasks.register("packageDesktopApp") {
+    group = "distribution"
+    description = "Builds the portable desktop application image for the current OS."
+    dependsOn("createDistributable")
+}

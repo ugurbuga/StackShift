@@ -14,9 +14,15 @@ import kotlinx.coroutines.flow.update
 class GameStore(
     private val gameLogic: GameLogic,
     private val scope: CoroutineScope,
+    initialState: GameState? = null,
+    private val onStateChanged: (GameState) -> Unit = {},
 ) {
     private val reducer = GameReducer(gameLogic)
-    private val _uiState = MutableStateFlow(GameUiState(gameState = gameLogic.newGame()))
+    private val _uiState = MutableStateFlow(
+        GameUiState(
+            gameState = gameLogic.restoreGame(initialState ?: gameLogic.newGame()),
+        ),
+    )
     private val effectHandler = GameEffectHandler(
         scope = scope,
         stateProvider = { _uiState.value.gameState },
@@ -24,6 +30,10 @@ class GameStore(
     )
 
     val uiState: StateFlow<GameUiState> = _uiState.asStateFlow()
+
+    init {
+        onStateChanged(_uiState.value.gameState)
+    }
 
     fun previewPlacement(column: Int): PlacementPreview? {
         val state = _uiState.value.gameState
@@ -46,7 +56,7 @@ class GameStore(
             state = _uiState.value.gameState,
             action = intent.toAction(),
         )
-        _uiState.update { current -> current.copy(gameState = result.state) }
+        updateState(result.state)
         result.effects.forEach(effectHandler::handle)
         return result.events
     }
@@ -56,15 +66,20 @@ class GameStore(
             state = _uiState.value.gameState,
             action = GameAction.Tick,
         )
-        _uiState.update { current -> current.copy(gameState = result.state) }
+        updateState(result.state)
         result.effects.forEach(effectHandler::handle)
     }
 
     fun replaceState(state: GameState) {
-        _uiState.value = GameUiState(gameState = state)
+        updateState(state)
     }
 
     fun dispose() {
         effectHandler.dispose()
+    }
+
+    private fun updateState(state: GameState) {
+        _uiState.update { current -> current.copy(gameState = state) }
+        onStateChanged(state)
     }
 }

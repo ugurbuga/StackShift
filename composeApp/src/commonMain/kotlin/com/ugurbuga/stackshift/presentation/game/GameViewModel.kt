@@ -18,9 +18,16 @@ import kotlinx.coroutines.launch
 
 class GameViewModel(
     private val gameLogic: GameLogic = GameLogic(),
+    initialState: GameState? = null,
+    private val onStateChanged: (GameState) -> Unit = {},
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
 ) {
-    private val store = GameStore(gameLogic = gameLogic, scope = scope)
+    private val store = GameStore(
+        gameLogic = gameLogic,
+        scope = scope,
+        initialState = initialState,
+        onStateChanged = onStateChanged,
+    )
     private val feedbackMapper = GameFeedbackMapper()
 
     val uiState: StateFlow<GameUiState> = store.uiState

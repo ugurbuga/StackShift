@@ -63,6 +63,7 @@
     <string name="game_over_title">Fin de la partida</string>
     <string name="continue_label">Continuar</string>
     <string name="play_again">Jugar de nuevo</string>
+    <string name="game_over_new_high_score">¡Nuevo récord!</string>
     <string name="game_message_select_column">Arrastra la pieza horizontalmente, elige la columna y lánzala hacia arriba.</string>
     <string name="game_message_no_opening">No hay una columna válida de entrada. Reinicia.</string>
     <string name="game_message_soft_lock">La ventana de ajuste corto está abierta. Ajusta la columna con precisión.</string>

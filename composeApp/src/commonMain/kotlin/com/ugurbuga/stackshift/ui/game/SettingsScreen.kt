@@ -1,5 +1,9 @@
 package com.ugurbuga.stackshift.ui.game
 
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -13,10 +17,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -34,14 +40,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -49,31 +51,28 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.ugurbuga.stackshift.game.model.AppLanguage
 import com.ugurbuga.stackshift.game.model.AppColorPalette
+import com.ugurbuga.stackshift.game.model.AppLanguage
 import com.ugurbuga.stackshift.game.model.AppThemeMode
 import com.ugurbuga.stackshift.game.model.BlockColorPalette
 import com.ugurbuga.stackshift.game.model.BlockVisualStyle
-import com.ugurbuga.stackshift.game.model.BoardBlockStyleMode
 import com.ugurbuga.stackshift.game.model.CellTone
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
 import com.ugurbuga.stackshift.settings.AppSettings
 import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
+import com.ugurbuga.stackshift.ui.theme.appBackgroundBrush
 import com.ugurbuga.stackshift.ui.theme.isStackShiftDarkTheme
 import com.ugurbuga.stackshift.ui.theme.stackShiftThemeSpec
 import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
-import stackshift.composeapp.generated.resources.app_title
 import stackshift.composeapp.generated.resources.app_language_english
 import stackshift.composeapp.generated.resources.app_language_turkish
 import stackshift.composeapp.generated.resources.app_theme_dark
 import stackshift.composeapp.generated.resources.app_theme_light
 import stackshift.composeapp.generated.resources.app_theme_system
-import stackshift.composeapp.generated.resources.theme_palette_aurora
-import stackshift.composeapp.generated.resources.theme_palette_classic
-import stackshift.composeapp.generated.resources.theme_palette_sunset
-import stackshift.composeapp.generated.resources.block_palette_classic
+import stackshift.composeapp.generated.resources.app_title
 import stackshift.composeapp.generated.resources.block_palette_candy
+import stackshift.composeapp.generated.resources.block_palette_classic
 import stackshift.composeapp.generated.resources.block_palette_earth
 import stackshift.composeapp.generated.resources.block_palette_neon
 import stackshift.composeapp.generated.resources.block_style_bubble
@@ -83,15 +82,15 @@ import stackshift.composeapp.generated.resources.block_style_neon
 import stackshift.composeapp.generated.resources.block_style_outline
 import stackshift.composeapp.generated.resources.block_style_sharp_3d
 import stackshift.composeapp.generated.resources.block_style_wood
-import stackshift.composeapp.generated.resources.board_block_style_always_flat
-import stackshift.composeapp.generated.resources.board_block_style_match_selected
 import stackshift.composeapp.generated.resources.settings_block_palette
 import stackshift.composeapp.generated.resources.settings_block_style
-import stackshift.composeapp.generated.resources.settings_board_block_style
 import stackshift.composeapp.generated.resources.settings_language
 import stackshift.composeapp.generated.resources.settings_theme
 import stackshift.composeapp.generated.resources.settings_theme_palette
 import stackshift.composeapp.generated.resources.settings_title
+import stackshift.composeapp.generated.resources.theme_palette_aurora
+import stackshift.composeapp.generated.resources.theme_palette_classic
+import stackshift.composeapp.generated.resources.theme_palette_sunset
 
 private val ScreenContentMaxWidth = 920.dp
 private val ChipShape = RoundedCornerShape(22.dp)
@@ -116,19 +115,12 @@ fun AppSettingsScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            uiColors.screenGradientTop,
-                            uiColors.screenGradientMiddle,
-                            uiColors.screenGradientBottom,
-                        ),
-                    ),
-                ),
+                .background(appBackgroundBrush(uiColors)),
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .safeDrawingPadding()
                     .verticalScroll(scrollState)
                     .padding(horizontal = 16.dp, vertical = 18.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -169,7 +161,7 @@ fun AppSettingsScreen(
 
                 SettingsSectionCard(
                     title = stringResource(Res.string.settings_block_style),
-                    subtitle = stringResource(Res.string.settings_board_block_style),
+                    subtitle = stringResource(Res.string.settings_block_style),
                     icon = Icons.Filled.ViewModule,
                     trailingContent = {
                         LiveBoardMiniPreview(settings = settings)
@@ -184,17 +176,8 @@ fun AppSettingsScreen(
                     SettingsGroup(
                         title = stringResource(Res.string.settings_block_style),
                         selectedValue = settings.blockVisualStyle,
-                        options = blockStyleOptions(palette = settings.blockColorPalette),
+                        options = blockStyleOptions(settings.blockColorPalette),
                         onSelected = { onSettingsChange(settings.copy(blockVisualStyle = it)) },
-                    )
-                    SettingsGroup(
-                        title = stringResource(Res.string.settings_board_block_style),
-                        selectedValue = settings.boardBlockStyleMode,
-                        options = boardBlockStyleOptions(
-                            selectedBlockStyle = settings.blockVisualStyle,
-                            palette = settings.blockColorPalette,
-                        ),
-                        onSelected = { onSettingsChange(settings.copy(boardBlockStyleMode = it)) },
                     )
                 }
             }
@@ -315,7 +298,7 @@ private fun SectionHeader(
     val uiColors = StackShiftThemeTokens.uiColors
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Surface(
@@ -384,7 +367,7 @@ private fun <T> SettingsGroup(
                         Row(
                             modifier = Modifier
                                 .padding(vertical = 3.dp)
-                                .widthIn(min = 132.dp, max = 244.dp),
+                                .wrapContentWidth(),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
@@ -503,27 +486,6 @@ private fun blockStyleOptions(palette: BlockColorPalette): List<SettingsOption<B
 }
 
 @Composable
-private fun boardBlockStyleOptions(
-    selectedBlockStyle: BlockVisualStyle,
-    palette: BlockColorPalette,
-): List<SettingsOption<BoardBlockStyleMode>> = BoardBlockStyleMode.entries.map { mode ->
-    SettingsOption(
-        value = mode,
-        label = when (mode) {
-            BoardBlockStyleMode.AlwaysFlat -> stringResource(Res.string.board_block_style_always_flat)
-            BoardBlockStyleMode.MatchSelectedBlockStyle -> stringResource(Res.string.board_block_style_match_selected)
-        },
-        preview = {
-            MiniBoardStylePreview(
-                boardStyleMode = mode,
-                selectedBlockStyle = selectedBlockStyle,
-                palette = palette,
-            )
-        },
-    )
-}
-
-@Composable
 private fun ThemeModePreview(mode: AppThemeMode) {
     val colors = when (mode) {
         AppThemeMode.System -> listOf(Color(0xFF7AA8FF), Color(0xFFE7EEF8))
@@ -600,7 +562,7 @@ private fun PreviewBlockRow(
                 tone = tone,
                 palette = palette,
                 style = style,
-                size = 22.dp,
+                size = 18.dp,
             )
         }
     }
@@ -609,7 +571,7 @@ private fun PreviewBlockRow(
 @Composable
 private fun LiveBoardMiniPreview(settings: AppSettings) {
     val uiColors = StackShiftThemeTokens.uiColors
-    val boardStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
+    val boardStyle = settings.blockVisualStyle
     val transition = rememberInfiniteTransition(label = "liveBoardPreview")
     val progress by transition.animateFloat(
         initialValue = 0f,
@@ -652,14 +614,14 @@ private fun LiveBoardMiniPreview(settings: AppSettings) {
                                     tone = CellTone.Emerald,
                                     palette = settings.blockColorPalette,
                                     style = settings.blockVisualStyle,
-                                    size = 18.dp,
+                                    size = 14.dp,
                                     alpha = previewAlpha,
                                     special = SpecialBlockType.ColumnClearer,
                                 )
                             } else {
                                 Box(
                                     modifier = Modifier
-                                        .size(18.dp)
+                                        .size(14.dp)
                                         .clip(RoundedCornerShape(6.dp))
                                         .background(uiColors.boardEmptyCell)
                                         .border(
@@ -674,7 +636,7 @@ private fun LiveBoardMiniPreview(settings: AppSettings) {
                                 tone = tone,
                                 palette = settings.blockColorPalette,
                                 style = boardStyle,
-                                size = 18.dp,
+                                size = 14.dp,
                                 special = if (row == 2 && column == 2) SpecialBlockType.Ghost else SpecialBlockType.None,
                             )
                         }
@@ -705,7 +667,7 @@ private fun BoxPreview(
                             imageVector = icon,
                             contentDescription = null,
                             tint = Color.White,
-                            modifier = Modifier.size(size * 0.58f),
+                            modifier = Modifier.size(size * 0.52f),
                         )
                     }
                 }

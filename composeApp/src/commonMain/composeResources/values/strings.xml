@@ -63,6 +63,7 @@
     <string name="game_over_title">Oyun Bitti</string>
     <string name="continue_label">Devam et</string>
     <string name="play_again">Tekrar oyna</string>
+    <string name="game_over_new_high_score">Yeni en yüksek puana ulaştın!</string>
     <string name="game_message_select_column">Parçayı yatay sürükle, sütunu seç ve yukarı fırlat.</string>
     <string name="game_message_no_opening">Açılış için uygun kolon yok. Yeniden başlat.</string>
     <string name="game_message_soft_lock">Kısa düzeltme penceresi açık. Sütunu mikro ayarla.</string>
