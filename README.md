@@ -1,45 +1,67 @@
 # StackShift
 
-StackShift is a reverse-Tetris inspired puzzle game built with **Kotlin + Compose Multiplatform** for **Android, iOS, and Desktop**.
+StackShift is a reverse-Tetris inspired puzzle game built with **Kotlin** and **Compose Multiplatform** for **Android, iOS, and Desktop**.
 
-## Core gameplay
+## Overview
 
-- Pieces **spawn at the bottom** of the screen instead of falling from the top.
-- The player **drags** the active piece onto the board.
-- When released, the piece **snaps to the nearest valid grid position**.
-- Filled horizontal rows are **cleared**, awarding score and combos.
-- Difficulty ramps up over time by unlocking **more complex piece shapes**.
+Instead of falling from the top, pieces spawn near the bottom of the board. You drag them into place, the game snaps them to the nearest valid grid position, and completed rows are cleared for points, combos, and increasing pressure.
+
+## Features
+
+- **Drag-first gameplay** with touch and mouse support.
+- **Placement preview** that shows the landing footprint before release.
+- **Line clearing** with score, combo, and clear animation feedback.
+- **Special block types** with dedicated icons and behavior hints.
+- **Theme and visual customization** for colors, block styles, and board styling.
+- **Multiplatform UI** shared across Android, iOS, and Desktop.
 
 ## Controls
 
-- **Drag** the active piece with touch or mouse.
-- Valid target cells are highlighted while dragging.
-- Releasing on an invalid area sends the piece back to its spawn zone.
-- Use **Pause** / **Resume** and **Restart** from the top HUD.
-
-## Architecture
-
-Shared game code lives in [`composeApp/src/commonMain/kotlin`](./composeApp/src/commonMain/kotlin).
-
-### Main layers
-
-- `game/model`
-  - Immutable state objects such as `GameState`, `BoardMatrix`, `Piece`, `PlacementPreview`
-- `game/logic`
-  - Pure gameplay rules: spawn, collision, nearest valid snap, line clearing, combo, scoring, difficulty
-- `presentation/game`
-  - `GameViewModel` with `StateFlow` and coroutine-based game loop
-- `ui/game`
-  - Compose UI: board rendering, draggable piece overlay, HUD, tray, pause overlay
-- `platform/feedback`
-  - Sound and haptic abstractions with no-op defaults
+- **Drag** the active piece onto the board.
+- **Release** to place it, or return to the spawn area if the position is invalid.
+- **Pause** / **Resume** and **Restart** are available from the top HUD.
+- **Settings** lets you adjust theme and gameplay visuals.
 
 ## Project structure
 
-- [`composeApp`](./composeApp/src) contains the shared Compose Multiplatform app and platform-specific hosts.
-- [`iosApp`](./iosApp/iosApp) contains the iOS entry point used by Xcode.
+Shared code lives in [`composeApp/src/commonMain/kotlin`](./composeApp/src/commonMain/kotlin).
 
-## Quick run commands
+- `game/model`
+  - Immutable game data such as `GameState`, `Board`, `Piece`, and `PlacementPreview`.
+- `game/logic`
+  - Pure gameplay rules: spawning, collision, snapping, clearing, scoring, and difficulty.
+- `ui/game`
+  - Compose UI for the board, HUD, tray, settings, and in-game overlays.
+- `settings`
+  - App settings model and persistence helpers.
+- `localization`
+  - Shared localization access for UI text.
+- `ui/theme`
+  - Theme palette helpers and Compose Material theme wiring.
+
+Platform-specific entry points live in:
+
+- [`composeApp`](./composeApp/src)
+  - Shared Compose Multiplatform app code and platform hosts.
+- [`iosApp`](./iosApp/iosApp)
+  - iOS entry point used by Xcode.
+
+## Requirements
+
+- A recent **JDK** compatible with the Gradle setup.
+- **Android Studio** for Android development.
+- **Xcode** for iOS builds and simulator testing.
+- **Desktop JVM** support if you want to run the desktop target.
+
+## Setup
+
+Clone the repository and open it in your IDE, then let Gradle sync the project.
+
+```sh
+./gradlew build
+```
+
+## Run commands
 
 ### Android
 
@@ -53,7 +75,15 @@ Shared game code lives in [`composeApp/src/commonMain/kotlin`](./composeApp/src/
 ./gradlew :composeApp:run
 ```
 
-### iOS simulator shared code compile check
+### Desktop distributable app image
+
+```sh
+./gradlew :composeApp:packageDesktopApp
+```
+
+This creates a portable desktop app image under `composeApp/build/compose/binaries/main/app/` for the current platform. You can copy that output folder anywhere and run the app from there.
+
+### iOS simulator compile check
 
 ```sh
 ./gradlew :composeApp:compileKotlinIosSimulatorArm64
@@ -61,16 +91,19 @@ Shared game code lives in [`composeApp/src/commonMain/kotlin`](./composeApp/src/
 
 To run the full iOS app, open [`iosApp`](./iosApp) in Xcode and launch it from there.
 
-## Validation commands used
+## Validation
+
+These are the commands used to verify the shared code and platform targets:
 
 ```sh
-./gradlew :composeApp:compileKotlinJvm :composeApp:jvmTest
+./gradlew build
 ./gradlew :composeApp:compileDebugKotlinAndroid
+./gradlew :composeApp:compileKotlinJvm :composeApp:jvmTest
 ./gradlew :composeApp:compileKotlinIosSimulatorArm64
 ```
 
 ## Notes
 
-- The current sound/haptic layer is intentionally abstract so platform-specific implementations can be added without changing shared game logic.
+- The sound and haptic layer is intentionally abstract so platform-specific implementations can be added later without changing shared game logic.
 - The board uses a compact array-backed representation to keep collision and row-clear checks efficient.
-- The current setup still uses the standard Compose Multiplatform app template, so Gradle may show a **KMP + Android application deprecation warning**. The game builds successfully, but a future migration to the newer Android/KMP project structure is recommended.
+- Gradle may still show Compose Multiplatform / KMP deprecation warnings depending on the toolchain, but the project builds successfully.
