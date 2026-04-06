@@ -88,6 +88,7 @@ import com.ugurbuga.stackshift.game.model.PlacementPreview
 import com.ugurbuga.stackshift.game.model.PressureLevel
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
 import com.ugurbuga.stackshift.game.model.gameText
+import com.ugurbuga.stackshift.localization.LocalAppSettings
 import com.ugurbuga.stackshift.platform.feedback.GameHaptic
 import com.ugurbuga.stackshift.platform.feedback.GameHaptics
 import com.ugurbuga.stackshift.platform.feedback.GameSound
@@ -181,6 +182,8 @@ import kotlin.math.roundToInt
 private const val LaunchAnimationMillis = 140L
 private const val EntryAnimationMillis = 70L
 private const val NextPieceScale = 0.5f
+private const val LaunchPreviewAlpha = 0.88f
+private const val QueuePreviewAlpha = 0.88f
 
 private val BottomDockHeight = 148.dp
 private val TopBarVerticalPadding = 6.dp
@@ -502,7 +505,6 @@ fun GameScreen(
                     translationX = screenShakeX.value,
                     translationY = screenShakeY.value,
                 )
-                .background(uiColors.gameSurface)
                 .safeDrawingPadding()
                 .padding(horizontal = 12.dp, vertical = 10.dp),
         ) {
@@ -605,9 +607,14 @@ fun GameScreen(
 
                 if (activePiece != null && overlayTopLeft != null && cellSizePx > 0f) {
                     val pieceCellDp = with(density) { cellSizePx.toDp() }
+                    val launchCellCornerRadius = boardCellCornerRadiusDp(
+                        cellSize = pieceCellDp,
+                        style = LocalAppSettings.current.blockVisualStyle,
+                    )
                     PieceBlocks(
                         piece = activePiece,
                         cellSize = pieceCellDp,
+                        cellCornerRadius = launchCellCornerRadius,
                         modifier = Modifier
                             .graphicsLayer(
                                 translationX = overlayX,
@@ -696,7 +703,7 @@ fun GameScreen(
                             },
                         alpha = when {
                             gameState.status == GameStatus.Paused -> 0.42f
-                            isLaunching -> 0.92f
+                            isLaunching -> LaunchPreviewAlpha
                             else -> 1f
                         },
                     )
@@ -1211,10 +1218,15 @@ private fun QueueSlot(
                 )
             }
             if (piece != null) {
+                val queueCellCornerRadius = boardCellCornerRadiusDp(
+                    cellSize = with(density) { (cellSizePx.coerceAtLeast(1f)).toDp() },
+                    style = LocalAppSettings.current.blockVisualStyle,
+                )
                 PieceBlocks(
                     piece = piece,
                     cellSize = with(density) { (cellSizePx.coerceAtLeast(1f)).toDp() },
-                    alpha = 0.92f,
+                    cellCornerRadius = queueCellCornerRadius,
+                    alpha = QueuePreviewAlpha,
                 )
             } else {
                 Text(

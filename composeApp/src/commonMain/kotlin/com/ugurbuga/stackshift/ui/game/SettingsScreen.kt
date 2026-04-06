@@ -129,7 +129,6 @@ fun AppSettingsScreen(
 
                 SettingsSectionCard(
                     title = stringResource(Res.string.settings_language),
-                    subtitle = stringResource(Res.string.app_language_english) + " • " + stringResource(Res.string.app_language_turkish),
                     icon = Icons.Filled.Translate,
                 ) {
                     SettingsGroup(
@@ -142,7 +141,6 @@ fun AppSettingsScreen(
 
                 SettingsSectionCard(
                     title = stringResource(Res.string.settings_theme),
-                    subtitle = stringResource(Res.string.settings_theme_palette),
                     icon = Icons.Filled.Palette,
                 ) {
                     SettingsGroup(
@@ -161,7 +159,6 @@ fun AppSettingsScreen(
 
                 SettingsSectionCard(
                     title = stringResource(Res.string.settings_block_style),
-                    subtitle = stringResource(Res.string.settings_block_style),
                     icon = Icons.Filled.ViewModule,
                     trailingContent = {
                         LiveBoardMiniPreview(settings = settings)
@@ -256,7 +253,6 @@ private fun HeaderCard(
 @Composable
 private fun SettingsSectionCard(
     title: String,
-    subtitle: String,
     icon: ImageVector,
     trailingContent: (@Composable (() -> Unit))? = null,
     content: @Composable ColumnScope.() -> Unit,
@@ -279,7 +275,6 @@ private fun SettingsSectionCard(
         ) {
             SectionHeader(
                 title = title,
-                subtitle = subtitle,
                 icon = icon,
                 trailingContent = trailingContent,
             )
@@ -291,7 +286,6 @@ private fun SettingsSectionCard(
 @Composable
 private fun SectionHeader(
     title: String,
-    subtitle: String,
     icon: ImageVector,
     trailingContent: (@Composable (() -> Unit))? = null,
 ) {
@@ -326,13 +320,6 @@ private fun SectionHeader(
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = uiColors.subtitle,
-                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
         }
@@ -584,10 +571,10 @@ private fun LiveBoardMiniPreview(settings: AppSettings) {
         progress < 0.66f -> 1
         else -> 2
     }
-    val previewAlpha = if (progress < 0.5f) 0.92f else 0.72f
+    val previewAlpha = if (progress < 0.5f) 0.80f else 0.60f
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = uiColors.chipPreview,
+        color = Color.Transparent,
         border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
     ) {
         Column(
@@ -623,7 +610,6 @@ private fun LiveBoardMiniPreview(settings: AppSettings) {
                                     modifier = Modifier
                                         .size(14.dp)
                                         .clip(RoundedCornerShape(6.dp))
-                                        .background(uiColors.boardEmptyCell)
                                         .border(
                                             width = 1.dp,
                                             color = uiColors.boardEmptyCellBorder,

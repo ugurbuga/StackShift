@@ -58,8 +58,12 @@ import com.ugurbuga.stackshift.game.model.PressureLevel
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
 import com.ugurbuga.stackshift.localization.LocalAppSettings
 import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
+import com.ugurbuga.stackshift.ui.theme.isStackShiftDarkTheme
 
-private const val PreviewLineAlpha = 0.16f
+private const val PreviewLineAlpha = 0.12f
+private const val PreviewFillAlpha = 0.22f
+private const val PreviewHighlightAlpha = 0.06f
+private val BoardFrameInset = 1.dp
 
 @Composable
 fun BoardGrid(
@@ -76,6 +80,7 @@ fun BoardGrid(
     val colorScheme = MaterialTheme.colorScheme
     val uiColors = StackShiftThemeTokens.uiColors
     val boardBlockStyle = settings.blockVisualStyle
+    val isDarkTheme = isStackShiftDarkTheme(settings)
     var clearFlashAlpha by remember { mutableFloatStateOf(0f) }
 
     val dangerTransition = rememberInfiniteTransition(label = "dangerTransition")
@@ -117,14 +122,20 @@ fun BoardGrid(
 
     BoxWithConstraints(
         modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
-            .background(uiColors.gameSurface)
+            .padding(BoardFrameInset)
+            .clip(RoundedCornerShape(boardFrameCornerRadiusDp(boardBlockStyle)))
     ) {
         val cellWidth = maxWidth / gameState.config.columns
         val cellHeight = maxHeight / gameState.config.rows
         val cellWidthPx = with(LocalDensity.current) { cellWidth.toPx() }
         val cellHeightPx = with(LocalDensity.current) { cellHeight.toPx() }
-        val cellVisual = boardCellVisual(cellWidth = cellWidthPx, cellHeight = cellHeightPx)
+        val boardCornerRadiusPx = with(LocalDensity.current) { boardFrameCornerRadiusDp(boardBlockStyle).toPx() }
+        val cellVisual = boardCellVisual(
+            cellWidth = cellWidthPx,
+            cellHeight = cellHeightPx,
+            style = boardBlockStyle,
+        )
+        val previewFillAlpha = if (isDarkTheme) 0.22f else 0.30f
         val cornerRadius = cellVisual.cornerRadius
 
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -133,6 +144,7 @@ fun BoardGrid(
 
             val pieceToneColor = activePiece?.tone?.paletteColor(settings.blockColorPalette)
             val effectivePreviewColor = pieceToneColor ?: uiColors.success
+            val previewLineColor = effectivePreviewColor.copy(alpha = PreviewLineAlpha)
             val previewColumnBounds = preview?.occupiedCells
                 ?.groupBy(GridPoint::column)
                 ?.mapValues { (_, points) ->
@@ -149,20 +161,12 @@ fun BoardGrid(
             }
 
             highlightedColumns?.forEach { column ->
-                val isPrimaryColumn = column == (preview?.selectedColumn ?: activeColumn)
-                val highlightColor = when {
-                    preview != null -> effectivePreviewColor.copy(alpha = 0.10f)
-                    isDragging -> activePiece?.tone?.paletteColor(settings.blockColorPalette) ?: uiColors.success
-                    isColumnValid -> uiColors.success
-                    else -> uiColors.danger
-                }.copy(alpha = if (preview != null) 0.10f else if (isPrimaryColumn) 0.18f else 0.10f)
-
                 val (barTop, barBottom) = previewColumnBounds?.get(column) ?: (0f to boardHeightPx)
                 val barHeight = (barBottom - barTop).coerceAtLeast(0f)
                 if (barHeight <= 0f) return@forEach
 
                 drawRoundRect(
-                    color = highlightColor,
+                    color = previewLineColor,
                     topLeft = Offset(x = column * cellWidthPx, y = barTop),
                     size = Size(width = cellWidthPx, height = barHeight),
                     cornerRadius = cornerRadius,
@@ -219,19 +223,13 @@ fun BoardGrid(
                         start = Offset(x = boardWidthPx * dangerSweep, y = 0f),
                         end = Offset(x = boardWidthPx * (1f - dangerSweep), y = boardHeightPx),
                     ),
-                    cornerRadius = CornerRadius(28f, 28f),
+                    cornerRadius = CornerRadius(boardCornerRadiusPx, boardCornerRadiusPx),
                     style = Stroke(width = 2.6f),
                 )
             } else {
                 drawRoundRect(
-                    color = uiColors.boardOutlineGlow,
-                    topLeft = Offset(2f, 2f),
-                    size = Size(width = boardWidthPx - 4f, height = boardHeightPx - 4f),
-                    cornerRadius = CornerRadius(26f, 26f),
-                )
-                drawRoundRect(
                     color = uiColors.boardOutline.copy(alpha = 0.32f),
-                    cornerRadius = CornerRadius(28f, 28f),
+                    cornerRadius = CornerRadius(boardCornerRadiusPx, boardCornerRadiusPx),
                     style = Stroke(width = 2f),
                 )
             }
@@ -240,13 +238,28 @@ fun BoardGrid(
                 for (column in 0 until gameState.config.columns) {
                     val topLeft = Offset(x = column * cellWidthPx, y = row * cellHeightPx)
                     val cellSize = Size(width = cellWidthPx, height = cellHeightPx)
+                    val gridLineColor = if (gameState.criticalColumns.isNotEmpty()) {
+                        uiColors.danger.copy(alpha = 0.10f + (dangerPulse * 0.26f))
+                    } else {
+                        uiColors.boardGridLine.copy(alpha = 0.52f)
+                    }
                     drawRoundRect(
-                        color = uiColors.boardGridLine.copy(alpha = 0.52f),
+                        color = gridLineColor,
                         topLeft = topLeft,
                         size = cellSize,
                         cornerRadius = cornerRadius,
                         style = Stroke(width = 1f),
                     )
+
+                    if (gameState.criticalColumns.isNotEmpty()) {
+                        drawRoundRect(
+                            color = uiColors.danger.copy(alpha = 0.04f + (dangerPulse * 0.18f)),
+                            topLeft = topLeft,
+                            size = cellSize,
+                            cornerRadius = cornerRadius,
+                            style = Stroke(width = 1.4f),
+                        )
+                    }
 
                     gameState.board.cellAt(column, row)?.let { cell ->
                         val point = GridPoint(column = column, row = row)
@@ -328,7 +341,7 @@ fun BoardGrid(
             }
 
             preview?.let { landing ->
-                val previewColor = effectivePreviewColor
+                val previewColor = effectivePreviewColor.copy(alpha = previewFillAlpha)
                 val previewStyle = boardBlockStyle
 
                 landing.occupiedCells.forEach { point ->
@@ -347,7 +360,7 @@ fun BoardGrid(
                         cornerRadius = cornerRadius,
                     )
                     drawRoundRect(
-                        color = previewColor.copy(alpha = PreviewLineAlpha),
+                        color = previewLineColor,
                         topLeft = topLeft + Offset(cellVisual.previewInsetPx, cellVisual.previewInsetPx),
                         size = Size(
                             width = cellWidthPx - (cellVisual.previewInsetPx * 2),
@@ -415,6 +428,32 @@ fun BoardGrid(
     }
 }
 
+private fun DrawScope.drawWoodGrain(
+    topLeft: Offset,
+    size: Size,
+    alpha: Float,
+) {
+    val lineWidth = size.height * 0.028f
+    drawLine(
+        color = Color.White.copy(alpha = alpha),
+        start = topLeft + Offset(size.width * 0.08f, size.height * 0.22f),
+        end = topLeft + Offset(size.width * 0.92f, size.height * 0.38f),
+        strokeWidth = lineWidth,
+    )
+    drawLine(
+        color = Color.Black.copy(alpha = alpha * 0.72f),
+        start = topLeft + Offset(size.width * 0.08f, size.height * 0.42f),
+        end = topLeft + Offset(size.width * 0.92f, size.height * 0.58f),
+        strokeWidth = lineWidth,
+    )
+    drawLine(
+        color = Color.White.copy(alpha = alpha * 0.70f),
+        start = topLeft + Offset(size.width * 0.08f, size.height * 0.62f),
+        end = topLeft + Offset(size.width * 0.92f, size.height * 0.78f),
+        strokeWidth = lineWidth,
+    )
+}
+
 private fun pieceCellVisualModifier(
     style: BlockVisualStyle,
     baseColor: Color,
@@ -432,16 +471,16 @@ private fun pieceCellVisualModifier(
 
     BlockVisualStyle.Bubble -> Modifier
         .border(
-            width = if (hasSpecial) 1.5.dp else 0.75.dp,
-            color = if (hasSpecial) specialColor else baseColor.copy(alpha = 0.52f),
+            width = if (hasSpecial) 1.6.dp else 0.9.dp,
+            color = if (hasSpecial) specialColor else baseColor.copy(alpha = 0.64f),
             shape = shape,
         )
         .background(
             brush = Brush.verticalGradient(
                 colors = listOf(
-                    baseColor.copy(alpha = 0.98f),
-                    baseColor.copy(alpha = 0.80f),
-                    baseColor.copy(alpha = 0.58f),
+                    baseColor.copy(alpha = 1f),
+                    baseColor.copy(alpha = 0.84f),
+                    baseColor.copy(alpha = 0.64f),
                 ),
             ),
             shape = shape,
@@ -453,23 +492,23 @@ private fun pieceCellVisualModifier(
             shape = shape,
         )
         .border(
-            width = if (hasSpecial) 1.9.dp else 1.5.dp,
-            color = baseColor.copy(alpha = 0.96f),
+            width = if (hasSpecial) 2.dp else 1.6.dp,
+            color = baseColor.copy(alpha = 0.98f),
             shape = shape,
         )
 
     BlockVisualStyle.Sharp3D -> Modifier
         .border(
-            width = if (hasSpecial) 1.5.dp else 0.dp,
-            color = specialColor,
+            width = if (hasSpecial) 1.2.dp else 0.9.dp,
+            color = if (hasSpecial) specialColor else baseColor.copy(alpha = 0.48f),
             shape = shape,
         )
         .background(
             brush = Brush.verticalGradient(
                 colors = listOf(
-                    baseColor.copy(alpha = 1f),
-                    baseColor.copy(alpha = 0.80f),
-                    baseColor.copy(alpha = 0.52f),
+                    baseColor.copy(alpha = 0.98f),
+                    baseColor.copy(alpha = 0.84f),
+                    baseColor.copy(alpha = 0.62f),
                 ),
             ),
             shape = shape,
@@ -477,16 +516,16 @@ private fun pieceCellVisualModifier(
 
     BlockVisualStyle.Wood -> Modifier
         .border(
-            width = if (hasSpecial) 1.5.dp else 0.dp,
+            width = if (hasSpecial) 1.2.dp else 0.9.dp,
             color = if (hasSpecial) specialColor else baseColor.copy(alpha = 0.58f),
             shape = shape,
         )
         .background(
-            brush = Brush.horizontalGradient(
+            brush = Brush.verticalGradient(
                 colors = listOf(
                     baseColor.copy(alpha = 0.98f),
-                    baseColor.copy(alpha = 0.82f),
-                    baseColor.copy(alpha = 0.60f),
+                    baseColor.copy(alpha = 0.88f),
+                    baseColor.copy(alpha = 0.72f),
                 ),
             ),
             shape = shape,
@@ -494,26 +533,26 @@ private fun pieceCellVisualModifier(
 
     BlockVisualStyle.LiquidGlass -> Modifier
         .border(
-            width = if (hasSpecial) 1.5.dp else 0.dp,
-            color = if (hasSpecial) specialColor else Color.White.copy(alpha = 0.42f),
+            width = if (hasSpecial) 1.5.dp else 0.9.dp,
+            color = if (hasSpecial) specialColor else Color.White.copy(alpha = 0.54f),
             shape = shape,
         )
         .background(
-            color = baseColor.copy(alpha = 0.36f),
+            color = baseColor.copy(alpha = 0.28f),
             shape = shape,
         )
 
     BlockVisualStyle.Neon -> Modifier
         .border(
-            width = if (hasSpecial) 1.5.dp else 0.dp,
-            color = specialColor,
+            width = if (hasSpecial) 1.5.dp else 1.dp,
+            color = if (hasSpecial) specialColor else baseColor.copy(alpha = 0.76f),
             shape = shape,
         )
         .background(
             brush = Brush.radialGradient(
                 colors = listOf(
-                    baseColor.copy(alpha = 0.98f),
-                    baseColor.copy(alpha = 0.78f),
+                    baseColor.copy(alpha = 1f),
+                    baseColor.copy(alpha = 0.82f),
                     Color.Transparent,
                 ),
             ),
@@ -531,7 +570,7 @@ internal fun BlockCellPreview(
     alpha: Float = 1f,
     special: SpecialBlockType = SpecialBlockType.None,
 ) {
-    val cellShape = RoundedCornerShape(boardCellCornerRadiusDp(size))
+    val cellShape = RoundedCornerShape(boardCellCornerRadiusDp(size, style))
     Box(
         modifier = modifier
             .size(size)
@@ -606,7 +645,7 @@ fun PieceBlocks(
     modifier: Modifier = Modifier,
     alpha: Float = 1f,
     cellInset: Dp = boardCellInsetDp(cellSize),
-    cellCornerRadius: Dp = boardCellCornerRadiusDp(cellSize),
+    cellCornerRadius: Dp? = null,
     blockContent: @Composable BoxScope.() -> Unit = {},
 ) {
     Box(
@@ -618,7 +657,8 @@ fun PieceBlocks(
         val settings = LocalAppSettings.current
         val baseColor = piece.tone.paletteColor(settings.blockColorPalette)
         val visualStyle = settings.blockVisualStyle
-        val cellShape = RoundedCornerShape(cellCornerRadius)
+        val resolvedCellCornerRadius = cellCornerRadius ?: boardCellCornerRadiusDp(cellSize, visualStyle)
+        val cellShape = RoundedCornerShape(resolvedCellCornerRadius)
         piece.cells.forEach { cell ->
             Box(
                 modifier = Modifier
@@ -696,8 +736,8 @@ private fun DrawScope.drawCellBody(
                 brush = Brush.verticalGradient(
                     colors = listOf(
                         baseColor.copy(alpha = 1f),
-                        baseColor.copy(alpha = 0.84f),
-                        baseColor.copy(alpha = 0.60f),
+                        baseColor.copy(alpha = 0.88f),
+                        baseColor.copy(alpha = 0.62f),
                     ),
                 ),
                 topLeft = topLeft,
@@ -705,15 +745,15 @@ private fun DrawScope.drawCellBody(
                 cornerRadius = CornerRadius(cornerRadius.x * 1.22f, cornerRadius.y * 1.22f),
             )
             drawRoundRect(
-                color = Color.White.copy(alpha = 0.18f),
+                color = Color.White.copy(alpha = 0.22f),
                 topLeft = topLeft + Offset(size.width * 0.10f, size.height * 0.10f),
-                size = Size(size.width * 0.34f, size.height * 0.26f),
+                size = Size(size.width * 0.34f, size.height * 0.24f),
                 cornerRadius = CornerRadius(cornerRadius.x * 0.94f, cornerRadius.y * 0.94f),
             )
             drawRoundRect(
-                color = Color.White.copy(alpha = 0.08f),
-                topLeft = topLeft + Offset(size.width * 0.14f, size.height * 0.22f),
-                size = Size(size.width * 0.64f, size.height * 0.12f),
+                color = Color.White.copy(alpha = 0.10f),
+                topLeft = topLeft + Offset(size.width * 0.12f, size.height * 0.24f),
+                size = Size(size.width * 0.60f, size.height * 0.10f),
                 cornerRadius = CornerRadius(cornerRadius.x * 0.42f, cornerRadius.y * 0.42f),
             )
             if (special != SpecialBlockType.None) {
@@ -738,12 +778,12 @@ private fun DrawScope.drawCellBody(
                 topLeft = topLeft,
                 size = size,
                 cornerRadius = cornerRadius,
-                style = Stroke(width = 2f),
+                style = Stroke(width = 2.2f),
             )
             drawRoundRect(
-                color = Color.White.copy(alpha = 0.08f),
+                color = Color.White.copy(alpha = 0.10f),
                 topLeft = topLeft + Offset(size.width * 0.10f, size.height * 0.10f),
-                size = Size(size.width * 0.32f, size.height * 0.18f),
+                size = Size(size.width * 0.30f, size.height * 0.16f),
                 cornerRadius = CornerRadius(cornerRadius.x * 0.7f, cornerRadius.y * 0.7f),
             )
             if (special != SpecialBlockType.None) {
@@ -759,26 +799,26 @@ private fun DrawScope.drawCellBody(
         BlockVisualStyle.Sharp3D -> drawRoundRect(
             brush = Brush.verticalGradient(
                 colors = listOf(
-                    baseColor.copy(alpha = 1f),
-                    baseColor.copy(alpha = 0.82f),
-                    baseColor.copy(alpha = 0.48f),
+                    baseColor.copy(alpha = 0.98f),
+                    baseColor.copy(alpha = 0.86f),
+                    baseColor.copy(alpha = 0.64f),
                 ),
             ),
             topLeft = topLeft,
             size = size,
-            cornerRadius = CornerRadius(cornerRadius.x * 0.62f, cornerRadius.y * 0.62f),
+            cornerRadius = CornerRadius(cornerRadius.x * 0.58f, cornerRadius.y * 0.58f),
         ).also {
             drawRoundRect(
-                color = Color.White.copy(alpha = 0.10f),
-                topLeft = topLeft + Offset(size.width * 0.06f, size.height * 0.06f),
-                size = Size(size.width * 0.90f, size.height * 0.24f),
-                cornerRadius = CornerRadius(cornerRadius.x * 0.40f, cornerRadius.y * 0.40f),
+                color = Color.White.copy(alpha = 0.12f),
+                topLeft = topLeft + Offset(size.width * 0.06f, size.height * 0.08f),
+                size = Size(size.width * 0.84f, size.height * 0.18f),
+                cornerRadius = CornerRadius(cornerRadius.x * 0.34f, cornerRadius.y * 0.34f),
             )
             drawRoundRect(
-                color = Color.Black.copy(alpha = 0.10f),
-                topLeft = topLeft + Offset(size.width * 0.02f, size.height * 0.58f),
-                size = Size(size.width * 0.98f, size.height * 0.40f),
-                cornerRadius = CornerRadius(cornerRadius.x * 0.56f, cornerRadius.y * 0.56f),
+                color = Color.Black.copy(alpha = 0.08f),
+                topLeft = topLeft + Offset(size.width * 0.06f, size.height * 0.66f),
+                size = Size(size.width * 0.88f, size.height * 0.22f),
+                cornerRadius = CornerRadius(cornerRadius.x * 0.30f, cornerRadius.y * 0.30f),
             )
             if (special != SpecialBlockType.None) {
                 drawRoundRect(
@@ -791,57 +831,46 @@ private fun DrawScope.drawCellBody(
             }
         }
         BlockVisualStyle.Wood -> drawRoundRect(
-            brush = Brush.linearGradient(
+            brush = Brush.verticalGradient(
                 colors = listOf(
-                    baseColor.copy(alpha = 0.96f),
-                    baseColor.copy(alpha = 0.82f),
-                    baseColor.copy(alpha = 0.62f),
+                    baseColor.copy(alpha = 0.98f),
+                    baseColor.copy(alpha = 0.90f),
+                    baseColor.copy(alpha = 0.74f),
                 ),
             ),
             topLeft = topLeft,
             size = size,
-            cornerRadius = CornerRadius(cornerRadius.x * 0.88f, cornerRadius.y * 0.82f),
+            cornerRadius = CornerRadius(cornerRadius.x * 0.86f, cornerRadius.y * 0.80f),
         ).also {
-            drawLine(
-                color = Color.White.copy(alpha = 0.10f),
-                start = topLeft + Offset(size.width * 0.08f, size.height * 0.28f),
-                end = topLeft + Offset(size.width * 0.92f, size.height * 0.28f),
-                strokeWidth = size.height * 0.08f,
-            )
-            drawLine(
-                color = Color.Black.copy(alpha = 0.08f),
-                start = topLeft + Offset(size.width * 0.08f, size.height * 0.62f),
-                end = topLeft + Offset(size.width * 0.92f, size.height * 0.62f),
-                strokeWidth = size.height * 0.07f,
-            )
+            drawWoodGrain(topLeft = topLeft, size = size, alpha = 0.16f)
             if (special != SpecialBlockType.None) {
                 drawRoundRect(
                     color = specialColor,
                     topLeft = topLeft,
                     size = size,
-                    cornerRadius = CornerRadius(cornerRadius.x * 0.82f, cornerRadius.y * 0.82f),
+                    cornerRadius = CornerRadius(cornerRadius.x * 0.72f, cornerRadius.y * 0.72f),
                     style = Stroke(width = 1.4f),
                 )
             }
         }
         BlockVisualStyle.LiquidGlass -> {
             drawRoundRect(
-                color = baseColor.copy(alpha = 0.42f),
+                color = baseColor.copy(alpha = 0.30f),
                 topLeft = topLeft,
                 size = size,
-                cornerRadius = CornerRadius(cornerRadius.x * 1.08f, cornerRadius.y * 1.08f),
+                cornerRadius = CornerRadius(cornerRadius.x * 1.12f, cornerRadius.y * 1.12f),
             )
             drawRoundRect(
-                color = baseColor.copy(alpha = 0.16f),
+                color = baseColor.copy(alpha = 0.18f),
                 topLeft = topLeft + Offset(size.width * 0.02f, size.height * 0.02f),
                 size = Size(size.width * 0.96f, size.height * 0.96f),
                 cornerRadius = CornerRadius(cornerRadius.x, cornerRadius.y),
-                style = Stroke(width = 1.1f),
+                style = Stroke(width = 1f),
             )
             drawRoundRect(
-                color = Color.White.copy(alpha = 0.18f),
+                color = Color.White.copy(alpha = 0.22f),
                 topLeft = topLeft + Offset(size.width * 0.06f, size.height * 0.06f),
-                size = Size(size.width * 0.78f, size.height * 0.40f),
+                size = Size(size.width * 0.78f, size.height * 0.36f),
                 cornerRadius = CornerRadius(cornerRadius.x * 0.8f, cornerRadius.y * 0.8f),
             )
             if (special != SpecialBlockType.None) {
@@ -904,7 +933,7 @@ private fun DrawScope.drawPreviewCellBody(
 ) {
     when (style) {
         BlockVisualStyle.Flat -> drawRoundRect(
-            color = baseColor.copy(alpha = 0.46f),
+            color = baseColor.copy(alpha = 0.26f),
             topLeft = topLeft,
             size = size,
             cornerRadius = cornerRadius,
@@ -913,9 +942,9 @@ private fun DrawScope.drawPreviewCellBody(
             drawRoundRect(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        baseColor.copy(alpha = 0.62f),
-                        baseColor.copy(alpha = 0.40f),
+                        baseColor.copy(alpha = 0.34f),
                         baseColor.copy(alpha = 0.24f),
+                        baseColor.copy(alpha = 0.16f),
                     ),
                 ),
                 topLeft = topLeft,
@@ -923,13 +952,13 @@ private fun DrawScope.drawPreviewCellBody(
                 cornerRadius = CornerRadius(cornerRadius.x * 1.22f, cornerRadius.y * 1.22f),
             )
             drawRoundRect(
-                color = Color.White.copy(alpha = 0.16f),
+                color = Color.White.copy(alpha = 0.08f),
                 topLeft = topLeft + Offset(size.width * 0.10f, size.height * 0.10f),
                 size = Size(size.width * 0.34f, size.height * 0.26f),
                 cornerRadius = CornerRadius(cornerRadius.x * 0.94f, cornerRadius.y * 0.94f),
             )
             drawRoundRect(
-                color = Color.White.copy(alpha = 0.06f),
+                color = Color.White.copy(alpha = 0.04f),
                 topLeft = topLeft + Offset(size.width * 0.14f, size.height * 0.22f),
                 size = Size(size.width * 0.64f, size.height * 0.12f),
                 cornerRadius = CornerRadius(cornerRadius.x * 0.42f, cornerRadius.y * 0.42f),
@@ -937,20 +966,20 @@ private fun DrawScope.drawPreviewCellBody(
         }
         BlockVisualStyle.Outline -> {
             drawRoundRect(
-                color = baseColor.copy(alpha = 0.12f),
+                color = baseColor.copy(alpha = 0.08f),
                 topLeft = topLeft,
                 size = size,
                 cornerRadius = cornerRadius,
             )
             drawRoundRect(
-                color = baseColor.copy(alpha = 0.86f),
+                color = baseColor.copy(alpha = 0.28f),
                 topLeft = topLeft,
                 size = size,
                 cornerRadius = cornerRadius,
-                style = Stroke(width = 2.2f),
+                style = Stroke(width = 1.4f),
             )
             drawRoundRect(
-                color = Color.White.copy(alpha = 0.10f),
+                color = Color.White.copy(alpha = 0.05f),
                 topLeft = topLeft + Offset(size.width * 0.10f, size.height * 0.10f),
                 size = Size(size.width * 0.30f, size.height * 0.16f),
                 cornerRadius = CornerRadius(cornerRadius.x * 0.7f, cornerRadius.y * 0.7f),
@@ -959,68 +988,57 @@ private fun DrawScope.drawPreviewCellBody(
         BlockVisualStyle.Sharp3D -> drawRoundRect(
             brush = Brush.verticalGradient(
                 colors = listOf(
-                    baseColor.copy(alpha = 0.72f),
-                    baseColor.copy(alpha = 0.46f),
-                    baseColor.copy(alpha = 0.20f),
+                    baseColor.copy(alpha = 0.34f),
+                    baseColor.copy(alpha = 0.26f),
+                    baseColor.copy(alpha = 0.18f),
                 ),
             ),
             topLeft = topLeft,
             size = size,
-            cornerRadius = CornerRadius(cornerRadius.x * 0.62f, cornerRadius.y * 0.62f),
+            cornerRadius = CornerRadius(cornerRadius.x * 0.72f, cornerRadius.y * 0.72f),
         ).also {
             drawRoundRect(
-                color = Color.White.copy(alpha = 0.08f),
-                topLeft = topLeft + Offset(size.width * 0.06f, size.height * 0.06f),
-                size = Size(size.width * 0.90f, size.height * 0.22f),
-                cornerRadius = CornerRadius(cornerRadius.x * 0.40f, cornerRadius.y * 0.40f),
+                color = Color.White.copy(alpha = 0.06f),
+                topLeft = topLeft + Offset(size.width * 0.06f, size.height * 0.08f),
+                size = Size(size.width * 0.86f, size.height * 0.16f),
+                cornerRadius = CornerRadius(cornerRadius.x * 0.42f, cornerRadius.y * 0.42f),
             )
             drawRoundRect(
-                color = Color.Black.copy(alpha = 0.08f),
-                topLeft = topLeft + Offset(size.width * 0.02f, size.height * 0.58f),
-                size = Size(size.width * 0.98f, size.height * 0.40f),
-                cornerRadius = CornerRadius(cornerRadius.x * 0.56f, cornerRadius.y * 0.56f),
+                color = Color.Black.copy(alpha = 0.04f),
+                topLeft = topLeft + Offset(size.width * 0.08f, size.height * 0.70f),
+                size = Size(size.width * 0.84f, size.height * 0.18f),
+                cornerRadius = CornerRadius(cornerRadius.x * 0.34f, cornerRadius.y * 0.34f),
             )
         }
         BlockVisualStyle.Wood -> drawRoundRect(
             brush = Brush.horizontalGradient(
                 colors = listOf(
-                    baseColor.copy(alpha = 0.64f),
-                    baseColor.copy(alpha = 0.42f),
-                    baseColor.copy(alpha = 0.24f),
+                    baseColor.copy(alpha = 0.36f),
+                    baseColor.copy(alpha = 0.26f),
+                    baseColor.copy(alpha = 0.18f),
                 ),
             ),
             topLeft = topLeft,
             size = size,
-            cornerRadius = CornerRadius(cornerRadius.x * 0.88f, cornerRadius.y * 0.82f),
+            cornerRadius = CornerRadius(cornerRadius.x * 0.90f, cornerRadius.y * 0.84f),
         ).also {
-            drawLine(
-                color = Color.White.copy(alpha = 0.08f),
-                start = topLeft + Offset(size.width * 0.08f, size.height * 0.28f),
-                end = topLeft + Offset(size.width * 0.92f, size.height * 0.28f),
-                strokeWidth = size.height * 0.08f,
-            )
-            drawLine(
-                color = Color.Black.copy(alpha = 0.08f),
-                start = topLeft + Offset(size.width * 0.08f, size.height * 0.62f),
-                end = topLeft + Offset(size.width * 0.92f, size.height * 0.62f),
-                strokeWidth = size.height * 0.07f,
-            )
+            drawWoodGrain(topLeft = topLeft, size = size, alpha = 0.06f)
         }
         BlockVisualStyle.LiquidGlass -> {
             drawRoundRect(
-                color = baseColor.copy(alpha = 0.24f),
+                color = baseColor.copy(alpha = 0.16f),
                 topLeft = topLeft,
                 size = size,
                 cornerRadius = CornerRadius(cornerRadius.x * 1.16f, cornerRadius.y * 1.16f),
             )
             drawRoundRect(
-                color = Color.White.copy(alpha = 0.12f),
+                color = Color.White.copy(alpha = 0.06f),
                 topLeft = topLeft + Offset(size.width * 0.04f, size.height * 0.05f),
                 size = Size(size.width * 0.86f, size.height * 0.28f),
                 cornerRadius = CornerRadius(cornerRadius.x, cornerRadius.y),
             )
             drawRoundRect(
-                color = Color.White.copy(alpha = 0.10f),
+                color = Color.White.copy(alpha = 0.05f),
                 topLeft = topLeft + Offset(size.width * 0.10f, size.height * 0.50f),
                 size = Size(size.width * 0.56f, size.height * 0.18f),
                 cornerRadius = CornerRadius(cornerRadius.x * 0.72f, cornerRadius.y * 0.72f),
@@ -1037,8 +1055,8 @@ private fun DrawScope.drawPreviewCellBody(
             drawRoundRect(
                 brush = Brush.radialGradient(
                     colors = listOf(
-                        baseColor.copy(alpha = 0.66f),
-                        baseColor.copy(alpha = 0.34f),
+                        baseColor.copy(alpha = 0.32f),
+                        baseColor.copy(alpha = 0.18f),
                         Color.Transparent,
                     ),
                     center = topLeft + Offset(size.width / 2f, size.height / 2f),
@@ -1049,11 +1067,11 @@ private fun DrawScope.drawPreviewCellBody(
                 cornerRadius = cornerRadius,
             )
             drawRoundRect(
-                color = baseColor.copy(alpha = 0.34f),
+                color = baseColor.copy(alpha = 0.18f),
                 topLeft = topLeft,
                 size = size,
                 cornerRadius = cornerRadius,
-                style = Stroke(width = 1.6f),
+                style = Stroke(width = 1.2f),
             )
         }
     }
@@ -1072,18 +1090,27 @@ private data class BoardCellVisual(
 private fun boardCellVisual(
     cellWidth: Float,
     cellHeight: Float,
+    style: BlockVisualStyle,
 ): BoardCellVisual {
     val minSize = minOf(cellWidth, cellHeight)
     val fillInset = (minSize * 0.085f).coerceIn(1.5f, 3.2f)
     val previewInset = (minSize * 0.06f).coerceIn(1.4f, 2.4f)
     val specialInset = (minSize * 0.14f).coerceIn(4f, 6f)
-    val outerRadius = minSize * 0.16f
+    val outerRadius = minSize * 0.16f * blockStyleCornerScale(style)
     return BoardCellVisual(
         fillInsetPx = fillInset,
         previewInsetPx = previewInset,
         specialInsetPx = specialInset,
         cornerRadius = CornerRadius(outerRadius, outerRadius),
-        innerCornerRadiusPx = outerRadius * 0.72f,
+        innerCornerRadiusPx = outerRadius * when (style) {
+            BlockVisualStyle.Flat -> 0.78f
+            BlockVisualStyle.Bubble -> 0.92f
+            BlockVisualStyle.Outline -> 0.70f
+            BlockVisualStyle.Sharp3D -> 0.52f
+            BlockVisualStyle.Wood -> 0.66f
+            BlockVisualStyle.LiquidGlass -> 0.84f
+            BlockVisualStyle.Neon -> 0.86f
+        },
     )
 }
 
@@ -1096,11 +1123,34 @@ internal fun boardCellInsetDp(cellSize: Dp): Dp {
 }
 
 @Composable
-internal fun boardCellCornerRadiusDp(cellSize: Dp): Dp {
+internal fun boardCellCornerRadiusDp(
+    cellSize: Dp,
+    style: BlockVisualStyle,
+): Dp {
     val density = LocalDensity.current
     return with(density) {
-        (cellSize.toPx() * 0.16f).toDp()
+        (cellSize.toPx() * 0.16f * blockStyleCornerScale(style)).toDp()
     }
+}
+
+internal fun boardFrameCornerRadiusDp(style: BlockVisualStyle): Dp = when (style) {
+    BlockVisualStyle.Flat -> 18.dp
+    BlockVisualStyle.Bubble -> 20.dp
+    BlockVisualStyle.Outline -> 16.dp
+    BlockVisualStyle.Sharp3D -> 10.dp
+    BlockVisualStyle.Wood -> 15.dp
+    BlockVisualStyle.LiquidGlass -> 18.dp
+    BlockVisualStyle.Neon -> 18.dp
+}
+
+private fun blockStyleCornerScale(style: BlockVisualStyle): Float = when (style) {
+    BlockVisualStyle.Flat -> 1.0f
+    BlockVisualStyle.Bubble -> 1.20f
+    BlockVisualStyle.Outline -> 0.88f
+    BlockVisualStyle.Sharp3D -> 0.58f
+    BlockVisualStyle.Wood -> 0.90f
+    BlockVisualStyle.LiquidGlass -> 1.08f
+    BlockVisualStyle.Neon -> 1.12f
 }
 
 internal fun CellTone.color(): Color = paletteColor(BlockColorPalette.Classic)
