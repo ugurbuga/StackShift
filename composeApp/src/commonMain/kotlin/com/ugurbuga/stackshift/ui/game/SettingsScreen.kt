@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -511,16 +510,6 @@ private fun BlockStylePreview(
     palette: BlockColorPalette,
 ) {
     PreviewBlockRow(palette = palette, style = style)
-}
-
-@Composable
-private fun PreviewMiniCard(content: @Composable RowScope.() -> Unit) {
-    Row(
-        modifier = Modifier.padding(end = 2.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        content = content,
-    )
 }
 
 @Composable

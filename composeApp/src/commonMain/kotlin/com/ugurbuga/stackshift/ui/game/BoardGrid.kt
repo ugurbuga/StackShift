@@ -61,8 +61,6 @@ import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
 import com.ugurbuga.stackshift.ui.theme.isStackShiftDarkTheme
 
 private const val PreviewLineAlpha = 0.12f
-private const val PreviewFillAlpha = 0.22f
-private const val PreviewHighlightAlpha = 0.06f
 private val BoardFrameInset = 1.dp
 
 @Composable
@@ -394,13 +392,13 @@ fun BoardGrid(
                         .offset(x = cellWidth * column, y = cellHeight * row)
                         .size(cellWidth, cellHeight)
                         .padding(2.dp),
-                    contentAlignment = Alignment.TopEnd,
+                    contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = boardSpecialIcon(cell.special),
                         contentDescription = null,
                         tint = Color.White,
-                        modifier = Modifier.size(minOf(cellWidth, cellHeight) * 0.30f),
+                        modifier = Modifier.size(minOf(cellWidth, cellHeight) * 0.36f),
                     )
                 }
             }
@@ -414,13 +412,13 @@ fun BoardGrid(
                         .offset(x = cellWidth * point.column, y = cellHeight * point.row)
                         .size(cellWidth, cellHeight)
                         .padding(2.dp),
-                    contentAlignment = Alignment.TopEnd,
+                    contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = boardSpecialIcon(previewSpecial),
                         contentDescription = null,
                         tint = Color.White.copy(alpha = 0.92f),
-                        modifier = Modifier.size(minOf(cellWidth, cellHeight) * 0.30f),
+                        modifier = Modifier.size(minOf(cellWidth, cellHeight) * 0.36f),
                     )
                 }
             }
@@ -585,7 +583,7 @@ internal fun BlockCellPreview(
                     hasSpecial = special != SpecialBlockType.None,
                 ),
             ),
-        contentAlignment = Alignment.TopEnd,
+        contentAlignment = Alignment.Center,
     ) {
         if (special != SpecialBlockType.None) {
             Icon(
@@ -593,8 +591,7 @@ internal fun BlockCellPreview(
                 contentDescription = null,
                 tint = Color.White,
                 modifier = Modifier
-                    .padding(2.dp)
-                    .size((size.value * 0.30f).dp),
+                    .size((size.value * 0.36f).dp),
             )
         }
     }
@@ -675,7 +672,7 @@ fun PieceBlocks(
                             hasSpecial = piece.special != SpecialBlockType.None,
                         ),
                     ),
-                contentAlignment = Alignment.TopEnd,
+                contentAlignment = Alignment.Center,
             ) {
                 if (piece.special != SpecialBlockType.None) {
                     Icon(
@@ -683,8 +680,7 @@ fun PieceBlocks(
                         contentDescription = null,
                         tint = Color.White,
                         modifier = Modifier
-                            .padding(2.dp)
-                            .size((cellSize.value * 0.36f).dp),
+                            .size((cellSize.value * 0.40f).dp),
                     )
                 }
             }

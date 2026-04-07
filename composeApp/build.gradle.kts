@@ -26,7 +26,11 @@ kotlin {
         }
     }
     
-    jvm()
+    jvm {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_11)
+        }
+    }
     
     sourceSets {
         androidMain.dependencies {

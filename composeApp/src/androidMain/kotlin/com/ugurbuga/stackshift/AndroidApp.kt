@@ -20,12 +20,15 @@ import com.ugurbuga.stackshift.ui.theme.isStackShiftDarkTheme
 fun AndroidApp() {
     var settings by remember { mutableStateOf(AppSettings()) }
     var showSettings by remember { mutableStateOf(false) }
-    val gameViewModel = remember {
-        GameViewModel(
-            initialState = GameSessionStorage.load(),
-            onStateChanged = GameSessionStorage::save,
+    val gameViewModelState = remember {
+        mutableStateOf(
+            GameViewModel(
+                initialState = GameSessionStorage.load(),
+                onStateChanged = GameSessionStorage::save,
+            ),
         )
     }
+    val gameViewModel = gameViewModelState.value
 
     LaunchedEffect(Unit) {
         settings = AppSettingsStorage.load()

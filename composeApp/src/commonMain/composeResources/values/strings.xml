@@ -43,6 +43,7 @@
     <string name="restart_cancel">Vazgeç</string>
     <string name="score">Skor</string>
     <string name="high_score">Rekor</string>
+    <string name="high_score_new_record">Yeni Rekor</string>
     <string name="lines">Satır</string>
     <string name="boost">Boost</string>
     <string name="danger">Tehlike</string>

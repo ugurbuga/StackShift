@@ -20,9 +20,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
@@ -62,6 +62,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
@@ -101,6 +102,7 @@ import com.ugurbuga.stackshift.settings.AppSettings
 import com.ugurbuga.stackshift.settings.HighScoreStorage
 import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -147,6 +149,7 @@ import stackshift.composeapp.generated.resources.game_message_tempo_up
 import stackshift.composeapp.generated.resources.game_over_new_high_score
 import stackshift.composeapp.generated.resources.game_over_title
 import stackshift.composeapp.generated.resources.high_score
+import stackshift.composeapp.generated.resources.high_score_new_record
 import stackshift.composeapp.generated.resources.hold
 import stackshift.composeapp.generated.resources.launch
 import stackshift.composeapp.generated.resources.launch_bar
@@ -189,7 +192,16 @@ private val BottomDockHeight = 148.dp
 private val TopBarVerticalPadding = 6.dp
 private val TopBarRowSpacing = 4.dp
 private val TopBarIconSpacing = 4.dp
+private val TopBarMetricLaunchSpacing = 8.dp
 private val TopBarActionIconSize = 28.dp
+private val MetricChipHorizontalPadding = 16.dp
+private val MetricChipVerticalPadding = 7.dp
+private val RecordIndicatorIconSize = 12.dp
+private val RecordIndicatorSideGap = 6.dp
+private const val MetricHighlightThreshold = 0.08f
+private const val MetricHighlightPulseScale = 1.08f
+private const val MetricHighlightPulseUpDurationMillis = 180
+private const val MetricHighlightPulseDownDurationMillis = 520
 
 @Composable
 private fun resolveActivePieceProperties(
@@ -297,7 +309,6 @@ fun GameScreen(
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
     val colorScheme = MaterialTheme.colorScheme
-    val uiColors = StackShiftThemeTokens.uiColors
     val updatedPreviewProvider by rememberUpdatedState(onRequestPreview)
     val updatedPreviewImpactProvider by rememberUpdatedState(onResolvePreviewImpact)
     val updatedPlacePiece by rememberUpdatedState(onPlacePiece)
@@ -310,6 +321,9 @@ fun GameScreen(
     val impactFlashAlpha = remember { Animatable(0f) }
     val comboDriftY = remember { Animatable(18f) }
     val comboAlpha = remember { Animatable(0f) }
+    val metricPulsePhase = remember { Animatable(0f) }
+    var highScoreHighlightActive by remember { mutableStateOf(false) }
+    var celebratedHighScore by remember { mutableIntStateOf(highestScore) }
 
     var overlayHostRectInRoot by remember { mutableStateOf(Rect.Zero) }
     var boardRectInRoot by remember { mutableStateOf(Rect.Zero) }
@@ -393,6 +407,46 @@ fun GameScreen(
                 selectedColumn?.let(updatedPreviewProvider)
             }
         }
+    }
+
+    val scoreHighlightActive = highScoreHighlightActive
+    val anyMetricHighlightActive = highScoreHighlightActive
+
+    LaunchedEffect(anyMetricHighlightActive, gameState.status) {
+        if (!anyMetricHighlightActive || gameState.status == GameStatus.GameOver) {
+            metricPulsePhase.snapTo(0f)
+            return@LaunchedEffect
+        }
+
+        metricPulsePhase.snapTo(0f)
+        while (isActive && anyMetricHighlightActive && gameState.status != GameStatus.GameOver) {
+            metricPulsePhase.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(
+                    durationMillis = MetricHighlightPulseUpDurationMillis,
+                    easing = FastOutSlowInEasing,
+                ),
+            )
+            metricPulsePhase.animateTo(
+                targetValue = 0f,
+                animationSpec = tween(
+                    durationMillis = MetricHighlightPulseDownDurationMillis,
+                    easing = FastOutSlowInEasing,
+                ),
+            )
+        }
+    }
+
+    val metricPulsePhaseValue = metricPulsePhase.value
+    val highScorePulseScale = if (highScoreHighlightActive) {
+        1f + (MetricHighlightPulseScale - 1f) * metricPulsePhaseValue
+    } else {
+        1f
+    }
+    val scorePulseScale = if (scoreHighlightActive) {
+        1f + (MetricHighlightPulseScale - 1f) * metricPulsePhaseValue
+    } else {
+        1f
     }
 
     val previewImpactPoints by remember(
@@ -494,6 +548,22 @@ fun GameScreen(
         )
     }
 
+    LaunchedEffect(highestScore, gameState.score, gameState.status, gameState.linesCleared) {
+        when {
+            gameState.status == GameStatus.GameOver ||
+                (gameState.status == GameStatus.Running && gameState.score == 0 && gameState.linesCleared == 0) -> {
+                highScoreHighlightActive = false
+                celebratedHighScore = highestScore
+                metricPulsePhase.animateTo(0f, animationSpec = snap())
+            }
+
+            highestScore > celebratedHighScore -> {
+                celebratedHighScore = highestScore
+                highScoreHighlightActive = true
+            }
+        }
+    }
+
     Surface(
         modifier = modifier.fillMaxSize(),
         color = colorScheme.background,
@@ -522,6 +592,10 @@ fun GameScreen(
                     MinimalTopBar(
                         gameState = gameState,
                         highestScore = highestScore,
+                        highScoreHighlightStrength = if (highScoreHighlightActive) 1f else 0f,
+                        highScoreHighlightScale = highScorePulseScale,
+                        scoreHighlightStrength = if (scoreHighlightActive) 1f else 0f,
+                        scoreHighlightScale = scorePulseScale,
                         onHoldPiece = {
                             dispatchFeedback(
                                 updatedHoldPiece(),
@@ -758,6 +832,10 @@ fun GameScreen(
 private fun MinimalTopBar(
     gameState: GameState,
     highestScore: Int,
+    highScoreHighlightStrength: Float,
+    highScoreHighlightScale: Float,
+    scoreHighlightStrength: Float,
+    scoreHighlightScale: Float,
     onHoldPiece: () -> Unit,
     onPauseToggle: () -> Unit,
     onRestart: () -> Unit,
@@ -765,12 +843,15 @@ private fun MinimalTopBar(
     onBlockProperties: () -> Unit,
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
-    val pressureCount =
-        gameState.columnPressure.count { it.level == PressureLevel.Critical || it.level == PressureLevel.Overflow }
+    val isNewRecordHighlight = highScoreHighlightStrength > 0.08f
     val holdLabel = resolveGameText(gameText(GameTextKey.Hold))
     val pauseLabel =
         resolveGameText(gameText(if (gameState.status == GameStatus.Paused) GameTextKey.Resume else GameTextKey.Pause))
     val restartLabel = resolveGameText(gameText(GameTextKey.Restart))
+    val dockMessage = resolveActivePieceProperties(piece = gameState.activePiece)
+    val dockDetail = resolveBlockDetail(piece = gameState.activePiece)
+    val dockMessageColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.92f)
+    val dockDetailColor = uiColors.subtitle
     Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = uiColors.panel),
@@ -836,31 +917,237 @@ private fun MinimalTopBar(
                 }
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                MetricChip(
-                    title = resolveGameText(gameText(GameTextKey.Score)),
-                    value = gameState.score.toString(),
-                    modifier = Modifier.weight(1f)
-                )
-                MetricChip(
-                    title = resolveGameText(gameText(GameTextKey.HighScore)),
-                    value = highestScore.toString(),
-                    modifier = Modifier.weight(1f)
-                )
-                MetricChip(
-                    title = resolveGameText(gameText(GameTextKey.Lines)),
-                    value = gameState.linesCleared.toString(),
-                    modifier = Modifier.weight(1f)
-                )
-                MetricChip(
-                    title = resolveGameText(gameText(GameTextKey.Danger)),
-                    value = if (pressureCount == 0) resolveGameText(gameText(GameTextKey.DangerNone)) else pressureCount.toString(),
-                    modifier = Modifier.weight(1f),
-                )
+            MetricLaunchRow(
+                highScoreTitle = if (isNewRecordHighlight) {
+                    stringResource(Res.string.high_score_new_record)
+                } else {
+                    resolveGameText(gameText(GameTextKey.HighScore))
+                },
+                highScoreValue = highestScore.toString(),
+                scoreTitle = resolveGameText(gameText(GameTextKey.Score)),
+                scoreValue = gameState.score.toString(),
+                highScoreHighlightStrength = highScoreHighlightStrength,
+                highScoreHighlightScale = highScoreHighlightScale,
+                scoreHighlightStrength = scoreHighlightStrength,
+                scoreHighlightScale = scoreHighlightScale,
+                launchContent = {
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = uiColors.panelMuted),
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            uiColors.panelStroke.copy(alpha = 0.72f)
+                        ),
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 10.dp, vertical = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            LaunchBarView(gameState = gameState)
+
+                            Text(
+                                text = dockMessage,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = dockMessageColor,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                text = dockDetail.ifBlank { " " },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = dockDetailColor,
+                                minLines = 2,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun MetricLaunchRow(
+    highScoreTitle: String,
+    highScoreValue: String,
+    scoreTitle: String,
+    scoreValue: String,
+    highScoreHighlightStrength: Float,
+    highScoreHighlightScale: Float,
+    scoreHighlightStrength: Float,
+    scoreHighlightScale: Float,
+    launchContent: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val spacing = TopBarMetricLaunchSpacing
+    SubcomposeLayout(modifier = modifier.fillMaxWidth()) { constraints ->
+        val spacingPx = spacing.roundToPx()
+        val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
+
+        val initialMetric = subcompose("metric-initial") {
+            EqualWidthMetricColumn(
+                highScoreTitle = highScoreTitle,
+                highScoreValue = highScoreValue,
+                scoreTitle = scoreTitle,
+                scoreValue = scoreValue,
+                highScoreHighlightStrength = highScoreHighlightStrength,
+                highScoreHighlightScale = highScoreHighlightScale,
+                scoreHighlightStrength = scoreHighlightStrength,
+                scoreHighlightScale = scoreHighlightScale,
+            )
+        }.first().measure(looseConstraints)
+
+        val metricWidth = initialMetric.width
+            .coerceAtMost((constraints.maxWidth - spacingPx).coerceAtLeast(0))
+        val launchWidth = (constraints.maxWidth - metricWidth - spacingPx).coerceAtLeast(0)
+
+        val launchPlaceable = subcompose("launch") {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                launchContent()
             }
+        }.first().measure(
+            constraints.copy(
+                minWidth = launchWidth,
+                maxWidth = launchWidth,
+                minHeight = 0,
+            )
+        )
+
+        val metricPlaceable = subcompose("metric") {
+            EqualWidthMetricColumn(
+                highScoreTitle = highScoreTitle,
+                highScoreValue = highScoreValue,
+                scoreTitle = scoreTitle,
+                scoreValue = scoreValue,
+                highScoreHighlightStrength = highScoreHighlightStrength,
+                highScoreHighlightScale = highScoreHighlightScale,
+                scoreHighlightStrength = scoreHighlightStrength,
+                scoreHighlightScale = scoreHighlightScale,
+            )
+        }.first().measure(
+            constraints.copy(
+                minWidth = metricWidth,
+                maxWidth = metricWidth,
+                minHeight = launchPlaceable.height,
+                maxHeight = launchPlaceable.height,
+            )
+        )
+
+        val layoutHeight = maxOf(metricPlaceable.height, launchPlaceable.height)
+        layout(constraints.maxWidth, layoutHeight) {
+            metricPlaceable.placeRelative(0, 0)
+            launchPlaceable.placeRelative(metricWidth + spacingPx, 0)
+        }
+    }
+}
+
+@Composable
+private fun EqualWidthMetricColumn(
+    highScoreTitle: String,
+    highScoreValue: String,
+    scoreTitle: String,
+    scoreValue: String,
+    highScoreHighlightStrength: Float,
+    highScoreHighlightScale: Float,
+    scoreHighlightStrength: Float,
+    scoreHighlightScale: Float,
+    modifier: Modifier = Modifier,
+) {
+    val spacing = 6.dp
+    SubcomposeLayout(modifier = modifier) { constraints ->
+        val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
+        val spacingPx = spacing.roundToPx()
+        val horizontalPaddingPx = MetricChipHorizontalPadding.roundToPx() * 2
+        val recordIndicatorsExtraWidth = ((RecordIndicatorIconSize * 2) + (RecordIndicatorSideGap * 2)).roundToPx()
+
+        fun measureMetricTextWidth(
+            slotId: String,
+            title: String,
+            value: String,
+            includeRecordIndicators: Boolean,
+        ): Int {
+            val titlePlaceable = subcompose("$slotId-title") {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }.first().measure(looseConstraints)
+            val valuePlaceable = subcompose("$slotId-value") {
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }.first().measure(looseConstraints)
+            return maxOf(titlePlaceable.width, valuePlaceable.width) + horizontalPaddingPx + if (includeRecordIndicators) recordIndicatorsExtraWidth else 0
+        }
+
+        val targetWidth = maxOf(
+            measureMetricTextWidth(
+                slotId = "initialHighScore",
+                title = highScoreTitle,
+                value = highScoreValue,
+                includeRecordIndicators = highScoreHighlightStrength > MetricHighlightThreshold,
+            ),
+            measureMetricTextWidth(
+                slotId = "initialScore",
+                title = scoreTitle,
+                value = scoreValue,
+                includeRecordIndicators = false,
+            ),
+        ).coerceIn(constraints.minWidth, constraints.maxWidth)
+
+        val availableHeight = constraints.maxHeight.takeIf { it != Int.MAX_VALUE }
+        val targetHeightPerChip = availableHeight
+            ?.let { ((it - spacingPx).coerceAtLeast(0)) / 2 }
+            ?.coerceAtLeast(0)
+
+        val chipConstraints = if (targetHeightPerChip != null) {
+            constraints.copy(
+                minWidth = targetWidth,
+                maxWidth = targetWidth,
+                minHeight = targetHeightPerChip,
+                maxHeight = targetHeightPerChip,
+            )
+        } else {
+            constraints.copy(
+                minWidth = targetWidth,
+                maxWidth = targetWidth,
+                minHeight = 0,
+            )
+        }
+
+        val highScorePlaceable = subcompose("highScore") {
+            CompactMetricChip(
+                title = highScoreTitle,
+                value = highScoreValue,
+                highlightStrength = highScoreHighlightStrength,
+                scale = highScoreHighlightScale,
+            )
+        }.first().measure(chipConstraints)
+        val scorePlaceable = subcompose("score") {
+            CompactMetricChip(
+                title = scoreTitle,
+                value = scoreValue,
+                highlightStrength = scoreHighlightStrength,
+                scale = scoreHighlightScale,
+            )
+        }.first().measure(chipConstraints)
+
+        val layoutHeight = availableHeight ?: (highScorePlaceable.height + spacingPx + scorePlaceable.height)
+
+        layout(targetWidth, layoutHeight) {
+            highScorePlaceable.placeRelative(0, 0)
+            scorePlaceable.placeRelative(0, highScorePlaceable.height + spacingPx)
         }
     }
 }
@@ -871,18 +1158,8 @@ private fun MinimalBottomDock(
     cellSizePx: Float,
     modifier: Modifier = Modifier,
 ) {
-    val density = LocalDensity.current
     val uiColors = StackShiftThemeTokens.uiColors
     val queuePieces = gameState.nextQueue.take(1)
-    val railWidth = with(density) {
-        (((gameState.activePiece?.width ?: 3) + 1) * cellSizePx)
-            .coerceAtLeast(88f)
-            .toDp()
-    }
-    val dockMessage = resolveActivePieceProperties(piece = gameState.activePiece)
-    val dockDetail = resolveBlockDetail(piece = gameState.activePiece)
-    val dockMessageColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.92f)
-    val dockDetailColor = uiColors.subtitle
 
     Card(
         modifier = modifier,
@@ -890,68 +1167,203 @@ private fun MinimalBottomDock(
         colors = CardDefaults.cardColors(containerColor = uiColors.panel),
         border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
     ) {
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            contentAlignment = Alignment.CenterEnd,
         ) {
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .widthIn(min = railWidth)
-                    .fillMaxHeight()
-                    .padding(start = 10.dp)
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(uiColors.panelMuted)
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Text(
-                    text = resolveGameText(gameText(GameTextKey.LaunchBar)),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Medium,
-                )
-                LaunchBarView(gameState = gameState)
+            HoldAndQueueStrip(
+                queue = queuePieces,
+                cellSizePx = cellSizePx,
+            )
+        }
+    }
+}
 
-                Text(
-                    text = dockMessage,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = dockMessageColor,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    fontWeight = FontWeight.SemiBold,
+@Composable
+private fun CompactMetricChip(
+    title: String,
+    value: String,
+    highlightStrength: Float = 0f,
+    scale: Float = 1f,
+    modifier: Modifier = Modifier,
+) {
+    val uiColors = StackShiftThemeTokens.uiColors
+    val highlightBorderColor = uiColors.success.copy(alpha = (0.34f + highlightStrength * 0.5f).coerceIn(0f, 0.88f))
+    Card(
+        modifier = modifier.graphicsLayer(
+            scaleX = scale,
+            scaleY = scale,
+        ),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = uiColors.metricCard),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            if (highlightStrength > 0.02f) highlightBorderColor else uiColors.panelStroke.copy(alpha = 0.72f)
+        ),
+    ) {
+        SubcomposeLayout(
+            modifier = Modifier
+                .fillMaxHeight()
+                .then(
+                    if (highlightStrength > 0.02f) {
+                        Modifier.background(
+                            Brush.linearGradient(
+                                colors = listOf(
+                                    uiColors.success.copy(alpha = 0.18f * highlightStrength),
+                                    uiColors.launchGlow.copy(alpha = 0.14f * highlightStrength),
+                                    Color.Transparent,
+                                ),
+                            ),
+                        )
+                    } else {
+                        Modifier
+                    },
                 )
-                if (dockDetail.isNotBlank()) {
-                    Text(
-                        text = dockDetail,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = dockDetailColor,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis,
+                .padding(horizontal = MetricChipHorizontalPadding, vertical = MetricChipVerticalPadding),
+        ) { constraints ->
+            val spacingPx = 1.dp.roundToPx()
+            val leadingRecordIcon = if (highlightStrength > MetricHighlightThreshold) {
+                subcompose("leadingRecordIcon") {
+                    Icon(
+                        imageVector = Icons.Filled.EmojiEvents,
+                        contentDescription = null,
+                        tint = uiColors.success,
+                        modifier = Modifier
+                            .size(RecordIndicatorIconSize)
+                            .graphicsLayer(alpha = highlightStrength.coerceIn(0f, 1f)),
                     )
-                }
+                }.first().measure(constraints.copy(minWidth = 0, minHeight = 0))
+            } else {
+                null
+            }
+            val trailingRecordIcon = if (highlightStrength > MetricHighlightThreshold) {
+                subcompose("trailingRecordIcon") {
+                    Icon(
+                        imageVector = Icons.Filled.EmojiEvents,
+                        contentDescription = null,
+                        tint = uiColors.success,
+                        modifier = Modifier
+                            .size(RecordIndicatorIconSize)
+                            .graphicsLayer(alpha = highlightStrength.coerceIn(0f, 1f)),
+                    )
+                }.first().measure(constraints.copy(minWidth = 0, minHeight = 0))
+            } else {
+                null
             }
 
-            Row(
-                modifier = Modifier
-                    .weight(0.5f)
-                    .fillMaxHeight()
-                    .padding(end = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                }
+            val sideGapPx = if (leadingRecordIcon != null || trailingRecordIcon != null) {
+                RecordIndicatorSideGap.roundToPx()
+            } else {
+                0
+            }
+            val leadingSlotWidth = (leadingRecordIcon?.width ?: 0) + if (leadingRecordIcon != null) sideGapPx else 0
+            val trailingSlotWidth = (trailingRecordIcon?.width ?: 0) + if (trailingRecordIcon != null) sideGapPx else 0
+            val textAreaWidth = (constraints.maxWidth - leadingSlotWidth - trailingSlotWidth).coerceAtLeast(0)
+            val textConstraints = constraints.copy(
+                minWidth = textAreaWidth,
+                maxWidth = textAreaWidth,
+                minHeight = 0,
+            )
+            val titlePlaceable = subcompose("title") {
+                Text(
+                    text = title,
+                    modifier = Modifier.fillMaxWidth(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = uiColors.subtitle,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                )
+            }.first().measure(textConstraints)
 
-                HoldAndQueueStrip(
-                    queue = queuePieces,
-                    cellSizePx = cellSizePx,
+            val valuePlaceable = subcompose("value") {
+                Text(
+                    text = value,
+                    modifier = Modifier.fillMaxWidth(),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                )
+            }.first().measure(textConstraints)
+
+            val width = if (constraints.minWidth == constraints.maxWidth) {
+                constraints.maxWidth
+            } else {
+                (maxOf(titlePlaceable.width, valuePlaceable.width) + leadingSlotWidth + trailingSlotWidth)
+                    .coerceIn(constraints.minWidth, constraints.maxWidth)
+            }
+            val contentHeight = titlePlaceable.height + spacingPx + valuePlaceable.height
+            val height = if (constraints.minHeight == constraints.maxHeight) {
+                constraints.maxHeight
+            } else {
+                contentHeight.coerceIn(constraints.minHeight, constraints.maxHeight)
+            }
+
+            layout(width, height) {
+                val contentTop = ((height - contentHeight) / 2).coerceAtLeast(0)
+                titlePlaceable.placeRelative(
+                    x = leadingSlotWidth,
+                    y = contentTop,
+                )
+                valuePlaceable.placeRelative(
+                    x = leadingSlotWidth,
+                    y = contentTop + titlePlaceable.height + spacingPx,
+                )
+                leadingRecordIcon?.placeRelative(
+                    x = 0,
+                    y = ((height - leadingRecordIcon.height) / 2).coerceAtLeast(0),
+                )
+                trailingRecordIcon?.placeRelative(
+                    x = (width - trailingRecordIcon.width).coerceAtLeast(0),
+                    y = ((height - trailingRecordIcon.height) / 2).coerceAtLeast(0),
+                )
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun GameScreenRunningRecordIconsPreview() {
+    StackShiftTheme(settings = AppSettings()) {
+        val gameState = previewGameState()
+        Surface(color = MaterialTheme.colorScheme.background) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                MinimalTopBar(
+                    gameState = gameState,
+                    highestScore = 142000,
+                    highScoreHighlightStrength = 1f,
+                    highScoreHighlightScale = 1.03f,
+                    scoreHighlightStrength = 1f,
+                    scoreHighlightScale = 1.03f,
+                    onHoldPiece = {},
+                    onPauseToggle = {},
+                    onRestart = {},
+                    onOpenSettings = {},
+                    onBlockProperties = {},
+                )
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .background(Color.Transparent),
+                )
+                MinimalBottomDock(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(BottomDockHeight),
+                    gameState = gameState,
+                    cellSizePx = 24f,
                 )
             }
         }
@@ -1473,7 +1885,7 @@ private fun GameScreenRunningPreview() {
             onBlockProperties = {},
             soundPlayer = NoOpSoundEffectPlayer,
             haptics = NoOpGameHaptics,
-            highestScore = 1420,
+            highestScore = 142000,
         )
     }
 }
@@ -1494,7 +1906,7 @@ private fun GameScreenPausedPreview() {
             onBlockProperties = {},
             soundPlayer = NoOpSoundEffectPlayer,
             haptics = NoOpGameHaptics,
-            highestScore = 1420,
+            highestScore = 142000,
         )
     }
 }
@@ -1515,7 +1927,7 @@ private fun GameScreenGameOverPreview() {
             onBlockProperties = {},
             soundPlayer = NoOpSoundEffectPlayer,
             haptics = NoOpGameHaptics,
-            highestScore = 1420,
+            highestScore = 142000,
         )
     }
 }

@@ -43,6 +43,7 @@
     <string name="restart_cancel">Annuler</string>
     <string name="score">Score</string>
     <string name="high_score">Record</string>
+    <string name="high_score_new_record">Nouveau record</string>
     <string name="lines">Lignes</string>
     <string name="boost">Boost</string>
     <string name="danger">Danger</string>

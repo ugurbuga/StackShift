@@ -43,6 +43,7 @@
     <string name="restart_cancel">Отмена</string>
     <string name="score">Счёт</string>
     <string name="high_score">Рекорд</string>
+    <string name="high_score_new_record">Новый рекорд</string>
     <string name="lines">Линии</string>
     <string name="boost">Boost</string>
     <string name="danger">Опасность</string>
