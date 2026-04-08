@@ -312,8 +312,16 @@ class GameLogic(
                 lastResolvedLines = resolution.totalLinesCleared,
                 lastChainDepth = resolution.chainDepth,
                 specialChainCount = resolution.triggeredSpecialCells,
-                clearAnimationToken = if (resolution.totalLinesCleared == 0) state.clearAnimationToken else state.clearAnimationToken + 1L,
-                screenShakeToken = if (resolution.totalLinesCleared > 0 || resolution.triggeredSpecialCells > 0) state.screenShakeToken + 1L else state.screenShakeToken,
+                clearAnimationToken = if (resolution.totalLinesCleared == 0 && resolution.triggeredSpecialCells == 0) {
+                    state.clearAnimationToken
+                } else {
+                    state.clearAnimationToken + 1L
+                },
+                screenShakeToken = if (nextStatus == GameStatus.GameOver || resolution.totalLinesCleared > 0 || resolution.triggeredSpecialCells > 0) {
+                    state.screenShakeToken + 1L
+                } else {
+                    state.screenShakeToken
+                },
                 impactFlashToken = if (piece.special != SpecialBlockType.None || resolution.totalLinesCleared > 0 || resolution.triggeredSpecialCells > 0) state.impactFlashToken + 1L else state.impactFlashToken,
                 comboPopupToken = if (nextComboChain > 1 || perfectDrop || resolution.triggeredSpecialCells > 0) state.comboPopupToken + 1L else state.comboPopupToken,
                 floatingFeedback = floatingFeedback,

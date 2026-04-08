@@ -98,6 +98,16 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "com.ugurbuga.stackshift"
             packageVersion = "1.0.0"
+
+            macOS {
+                iconFile.set(project.file("desktop-icons/stackshift.icns"))
+            }
+            windows {
+                iconFile.set(project.file("desktop-icons/stackshift.ico"))
+            }
+            linux {
+                iconFile.set(project.file("desktop-icons/stackshift.png"))
+            }
         }
     }
 }

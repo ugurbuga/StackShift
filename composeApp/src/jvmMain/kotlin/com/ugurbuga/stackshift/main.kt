@@ -9,6 +9,8 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import java.awt.Dimension
+import java.awt.Taskbar
+import java.awt.Toolkit
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
 import java.util.prefs.Preferences
@@ -35,6 +37,16 @@ fun main() = application {
         title = appTitle,
     ) {
         DisposableEffect(window) {
+            Thread.currentThread().contextClassLoader.getResource("app_icon_window.png")?.let { resource ->
+                Toolkit.getDefaultToolkit().getImage(resource).also { image ->
+                    window.iconImage = image
+                    if (Taskbar.isTaskbarSupported()) {
+                        runCatching {
+                            Taskbar.getTaskbar().iconImage = image
+                        }
+                    }
+                }
+            }
             val controller = AspectLockedWindowController(
                 window = window,
                 initialSnapshot = initialSnapshot,
