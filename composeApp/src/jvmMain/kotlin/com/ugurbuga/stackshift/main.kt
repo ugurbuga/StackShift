@@ -37,7 +37,9 @@ fun main() = application {
         title = appTitle,
     ) {
         DisposableEffect(window) {
-            Thread.currentThread().contextClassLoader.getResource("app_icon_window.png")?.let { resource ->
+            windowIconResourceNames().asSequence()
+                .mapNotNull(Thread.currentThread().contextClassLoader::getResource)
+                .firstOrNull()?.let { resource ->
                 Toolkit.getDefaultToolkit().getImage(resource).also { image ->
                     window.iconImage = image
                     if (Taskbar.isTaskbarSupported()) {
@@ -54,6 +56,15 @@ fun main() = application {
             onDispose(controller::dispose)
         }
         App()
+    }
+}
+
+private fun windowIconResourceNames(): List<String> {
+    val isMacOs = System.getProperty("os.name").orEmpty().contains("mac", ignoreCase = true)
+    return if (isMacOs) {
+        listOf("app_icon_window_macos.png", "app_icon_window.png")
+    } else {
+        listOf("app_icon_window.png")
     }
 }
 

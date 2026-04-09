@@ -1,5 +1,31 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.io.File
+
+private fun File.hasJpackage(): Boolean = resolve("bin/jpackage").canExecute()
+
+private fun findDesktopJdkHome(): File? {
+    val candidateHomes = buildList {
+        System.getenv("JAVA_HOME")?.let(::File)?.let(::add)
+        System.getProperty("java.home")?.let(::File)?.let(::add)
+
+        File(System.getProperty("user.home"), "Library/Java/JavaVirtualMachines")
+            .listFiles()
+            .orEmpty()
+            .map { File(it, "Contents/Home") }
+            .forEach(::add)
+
+        File("/Library/Java/JavaVirtualMachines")
+            .listFiles()
+            .orEmpty()
+            .map { File(it, "Contents/Home") }
+            .forEach(::add)
+    }
+
+    return candidateHomes.firstOrNull { it.hasJpackage() }
+}
+
+val desktopJdkHome = findDesktopJdkHome()
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -94,19 +120,23 @@ compose.desktop {
     application {
         mainClass = "com.ugurbuga.stackshift.MainKt"
 
-        nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "com.ugurbuga.stackshift"
-            packageVersion = "1.0.0"
+        if (desktopJdkHome != null) {
+            javaHome = desktopJdkHome.absolutePath
 
-            macOS {
-                iconFile.set(project.file("desktop-icons/stackshift.icns"))
-            }
-            windows {
-                iconFile.set(project.file("desktop-icons/stackshift.ico"))
-            }
-            linux {
-                iconFile.set(project.file("desktop-icons/stackshift.png"))
+            nativeDistributions {
+                targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+                packageName = "com.ugurbuga.stackshift"
+                packageVersion = "1.0.0"
+
+                macOS {
+                    iconFile.set(project.file("desktop-icons/stackshift.icns"))
+                }
+                windows {
+                    iconFile.set(project.file("desktop-icons/stackshift.ico"))
+                }
+                linux {
+                    iconFile.set(project.file("desktop-icons/stackshift.png"))
+                }
             }
         }
     }
@@ -115,5 +145,13 @@ compose.desktop {
 tasks.register("packageDesktopApp") {
     group = "distribution"
     description = "Builds the portable desktop application image for the current OS."
-    dependsOn("createDistributable")
+    if (desktopJdkHome != null) {
+        dependsOn("createDistributable")
+    } else {
+        doLast {
+            error(
+                "Desktop packaging requires a JDK with jpackage. Set JAVA_HOME to a full JDK or install one before running packageDesktopApp.",
+            )
+        }
+    }
 }

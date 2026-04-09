@@ -16,8 +16,12 @@ BRANDING_OUT = ROOT / "branding" / "generated"
 
 FULL_SVG_NAME = "stackshift-app-icon.svg"
 FOREGROUND_SVG_NAME = "stackshift-adaptive-foreground.svg"
+MACOS_FOREGROUND_SVG_NAME = "stackshift-macos-foreground.svg"
+ANDROID_ROUND_SVG_NAME = "stackshift-android-round-icon.svg"
 FULL_PNG_NAME = "stackshift-app-icon-1024.png"
 FOREGROUND_PNG_NAME = "stackshift-adaptive-foreground-1024.png"
+MACOS_FOREGROUND_PNG_NAME = "stackshift-macos-foreground-1024.png"
+ANDROID_ROUND_PNG_NAME = "stackshift-android-round-1024.png"
 
 
 def main() -> None:
@@ -26,24 +30,32 @@ def main() -> None:
         temp_path = Path(temp_dir)
         full_svg = temp_path / FULL_SVG_NAME
         foreground_svg = temp_path / FOREGROUND_SVG_NAME
+        macos_foreground_svg = temp_path / MACOS_FOREGROUND_SVG_NAME
+        android_round_svg = temp_path / ANDROID_ROUND_SVG_NAME
         full_svg.write_text(full_icon_svg(), encoding="utf-8")
         foreground_svg.write_text(foreground_icon_svg(), encoding="utf-8")
+        macos_foreground_svg.write_text(macos_foreground_icon_svg(), encoding="utf-8")
+        android_round_svg.write_text(android_round_icon_svg(), encoding="utf-8")
 
         full_png = BRANDING_OUT / FULL_PNG_NAME
         foreground_png = BRANDING_OUT / FOREGROUND_PNG_NAME
+        macos_foreground_png = BRANDING_OUT / MACOS_FOREGROUND_PNG_NAME
+        android_round_png = BRANDING_OUT / ANDROID_ROUND_PNG_NAME
         BRANDING_OUT.mkdir(parents=True, exist_ok=True)
         rasterize_svg(full_svg, full_png, 1024)
         rasterize_svg(foreground_svg, foreground_png, 1024)
+        rasterize_svg(macos_foreground_svg, macos_foreground_png, 1024)
+        rasterize_svg(android_round_svg, android_round_png, 1024)
 
-        generate_android_assets(full_png, foreground_png)
+        generate_android_assets(full_png, foreground_png, android_round_png)
         generate_ios_assets(full_png)
-        generate_desktop_assets(full_png)
+        generate_desktop_assets(full_png, macos_foreground_png)
 
     print("Generated StackShift icons for Android, iOS, and desktop.")
 
 
 def ensure_tools() -> None:
-    missing = [tool for tool in ("qlmanage", "sips", "iconutil") if shutil.which(tool) is None]
+    missing = [tool for tool in ("sips", "iconutil") if shutil.which(tool) is None]
     if missing:
         raise SystemExit(f"Missing required tools: {', '.join(missing)}")
 
@@ -54,14 +66,11 @@ def run(*args: str) -> None:
 
 def rasterize_svg(svg_path: Path, output_png: Path, size: int) -> None:
     output_png.parent.mkdir(parents=True, exist_ok=True)
-    temp_dir = output_png.parent
-    run("qlmanage", "-t", "-s", str(size), "-o", str(temp_dir), str(svg_path))
-    generated = temp_dir / f"{svg_path.name}.png"
-    if not generated.exists():
-        raise FileNotFoundError(f"Quick Look did not generate PNG for {svg_path}")
-    if output_png.exists():
-        output_png.unlink()
-    generated.rename(output_png)
+    with tempfile.TemporaryDirectory(prefix="stackshift-svg-raster-") as temp_dir:
+        temp_path = Path(temp_dir)
+        converted = temp_path / f"{svg_path.stem}.png"
+        run("sips", "-s", "format", "png", str(svg_path), "--out", str(converted))
+        resize_png(converted, output_png, size)
 
 
 def resize_png(source: Path, target: Path, size: int) -> None:
@@ -69,7 +78,7 @@ def resize_png(source: Path, target: Path, size: int) -> None:
     run("sips", "-z", str(size), str(size), str(source), "--out", str(target))
 
 
-def generate_android_assets(full_png: Path, foreground_png: Path) -> None:
+def generate_android_assets(full_png: Path, foreground_png: Path, round_png: Path) -> None:
     android_sizes = {
         "mipmap-mdpi": 48,
         "mipmap-hdpi": 72,
@@ -79,7 +88,7 @@ def generate_android_assets(full_png: Path, foreground_png: Path) -> None:
     }
     for folder, size in android_sizes.items():
         resize_png(full_png, ANDROID_RES / folder / "ic_launcher.png", size)
-        resize_png(full_png, ANDROID_RES / folder / "ic_launcher_round.png", size)
+        resize_png(round_png, ANDROID_RES / folder / "ic_launcher_round.png", size)
 
     resize_png(
         foreground_png,
@@ -97,11 +106,12 @@ def generate_ios_assets(full_png: Path) -> None:
     resize_png(full_png, IOS_APPICON / "app-icon-1024.png", 1024)
 
 
-def generate_desktop_assets(full_png: Path) -> None:
+def generate_desktop_assets(full_png: Path, macos_png: Path) -> None:
     DESKTOP_RES.mkdir(parents=True, exist_ok=True)
     DESKTOP_ICONS.mkdir(parents=True, exist_ok=True)
 
     resize_png(full_png, DESKTOP_RES / "app_icon_window.png", 512)
+    resize_png(macos_png, DESKTOP_RES / "app_icon_window_macos.png", 512)
     resize_png(full_png, DESKTOP_ICONS / "stackshift.png", 512)
 
     ico_sizes = [16, 24, 32, 48, 64, 128, 256]
@@ -134,7 +144,7 @@ def generate_desktop_assets(full_png: Path) -> None:
         write_ico(DESKTOP_ICONS / "stackshift.ico", ico_images)
 
     for name, size in iconset_map.items():
-        resize_png(full_png, iconset_dir / name, size)
+        resize_png(macos_png, iconset_dir / name, size)
     icns_path = DESKTOP_ICONS / "stackshift.icns"
     if icns_path.exists():
         icns_path.unlink()
@@ -177,15 +187,79 @@ def full_icon_svg() -> str:
 
 
 def foreground_icon_svg() -> str:
-    return board_icon_svg(include_background=False)
+    return board_icon_svg(
+        include_background=False,
+        clip_shape="rounded_rect",
+        board_scale=0.97,
+        clip_inset=76,
+        clip_radius=188,
+        surface_inset=92,
+        surface_radius=180,
+    )
 
 
-def board_icon_svg(include_background: bool) -> str:
+def macos_foreground_icon_svg() -> str:
+    return board_icon_svg(
+        include_background=False,
+        clip_shape="rounded_rect",
+        board_scale=0.95,
+        clip_inset=82,
+        clip_radius=192,
+        surface_inset=90,
+        surface_radius=184,
+    )
+
+
+def android_round_icon_svg() -> str:
+    return board_icon_svg(include_background=True, clip_shape="circle")
+
+
+def board_icon_svg(
+    include_background: bool,
+    clip_shape: str | None = None,
+    board_scale: float = 1.0,
+    clip_inset: int | None = None,
+    clip_radius: int | None = None,
+    surface_inset: int | None = None,
+    surface_radius: int | None = None,
+) -> str:
+    geometry = board_geometry(board_scale=board_scale)
     background = "" if not include_background else """
   <rect width=\"1024\" height=\"1024\" fill=\"url(#screenBg)\"/>
   <rect width=\"1024\" height=\"1024\" fill=\"url(#screenGlowA)\"/>
   <rect width=\"1024\" height=\"1024\" fill=\"url(#screenGlowB)\"/>
 """
+    resolved_clip_inset = 0 if clip_shape == "circle" else (clip_inset if clip_inset is not None else 112)
+    resolved_clip_radius = clip_radius if clip_radius is not None else 176
+    clip_size = 1024 - (resolved_clip_inset * 2)
+    clip_definition = {
+        None: "",
+        "circle": """
+    <clipPath id=\"iconMask\">
+      <circle cx=\"512\" cy=\"512\" r=\"512\"/>
+    </clipPath>
+""",
+        "rounded_rect": f"""
+    <clipPath id=\"iconMask\">
+      <rect x=\"{resolved_clip_inset}\" y=\"{resolved_clip_inset}\" width=\"{clip_size}\" height=\"{clip_size}\" rx=\"{resolved_clip_radius}\"/>
+    </clipPath>
+""",
+    }[clip_shape]
+    resolved_surface_inset = surface_inset if surface_inset is not None else geometry["board_x"] - max(20, round(32 * board_scale))
+    surface_x = resolved_surface_inset
+    surface_y = resolved_surface_inset
+    surface_size = 1024 - (resolved_surface_inset * 2)
+    surface_corner = surface_radius if surface_radius is not None else max(40, round(144 * board_scale))
+    board_surface = "" if include_background else f"""
+  <rect x=\"{surface_x}\" y=\"{surface_y}\" width=\"{surface_size}\" height=\"{surface_size}\" rx=\"{surface_corner}\" fill=\"url(#boardBg)\"/>
+  <rect x=\"{surface_x}\" y=\"{surface_y}\" width=\"{surface_size}\" height=\"{surface_size}\" rx=\"{surface_corner}\" fill=\"url(#boardGlowA)\"/>
+  <rect x=\"{surface_x}\" y=\"{surface_y}\" width=\"{surface_size}\" height=\"{surface_size}\" rx=\"{surface_corner}\" fill=\"url(#boardGlowB)\"/>
+"""
+    art = f"""  {background}
+  {board_surface}
+  {board_slots(geometry, board_scale)}
+  {placed_blocks(geometry)}"""
+    content = art if clip_shape is None else f"  <g clip-path=\"url(#iconMask)\">\n{art}\n  </g>"
     return f"""<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1024\" height=\"1024\" viewBox=\"0 0 1024 1024\" fill=\"none\">
   <defs>
     <linearGradient id=\"screenBg\" x1=\"132\" y1=\"92\" x2=\"884\" y2=\"936\" gradientUnits=\"userSpaceOnUse\">
@@ -214,24 +288,20 @@ def board_icon_svg(include_background: bool) -> str:
       <stop stop-color=\"#6B74FF\" stop-opacity=\"0.18\"/>
       <stop offset=\"1\" stop-color=\"#6B74FF\" stop-opacity=\"0\"/>
     </radialGradient>
+{clip_definition}
   </defs>
-  {background}
-  <rect x=\"104\" y=\"104\" width=\"816\" height=\"816\" rx=\"132\" fill=\"url(#boardBg)\"/>
-  <rect x=\"104\" y=\"104\" width=\"816\" height=\"816\" rx=\"132\" fill=\"url(#boardGlowA)\"/>
-  <rect x=\"104\" y=\"104\" width=\"816\" height=\"816\" rx=\"132\" fill=\"url(#boardGlowB)\"/>
-  <rect x=\"104\" y=\"104\" width=\"816\" height=\"816\" rx=\"132\" stroke=\"#9AB0C6\" stroke-opacity=\"0.30\" stroke-width=\"8\"/>
-  {board_slots()}
-  {placed_blocks()}
+{content}
 </svg>
 """
 
 
-def board_geometry() -> dict[str, int]:
-    board_x = 148
-    board_y = 148
-    board_size = 728
-    grid_size = 5
-    gap = 12
+def board_geometry(board_scale: float = 1.0) -> dict[str, int]:
+    base_board_size = 636
+    board_size = round(base_board_size * board_scale)
+    board_x = (1024 - board_size) // 2
+    board_y = (1024 - board_size) // 2
+    grid_size = 4
+    gap = max(8, round(12 * board_scale))
     cell_size = (board_size - ((grid_size - 1) * gap)) // grid_size
     return {
         "board_x": board_x,
@@ -243,43 +313,36 @@ def board_geometry() -> dict[str, int]:
     }
 
 
-def board_slots() -> str:
-    geometry = board_geometry()
+def board_slots(geometry: dict[str, int], board_scale: float) -> str:
     lines: list[str] = []
+    slot_corner = max(18, round(26 * board_scale))
+    slot_stroke_width = round(max(1.5, 2.5 * board_scale) * 10) / 10
     for row in range(geometry["grid_size"]):
         for column in range(geometry["grid_size"]):
             x = geometry["board_x"] + column * (geometry["cell_size"] + geometry["gap"])
             y = geometry["board_y"] + row * (geometry["cell_size"] + geometry["gap"])
             lines.append(
-                f'  <rect x="{x}" y="{y}" width="{geometry["cell_size"]}" height="{geometry["cell_size"]}" rx="28" fill="#EAF7FF" fill-opacity="0.055"/>'
+                f'  <rect x="{x}" y="{y}" width="{geometry["cell_size"]}" height="{geometry["cell_size"]}" rx="{slot_corner}" fill="#EAF7FF" fill-opacity="0.048"/>'
             )
             lines.append(
-                f'  <rect x="{x}" y="{y}" width="{geometry["cell_size"]}" height="{geometry["cell_size"]}" rx="28" stroke="#EAF7FF" stroke-opacity="0.08" stroke-width="3"/>'
+                f'  <rect x="{x}" y="{y}" width="{geometry["cell_size"]}" height="{geometry["cell_size"]}" rx="{slot_corner}" stroke="#EAF7FF" stroke-opacity="0.06" stroke-width="{slot_stroke_width}"/>'
             )
     return "\n".join(lines)
 
 
-def placed_blocks() -> str:
-    geometry = board_geometry()
+def placed_blocks(geometry: dict[str, int]) -> str:
     placements = [
-        ((0, 0), "#4FC3F7"),
-        ((0, 1), "#4FC3F7"),
-        ((0, 3), "#FFD166"),
-        ((0, 4), "#FFD166"),
-        ((1, 1), "#4FC3F7"),
-        ((1, 2), "#C084FC"),
-        ((1, 3), "#FFD166"),
-        ((2, 0), "#2DD4BF"),
-        ((2, 1), "#57E389"),
-        ((2, 2), "#C084FC"),
-        ((2, 4), "#FF9F43"),
-        ((3, 0), "#2DD4BF"),
-        ((3, 2), "#57E389"),
-        ((3, 3), "#57E389"),
-        ((3, 4), "#FF9F43"),
-        ((4, 0), "#FF7A90"),
-        ((4, 1), "#FF7A90"),
-        ((4, 3), "#FF9F43"),
+        ((0, 0), "#00BBF9"),
+        ((0, 1), "#00BBF9"),
+        ((0, 3), "#FFE66D"),
+        ((1, 1), "#00BBF9"),
+        ((1, 2), "#9B5DE5"),
+        ((2, 0), "#00F5D4"),
+        ((2, 2), "#9B5DE5"),
+        ((2, 3), "#FFBE0B"),
+        ((3, 0), "#FF5C8A"),
+        ((3, 1), "#FF5C8A"),
+        ((3, 3), "#FFBE0B"),
     ]
     return "\n".join(
         tile_block(
@@ -293,41 +356,11 @@ def placed_blocks() -> str:
 
 
 def tile_block(x: int, y: int, color: str, size: int = 150) -> str:
-    stroke = shade(color, 0.72)
-    inner = tint(color, 0.16)
-    corner = round(size * 0.24)
-    inner_inset = round(size * 0.10)
-    inner_width = size - (inner_inset * 2)
-    shine_height = round(size * 0.20)
-    stroke_width = max(4, round(size * 0.066))
+    corner = round(size * 0.21)
     return f"""
   <g>
     <rect x=\"{x}\" y=\"{y}\" width=\"{size}\" height=\"{size}\" rx=\"{corner}\" fill=\"{color}\"/>
-    <rect x=\"{x}\" y=\"{y}\" width=\"{size}\" height=\"{size}\" rx=\"{corner}\" stroke=\"{stroke}\" stroke-width=\"{stroke_width}\" stroke-opacity=\"0.70\"/>
-    <rect x=\"{x + inner_inset}\" y=\"{y + inner_inset}\" width=\"{inner_width}\" height=\"{shine_height}\" rx=\"{round(shine_height / 2)}\" fill=\"{inner}\" fill-opacity=\"0.88\"/>
   </g>"""
-
-
-def tint(hex_color: str, amount: float) -> str:
-    r, g, b = parse_hex(hex_color)
-    r = int(r + (255 - r) * amount)
-    g = int(g + (255 - g) * amount)
-    b = int(b + (255 - b) * amount)
-    return to_hex(r, g, b)
-
-
-def shade(hex_color: str, amount: float) -> str:
-    r, g, b = parse_hex(hex_color)
-    return to_hex(int(r * amount), int(g * amount), int(b * amount))
-
-
-def parse_hex(hex_color: str) -> tuple[int, int, int]:
-    value = hex_color.removeprefix('#')
-    return int(value[0:2], 16), int(value[2:4], 16), int(value[4:6], 16)
-
-
-def to_hex(r: int, g: int, b: int) -> str:
-    return f"#{max(0, min(255, r)):02X}{max(0, min(255, g)):02X}{max(0, min(255, b)):02X}"
 
 
 if __name__ == "__main__":

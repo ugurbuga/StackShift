@@ -39,3 +39,6 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# Shared downloadable artifacts
+artifacts/
