@@ -23,6 +23,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ugurbuga.stackshift.game.model.Piece
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
+import com.ugurbuga.stackshift.telemetry.AppTelemetry
+import com.ugurbuga.stackshift.telemetry.LogScreen
+import com.ugurbuga.stackshift.telemetry.NoOpAppTelemetry
+import com.ugurbuga.stackshift.telemetry.TelemetryScreenNames
 import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
 import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
@@ -44,9 +48,11 @@ import stackshift.composeapp.generated.resources.special_row_clearer
 @Composable
 fun PiecePropertiesScreen(
     modifier: Modifier = Modifier,
+    telemetry: AppTelemetry = NoOpAppTelemetry,
     activePiece: Piece?,
     onBack: () -> Unit,
 ) {
+    LogScreen(telemetry, TelemetryScreenNames.PieceProperties)
     val uiColors = StackShiftThemeTokens.uiColors
     Surface(
         modifier = modifier.fillMaxSize(),

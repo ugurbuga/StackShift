@@ -48,6 +48,8 @@ class GameViewModel(
 
     fun holdPiece(): InteractionFeedback = dispatch(GameIntent.HoldPiece)
 
+    fun reviveFromReward(): InteractionFeedback = dispatch(GameIntent.ReviveFromReward)
+
     fun togglePause(): InteractionFeedback {
         return dispatch(GameIntent.TogglePause)
     }

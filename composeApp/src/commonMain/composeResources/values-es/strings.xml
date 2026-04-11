@@ -63,6 +63,8 @@
     <string name="pause_title">En pausa</string>
     <string name="game_over_title">Fin de la partida</string>
     <string name="continue_label">Continuar</string>
+    <string name="game_over_extra_life">Ver anuncio + continuar</string>
+    <string name="game_over_extra_life_loading">Cargando anuncio…</string>
     <string name="play_again">Jugar de nuevo</string>
     <string name="game_over_new_high_score">¡Nuevo récord!</string>
     <string name="game_message_select_column">Arrastra la pieza horizontalmente, elige la columna y lánzala hacia arriba.</string>
@@ -82,6 +84,7 @@
     <string name="game_message_tempo_up">El ritmo subió. Llegan piezas más difíciles.</string>
     <string name="game_message_paused">El juego está en pausa.</string>
     <string name="game_message_resumed">Continúa. Elige la columna y lanza.</string>
+    <string name="game_message_extra_life_used">¡Vida extra activada! Se limpiaron %1$s filas.</string>
     <string name="feedback_overflow">Desbordamiento</string>
     <string name="feedback_perfect_lane">Carril perfecto x%1$s</string>
     <string name="feedback_micro_adjust">Microajuste</string>
@@ -94,6 +97,7 @@
     <string name="feedback_chain">Cadena x%1$s +%2$s</string>
     <string name="feedback_clear">Limpieza +%1$s</string>
     <string name="feedback_score_only">+%1$s</string>
+    <string name="feedback_extra_life">¡Vida extra! %1$s filas</string>
     <string name="special_column_clearer">COLUMNA</string>
     <string name="special_row_clearer">FILA</string>
     <string name="special_ghost">FANTASMA</string>

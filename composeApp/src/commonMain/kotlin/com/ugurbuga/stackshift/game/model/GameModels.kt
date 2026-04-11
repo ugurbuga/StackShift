@@ -126,6 +126,8 @@ enum class GameTextKey {
     PauseTitle,
     GameOverTitle,
     Continue,
+    GameOverExtraLife,
+    GameOverExtraLifeLoading,
     PlayAgain,
     GameOverNewHighScore,
     GameMessageSelectColumn,
@@ -145,6 +147,7 @@ enum class GameTextKey {
     GameMessageTempoUp,
     GameMessagePaused,
     GameMessageResumed,
+    GameMessageExtraLifeUsed,
     FeedbackOverflow,
     FeedbackPerfectLane,
     FeedbackMicroAdjust,
@@ -157,6 +160,7 @@ enum class GameTextKey {
     FeedbackChain,
     FeedbackClear,
     FeedbackScoreOnly,
+    FeedbackExtraLife,
     SpecialColumnClearer,
     SpecialRowClearer,
     SpecialGhost,
@@ -589,6 +593,7 @@ data class GameState(
     val comboPopupToken: Long = 0L,
     val floatingFeedback: FloatingFeedback? = null,
     val feedbackToken: Long = 0L,
+    val rewardedReviveUsed: Boolean = false,
     val message: GameText = GameText(GameTextKey.GameMessageSelectColumn),
 ) {
     val nextPiece: Piece?

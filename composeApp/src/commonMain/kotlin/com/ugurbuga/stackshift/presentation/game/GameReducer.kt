@@ -44,6 +44,15 @@ internal class GameReducer(
             )
         }
 
+        GameAction.ReviveFromReward -> {
+            val result = gameLogic.reviveFromReward(state)
+            ReduceResult(
+                state = result.state,
+                events = result.events,
+                effects = listOf(GameEffect.CancelSoftLockTimer),
+            )
+        }
+
         GameAction.TogglePause -> {
             val next = when (state.status) {
                 GameStatus.Running -> gameLogic.pause(state)
@@ -79,6 +88,7 @@ sealed interface GameIntent {
     data class LaunchColumn(val column: Int) : GameIntent
     data object CommitSoftLock : GameIntent
     data object HoldPiece : GameIntent
+    data object ReviveFromReward : GameIntent
     data object TogglePause : GameIntent
     data class Restart(val config: GameConfig) : GameIntent
 }
@@ -87,6 +97,7 @@ internal sealed interface GameAction {
     data class LaunchColumn(val column: Int) : GameAction
     data object CommitSoftLock : GameAction
     data object HoldPiece : GameAction
+    data object ReviveFromReward : GameAction
     data object TogglePause : GameAction
     data class Restart(val config: GameConfig) : GameAction
     data object Tick : GameAction
@@ -111,6 +122,7 @@ internal fun GameIntent.toAction(): GameAction = when (this) {
     is GameIntent.LaunchColumn -> GameAction.LaunchColumn(column)
     GameIntent.CommitSoftLock -> GameAction.CommitSoftLock
     GameIntent.HoldPiece -> GameAction.HoldPiece
+    GameIntent.ReviveFromReward -> GameAction.ReviveFromReward
     GameIntent.TogglePause -> GameAction.TogglePause
     is GameIntent.Restart -> GameAction.Restart(config)
 }

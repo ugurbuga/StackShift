@@ -80,6 +80,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ugurbuga.stackshift.StackShiftTheme
+import com.ugurbuga.stackshift.ads.GameAdController
+import com.ugurbuga.stackshift.ads.NoOpGameAdController
 import com.ugurbuga.stackshift.game.model.BlockVisualStyle
 import com.ugurbuga.stackshift.game.model.BoardMatrix
 import com.ugurbuga.stackshift.game.model.CellTone
@@ -108,6 +110,11 @@ import com.ugurbuga.stackshift.presentation.game.GameViewModel
 import com.ugurbuga.stackshift.presentation.game.InteractionFeedback
 import com.ugurbuga.stackshift.settings.AppSettings
 import com.ugurbuga.stackshift.settings.HighScoreStorage
+import com.ugurbuga.stackshift.telemetry.AppTelemetry
+import com.ugurbuga.stackshift.telemetry.LogScreen
+import com.ugurbuga.stackshift.telemetry.NoOpAppTelemetry
+import com.ugurbuga.stackshift.telemetry.TelemetryActionNames
+import com.ugurbuga.stackshift.telemetry.TelemetryScreenNames
 import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
 import com.ugurbuga.stackshift.ui.theme.appBackgroundBrush
 import com.ugurbuga.stackshift.ui.theme.isStackShiftDarkTheme
@@ -129,6 +136,7 @@ import stackshift.composeapp.generated.resources.danger
 import stackshift.composeapp.generated.resources.danger_none
 import stackshift.composeapp.generated.resources.feedback_chain
 import stackshift.composeapp.generated.resources.feedback_clear
+import stackshift.composeapp.generated.resources.feedback_extra_life
 import stackshift.composeapp.generated.resources.feedback_hold_armed
 import stackshift.composeapp.generated.resources.feedback_micro_adjust
 import stackshift.composeapp.generated.resources.feedback_overflow
@@ -140,6 +148,7 @@ import stackshift.composeapp.generated.resources.feedback_special
 import stackshift.composeapp.generated.resources.feedback_special_chain
 import stackshift.composeapp.generated.resources.feedback_swap
 import stackshift.composeapp.generated.resources.game_message_chain_lines
+import stackshift.composeapp.generated.resources.game_message_extra_life_used
 import stackshift.composeapp.generated.resources.game_message_good_shot
 import stackshift.composeapp.generated.resources.game_message_hold_updated
 import stackshift.composeapp.generated.resources.game_message_lines_cleared
@@ -156,6 +165,8 @@ import stackshift.composeapp.generated.resources.game_message_special_lines
 import stackshift.composeapp.generated.resources.game_message_special_triggered
 import stackshift.composeapp.generated.resources.game_message_tempo_critical
 import stackshift.composeapp.generated.resources.game_message_tempo_up
+import stackshift.composeapp.generated.resources.game_over_extra_life
+import stackshift.composeapp.generated.resources.game_over_extra_life_loading
 import stackshift.composeapp.generated.resources.game_over_new_high_score
 import stackshift.composeapp.generated.resources.game_over_title
 import stackshift.composeapp.generated.resources.high_score
@@ -353,7 +364,10 @@ private fun GameOverDialog(
     highestScore: Int,
     showNewHighScoreMessage: Boolean,
     revealProgress: Float,
+    canUseExtraLife: Boolean,
+    isExtraLifeLoading: Boolean,
     onPlayAgain: () -> Unit,
+    onUseExtraLife: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     val density = LocalDensity.current
@@ -371,7 +385,10 @@ private fun GameOverDialog(
             highestScore = highestScore,
             showNewHighScoreMessage = showNewHighScoreMessage,
             revealProgress = revealProgress,
+            canUseExtraLife = canUseExtraLife,
+            isExtraLifeLoading = isExtraLifeLoading,
             onPlayAgain = onPlayAgain,
+            onUseExtraLife = onUseExtraLife,
             onOpenSettings = onOpenSettings,
             modifier = Modifier
                 .widthIn(max = GameOverDialogWidth)
@@ -391,7 +408,10 @@ private fun GameOverDialogContent(
     highestScore: Int,
     showNewHighScoreMessage: Boolean,
     revealProgress: Float,
+    canUseExtraLife: Boolean,
+    isExtraLifeLoading: Boolean,
     onPlayAgain: () -> Unit,
+    onUseExtraLife: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -519,6 +539,25 @@ private fun GameOverDialogContent(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(GameOverDialogButtonSpacing),
             ) {
+                if (canUseExtraLife || isExtraLifeLoading) {
+                    Button(
+                        onClick = onUseExtraLife,
+                        enabled = !isExtraLifeLoading,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = uiColors.success,
+                            contentColor = Color.White,
+                        ),
+                    ) {
+                        Text(
+                            if (isExtraLifeLoading) {
+                                resolveGameText(gameText(GameTextKey.GameOverExtraLifeLoading))
+                            } else {
+                                resolveGameText(gameText(GameTextKey.GameOverExtraLife))
+                            },
+                        )
+                    }
+                }
                 TextButton(
                     onClick = onOpenSettings,
                     modifier = Modifier.weight(1f),
@@ -581,6 +620,8 @@ private fun GameOverStatChip(
 fun StackShiftGameApp(
     modifier: Modifier = Modifier,
     soundPlayer: SoundEffectPlayer = NoOpSoundEffectPlayer,
+    telemetry: AppTelemetry = NoOpAppTelemetry,
+    adController: GameAdController = NoOpGameAdController,
     viewModel: GameViewModel = remember { GameViewModel() },
     onOpenSettings: () -> Unit = {},
 ) {
@@ -592,6 +633,10 @@ fun StackShiftGameApp(
     var newHighScoreReached by remember { mutableStateOf(false) }
     LaunchedEffect(uiState.gameState.score) {
         if (uiState.gameState.score > highestScore) {
+            telemetry.logHighScoreReached(
+                newScore = uiState.gameState.score,
+                previousHighScore = highestScore,
+            )
             highestScore = uiState.gameState.score
             HighScoreStorage.save(highestScore)
             newHighScoreReached = true
@@ -612,20 +657,40 @@ fun StackShiftGameApp(
     if (showBlockProperties) {
         BlockPropertiesScreen(
             modifier = modifier,
+            telemetry = telemetry,
             onBack = { showBlockProperties = false },
         )
     } else {
+        LogScreen(telemetry, TelemetryScreenNames.Game)
         GameScreen(
             modifier = modifier,
             gameState = uiState.gameState,
             onRequestPreview = viewModel::previewPlacement,
             onResolvePreviewImpact = viewModel::previewImpactPoints,
             onPlacePiece = viewModel::placePiece,
-            onHoldPiece = viewModel::holdPiece,
-            onPauseToggle = viewModel::togglePause,
-            onRestart = { viewModel.restart(uiState.gameState.config) },
+            onHoldPiece = {
+                telemetry.logUserAction(TelemetryActionNames.HoldPiece)
+                viewModel.holdPiece()
+            },
+            onPauseToggle = {
+                telemetry.logUserAction(TelemetryActionNames.TogglePause)
+                viewModel.togglePause()
+            },
+            onRestart = {
+                telemetry.logUserAction(TelemetryActionNames.RestartGame)
+                viewModel.restart(uiState.gameState.config)
+            },
             onOpenSettings = onOpenSettings,
-            onBlockProperties = { showBlockProperties = true },
+            onBlockProperties = {
+                telemetry.logUserAction(TelemetryActionNames.OpenBlockProperties)
+                showBlockProperties = true
+            },
+            onRewardedRevive = {
+                telemetry.logUserAction("rewarded_revive")
+                viewModel.reviveFromReward()
+            },
+            telemetry = telemetry,
+            adController = adController,
             soundPlayer = soundPlayer,
             haptics = haptics,
             highestScore = highestScore,
@@ -643,8 +708,11 @@ fun GameScreen(
     onHoldPiece: () -> InteractionFeedback,
     onPauseToggle: () -> InteractionFeedback,
     onRestart: () -> InteractionFeedback,
+    onRewardedRevive: () -> InteractionFeedback,
     onOpenSettings: () -> Unit,
     onBlockProperties: () -> Unit,
+    telemetry: AppTelemetry = NoOpAppTelemetry,
+    adController: GameAdController = NoOpGameAdController,
     soundPlayer: SoundEffectPlayer,
     haptics: GameHaptics,
     highestScore: Int,
@@ -661,6 +729,7 @@ fun GameScreen(
     val updatedHoldPiece by rememberUpdatedState(onHoldPiece)
     val updatedPauseToggle by rememberUpdatedState(onPauseToggle)
     val updatedRestart by rememberUpdatedState(onRestart)
+    val updatedRewardedRevive by rememberUpdatedState(onRewardedRevive)
     var showRestartDialog by remember { mutableStateOf(false) }
     val screenShakeX = remember { Animatable(0f) }
     val screenShakeY = remember { Animatable(0f) }
@@ -673,6 +742,7 @@ fun GameScreen(
     var highScoreHighlightActive by remember { mutableStateOf(false) }
     var celebratedHighScore by remember { mutableIntStateOf(highestScore) }
     var showGameOverDialog by remember { mutableStateOf(false) }
+    var rewardedReviveLoading by remember { mutableStateOf(false) }
 
     var overlayHostRectInRoot by remember { mutableStateOf(Rect.Zero) }
     var boardRectInRoot by remember { mutableStateOf(Rect.Zero) }
@@ -902,6 +972,7 @@ fun GameScreen(
             gameOverBoardClearProgress.snapTo(0f)
             gameOverDialogRevealProgress.snapTo(0f)
             showGameOverDialog = false
+            rewardedReviveLoading = false
             return@LaunchedEffect
         }
 
@@ -1177,8 +1248,23 @@ fun GameScreen(
                     highestScore = highestScore,
                     showNewHighScoreMessage = showNewHighScoreMessage,
                     revealProgress = gameOverDialogRevealProgress.value,
+                    canUseExtraLife = !gameState.rewardedReviveUsed,
+                    isExtraLifeLoading = rewardedReviveLoading,
                     onPlayAgain = {
-                        dispatchFeedback(updatedRestart(), soundPlayer, haptics)
+                        telemetry.logUserAction(TelemetryActionNames.PlayAgain)
+                        adController.showRestartInterstitial {
+                            dispatchFeedback(updatedRestart(), soundPlayer, haptics)
+                        }
+                    },
+                    onUseExtraLife = {
+                        if (rewardedReviveLoading || gameState.rewardedReviveUsed) return@GameOverDialog
+                        rewardedReviveLoading = true
+                        adController.showRewardedRevive { rewarded ->
+                            rewardedReviveLoading = false
+                            if (rewarded) {
+                                dispatchFeedback(updatedRewardedRevive(), soundPlayer, haptics)
+                            }
+                        }
                     },
                     onOpenSettings = onOpenSettings,
                 )
@@ -1187,6 +1273,7 @@ fun GameScreen(
                     gameState = gameState,
                     showNewHighScoreMessage = showNewHighScoreMessage,
                     onPrimaryAction = {
+                        telemetry.logUserAction(TelemetryActionNames.TogglePause)
                         dispatchFeedback(updatedPauseToggle(), soundPlayer, haptics)
                     },
                 )
@@ -1205,7 +1292,10 @@ fun GameScreen(
                         TextButton(
                             onClick = {
                                 showRestartDialog = false
-                                dispatchFeedback(updatedRestart(), soundPlayer, haptics)
+                                telemetry.logUserAction(TelemetryActionNames.RestartGame)
+                                adController.showRestartInterstitial {
+                                    dispatchFeedback(updatedRestart(), soundPlayer, haptics)
+                                }
                             },
                         ) {
                             Text(resolveGameText(gameText(GameTextKey.RestartConfirm)))
@@ -2398,6 +2488,8 @@ private fun GameTextKey.stringResourceId(): StringResource = when (this) {
     GameTextKey.PauseTitle -> Res.string.pause_title
     GameTextKey.GameOverTitle -> Res.string.game_over_title
     GameTextKey.Continue -> Res.string.continue_label
+    GameTextKey.GameOverExtraLife -> Res.string.game_over_extra_life
+    GameTextKey.GameOverExtraLifeLoading -> Res.string.game_over_extra_life_loading
     GameTextKey.PlayAgain -> Res.string.play_again
     GameTextKey.GameMessageSelectColumn -> Res.string.game_message_select_column
     GameTextKey.GameMessageNoOpening -> Res.string.game_message_no_opening
@@ -2416,6 +2508,7 @@ private fun GameTextKey.stringResourceId(): StringResource = when (this) {
     GameTextKey.GameMessageTempoUp -> Res.string.game_message_tempo_up
     GameTextKey.GameMessagePaused -> Res.string.game_message_paused
     GameTextKey.GameMessageResumed -> Res.string.game_message_resumed
+    GameTextKey.GameMessageExtraLifeUsed -> Res.string.game_message_extra_life_used
     GameTextKey.FeedbackOverflow -> Res.string.feedback_overflow
     GameTextKey.FeedbackPerfectLane -> Res.string.feedback_perfect_lane
     GameTextKey.FeedbackMicroAdjust -> Res.string.feedback_micro_adjust
@@ -2428,6 +2521,7 @@ private fun GameTextKey.stringResourceId(): StringResource = when (this) {
     GameTextKey.FeedbackChain -> Res.string.feedback_chain
     GameTextKey.FeedbackClear -> Res.string.feedback_clear
     GameTextKey.FeedbackScoreOnly -> Res.string.feedback_score_only
+    GameTextKey.FeedbackExtraLife -> Res.string.feedback_extra_life
     GameTextKey.SpecialColumnClearer -> Res.string.special_column_clearer
     GameTextKey.SpecialRowClearer -> Res.string.special_row_clearer
     GameTextKey.SpecialGhost -> Res.string.special_ghost
@@ -2535,6 +2629,7 @@ private fun GameScreenRunningPreview() {
             onHoldPiece = { InteractionFeedback.None },
             onPauseToggle = { InteractionFeedback.None },
             onRestart = { InteractionFeedback.None },
+            onRewardedRevive = { InteractionFeedback.None },
             onOpenSettings = {},
             onBlockProperties = {},
             soundPlayer = NoOpSoundEffectPlayer,
@@ -2557,7 +2652,10 @@ private fun GameOverDialogContentPreview() {
                 highestScore = 142000,
                 showNewHighScoreMessage = false,
                 revealProgress = 1f,
+                canUseExtraLife = true,
+                isExtraLifeLoading = false,
                 onPlayAgain = {},
+                onUseExtraLife = {},
                 onOpenSettings = {},
                 modifier = Modifier.widthIn(max = GameOverDialogWidth),
             )
@@ -2578,7 +2676,10 @@ private fun GameOverDialogContentNewRecordPreview() {
                 highestScore = 1520,
                 showNewHighScoreMessage = true,
                 revealProgress = 1f,
+                canUseExtraLife = true,
+                isExtraLifeLoading = false,
                 onPlayAgain = {},
+                onUseExtraLife = {},
                 onOpenSettings = {},
                 modifier = Modifier.widthIn(max = GameOverDialogWidth),
             )
@@ -2598,6 +2699,7 @@ private fun GameScreenPausedPreview() {
             onHoldPiece = { InteractionFeedback.None },
             onPauseToggle = { InteractionFeedback.None },
             onRestart = { InteractionFeedback.None },
+            onRewardedRevive = { InteractionFeedback.None },
             onOpenSettings = {},
             onBlockProperties = {},
             soundPlayer = NoOpSoundEffectPlayer,
@@ -2619,6 +2721,7 @@ private fun GameScreenGameOverPreview() {
             onHoldPiece = { InteractionFeedback.None },
             onPauseToggle = { InteractionFeedback.None },
             onRestart = { InteractionFeedback.None },
+            onRewardedRevive = { InteractionFeedback.None },
             onOpenSettings = {},
             onBlockProperties = {},
             soundPlayer = NoOpSoundEffectPlayer,

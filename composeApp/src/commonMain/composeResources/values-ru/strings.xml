@@ -63,6 +63,8 @@
     <string name="pause_title">Пауза</string>
     <string name="game_over_title">Игра окончена</string>
     <string name="continue_label">Продолжить</string>
+    <string name="game_over_extra_life">Смотреть рекламу + продолжить</string>
+    <string name="game_over_extra_life_loading">Загрузка рекламы…</string>
     <string name="play_again">Играть снова</string>
     <string name="game_over_new_high_score">Новый рекорд!</string>
     <string name="game_message_select_column">Перетащите фигуру по горизонтали, выберите колонку и запустите вверх.</string>
@@ -82,6 +84,7 @@
     <string name="game_message_tempo_up">Темп вырос. Появляются более сложные фигуры.</string>
     <string name="game_message_paused">Игра поставлена на паузу.</string>
     <string name="game_message_resumed">Продолжайте. Выберите колонку и запускайте.</string>
+    <string name="game_message_extra_life_used">Доп. жизнь активирована! Очищено %1$s рядов.</string>
     <string name="feedback_overflow">Переполнение</string>
     <string name="feedback_perfect_lane">Идеальная колонка x%1$s</string>
     <string name="feedback_micro_adjust">Микрокоррекция</string>
@@ -94,6 +97,7 @@
     <string name="feedback_chain">Цепочка x%1$s +%2$s</string>
     <string name="feedback_clear">Очистка +%1$s</string>
     <string name="feedback_score_only">+%1$s</string>
+    <string name="feedback_extra_life">Доп. жизнь! %1$s рядов</string>
     <string name="special_column_clearer">КОЛОНКА</string>
     <string name="special_row_clearer">СТРОКА</string>
     <string name="special_ghost">ПРИЗРАК</string>

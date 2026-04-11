@@ -33,6 +33,10 @@ import androidx.compose.ui.unit.dp
 import com.ugurbuga.stackshift.game.model.CellTone
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
 import com.ugurbuga.stackshift.localization.LocalAppSettings
+import com.ugurbuga.stackshift.telemetry.AppTelemetry
+import com.ugurbuga.stackshift.telemetry.LogScreen
+import com.ugurbuga.stackshift.telemetry.NoOpAppTelemetry
+import com.ugurbuga.stackshift.telemetry.TelemetryScreenNames
 import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
 import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
@@ -53,8 +57,10 @@ private val BlockSampleSize = 78.dp
 @Composable
 fun BlockPropertiesScreen(
     modifier: Modifier = Modifier,
+    telemetry: AppTelemetry = NoOpAppTelemetry,
     onBack: () -> Unit,
 ) {
+    LogScreen(telemetry, TelemetryScreenNames.BlockProperties)
     var selected by remember { mutableStateOf(SpecialBlockType.None) }
     val uiColors = StackShiftThemeTokens.uiColors
 

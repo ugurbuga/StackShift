@@ -54,6 +54,10 @@ class GameFeedbackMapper {
             sounds += GameSound.GameOver
             haptics += GameHaptic.Warning
         }
+        if (GameEvent.Revived in events) {
+            sounds += GameSound.Combo
+            haptics += GameHaptic.Success
+        }
         if (GameEvent.Restarted in events) {
             sounds += GameSound.Restart
             haptics += GameHaptic.Success

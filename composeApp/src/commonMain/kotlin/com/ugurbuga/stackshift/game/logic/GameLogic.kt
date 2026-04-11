@@ -364,6 +364,58 @@ class GameLogic(
         return GameMoveResult(state = nextState, events = setOf(GameEvent.HoldUsed))
     }
 
+    fun reviveFromReward(state: GameState): GameMoveResult {
+        if (state.status != GameStatus.GameOver || state.rewardedReviveUsed) {
+            return invalidMove(state)
+        }
+
+        val revivedRows = selectRewardRows(
+            board = state.board,
+            totalRows = state.config.rows,
+            maxRowsToClear = RewardedReviveRowCount,
+        )
+        val revivedBoard = state.board.clearRows(revivedRows)
+        val queueAdvance = ensurePlayableQueueAfterRevive(
+            board = revivedBoard,
+            activePiece = state.activePiece,
+            nextQueue = state.nextQueue,
+            level = state.level,
+            launchBar = state.launchBar,
+            config = state.config,
+        )
+        val nextPressure = computeColumnPressure(revivedBoard, state.config)
+        val nextToken = state.feedbackToken + 1L
+
+        return GameMoveResult(
+            state = state.copy(
+                board = revivedBoard,
+                activePiece = queueAdvance.activePiece,
+                nextQueue = queueAdvance.nextQueue,
+                lastMoveScore = 0,
+                columnPressure = nextPressure,
+                softLock = null,
+                status = GameStatus.Running,
+                recentlyClearedRows = revivedRows,
+                lastResolvedLines = revivedRows.size,
+                lastChainDepth = if (revivedRows.isEmpty()) 0 else 1,
+                specialChainCount = 0,
+                clearAnimationToken = state.clearAnimationToken + 1L,
+                screenShakeToken = state.screenShakeToken + 1L,
+                impactFlashToken = state.impactFlashToken + 1L,
+                comboPopupToken = state.comboPopupToken + 1L,
+                floatingFeedback = FloatingFeedback(
+                    text = gameText(GameTextKey.FeedbackExtraLife, revivedRows.size),
+                    emphasis = FeedbackEmphasis.Bonus,
+                    token = nextToken,
+                ),
+                feedbackToken = nextToken,
+                rewardedReviveUsed = true,
+                message = gameText(GameTextKey.GameMessageExtraLifeUsed, revivedRows.size),
+            ),
+            events = setOf(GameEvent.Revived),
+        )
+    }
+
     fun tick(state: GameState): GameState {
         if (state.status != GameStatus.Running) return state
 
@@ -730,6 +782,110 @@ class GameLogic(
         }
     }
 
+    private fun ensurePlayableQueueAfterRevive(
+        board: BoardMatrix,
+        activePiece: Piece?,
+        nextQueue: List<Piece>,
+        level: Int,
+        launchBar: LaunchBarState,
+        config: GameConfig,
+    ): QueueAdvance {
+        activePiece
+            ?.takeIf { hasAnyValidPlacement(board = board, piece = it, config = config) }
+            ?.let { return QueueAdvance(activePiece = it, nextQueue = nextQueue) }
+
+        val nextPlayableIndex = nextQueue.indexOfFirst { piece ->
+            hasAnyValidPlacement(board = board, piece = piece, config = config)
+        }
+        if (nextPlayableIndex >= 0) {
+            val nextActivePiece = nextQueue[nextPlayableIndex]
+            val reorderedQueue = nextQueue.toMutableList().apply { removeAt(nextPlayableIndex) }
+            return QueueAdvance(
+                activePiece = nextActivePiece,
+                nextQueue = refillQueue(
+                    queue = reorderedQueue,
+                    level = level,
+                    launchBar = launchBar,
+                ),
+            )
+        }
+
+        repeat(PlayablePieceGenerationAttempts) {
+            val candidate = createPiece(level = level, launchBar = launchBar)
+            if (hasAnyValidPlacement(board = board, piece = candidate, config = config)) {
+                return QueueAdvance(
+                    activePiece = candidate,
+                    nextQueue = refillQueue(
+                        queue = nextQueue,
+                        level = level,
+                        launchBar = launchBar,
+                    ),
+                )
+            }
+        }
+
+        return QueueAdvance(
+            activePiece = createFallbackPlayablePiece(board = board, config = config),
+            nextQueue = refillQueue(
+                queue = nextQueue,
+                level = level,
+                launchBar = launchBar,
+            ),
+        )
+    }
+
+    private fun createFallbackPlayablePiece(
+        board: BoardMatrix,
+        config: GameConfig,
+    ): Piece {
+        val candidateKinds = listOf(PieceKind.Domino, PieceKind.TriL, PieceKind.Square, PieceKind.T, PieceKind.I)
+        candidateKinds.forEach { kind ->
+            repeat(4) { rotation ->
+                val rotatedCells = rotateAndNormalize(kind.template, rotation)
+                val candidate = Piece(
+                    id = nextPieceId++,
+                    kind = kind,
+                    tone = kind.tone,
+                    cells = rotatedCells,
+                    width = rotatedCells.maxOf { it.column } + 1,
+                    height = rotatedCells.maxOf { it.row } + 1,
+                    special = SpecialBlockType.None,
+                )
+                if (hasAnyValidPlacement(board = board, piece = candidate, config = config)) {
+                    return candidate
+                }
+            }
+        }
+
+        return Piece(
+            id = nextPieceId++,
+            kind = PieceKind.Domino,
+            tone = PieceKind.Domino.tone,
+            cells = listOf(GridPoint(0, 0), GridPoint(1, 0)),
+            width = 2,
+            height = 1,
+            special = SpecialBlockType.None,
+        )
+    }
+
+    private fun selectRewardRows(
+        board: BoardMatrix,
+        totalRows: Int,
+        maxRowsToClear: Int,
+    ): Set<Int> {
+        if (totalRows <= 0 || maxRowsToClear <= 0) return emptySet()
+
+        val allRows = (0 until totalRows).toList()
+        val occupiedRows = allRows.filter { row ->
+            (0 until board.columns).any { column -> board.isOccupied(column, row) }
+        }.shuffled(random)
+        val emptyRows = allRows.filterNot(occupiedRows::contains).shuffled(random)
+
+        return (occupiedRows + emptyRows)
+            .take(maxRowsToClear.coerceAtMost(totalRows))
+            .toSet()
+    }
+
     private fun promoteQueue(
         queue: List<Piece>,
         level: Int,
@@ -960,6 +1116,8 @@ class GameLogic(
     private companion object {
         const val QueueSize = 3
         const val SoftLockMillis = 260L
+        const val RewardedReviveRowCount = 6
+        const val PlayablePieceGenerationAttempts = 16
     }
 }
 
@@ -977,6 +1135,7 @@ enum class GameEvent {
     LaunchBoostCharged,
     PressureCritical,
     GameOver,
+    Revived,
     Paused,
     Resumed,
     Restarted,

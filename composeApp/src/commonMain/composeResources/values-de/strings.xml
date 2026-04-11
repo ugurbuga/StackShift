@@ -63,6 +63,8 @@
     <string name="pause_title">Pausiert</string>
     <string name="game_over_title">Spiel vorbei</string>
     <string name="continue_label">Weiter</string>
+    <string name="game_over_extra_life">Werbung ansehen + weiter</string>
+    <string name="game_over_extra_life_loading">Werbung lädt…</string>
     <string name="play_again">Nochmal spielen</string>
     <string name="game_over_new_high_score">Neuer Bestwert!</string>
     <string name="game_message_select_column">Ziehe das Teil horizontal, wähle die Spalte und starte nach oben.</string>
@@ -82,6 +84,7 @@
     <string name="game_message_tempo_up">Das Tempo steigt. Schwieriger Teile kommen.</string>
     <string name="game_message_paused">Das Spiel ist pausiert.</string>
     <string name="game_message_resumed">Weiter. Wähle die Spalte und starte.</string>
+    <string name="game_message_extra_life_used">Extra-Leben aktiviert! %1$s Reihen entfernt.</string>
     <string name="feedback_overflow">Überlauf</string>
     <string name="feedback_perfect_lane">Perfekte Spur x%1$s</string>
     <string name="feedback_micro_adjust">Mikroanpassung</string>
@@ -94,6 +97,7 @@
     <string name="feedback_chain">Kette x%1$s +%2$s</string>
     <string name="feedback_clear">Löschen +%1$s</string>
     <string name="feedback_score_only">+%1$s</string>
+    <string name="feedback_extra_life">Extra-Leben! %1$s Reihen</string>
     <string name="special_column_clearer">SPALTE</string>
     <string name="special_row_clearer">REIHE</string>
     <string name="special_ghost">GEIST</string>

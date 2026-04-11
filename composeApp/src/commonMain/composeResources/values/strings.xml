@@ -63,6 +63,8 @@
     <string name="pause_title">Duraklatıldı</string>
     <string name="game_over_title">Oyun Bitti</string>
     <string name="continue_label">Devam et</string>
+    <string name="game_over_extra_life">Reklam izle + devam et</string>
+    <string name="game_over_extra_life_loading">Reklam hazırlanıyor…</string>
     <string name="play_again">Tekrar oyna</string>
     <string name="game_over_new_high_score">Yeni en yüksek puana ulaştın!</string>
     <string name="game_message_select_column">Parçayı yatay sürükle, sütunu seç ve yukarı fırlat.</string>
@@ -82,6 +84,7 @@
     <string name="game_message_tempo_up">Tempo arttı. Daha keskin parçalar geliyor.</string>
     <string name="game_message_paused">Oyun duraklatıldı.</string>
     <string name="game_message_resumed">Devam. Kolonu seç ve fırlat.</string>
+    <string name="game_message_extra_life_used">Ekstra can aktif! %1$s satır temizlendi.</string>
     <string name="feedback_overflow">Taşma</string>
     <string name="feedback_perfect_lane">Perfect lane x%1$s</string>
     <string name="feedback_micro_adjust">Mikro ayar</string>
@@ -94,6 +97,7 @@
     <string name="feedback_chain">Chain x%1$s +%2$s</string>
     <string name="feedback_clear">Temizleme +%1$s</string>
     <string name="feedback_score_only">+%1$s</string>
+    <string name="feedback_extra_life">Ekstra can! %1$s satır</string>
     <string name="special_column_clearer">SÜTUN</string>
     <string name="special_row_clearer">SATIR</string>
     <string name="special_ghost">HAYALET</string>

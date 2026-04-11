@@ -58,6 +58,10 @@ import com.ugurbuga.stackshift.game.model.BlockVisualStyle
 import com.ugurbuga.stackshift.game.model.CellTone
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
 import com.ugurbuga.stackshift.settings.AppSettings
+import com.ugurbuga.stackshift.telemetry.AppTelemetry
+import com.ugurbuga.stackshift.telemetry.LogScreen
+import com.ugurbuga.stackshift.telemetry.NoOpAppTelemetry
+import com.ugurbuga.stackshift.telemetry.TelemetryScreenNames
 import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
 import com.ugurbuga.stackshift.ui.theme.appBackgroundBrush
 import com.ugurbuga.stackshift.ui.theme.isStackShiftDarkTheme
@@ -98,11 +102,13 @@ private val PremiumPreviewCardShape = RoundedCornerShape(12.dp)
 
 @Composable
 fun AppSettingsScreen(
+    telemetry: AppTelemetry = NoOpAppTelemetry,
     settings: AppSettings,
     onSettingsChange: (AppSettings) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    LogScreen(telemetry, TelemetryScreenNames.Settings)
     val scrollState = rememberScrollState()
     val uiColors = StackShiftThemeTokens.uiColors
     val darkTheme = isStackShiftDarkTheme(settings)

@@ -13,7 +13,11 @@ struct ComposeView: UIViewControllerRepresentable {
 struct ContentView: View {
     var body: some View {
         ComposeView()
-            .ignoresSafeArea()
+            .ignoresSafeArea(.container, edges: [.top, .leading, .trailing])
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                StackShiftBannerHost()
+                    .frame(height: 50)
+            }
     }
 }
 

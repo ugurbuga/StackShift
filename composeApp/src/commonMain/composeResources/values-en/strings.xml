@@ -63,6 +63,8 @@
     <string name="pause_title">Paused</string>
     <string name="game_over_title">Game Over</string>
     <string name="continue_label">Continue</string>
+    <string name="game_over_extra_life">Watch ad + continue</string>
+    <string name="game_over_extra_life_loading">Loading ad…</string>
     <string name="play_again">Play again</string>
     <string name="game_over_new_high_score">New high score!</string>
     <string name="game_message_select_column">Drag the piece horizontally, choose the column, and launch upward.</string>
@@ -82,6 +84,7 @@
     <string name="game_message_tempo_up">Tempo is up. Sharper pieces are coming.</string>
     <string name="game_message_paused">The game is paused.</string>
     <string name="game_message_resumed">Resume. Choose the column and launch.</string>
+    <string name="game_message_extra_life_used">Extra life activated! %1$s rows cleared.</string>
     <string name="feedback_overflow">Overflow</string>
     <string name="feedback_perfect_lane">Perfect lane x%1$s</string>
     <string name="feedback_micro_adjust">Micro adjust</string>
@@ -94,6 +97,7 @@
     <string name="feedback_chain">Chain x%1$s +%2$s</string>
     <string name="feedback_clear">Clear +%1$s</string>
     <string name="feedback_score_only">+%1$s</string>
+    <string name="feedback_extra_life">Extra life! %1$s rows</string>
     <string name="special_column_clearer">COLUMN</string>
     <string name="special_row_clearer">ROW</string>
     <string name="special_ghost">GHOST</string>

@@ -33,6 +33,8 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
+    alias(libs.plugins.googleServices)
+    alias(libs.plugins.firebaseCrashlytics)
 }
 
 kotlin {
@@ -62,6 +64,9 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.firebase.analytics)
+            implementation(libs.firebase.crashlytics)
+            implementation("com.google.android.gms:play-services-ads:24.7.0")
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -74,6 +79,11 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.gitlive.firebase.app)
+            implementation(libs.gitlive.firebase.analytics)
+        }
+        iosMain.dependencies {
+            implementation(libs.gitlive.firebase.crashlytics)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -81,6 +91,7 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+            implementation(libs.gitlive.firebase.java.sdk)
         }
     }
 }
@@ -89,12 +100,24 @@ android {
     namespace = "com.ugurbuga.stackshift"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
+    flavorDimensions += "environment"
+
     defaultConfig {
         applicationId = "com.ugurbuga.stackshift"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
+    }
+    productFlavors {
+        create("dev") {
+            dimension = "environment"
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+        }
+        create("prod") {
+            dimension = "environment"
+        }
     }
     packaging {
         resources {
