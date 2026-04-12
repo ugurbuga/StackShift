@@ -368,7 +368,6 @@ private fun GameOverDialog(
     isExtraLifeLoading: Boolean,
     onPlayAgain: () -> Unit,
     onUseExtraLife: () -> Unit,
-    onOpenSettings: () -> Unit,
 ) {
     val density = LocalDensity.current
     val revealOffsetPx = with(density) { GameOverDialogRevealOffsetDp.toPx() }
@@ -389,7 +388,6 @@ private fun GameOverDialog(
             isExtraLifeLoading = isExtraLifeLoading,
             onPlayAgain = onPlayAgain,
             onUseExtraLife = onUseExtraLife,
-            onOpenSettings = onOpenSettings,
             modifier = Modifier
                 .widthIn(max = GameOverDialogWidth)
                 .graphicsLayer(
@@ -412,7 +410,6 @@ private fun GameOverDialogContent(
     isExtraLifeLoading: Boolean,
     onPlayAgain: () -> Unit,
     onUseExtraLife: () -> Unit,
-    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
@@ -554,15 +551,9 @@ private fun GameOverDialogContent(
                                 resolveGameText(gameText(GameTextKey.GameOverExtraLifeLoading))
                             } else {
                                 resolveGameText(gameText(GameTextKey.GameOverExtraLife))
-                            },
+                            }
                         )
                     }
-                }
-                TextButton(
-                    onClick = onOpenSettings,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(stringResource(Res.string.settings_title))
                 }
                 Button(
                     onClick = onPlayAgain,
@@ -1266,7 +1257,6 @@ fun GameScreen(
                             }
                         }
                     },
-                    onOpenSettings = onOpenSettings,
                 )
             } else if (gameState.status == GameStatus.Paused) {
                 PauseOverlay(
@@ -2656,7 +2646,6 @@ private fun GameOverDialogContentPreview() {
                 isExtraLifeLoading = false,
                 onPlayAgain = {},
                 onUseExtraLife = {},
-                onOpenSettings = {},
                 modifier = Modifier.widthIn(max = GameOverDialogWidth),
             )
         }
@@ -2680,7 +2669,6 @@ private fun GameOverDialogContentNewRecordPreview() {
                 isExtraLifeLoading = false,
                 onPlayAgain = {},
                 onUseExtraLife = {},
-                onOpenSettings = {},
                 modifier = Modifier.widthIn(max = GameOverDialogWidth),
             )
         }

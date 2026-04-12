@@ -1,4 +1,5 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.io.File
 
@@ -43,7 +44,13 @@ kotlin {
             jvmTarget.set(JvmTarget.JVM_11)
         }
     }
-    
+
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
+        browser()
+        binaries.executable()
+    }
+
     listOf(
         iosArm64(),
         iosSimulatorArm64()
@@ -79,10 +86,10 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.kotlinx.coroutines.core)
-            implementation(libs.gitlive.firebase.app)
-            implementation(libs.gitlive.firebase.analytics)
         }
         iosMain.dependencies {
+            implementation(libs.gitlive.firebase.app)
+            implementation(libs.gitlive.firebase.analytics)
             implementation(libs.gitlive.firebase.crashlytics)
         }
         commonTest.dependencies {
@@ -91,6 +98,8 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+            implementation(libs.gitlive.firebase.app)
+            implementation(libs.gitlive.firebase.analytics)
             implementation(libs.gitlive.firebase.java.sdk)
         }
     }
@@ -100,24 +109,12 @@ android {
     namespace = "com.ugurbuga.stackshift"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
-    flavorDimensions += "environment"
-
     defaultConfig {
         applicationId = "com.ugurbuga.stackshift"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
-    }
-    productFlavors {
-        create("dev") {
-            dimension = "environment"
-            applicationIdSuffix = ".dev"
-            versionNameSuffix = "-dev"
-        }
-        create("prod") {
-            dimension = "environment"
-        }
     }
     packaging {
         resources {
@@ -178,3 +175,16 @@ tasks.register("packageDesktopApp") {
         }
     }
 }
+
+tasks.register("assembleDevDebug") {
+    group = "build"
+    description = "Compatibility alias for stale IDE configurations after removing Android product flavors."
+    dependsOn("assembleDebug")
+}
+
+tasks.register("runWeb") {
+    group = "application"
+    description = "Runs the wasm web app in a browser development server."
+    dependsOn("wasmJsBrowserDevelopmentRun")
+}
+

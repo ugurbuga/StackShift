@@ -111,15 +111,5 @@ private fun loadDesktopFirebaseConfig(): DesktopFirebaseConfig? {
     }
 }
 
-private fun desktopDeviceInfo(): Map<String, String> = mapOf(
-    TelemetryParamKeys.PackageName to "com.ugurbuga.stackshift.desktop",
-    TelemetryParamKeys.Manufacturer to System.getProperty("os.name").orEmpty(),
-    TelemetryParamKeys.Model to System.getProperty("os.arch").orEmpty(),
-    TelemetryParamKeys.Device to System.getProperty("os.name").orEmpty(),
-    TelemetryParamKeys.Product to System.getProperty("java.vm.name").orEmpty(),
-    TelemetryParamKeys.Release to System.getProperty("os.version").orEmpty(),
-    TelemetryParamKeys.SdkInt to System.getProperty("java.version").orEmpty(),
-)
-
 private const val DesktopConfigResourceName = "firebase-desktop.properties"
 private const val DesktopConfigFileName = "firebase-desktop.properties"

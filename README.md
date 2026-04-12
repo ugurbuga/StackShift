@@ -4,7 +4,7 @@
   <img src="./branding/generated/stackshift-app-icon-1024.png" alt="StackShift logo" width="160" />
 </p>
 
-StackShift is a reverse-Tetris inspired puzzle game built with **Kotlin** and **Compose Multiplatform** for **Android, iOS, macOS, Windows, and Desktop JVM**.
+StackShift is a reverse-Tetris inspired puzzle game built with **Kotlin** and **Compose Multiplatform** for **Android, iOS, Web, macOS, Windows, and Desktop JVM**.
 
 ## Quick links
 
@@ -132,6 +132,30 @@ The `artifacts/` directory is ignored by Git again, so the generated files stay 
 ./gradlew :composeApp:run
 ```
 
+### Web
+
+Run the browser dev server directly:
+
+```sh
+./gradlew :composeApp:wasmJsBrowserDevelopmentRun
+```
+
+Or use the shortcut task:
+
+```sh
+./gradlew :composeApp:runWeb
+```
+
+Build the browser development bundle without starting the server:
+
+```sh
+./gradlew :composeApp:wasmJsBrowserDevelopmentWebpack
+```
+
+The generated web assets are placed under:
+
+- `composeApp/build/kotlin-webpack/wasmJs/developmentExecutable/`
+
 ### Desktop distributable app image
 
 ```sh
@@ -172,6 +196,7 @@ These are the commands used to verify the shared code and platform targets:
 ./gradlew :composeApp:compileDebugKotlinAndroid
 ./gradlew :composeApp:compileKotlinJvm :composeApp:jvmTest
 ./gradlew :composeApp:compileKotlinIosSimulatorArm64
+./gradlew :composeApp:compileDevelopmentExecutableKotlinWasmJs
 ```
 
 ## Notes

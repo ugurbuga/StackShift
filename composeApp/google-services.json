@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:933963918835:android:2045531a66d72a680e7686",
+        "mobilesdk_app_id": "1:933963918835:android:cc5d3f06c4094c190e7686",
         "android_client_info": {
-          "package_name": "com.ugurbuga.stackshift.dev"
+          "package_name": "com.ugurbuga.stackshift"
         }
       },
       "oauth_client": [],

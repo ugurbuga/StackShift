@@ -5,7 +5,11 @@ import android.content.Context
 import android.content.ContextWrapper
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
@@ -20,6 +24,9 @@ import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
+import kotlinx.coroutines.delay
+
+private const val BannerRefreshIntervalMillis = 60_000L
 
 @Composable
 actual fun rememberPlatformGameAdController(): GameAdController {
@@ -119,17 +126,39 @@ private class AndroidGameAdController(
         val inspectionMode = LocalInspectionMode.current
         if (inspectionMode) return
 
+        var bannerAdView by remember { mutableStateOf<AdView?>(null) }
+
         AndroidView(
             modifier = modifier,
             factory = { viewContext ->
                 AdView(viewContext).apply {
                     setAdSize(AdSize.BANNER)
                     adUnitId = AndroidAdMobIds.BannerAdUnitId
-                    loadAd(AdRequest.Builder().build())
                 }
             },
-            update = { },
+            update = { view ->
+                if (bannerAdView !== view) {
+                    bannerAdView = view
+                }
+            },
         )
+
+        val currentBannerAdView = bannerAdView ?: return
+
+        LaunchedEffect(currentBannerAdView) {
+            refreshBannerAd(currentBannerAdView)
+            while (true) {
+                delay(BannerRefreshIntervalMillis)
+                refreshBannerAd(currentBannerAdView)
+            }
+        }
+
+        DisposableEffect(currentBannerAdView) {
+            onDispose {
+                currentBannerAdView.destroy()
+                bannerAdView = null
+            }
+        }
     }
 
     private fun initializeMobileAdsIfNeeded() {
@@ -170,6 +199,10 @@ private class AndroidGameAdController(
                 }
             },
         )
+    }
+
+    private fun refreshBannerAd(adView: AdView) {
+        adView.loadAd(AdRequest.Builder().build())
     }
 }
 

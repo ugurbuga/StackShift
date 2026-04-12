@@ -41,6 +41,7 @@ object TelemetryActionNames {
 }
 
 object TelemetryParamKeys {
+    const val ClientId = "client_id"
     const val ScreenName = "screen_name"
     const val ScreenClass = "screen_class"
     const val Action = "action"
@@ -57,6 +58,7 @@ object TelemetryParamKeys {
     const val Product = "product"
     const val Release = "release"
     const val SdkInt = "sdk_int"
+    const val SharedClientId = "shared_client_id"
 }
 
 object TelemetryScreenNames {
@@ -67,12 +69,19 @@ object TelemetryScreenNames {
 }
 
 object TelemetryUserPropertyNames {
+    const val ClientId = "client_id"
     const val Language = "language"
     const val ThemeMode = "theme_mode"
     const val ThemePalette = "theme_palette"
     const val BlockPalette = "block_palette"
     const val BlockStyle = "block_style"
     const val BoardBlockStyleMode = "board_block_style_mode"
+    const val SharedClientId = "shared_client_id"
+}
+
+object TelemetryStorageKeys {
+    const val ClientId = "stackshift.telemetry.client_id"
+    const val SharedClientId = "stackshift.telemetry.shared_client_id"
 }
 
 @Composable

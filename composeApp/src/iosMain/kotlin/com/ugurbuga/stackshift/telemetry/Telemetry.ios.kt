@@ -9,7 +9,16 @@ import dev.gitlive.firebase.crashlytics.crashlytics
 import dev.gitlive.firebase.apps
 import dev.gitlive.firebase.initialize
 import platform.Foundation.NSBundle
+import platform.Foundation.NSUUID
+import platform.Foundation.NSUserDefaults
 import platform.UIKit.UIDevice
+
+private const val TelemetryNamespace = "com.ugurbuga.stackshift.telemetry"
+private const val DeviceInfoPrefix = "device_"
+private const val CrashlyticsScreenViewLog = "screen_view"
+private const val CrashlyticsEventLog = "event"
+private const val CrashlyticsHighScoreLog = "high_score_reached"
+private const val AppleManufacturer = "Apple"
 
 @Composable
 actual fun rememberAppTelemetry(): AppTelemetry {
@@ -34,32 +43,43 @@ private fun isFirebaseConfigured(): Boolean = NSBundle.mainBundle.pathForResourc
 ) != null
 
 private fun iosDeviceInfo(): Map<String, String> = mapOf(
+    TelemetryParamKeys.ClientId to resolveIosClientId(),
     TelemetryParamKeys.PackageName to (NSBundle.mainBundle.bundleIdentifier ?: ""),
-    TelemetryParamKeys.Manufacturer to "Apple",
+    TelemetryParamKeys.Manufacturer to AppleManufacturer,
     TelemetryParamKeys.Model to UIDevice.currentDevice.model,
     TelemetryParamKeys.Device to UIDevice.currentDevice.name,
     TelemetryParamKeys.Product to UIDevice.currentDevice.systemName,
     TelemetryParamKeys.Release to UIDevice.currentDevice.systemVersion,
     TelemetryParamKeys.SdkInt to UIDevice.currentDevice.systemVersion,
-)
+).mapKeys { (key, _) -> if (key == TelemetryParamKeys.ClientId) key else "$DeviceInfoPrefix$key" }
 
 private class IosFirebaseTelemetry(
     private val deviceInfoProvider: () -> Map<String, String>,
 ) : AppTelemetry {
+    private val defaults = NSUserDefaults.standardUserDefaults
+    private val clientId = resolveClientId()
+
+    init {
+        setTelemetryIdentity()
+    }
+
     override fun logScreen(screenName: String) {
         Firebase.analytics.logEvent(
             TelemetryEventNames.ScreenView,
-            mapOf(
-                TelemetryParamKeys.ScreenName to screenName,
-                TelemetryParamKeys.ScreenClass to screenName,
+            telemetryParameters(
+                mapOf(
+                    TelemetryParamKeys.ScreenName to screenName,
+                    TelemetryParamKeys.ScreenClass to screenName,
+                ),
             ),
         )
-        Firebase.crashlytics.log("screen_view:$screenName")
+        Firebase.crashlytics.log("$CrashlyticsScreenViewLog:$screenName client_id=$clientId")
     }
 
     override fun logEvent(eventName: String, parameters: Map<String, String>) {
-        Firebase.analytics.logEvent(eventName, parameters.mapValues { it.value as Any })
-        Firebase.crashlytics.log("event:$eventName ${parameters.entries.joinToString(separator = ";") { "${it.key}=${it.value}" }}")
+        val mergedParameters = telemetryParameters(parameters)
+        Firebase.analytics.logEvent(eventName, mergedParameters)
+        Firebase.crashlytics.log("$CrashlyticsEventLog:$eventName ${mergedParameters.entries.joinToString(separator = ";") { "${it.key}=${it.value}" }}")
     }
 
     override fun logUserProperty(name: String, value: String?) {
@@ -68,20 +88,28 @@ private class IosFirebaseTelemetry(
     }
 
     override fun logHighScoreReached(newScore: Int, previousHighScore: Int) {
-        val deviceInfo = deviceInfoProvider()
         val eventParameters = buildMap<String, Any> {
             put(TelemetryParamKeys.Score, newScore)
             put(TelemetryParamKeys.PreviousScore, previousHighScore)
-            deviceInfo.forEach { (key, value) -> put(key, value) }
+            telemetryContext().forEach { (key, value) -> put(key, value) }
         }
         Firebase.analytics.logEvent(TelemetryEventNames.HighScoreReached, eventParameters)
-        Firebase.crashlytics.log("high_score_reached:$newScore")
+        Firebase.crashlytics.log("$CrashlyticsHighScoreLog:$newScore client_id=$clientId")
         Firebase.crashlytics.setCustomKey(TelemetryParamKeys.Score, newScore)
         Firebase.crashlytics.setCustomKey(TelemetryParamKeys.PreviousScore, previousHighScore)
-        deviceInfo.forEach { (key, value) -> Firebase.crashlytics.setCustomKey(key, value) }
+        telemetryContext().forEach { (key, value) -> Firebase.crashlytics.setCustomKey(key, value) }
     }
 
     override fun recordException(throwable: Throwable) {
+        Firebase.analytics.logEvent(
+            TelemetryEventNames.Exception,
+            telemetryParameters(
+                mapOf(
+                    TelemetryParamKeys.ExceptionType to throwable::class.simpleName.orEmpty(),
+                    TelemetryParamKeys.ExceptionMessage to (throwable.message ?: throwable.toString()),
+                ),
+            ),
+        )
         Firebase.crashlytics.recordException(throwable)
     }
 
@@ -94,4 +122,31 @@ private class IosFirebaseTelemetry(
             },
         )
     }
+
+    private fun setTelemetryIdentity() {
+        val context = telemetryContext()
+        Firebase.analytics.setUserProperty(TelemetryUserPropertyNames.ClientId, clientId)
+        Firebase.crashlytics.setCustomKey(TelemetryParamKeys.ClientId, clientId)
+        context.forEach { (key, value) -> Firebase.crashlytics.setCustomKey(key, value) }
+    }
+
+    private fun telemetryParameters(parameters: Map<String, String>): Map<String, Any> = buildMap {
+        telemetryContext().forEach { (key, value) -> put(key, value) }
+        parameters.forEach { (key, value) -> put(key, value) }
+    }
+
+    private fun telemetryContext(): Map<String, String> = buildMap {
+        put(TelemetryParamKeys.ClientId, clientId)
+        putAll(deviceInfoProvider())
+    }
+
+    private fun resolveClientId(): String = defaults.stringForKey(TelemetryStorageKeys.ClientId)
+        ?.takeIf(String::isNotBlank)
+        ?: NSUUID().UUIDString.also { defaults.setObject(it, forKey = TelemetryStorageKeys.ClientId) }
 }
+
+private fun resolveIosClientId(): String = NSUserDefaults.standardUserDefaults.stringForKey(TelemetryStorageKeys.ClientId)
+    ?.takeIf(String::isNotBlank)
+    ?: NSUUID().UUIDString.also {
+        NSUserDefaults.standardUserDefaults.setObject(it, forKey = TelemetryStorageKeys.ClientId)
+    }
