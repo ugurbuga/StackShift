@@ -1,0 +1,24 @@
+# Copy this file to `google.properties` and fill in your local Firebase values.
+# The real `google.properties` is gitignored.
+
+firebase.projectNumber=
+firebase.gcmSenderId=
+firebase.projectId=
+firebase.storageBucket=
+
+firebase.android.appId=
+firebase.android.apiKey=
+firebase.android.packageName=com.ugurbuga.stackshift
+
+firebase.ios.appId=
+firebase.ios.apiKey=
+firebase.ios.bundleId=com.ugurbuga.stackshift
+firebase.ios.clientId=
+
+# Optional desktop/web fallbacks used by the JVM telemetry bootstrap.
+firebase.desktop.appId=
+firebase.desktop.apiKey=
+firebase.desktop.authDomain=
+firebase.desktop.databaseUrl=
+firebase.desktop.gaTrackingId=
+

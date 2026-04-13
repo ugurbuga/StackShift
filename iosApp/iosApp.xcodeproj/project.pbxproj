@@ -124,6 +124,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 23290C7335851B0FC0B8E353 /* Build configuration list for PBXNativeTarget "iosApp" */;
 			buildPhases = (
+				C2F247A42F884D0F00A10001 /* Copy Local Google Properties */,
 				DE286BD4DF638EED36D76BDF /* Compile Kotlin Framework */,
 				41EB784B4BD8A76FE86B7270 /* Sources */,
 				9179D7632CA9138E553BAEF4 /* Frameworks */,
@@ -196,6 +197,26 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		C2F247A42F884D0F00A10001 /* Copy Local Google Properties */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/../google.properties",
+			);
+			name = "Copy Local Google Properties";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/google.properties",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "GOOGLE_PROPERTIES_SOURCE=\"$SRCROOT/../google.properties\"\nGOOGLE_PROPERTIES_TARGET=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/google.properties\"\n\nif [ -f \"$GOOGLE_PROPERTIES_SOURCE\" ]; then\n  cp \"$GOOGLE_PROPERTIES_SOURCE\" \"$GOOGLE_PROPERTIES_TARGET\"\nelse\n  rm -f \"$GOOGLE_PROPERTIES_TARGET\"\nfi\n";
+		};
 		DE286BD4DF638EED36D76BDF /* Compile Kotlin Framework */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;

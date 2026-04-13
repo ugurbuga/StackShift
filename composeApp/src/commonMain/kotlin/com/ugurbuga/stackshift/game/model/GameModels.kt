@@ -1,18 +1,36 @@
 package com.ugurbuga.stackshift.game.model
 
 import androidx.compose.runtime.Immutable
+import org.jetbrains.compose.resources.StringResource
 import kotlin.math.max
+import stackshift.composeapp.generated.resources.Res
+import stackshift.composeapp.generated.resources.app_language_arabic
+import stackshift.composeapp.generated.resources.app_language_chinese_simplified
+import stackshift.composeapp.generated.resources.app_language_english
+import stackshift.composeapp.generated.resources.app_language_french
+import stackshift.composeapp.generated.resources.app_language_german
+import stackshift.composeapp.generated.resources.app_language_hindi
+import stackshift.composeapp.generated.resources.app_language_indonesian
+import stackshift.composeapp.generated.resources.app_language_portuguese
+import stackshift.composeapp.generated.resources.app_language_russian
+import stackshift.composeapp.generated.resources.app_language_spanish
+import stackshift.composeapp.generated.resources.app_language_turkish
 
 enum class AppLanguage(
     val localeTag: String,
-    val endonym: String,
+    val labelRes: StringResource,
 ) {
-    English(localeTag = "en", endonym = "English"),
-    Turkish(localeTag = "tr", endonym = "Türkçe"),
-    Spanish(localeTag = "es", endonym = "Español"),
-    French(localeTag = "fr", endonym = "Français"),
-    German(localeTag = "de", endonym = "Deutsch"),
-    Russian(localeTag = "ru", endonym = "Русский"),
+    English(localeTag = "en", labelRes = Res.string.app_language_english),
+    Turkish(localeTag = "tr", labelRes = Res.string.app_language_turkish),
+    Spanish(localeTag = "es", labelRes = Res.string.app_language_spanish),
+    French(localeTag = "fr", labelRes = Res.string.app_language_french),
+    German(localeTag = "de", labelRes = Res.string.app_language_german),
+    Russian(localeTag = "ru", labelRes = Res.string.app_language_russian),
+    ChineseSimplified(localeTag = "zh-Hans", labelRes = Res.string.app_language_chinese_simplified),
+    Hindi(localeTag = "hi", labelRes = Res.string.app_language_hindi),
+    Arabic(localeTag = "ar", labelRes = Res.string.app_language_arabic),
+    Portuguese(localeTag = "pt", labelRes = Res.string.app_language_portuguese),
+    Indonesian(localeTag = "id", labelRes = Res.string.app_language_indonesian),
 }
 
 enum class AppThemeMode(

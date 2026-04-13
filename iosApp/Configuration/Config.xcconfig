@@ -1,5 +1,7 @@
 TEAM_ID=
 
+#include? "GeneratedAds.xcconfig"
+
 PRODUCT_NAME=StackShift
 PRODUCT_BUNDLE_IDENTIFIER=com.ugurbuga.stackshift
 

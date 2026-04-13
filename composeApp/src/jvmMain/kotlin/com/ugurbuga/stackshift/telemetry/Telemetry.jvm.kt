@@ -88,28 +88,65 @@ private fun DesktopFirebaseConfig.toFirebaseOptions(): FirebaseOptions = Firebas
 )
 
 private fun loadDesktopFirebaseConfig(): DesktopFirebaseConfig? {
-    val resource = Thread.currentThread().contextClassLoader.getResourceAsStream(DesktopConfigResourceName)
-        ?: File(DesktopConfigFileName).takeIf(File::exists)?.inputStream()
-        ?: return null
+    loadPropertiesResource(DesktopConfigResourceName, DesktopConfigFileName)
+        ?.toLegacyDesktopFirebaseConfig()
+        ?.let { return it }
 
-    return resource.use { inputStream ->
-        Properties().apply { load(inputStream) }.let { properties ->
-            val projectId = properties.getProperty("projectId")?.takeIf(String::isNotBlank) ?: return null
-            val applicationId = properties.getProperty("applicationId")?.takeIf(String::isNotBlank) ?: return null
-            val apiKey = properties.getProperty("apiKey")?.takeIf(String::isNotBlank) ?: return null
-            DesktopFirebaseConfig(
-                projectId = projectId,
-                applicationId = applicationId,
-                apiKey = apiKey,
-                storageBucket = properties.getProperty("storageBucket")?.takeIf(String::isNotBlank),
-                gcmSenderId = properties.getProperty("gcmSenderId")?.takeIf(String::isNotBlank),
-                authDomain = properties.getProperty("authDomain")?.takeIf(String::isNotBlank),
-                databaseUrl = properties.getProperty("databaseUrl")?.takeIf(String::isNotBlank),
-                gaTrackingId = properties.getProperty("gaTrackingId")?.takeIf(String::isNotBlank),
-            )
-        }
-    }
+    return loadPropertiesResource(GoogleConfigResourceName, GoogleConfigFileName)
+        ?.toGoogleDesktopFirebaseConfig()
 }
 
 private const val DesktopConfigResourceName = "firebase-desktop.properties"
 private const val DesktopConfigFileName = "firebase-desktop.properties"
+private const val GoogleConfigResourceName = "google.properties"
+private const val GoogleConfigFileName = "google.properties"
+
+private fun loadPropertiesResource(resourceName: String, fileName: String): Properties? {
+    val resource = Thread.currentThread().contextClassLoader.getResourceAsStream(resourceName)
+        ?: File(fileName).takeIf(File::exists)?.inputStream()
+        ?: return null
+
+    return resource.use { inputStream ->
+        Properties().apply { load(inputStream) }
+    }
+}
+
+private fun Properties.toLegacyDesktopFirebaseConfig(): DesktopFirebaseConfig? {
+    val projectId = getProperty("projectId")?.takeIf(String::isNotBlank) ?: return null
+    val applicationId = getProperty("applicationId")?.takeIf(String::isNotBlank) ?: return null
+    val apiKey = getProperty("apiKey")?.takeIf(String::isNotBlank) ?: return null
+    return DesktopFirebaseConfig(
+        projectId = projectId,
+        applicationId = applicationId,
+        apiKey = apiKey,
+        storageBucket = getProperty("storageBucket")?.takeIf(String::isNotBlank),
+        gcmSenderId = getProperty("gcmSenderId")?.takeIf(String::isNotBlank),
+        authDomain = getProperty("authDomain")?.takeIf(String::isNotBlank),
+        databaseUrl = getProperty("databaseUrl")?.takeIf(String::isNotBlank),
+        gaTrackingId = getProperty("gaTrackingId")?.takeIf(String::isNotBlank),
+    )
+}
+
+private fun Properties.toGoogleDesktopFirebaseConfig(): DesktopFirebaseConfig? {
+    val projectId = getProperty("firebase.projectId")?.takeIf(String::isNotBlank) ?: return null
+    val applicationId = getProperty("firebase.desktop.appId")
+        ?.takeIf(String::isNotBlank)
+        ?: getProperty("firebase.android.appId")?.takeIf(String::isNotBlank)
+        ?: return null
+    val apiKey = getProperty("firebase.desktop.apiKey")
+        ?.takeIf(String::isNotBlank)
+        ?: getProperty("firebase.android.apiKey")?.takeIf(String::isNotBlank)
+        ?: return null
+
+    return DesktopFirebaseConfig(
+        projectId = projectId,
+        applicationId = applicationId,
+        apiKey = apiKey,
+        storageBucket = getProperty("firebase.storageBucket")?.takeIf(String::isNotBlank),
+        gcmSenderId = getProperty("firebase.gcmSenderId")?.takeIf(String::isNotBlank)
+            ?: getProperty("firebase.projectNumber")?.takeIf(String::isNotBlank),
+        authDomain = getProperty("firebase.desktop.authDomain")?.takeIf(String::isNotBlank),
+        databaseUrl = getProperty("firebase.desktop.databaseUrl")?.takeIf(String::isNotBlank),
+        gaTrackingId = getProperty("firebase.desktop.gaTrackingId")?.takeIf(String::isNotBlank),
+    )
+}

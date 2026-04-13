@@ -4,16 +4,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.analytics.analytics
-import dev.gitlive.firebase.analytics.logEvent
 import dev.gitlive.firebase.crashlytics.crashlytics
 import dev.gitlive.firebase.apps
-import dev.gitlive.firebase.initialize
 import platform.Foundation.NSBundle
 import platform.Foundation.NSUUID
 import platform.Foundation.NSUserDefaults
 import platform.UIKit.UIDevice
 
-private const val TelemetryNamespace = "com.ugurbuga.stackshift.telemetry"
 private const val DeviceInfoPrefix = "device_"
 private const val CrashlyticsScreenViewLog = "screen_view"
 private const val CrashlyticsEventLog = "event"
@@ -22,25 +19,13 @@ private const val AppleManufacturer = "Apple"
 
 @Composable
 actual fun rememberAppTelemetry(): AppTelemetry {
-    if (!isFirebaseConfigured()) {
-        return NoOpAppTelemetry
-    }
-
-    runCatching {
-        if (Firebase.apps().isEmpty()) {
-            Firebase.initialize()
-        }
-    }.getOrElse {
+    if (Firebase.apps().isEmpty()) {
         return NoOpAppTelemetry
     }
 
     return remember { IosFirebaseTelemetry(::iosDeviceInfo) }
 }
 
-private fun isFirebaseConfigured(): Boolean = NSBundle.mainBundle.pathForResource(
-    name = "GoogleService-Info",
-    ofType = "plist",
-) != null
 
 private fun iosDeviceInfo(): Map<String, String> = mapOf(
     TelemetryParamKeys.ClientId to resolveIosClientId(),

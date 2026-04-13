@@ -366,6 +366,7 @@ private fun GameOverDialog(
     revealProgress: Float,
     canUseExtraLife: Boolean,
     isExtraLifeLoading: Boolean,
+    showExtraLifeButton: Boolean,
     onPlayAgain: () -> Unit,
     onUseExtraLife: () -> Unit,
 ) {
@@ -386,6 +387,7 @@ private fun GameOverDialog(
             revealProgress = revealProgress,
             canUseExtraLife = canUseExtraLife,
             isExtraLifeLoading = isExtraLifeLoading,
+            showExtraLifeButton = showExtraLifeButton,
             onPlayAgain = onPlayAgain,
             onUseExtraLife = onUseExtraLife,
             modifier = Modifier
@@ -408,6 +410,7 @@ private fun GameOverDialogContent(
     revealProgress: Float,
     canUseExtraLife: Boolean,
     isExtraLifeLoading: Boolean,
+    showExtraLifeButton: Boolean,
     onPlayAgain: () -> Unit,
     onUseExtraLife: () -> Unit,
     modifier: Modifier = Modifier,
@@ -536,7 +539,7 @@ private fun GameOverDialogContent(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(GameOverDialogButtonSpacing),
             ) {
-                if (canUseExtraLife || isExtraLifeLoading) {
+                if (showExtraLifeButton && (canUseExtraLife || isExtraLifeLoading)) {
                     Button(
                         onClick = onUseExtraLife,
                         enabled = !isExtraLifeLoading,
@@ -1241,6 +1244,7 @@ fun GameScreen(
                     revealProgress = gameOverDialogRevealProgress.value,
                     canUseExtraLife = !gameState.rewardedReviveUsed,
                     isExtraLifeLoading = rewardedReviveLoading,
+                    showExtraLifeButton = adController !== NoOpGameAdController,
                     onPlayAgain = {
                         telemetry.logUserAction(TelemetryActionNames.PlayAgain)
                         adController.showRestartInterstitial {
@@ -2644,6 +2648,7 @@ private fun GameOverDialogContentPreview() {
                 revealProgress = 1f,
                 canUseExtraLife = true,
                 isExtraLifeLoading = false,
+                showExtraLifeButton = true,
                 onPlayAgain = {},
                 onUseExtraLife = {},
                 modifier = Modifier.widthIn(max = GameOverDialogWidth),
@@ -2667,6 +2672,7 @@ private fun GameOverDialogContentNewRecordPreview() {
                 revealProgress = 1f,
                 canUseExtraLife = true,
                 isExtraLifeLoading = false,
+                showExtraLifeButton = true,
                 onPlayAgain = {},
                 onUseExtraLife = {},
                 modifier = Modifier.widthIn(max = GameOverDialogWidth),

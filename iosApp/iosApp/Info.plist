@@ -5,6 +5,6 @@
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-4092597605623611~2211988145</string>
+	<string>$(ADS_IOS_APPLICATION_ID)</string>
 </dict>
 </plist>

@@ -5,6 +5,20 @@ build/
 
 # Local configuration file (sdk path, etc)
 local.properties
+ads.properties
+google.properties
+keystore.properties
+iosApp/Configuration/GeneratedAds.xcconfig
+iosApp/iosApp/ads.properties
+iosApp/iosApp/google.properties
+iosApp/iosApp/GoogleService-Info.plist
+composeApp/google-services.json
+composeApp/src/main/google-services.json
+composeApp/src/dev/google-services.json
+composeApp/src/prod/google-services.json
+composeApp/src/debug/google-services.json
+composeApp/src/release/google-services.json
+composeApp/src/jvmMain/resources/firebase-desktop.properties
 
 # Log/OS Files
 *.log
@@ -33,6 +47,7 @@ render.experimental.xml
 # Keystore files
 *.jks
 *.keystore
+keystore/StackShift.jks
 
 
 # Android Profiling

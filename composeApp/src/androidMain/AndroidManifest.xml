@@ -13,7 +13,7 @@
         android:theme="@style/Theme.StackShift.Splash">
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-4092597605623611~6915305479" />
+            android:value="${adsApplicationId}" />
 
         <activity
             android:exported="true"

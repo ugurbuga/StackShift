@@ -102,6 +102,14 @@ If you are not on the target platform, the task still attempts the build and con
 
 Clone the repository and open it in your IDE, then let Gradle sync the project.
 
+Before building, create your local config files from the examples/placeholders:
+
+- `google.properties` for Firebase platform IDs and API keys
+- `ads.properties` for AdMob IDs
+- `keystore.properties` for Android release signing values
+
+`google.properties.example` documents the Firebase keys expected by Android, iOS, and desktop.
+
 ```sh
 ./gradlew build
 ```

@@ -68,8 +68,6 @@ import com.ugurbuga.stackshift.ui.theme.isStackShiftDarkTheme
 import com.ugurbuga.stackshift.ui.theme.stackShiftThemeSpec
 import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
-import stackshift.composeapp.generated.resources.app_language_english
-import stackshift.composeapp.generated.resources.app_language_turkish
 import stackshift.composeapp.generated.resources.app_theme_dark
 import stackshift.composeapp.generated.resources.app_theme_light
 import stackshift.composeapp.generated.resources.app_theme_system
@@ -408,14 +406,7 @@ private data class SettingsOption<T>(
 private fun languageOptions(selected: AppLanguage): List<SettingsOption<AppLanguage>> = AppLanguage.entries.map { language ->
     SettingsOption(
         value = language,
-        label = when (language) {
-            AppLanguage.English -> stringResource(Res.string.app_language_english)
-            AppLanguage.Turkish -> stringResource(Res.string.app_language_turkish)
-            AppLanguage.Spanish -> language.endonym
-            AppLanguage.French -> language.endonym
-            AppLanguage.German -> language.endonym
-            AppLanguage.Russian -> language.endonym
-        },
+        label = stringResource(language.labelRes),
         preview = { LanguagePreview(language = language, selected = language == selected) },
     )
 }

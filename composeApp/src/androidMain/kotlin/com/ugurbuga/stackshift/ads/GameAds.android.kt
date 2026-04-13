@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.viewinterop.AndroidView
+import com.ugurbuga.stackshift.BuildConfig
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
@@ -207,9 +208,9 @@ private class AndroidGameAdController(
 }
 
 private object AndroidAdMobIds {
-    const val BannerAdUnitId = "ca-app-pub-4092597605623611/7188982656"
-    const val InterstitialAdUnitId = "ca-app-pub-4092597605623611/6646057170"
-    const val RewardedAdUnitId = "ca-app-pub-4092597605623611/3059820942"
+    val BannerAdUnitId: String = BuildConfig.ADS_BANNER_UNIT_ID
+    val InterstitialAdUnitId: String = BuildConfig.ADS_INTERSTITIAL_UNIT_ID
+    val RewardedAdUnitId: String = BuildConfig.ADS_REWARDED_UNIT_ID
 }
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {

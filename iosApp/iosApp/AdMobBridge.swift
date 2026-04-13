@@ -10,10 +10,56 @@ private enum StackShiftAdNotification {
     static let rewardedCompleted = Notification.Name("StackShiftAdRewardedCompleted")
 }
 
+private struct StackShiftAdsProperties {
+    static let shared = load()
+
+    let iosApplicationId: String
+    let banner: String
+    let interstitial: String
+    let rewarded: String
+
+    private static func load() -> StackShiftAdsProperties {
+        guard let url = Bundle.main.url(forResource: "ads", withExtension: "properties"),
+              let content = try? String(contentsOf: url, encoding: .utf8) else {
+            return StackShiftAdsProperties(
+                iosApplicationId: "",
+                banner: "",
+                interstitial: "",
+                rewarded: ""
+            )
+        }
+
+        let values = parse(content)
+        return StackShiftAdsProperties(
+            iosApplicationId: values["ads.ios.applicationId"] ?? "",
+            banner: values["ads.ios.bannerUnitId"] ?? "",
+            interstitial: values["ads.ios.interstitialUnitId"] ?? "",
+            rewarded: values["ads.ios.rewardedUnitId"] ?? ""
+        )
+    }
+
+    private static func parse(_ content: String) -> [String: String] {
+        var values: [String: String] = [:]
+
+        for line in content.components(separatedBy: .newlines) {
+            let trimmedLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmedLine.isEmpty, !trimmedLine.hasPrefix("#"), let separatorIndex = trimmedLine.firstIndex(of: "=") else {
+                continue
+            }
+
+            let key = String(trimmedLine[..<separatorIndex]).trimmingCharacters(in: .whitespaces)
+            let value = String(trimmedLine[trimmedLine.index(after: separatorIndex)...]).trimmingCharacters(in: .whitespaces)
+            values[key] = value
+        }
+
+        return values
+    }
+}
+
 private enum StackShiftAdMobIDs {
-    static let banner = "ca-app-pub-4092597605623611/1746739272"
-    static let interstitial = "ca-app-pub-4092597605623611/8585824807"
-    static let rewarded = "ca-app-pub-4092597605623611/9433657608"
+    static let banner = StackShiftAdsProperties.shared.banner
+    static let interstitial = StackShiftAdsProperties.shared.interstitial
+    static let rewarded = StackShiftAdsProperties.shared.rewarded
 }
 
 final class StackShiftAdBridge: NSObject, FullScreenContentDelegate {

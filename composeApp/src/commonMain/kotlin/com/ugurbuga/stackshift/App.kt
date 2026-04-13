@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.tooling.preview.Preview
+import com.ugurbuga.stackshift.ads.NoOpGameAdController
 import com.ugurbuga.stackshift.ads.rememberPlatformGameAdController
 import com.ugurbuga.stackshift.settings.AppSettings
 import com.ugurbuga.stackshift.settings.AppSettingsStorage
@@ -81,7 +82,9 @@ fun StackShiftRoot(
                             onShowSettingsChange(true)
                         },
                     )
-                    adController.Banner(modifier = androidx.compose.ui.Modifier.fillMaxWidth())
+                    if (adController !== NoOpGameAdController) {
+                        adController.Banner(modifier = androidx.compose.ui.Modifier.fillMaxWidth())
+                    }
                 }
             }
         }
