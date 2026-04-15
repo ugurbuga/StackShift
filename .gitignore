@@ -19,6 +19,7 @@ composeApp/src/prod/google-services.json
 composeApp/src/debug/google-services.json
 composeApp/src/release/google-services.json
 composeApp/src/jvmMain/resources/firebase-desktop.properties
+composeApp/src/androidMain/assets/adi-registration.properties
 
 # Log/OS Files
 *.log

@@ -25,6 +25,7 @@ import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
+import android.util.Log
 import kotlinx.coroutines.delay
 
 private const val BannerRefreshIntervalMillis = 60_000L
@@ -60,65 +61,96 @@ private class AndroidGameAdController(
     private var rewardedAd: RewardedAd? = null
 
     fun preloadAds() {
-        initializeMobileAdsIfNeeded()
-        if (interstitialAd == null) {
-            loadInterstitial()
+        try {
+            initializeMobileAdsIfNeeded()
+        } catch (e: Exception) {
+            Log.e("GameAds", "Failed to initialize MobileAds", e)
+            return
         }
-        if (rewardedAd == null) {
-            loadRewarded()
+        try {
+            if (interstitialAd == null) {
+                loadInterstitial()
+            }
+        } catch (e: Exception) {
+            Log.e("GameAds", "Failed to load interstitial ad", e)
+        }
+        try {
+            if (rewardedAd == null) {
+                loadRewarded()
+            }
+        } catch (e: Exception) {
+            Log.e("GameAds", "Failed to load rewarded ad", e)
         }
     }
 
     override fun showRestartInterstitial(onFinished: () -> Unit) {
-        preloadAds()
-        val activity = activityProvider()
-        val ad = interstitialAd
-        if (activity == null || ad == null) {
+        try {
+            preloadAds()
+            val activity = activityProvider()
+            val ad = interstitialAd
+            if (activity == null || ad == null) {
+                onFinished()
+                loadInterstitial()
+                return
+            }
+            interstitialAd = null
+            ad.fullScreenContentCallback = object : FullScreenContentCallback() {
+                override fun onAdDismissedFullScreenContent() {
+                    onFinished()
+                    loadInterstitial()
+                }
+                override fun onAdFailedToShowFullScreenContent(adError: com.google.android.gms.ads.AdError) {
+                    onFinished()
+                    loadInterstitial()
+                }
+            }
+            try {
+                ad.show(activity)
+            } catch (e: Exception) {
+                Log.e("GameAds", "Failed to show interstitial ad", e)
+                onFinished()
+                loadInterstitial()
+            }
+        } catch (e: Exception) {
+            Log.e("GameAds", "Exception in showRestartInterstitial", e)
             onFinished()
-            loadInterstitial()
-            return
         }
-
-        interstitialAd = null
-        ad.fullScreenContentCallback = object : FullScreenContentCallback() {
-            override fun onAdDismissedFullScreenContent() {
-                onFinished()
-                loadInterstitial()
-            }
-
-            override fun onAdFailedToShowFullScreenContent(adError: com.google.android.gms.ads.AdError) {
-                onFinished()
-                loadInterstitial()
-            }
-        }
-        ad.show(activity)
     }
 
     override fun showRewardedRevive(onResult: (Boolean) -> Unit) {
-        preloadAds()
-        val activity = activityProvider()
-        val ad = rewardedAd
-        if (activity == null || ad == null) {
-            onResult(false)
-            loadRewarded()
-            return
-        }
-
-        rewardedAd = null
-        var rewardEarned = false
-        ad.fullScreenContentCallback = object : FullScreenContentCallback() {
-            override fun onAdDismissedFullScreenContent() {
-                onResult(rewardEarned)
+        try {
+            preloadAds()
+            val activity = activityProvider()
+            val ad = rewardedAd
+            if (activity == null || ad == null) {
+                onResult(false)
                 loadRewarded()
+                return
             }
-
-            override fun onAdFailedToShowFullScreenContent(adError: com.google.android.gms.ads.AdError) {
+            rewardedAd = null
+            var rewardEarned = false
+            ad.fullScreenContentCallback = object : FullScreenContentCallback() {
+                override fun onAdDismissedFullScreenContent() {
+                    onResult(rewardEarned)
+                    loadRewarded()
+                }
+                override fun onAdFailedToShowFullScreenContent(adError: com.google.android.gms.ads.AdError) {
+                    onResult(false)
+                    loadRewarded()
+                }
+            }
+            try {
+                ad.show(activity) {
+                    rewardEarned = true
+                }
+            } catch (e: Exception) {
+                Log.e("GameAds", "Failed to show rewarded ad", e)
                 onResult(false)
                 loadRewarded()
             }
-        }
-        ad.show(activity) {
-            rewardEarned = true
+        } catch (e: Exception) {
+            Log.e("GameAds", "Exception in showRewardedRevive", e)
+            onResult(false)
         }
     }
 
@@ -164,46 +196,66 @@ private class AndroidGameAdController(
 
     private fun initializeMobileAdsIfNeeded() {
         if (mobileAdsInitialized) return
-        MobileAds.initialize(context)
-        mobileAdsInitialized = true
+        if (context == null) {
+            Log.e("GameAds", "Context is null in initializeMobileAdsIfNeeded")
+            return
+        }
+        try {
+            MobileAds.initialize(context)
+            mobileAdsInitialized = true
+        } catch (e: Exception) {
+            Log.e("GameAds", "Exception in MobileAds.initialize", e)
+        }
     }
 
     private fun loadInterstitial() {
-        InterstitialAd.load(
-            context,
-            AndroidAdMobIds.InterstitialAdUnitId,
-            AdRequest.Builder().build(),
-            object : InterstitialAdLoadCallback() {
-                override fun onAdLoaded(ad: InterstitialAd) {
-                    interstitialAd = ad
-                }
-
-                override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-                    interstitialAd = null
-                }
-            },
-        )
+        try {
+            InterstitialAd.load(
+                context,
+                AndroidAdMobIds.InterstitialAdUnitId,
+                AdRequest.Builder().build(),
+                object : InterstitialAdLoadCallback() {
+                    override fun onAdLoaded(ad: InterstitialAd) {
+                        interstitialAd = ad
+                    }
+                    override fun onAdFailedToLoad(loadAdError: LoadAdError) {
+                        interstitialAd = null
+                        Log.e("GameAds", "Interstitial ad failed to load: $loadAdError")
+                    }
+                },
+            )
+        } catch (e: Exception) {
+            Log.e("GameAds", "Exception in loadInterstitial", e)
+        }
     }
 
     private fun loadRewarded() {
-        RewardedAd.load(
-            context,
-            AndroidAdMobIds.RewardedAdUnitId,
-            AdRequest.Builder().build(),
-            object : RewardedAdLoadCallback() {
-                override fun onAdLoaded(ad: RewardedAd) {
-                    rewardedAd = ad
-                }
-
-                override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-                    rewardedAd = null
-                }
-            },
-        )
+        try {
+            RewardedAd.load(
+                context,
+                AndroidAdMobIds.RewardedAdUnitId,
+                AdRequest.Builder().build(),
+                object : RewardedAdLoadCallback() {
+                    override fun onAdLoaded(ad: RewardedAd) {
+                        rewardedAd = ad
+                    }
+                    override fun onAdFailedToLoad(loadAdError: LoadAdError) {
+                        rewardedAd = null
+                        Log.e("GameAds", "Rewarded ad failed to load: $loadAdError")
+                    }
+                },
+            )
+        } catch (e: Exception) {
+            Log.e("GameAds", "Exception in loadRewarded", e)
+        }
     }
 
     private fun refreshBannerAd(adView: AdView) {
-        adView.loadAd(AdRequest.Builder().build())
+        try {
+            adView.loadAd(AdRequest.Builder().build())
+        } catch (e: Exception) {
+            Log.e("GameAds", "Exception in refreshBannerAd", e)
+        }
     }
 }
 

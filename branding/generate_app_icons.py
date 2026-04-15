@@ -22,6 +22,8 @@ FULL_PNG_NAME = "stackshift-app-icon-1024.png"
 FOREGROUND_PNG_NAME = "stackshift-adaptive-foreground-1024.png"
 MACOS_FOREGROUND_PNG_NAME = "stackshift-macos-foreground-1024.png"
 ANDROID_ROUND_PNG_NAME = "stackshift-android-round-1024.png"
+FEATURE_GRAPHIC_SVG_NAME = "stackshift-feature-graphic-1024x500.svg"
+FEATURE_GRAPHIC_PNG_NAME = "stackshift-feature-graphic-1024x500.png"
 
 
 def main() -> None:
@@ -47,11 +49,16 @@ def main() -> None:
         rasterize_svg(macos_foreground_svg, macos_foreground_png, 1024)
         rasterize_svg(android_round_svg, android_round_png, 1024)
 
+        feature_graphic_svg = temp_path / FEATURE_GRAPHIC_SVG_NAME
+        feature_graphic_svg.write_text(feature_graphic_svg_content(), encoding="utf-8")
+        feature_graphic_png = BRANDING_OUT / FEATURE_GRAPHIC_PNG_NAME
+        rasterize_svg(feature_graphic_svg, feature_graphic_png, 1024, height=500)
+
         generate_android_assets(full_png, foreground_png, android_round_png)
         generate_ios_assets(full_png)
         generate_desktop_assets(full_png, macos_foreground_png)
 
-    print("Generated StackShift icons for Android, iOS, and desktop.")
+    print("Generated StackShift icons for Android, iOS, desktop, and feature graphic.")
 
 
 def ensure_tools() -> None:
@@ -64,13 +71,19 @@ def run(*args: str) -> None:
     subprocess.run(args, check=True)
 
 
-def rasterize_svg(svg_path: Path, output_png: Path, size: int) -> None:
+def rasterize_svg(svg_path: Path, output_png: Path, size: int, height: int | None = None) -> None:
     output_png.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="stackshift-svg-raster-") as temp_dir:
         temp_path = Path(temp_dir)
         converted = temp_path / f"{svg_path.stem}.png"
-        run("sips", "-s", "format", "png", str(svg_path), "--out", str(converted))
-        resize_png(converted, output_png, size)
+        if height is not None:
+            run("sips", "-s", "format", "png", str(svg_path), "--resampleHeightWidth", str(height), str(size), "--out", str(converted))
+        else:
+            run("sips", "-s", "format", "png", str(svg_path), "--out", str(converted))
+        if height is not None:
+            run("sips", "-z", str(height), str(size), str(converted), "--out", str(output_png))
+        else:
+            resize_png(converted, output_png, size)
 
 
 def resize_png(source: Path, target: Path, size: int) -> None:
@@ -293,6 +306,34 @@ def board_icon_svg(
 {content}
 </svg>
 """
+
+
+def feature_graphic_svg_content() -> str:
+    # 1024x500, ortada 400x400 logo, arka plan uzatılmış
+    # Ortalamak için: (1024-400)/2 = 312, (500-400)/2 = 50
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500" fill="none">
+  <defs>
+    <linearGradient id="featureBg" x1="132" y1="92" x2="884" y2="436" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#152434"/>
+      <stop offset="0.48" stop-color="#0C1621"/>
+      <stop offset="1" stop-color="#070D14"/>
+    </linearGradient>
+    <radialGradient id="featureGlowA" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(232 114) rotate(45) scale(448)">
+      <stop stop-color="#48D8C8" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#48D8C8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="featureGlowB" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(796 386) rotate(45) scale(404)">
+      <stop stop-color="#6B74FF" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#6B74FF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="500" fill="url(#featureBg)"/>
+  <rect width="1024" height="500" fill="url(#featureGlowA)"/>
+  <rect width="1024" height="500" fill="url(#featureGlowB)"/>
+  <g transform="translate(312, 50) scale(0.390625)">
+    {board_icon_svg(include_background=False)}
+  </g>
+</svg>'''
 
 
 def board_geometry(board_scale: float = 1.0) -> dict[str, int]:
