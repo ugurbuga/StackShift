@@ -25,6 +25,7 @@ actual object AppSettingsStorage {
         blockColorPalette = BlockColorPalette.entries[prefs.getInt(KeyBlockColorPalette, BlockColorPalette.Classic.ordinal)],
         blockVisualStyle = BlockVisualStyle.entries[prefs.getInt(KeyBlockVisualStyle, BlockVisualStyle.Flat.ordinal)],
         boardBlockStyleMode = BoardBlockStyleMode.entries[prefs.getInt(KeyBoardBlockStyleMode, BoardBlockStyleMode.MatchSelectedBlockStyle.ordinal)],
+        hasSeenTutorial = prefs.getBoolean(KeyHasSeenTutorial, false),
     )
 
     actual fun save(settings: AppSettings) {
@@ -35,6 +36,7 @@ actual object AppSettingsStorage {
             .putInt(KeyBlockColorPalette, settings.blockColorPalette.ordinal)
             .putInt(KeyBlockVisualStyle, settings.blockVisualStyle.ordinal)
             .putInt(KeyBoardBlockStyleMode, settings.boardBlockStyleMode.ordinal)
+            .putBoolean(KeyHasSeenTutorial, settings.hasSeenTutorial)
             .apply()
     }
 
@@ -42,4 +44,5 @@ actual object AppSettingsStorage {
     private const val KeyBlockColorPalette = "blockColorPalette"
     private const val KeyBlockVisualStyle = "blockVisualStyle"
     private const val KeyBoardBlockStyleMode = "boardBlockStyleMode"
+    private const val KeyHasSeenTutorial = "hasSeenTutorial"
 }

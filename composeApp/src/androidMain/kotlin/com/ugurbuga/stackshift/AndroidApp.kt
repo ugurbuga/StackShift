@@ -15,11 +15,13 @@ import com.ugurbuga.stackshift.telemetry.TelemetryActionNames
 import com.ugurbuga.stackshift.telemetry.TelemetryUserPropertyNames
 import com.ugurbuga.stackshift.telemetry.rememberAppTelemetry
 import com.ugurbuga.stackshift.ui.theme.isStackShiftDarkTheme
+import com.ugurbuga.stackshift.ui.theme.stackShiftThemeSpec
 
 @Composable
 fun AndroidApp() {
     var settings by remember { mutableStateOf(AppSettings()) }
     var showSettings by remember { mutableStateOf(false) }
+    var showTutorial by remember { mutableStateOf(false) }
     val telemetry = rememberAppTelemetry()
     val gameViewModelState = remember {
         mutableStateOf(
@@ -48,18 +50,28 @@ fun AndroidApp() {
         onDispose(gameViewModel::dispose)
     }
 
-    AndroidSystemBarsEffect(darkTheme = isStackShiftDarkTheme(settings))
+    val darkTheme = isStackShiftDarkTheme(settings)
+    val systemBarColor = stackShiftThemeSpec(settings = settings, darkTheme = darkTheme).uiColors.screenGradientBottom
+    AndroidSystemBarsEffect(
+        darkTheme = darkTheme,
+        navigationBarColor = systemBarColor,
+    )
 
     StackShiftRoot(
         settings = settings,
         telemetry = telemetry,
         gameViewModel = gameViewModel,
         showSettings = showSettings,
+        showTutorial = showTutorial,
         onShowSettingsChange = { showSettings = it },
+        onShowTutorialChange = { showTutorial = it },
         onSettingsChange = { updated ->
+            val shouldLogSettingsChange = updated.copy(hasSeenTutorial = settings.hasSeenTutorial) != settings
             settings = updated
             AppSettingsStorage.save(updated)
-            telemetry.logUserAction(TelemetryActionNames.SettingsChanged)
+            if (shouldLogSettingsChange) {
+                telemetry.logUserAction(TelemetryActionNames.SettingsChanged)
+            }
         }
     )
 }

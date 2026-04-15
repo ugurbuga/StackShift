@@ -26,8 +26,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.ViewModule
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
@@ -88,6 +91,9 @@ import stackshift.composeapp.generated.resources.settings_block_style
 import stackshift.composeapp.generated.resources.settings_language
 import stackshift.composeapp.generated.resources.settings_theme
 import stackshift.composeapp.generated.resources.settings_theme_palette
+import stackshift.composeapp.generated.resources.settings_tutorial
+import stackshift.composeapp.generated.resources.settings_tutorial_body
+import stackshift.composeapp.generated.resources.settings_tutorial_replay
 import stackshift.composeapp.generated.resources.settings_title
 import stackshift.composeapp.generated.resources.theme_palette_aurora
 import stackshift.composeapp.generated.resources.theme_palette_classic
@@ -103,6 +109,7 @@ fun AppSettingsScreen(
     telemetry: AppTelemetry = NoOpAppTelemetry,
     settings: AppSettings,
     onSettingsChange: (AppSettings) -> Unit,
+    onReplayTutorial: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -179,6 +186,26 @@ fun AppSettingsScreen(
                         options = blockStyleOptions(settings.blockColorPalette),
                         onSelected = { onSettingsChange(settings.copy(blockVisualStyle = it)) },
                     )
+                }
+
+                SettingsSectionCard(
+                    title = stringResource(Res.string.settings_tutorial),
+                    icon = Icons.Filled.PlayArrow,
+                ) {
+                    Text(
+                        text = stringResource(Res.string.settings_tutorial_body),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = uiColors.subtitle,
+                    )
+                    Button(
+                        onClick = onReplayTutorial,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = uiColors.actionButton,
+                            contentColor = uiColors.actionIcon,
+                        ),
+                    ) {
+                        Text(stringResource(Res.string.settings_tutorial_replay))
+                    }
                 }
             }
         }
@@ -654,6 +681,7 @@ private fun AppSettingsScreenPreview() {
     AppSettingsScreen(
         settings = AppSettings(),
         onSettingsChange = {},
+        onReplayTutorial = {},
         onBack = {},
     )
 }

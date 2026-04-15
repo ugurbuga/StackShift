@@ -1,0 +1,1400 @@
+package com.ugurbuga.stackshift.ui.game
+
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.ViewModule
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.ugurbuga.stackshift.StackShiftTheme
+import com.ugurbuga.stackshift.game.logic.GameLogic
+import com.ugurbuga.stackshift.game.model.BoardMatrix
+import com.ugurbuga.stackshift.game.model.CellTone
+import com.ugurbuga.stackshift.game.model.GameConfig
+import com.ugurbuga.stackshift.game.model.GameState
+import com.ugurbuga.stackshift.game.model.GameStatus
+import com.ugurbuga.stackshift.game.model.GameTextKey
+import com.ugurbuga.stackshift.game.model.GridPoint
+import com.ugurbuga.stackshift.game.model.Piece
+import com.ugurbuga.stackshift.game.model.PieceKind
+import com.ugurbuga.stackshift.game.model.PlacementPreview
+import com.ugurbuga.stackshift.game.model.SpecialBlockType
+import com.ugurbuga.stackshift.game.model.gameText
+import com.ugurbuga.stackshift.localization.LocalAppSettings
+import com.ugurbuga.stackshift.settings.AppSettings
+import com.ugurbuga.stackshift.telemetry.AppTelemetry
+import com.ugurbuga.stackshift.telemetry.LogScreen
+import com.ugurbuga.stackshift.telemetry.NoOpAppTelemetry
+import com.ugurbuga.stackshift.telemetry.TelemetryScreenNames
+import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
+import com.ugurbuga.stackshift.ui.theme.appBackgroundBrush
+import com.ugurbuga.stackshift.ui.theme.isStackShiftDarkTheme
+import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
+import stackshift.composeapp.generated.resources.Res
+import stackshift.composeapp.generated.resources.app_title
+import stackshift.composeapp.generated.resources.block_properties_column_clearer_desc
+import stackshift.composeapp.generated.resources.block_properties_column_clearer_title
+import stackshift.composeapp.generated.resources.block_properties_ghost_desc
+import stackshift.composeapp.generated.resources.block_properties_ghost_title
+import stackshift.composeapp.generated.resources.block_properties_heavy_desc
+import stackshift.composeapp.generated.resources.block_properties_heavy_title
+import stackshift.composeapp.generated.resources.block_properties_row_clearer_desc
+import stackshift.composeapp.generated.resources.block_properties_row_clearer_title
+import stackshift.composeapp.generated.resources.block_properties_title
+import stackshift.composeapp.generated.resources.hold
+import stackshift.composeapp.generated.resources.launch_drag_hint
+import stackshift.composeapp.generated.resources.pause
+import stackshift.composeapp.generated.resources.piece_properties_active
+import stackshift.composeapp.generated.resources.queue_next_short
+import stackshift.composeapp.generated.resources.settings_title
+import stackshift.composeapp.generated.resources.tutorial_back
+import stackshift.composeapp.generated.resources.tutorial_finish
+import stackshift.composeapp.generated.resources.tutorial_intro_body
+import stackshift.composeapp.generated.resources.tutorial_intro_title
+import stackshift.composeapp.generated.resources.tutorial_next
+import stackshift.composeapp.generated.resources.tutorial_ready_body
+import stackshift.composeapp.generated.resources.tutorial_ready_title
+import stackshift.composeapp.generated.resources.tutorial_specials_body
+import stackshift.composeapp.generated.resources.tutorial_specials_title
+import stackshift.composeapp.generated.resources.tutorial_step_counter
+import stackshift.composeapp.generated.resources.tutorial_subtitle
+import stackshift.composeapp.generated.resources.tutorial_systems_body
+import stackshift.composeapp.generated.resources.tutorial_systems_title
+import kotlin.math.roundToInt
+
+private val TutorialCardShape = RoundedCornerShape(28.dp)
+private val TutorialMiniBoardCellSize = 16.dp
+private val TutorialMiniBoardCellGap = 4.dp
+private val TutorialMiniDockHeight = 78.dp
+private val TutorialMiniTrayHeight = 54.dp
+private val TutorialSamplePiece = Piece(
+    id = -1,
+    kind = PieceKind.T,
+    tone = CellTone.Cyan,
+    cells = listOf(
+        GridPoint(column = 1, row = 0),
+        GridPoint(column = 0, row = 1),
+        GridPoint(column = 1, row = 1),
+        GridPoint(column = 2, row = 1),
+    ),
+    width = 3,
+    height = 2,
+)
+private val TutorialNextPiece = Piece(
+    id = -2,
+    kind = PieceKind.L,
+    tone = CellTone.Gold,
+    cells = listOf(
+        GridPoint(column = 0, row = 0),
+        GridPoint(column = 0, row = 1),
+        GridPoint(column = 0, row = 2),
+        GridPoint(column = 1, row = 2),
+    ),
+    width = 2,
+    height = 3,
+    special = SpecialBlockType.Ghost,
+)
+
+private data class TutorialDemoScene(
+    val gameState: GameState,
+    val spawnColumn: Int,
+)
+
+private fun tutorialPreviewGameState(
+    board: BoardMatrix,
+    activePiece: Piece,
+    nextQueue: List<Piece> = listOf(TutorialNextPiece),
+    spawnColumn: Int,
+): GameState = GameState(
+    config = GameConfig(columns = board.columns, rows = board.rows),
+    board = board,
+    activePiece = activePiece,
+    nextQueue = nextQueue,
+    holdPiece = null,
+    canHold = true,
+    lastPlacementColumn = spawnColumn,
+    score = 0,
+    linesCleared = 0,
+    level = 1,
+    difficultyStage = 0,
+    secondsUntilDifficultyIncrease = 18,
+    status = GameStatus.Running,
+    message = gameText(GameTextKey.GameMessageSelectColumn),
+)
+
+private fun tutorialLaunchScene(): TutorialDemoScene {
+    val board = BoardMatrix.empty(columns = 5, rows = 5)
+        .fill(
+            points = listOf(
+                GridPoint(0, 4),
+                GridPoint(1, 4),
+                GridPoint(2, 4),
+                GridPoint(0, 3),
+                GridPoint(4, 4),
+            ),
+            tone = CellTone.Blue,
+        )
+        .fill(
+            points = listOf(
+                GridPoint(3, 3),
+                GridPoint(4, 3),
+            ),
+            tone = CellTone.Gold,
+        )
+    return TutorialDemoScene(
+        gameState = tutorialPreviewGameState(
+            board = board,
+            activePiece = TutorialSamplePiece.copy(id = -101, tone = CellTone.Cyan),
+            spawnColumn = 1,
+        ),
+        spawnColumn = 1,
+    )
+}
+
+private fun tutorialSpecialScene(
+    tone: CellTone,
+    special: SpecialBlockType,
+): TutorialDemoScene {
+    val board = when (special) {
+        SpecialBlockType.ColumnClearer -> BoardMatrix.empty(columns = 5, rows = 5)
+            .fill(
+                points = listOf(
+                    GridPoint(1, 4),
+                    GridPoint(1, 3),
+                    GridPoint(1, 2),
+                    GridPoint(2, 4),
+                    GridPoint(2, 3),
+                    GridPoint(3, 4),
+                ),
+                tone = CellTone.Blue,
+            )
+            .fill(
+                points = listOf(
+                    GridPoint(4, 4),
+                    GridPoint(4, 3),
+                ),
+                tone = CellTone.Gold,
+            )
+
+        SpecialBlockType.RowClearer -> BoardMatrix.empty(columns = 5, rows = 5)
+            .fill(
+                points = listOf(
+                    GridPoint(0, 4),
+                    GridPoint(1, 4),
+                    GridPoint(2, 4),
+                    GridPoint(4, 4),
+                    GridPoint(1, 3),
+                    GridPoint(2, 3),
+                    GridPoint(3, 3),
+                    GridPoint(4, 3),
+                ),
+                tone = CellTone.Emerald,
+            )
+
+        SpecialBlockType.Ghost -> BoardMatrix.empty(columns = 5, rows = 5)
+            .fill(
+                points = listOf(
+                    GridPoint(0, 4),
+                    GridPoint(1, 4),
+                    GridPoint(3, 4),
+                    GridPoint(4, 4),
+                    GridPoint(1, 3),
+                    GridPoint(3, 3),
+                ),
+                tone = CellTone.Violet,
+            )
+            .fill(
+                points = listOf(GridPoint(2, 2)),
+                tone = CellTone.Gold,
+            )
+
+        SpecialBlockType.Heavy -> BoardMatrix.empty(columns = 5, rows = 5)
+            .fill(
+                points = listOf(
+                    GridPoint(0, 4),
+                    GridPoint(1, 4),
+                    GridPoint(2, 4),
+                    GridPoint(3, 4),
+                    GridPoint(2, 3),
+                    GridPoint(4, 3),
+                    GridPoint(4, 2),
+                ),
+                tone = CellTone.Coral,
+            )
+
+        SpecialBlockType.None -> BoardMatrix.empty(columns = 5, rows = 5)
+    }
+    val activePiece = when (special) {
+        SpecialBlockType.Ghost -> TutorialNextPiece.copy(id = -202L, tone = tone, special = special)
+        else -> TutorialSamplePiece.copy(id = -201L - special.ordinal, tone = tone, special = special)
+    }
+    val spawnColumn = when (special) {
+        SpecialBlockType.Heavy -> 1
+        else -> 1
+    }
+    return TutorialDemoScene(
+        gameState = tutorialPreviewGameState(
+            board = board,
+            activePiece = activePiece,
+            spawnColumn = spawnColumn,
+        ),
+        spawnColumn = spawnColumn,
+    )
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun GameTutorialScreen(
+    modifier: Modifier = Modifier,
+    telemetry: AppTelemetry = NoOpAppTelemetry,
+    onFinish: () -> Unit,
+) {
+    LogScreen(telemetry, TelemetryScreenNames.Tutorial)
+    val totalSteps = 4
+    val uiColors = StackShiftThemeTokens.uiColors
+    val pagerState = rememberPagerState(pageCount = { totalSteps })
+    val coroutineScope = rememberCoroutineScope()
+    val currentStep = pagerState.currentPage
+    val isLastStep = currentStep == totalSteps - 1
+
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(appBackgroundBrush(uiColors))
+                .safeDrawingPadding()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+        ) {
+            Card(
+                modifier = Modifier.fillMaxSize(),
+                shape = TutorialCardShape,
+                colors = CardDefaults.cardColors(containerColor = uiColors.panel.copy(alpha = 0.94f)),
+                border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.84f)),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                                colors = listOf(
+                                    uiColors.panelHighlight.copy(alpha = 0.14f),
+                                    uiColors.launchGlow.copy(alpha = 0.10f),
+                                    androidx.compose.ui.graphics.Color.Transparent,
+                                ),
+                            ),
+                        )
+                        .padding(horizontal = 18.dp, vertical = 16.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Text(
+                            text = stringResource(Res.string.app_title),
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TutorialStepChip(
+                            currentStep = currentStep + 1,
+                            totalSteps = totalSteps,
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(Res.string.tutorial_subtitle),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = uiColors.subtitle,
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                    ) {
+                        TutorialScrollablePage {
+                            when (it) {
+                                0 -> TutorialIntroStep()
+                                1 -> TutorialSystemsStep()
+                                2 -> TutorialSpecialsStep()
+                                else -> TutorialReadyStep()
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (currentStep > 0) {
+                            TextButton(onClick = {
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(currentStep - 1)
+                                }
+                            }) {
+                                Text(stringResource(Res.string.tutorial_back))
+                            }
+                        } else {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                        Spacer(modifier = Modifier.weight(1f))
+                        Button(
+                            onClick = {
+                                if (isLastStep) {
+                                    onFinish()
+                                } else {
+                                    coroutineScope.launch {
+                                        pagerState.animateScrollToPage(currentStep + 1)
+                                    }
+                                }
+                            },
+                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                containerColor = uiColors.actionButton,
+                                contentColor = uiColors.actionIcon,
+                            ),
+                        ) {
+                            Text(
+                                text = if (isLastStep) {
+                                    stringResource(Res.string.tutorial_finish)
+                                } else {
+                                    stringResource(Res.string.tutorial_next)
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TutorialStepChip(currentStep: Int, totalSteps: Int) {
+    val uiColors = StackShiftThemeTokens.uiColors
+    Card(
+        shape = RoundedCornerShape(999.dp),
+        colors = CardDefaults.cardColors(containerColor = uiColors.panelMuted.copy(alpha = 0.92f)),
+        border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.68f)),
+    ) {
+        Text(
+            text = stringResource(Res.string.tutorial_step_counter, currentStep, totalSteps),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.SemiBold,
+        )
+    }
+}
+
+@Composable
+private fun TutorialScrollablePage(
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val uiColors = StackShiftThemeTokens.uiColors
+    val scrollState = rememberScrollState()
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(end = 2.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            content = content,
+        )
+
+        if (scrollState.canScrollBackward) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .height(22.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                uiColors.panel.copy(alpha = 0.82f),
+                                Color.Transparent,
+                            ),
+                        ),
+                    ),
+            )
+        }
+
+        if (scrollState.canScrollForward) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                uiColors.panel.copy(alpha = 0.88f),
+                            ),
+                        ),
+                    )
+                    .padding(top = 18.dp, bottom = 4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Text(
+                    text = "⌄",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = uiColors.subtitle,
+                )
+                Text(
+                    text = "⌄",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = uiColors.subtitle.copy(alpha = 0.72f),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TutorialMiniBoardShell(
+    modifier: Modifier = Modifier,
+    content: @Composable BoxScope.() -> Unit,
+) {
+    val uiColors = StackShiftThemeTokens.uiColors
+    val settings = LocalAppSettings.current
+    val boardStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(boardFrameCornerRadiusDp(boardStyle)),
+        colors = CardDefaults.cardColors(containerColor = uiColors.gameSurface.copy(alpha = 0.88f)),
+        border = BorderStroke(1.dp, uiColors.boardOutline.copy(alpha = 0.84f)),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            uiColors.boardGradientTop.copy(alpha = 0.24f),
+                            uiColors.boardGradientBottom.copy(alpha = 0.28f),
+                        ),
+                    ),
+                )
+                .padding(10.dp),
+            content = content,
+        )
+    }
+}
+
+@Composable
+private fun TutorialMiniBoardCell(
+    tone: CellTone?,
+    style: com.ugurbuga.stackshift.game.model.BlockVisualStyle,
+    alpha: Float = 1f,
+    special: SpecialBlockType = SpecialBlockType.None,
+    isPreview: Boolean = false,
+) {
+    val settings = LocalAppSettings.current
+    val uiColors = StackShiftThemeTokens.uiColors
+    if (tone == null) {
+        Box(
+            modifier = Modifier
+                .size(TutorialMiniBoardCellSize)
+                .clip(RoundedCornerShape(5.dp))
+                .background(uiColors.boardEmptyCell.copy(alpha = if (isPreview) 0.52f else 0.42f))
+                .border(
+                    width = 1.dp,
+                    color = uiColors.boardEmptyCellBorder.copy(alpha = if (isPreview) 0.82f else 0.58f),
+                    shape = RoundedCornerShape(5.dp),
+                ),
+        )
+    } else {
+        BlockCellPreview(
+            tone = tone,
+            palette = settings.blockColorPalette,
+            style = style,
+            size = TutorialMiniBoardCellSize,
+            alpha = alpha,
+            special = special,
+        )
+    }
+}
+
+@Composable
+private fun TutorialIntroStep(launchPreviewColumn: Int? = null) {
+    TutorialSection(
+        title = stringResource(Res.string.tutorial_intro_title),
+        body = stringResource(Res.string.tutorial_intro_body),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            TutorialPieceCard(
+                modifier = Modifier.weight(1f),
+                title = stringResource(Res.string.piece_properties_active),
+                piece = TutorialSamplePiece,
+                alpha = 1f,
+            )
+            TutorialPieceCard(
+                modifier = Modifier.weight(1f),
+                title = stringResource(Res.string.queue_next_short),
+                piece = TutorialNextPiece,
+                alpha = 0.58f,
+            )
+        }
+        TutorialLaunchBoardDemo(lockedColumn = launchPreviewColumn)
+        TutorialHintCard(text = stringResource(Res.string.launch_drag_hint))
+    }
+}
+
+@Composable
+private fun TutorialSystemsStep() {
+    TutorialSection(
+        title = stringResource(Res.string.tutorial_systems_title),
+        body = stringResource(Res.string.tutorial_systems_body),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            TutorialActionTile(
+                modifier = Modifier.weight(1f),
+                tone = CellTone.Cyan,
+                icon = Icons.Filled.SwapHoriz,
+                title = stringResource(Res.string.hold),
+            )
+            TutorialActionTile(
+                modifier = Modifier.weight(1f),
+                tone = CellTone.Gold,
+                icon = Icons.Filled.Pause,
+                title = stringResource(Res.string.pause),
+            )
+            TutorialActionTile(
+                modifier = Modifier.weight(1f),
+                tone = CellTone.Violet,
+                icon = Icons.Filled.ViewModule,
+                title = stringResource(Res.string.block_properties_title),
+            )
+            TutorialActionTile(
+                modifier = Modifier.weight(1f),
+                tone = CellTone.Lime,
+                icon = Icons.Filled.Settings,
+                title = stringResource(Res.string.settings_title),
+            )
+        }
+        TutorialHintCard(text = stringResource(Res.string.launch_drag_hint))
+    }
+}
+
+@Composable
+private fun TutorialSpecialsStep(previewColumns: Map<SpecialBlockType, Int> = emptyMap()) {
+    TutorialSection(
+        title = stringResource(Res.string.tutorial_specials_title),
+        body = stringResource(Res.string.tutorial_specials_body),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            TutorialAnimatedSpecialsShowcase(previewColumns = previewColumns)
+            TutorialSpecialCard(
+                tone = CellTone.Emerald,
+                special = SpecialBlockType.ColumnClearer,
+                title = stringResource(Res.string.block_properties_column_clearer_title),
+                body = stringResource(Res.string.block_properties_column_clearer_desc),
+            )
+            TutorialSpecialCard(
+                tone = CellTone.Amber,
+                special = SpecialBlockType.RowClearer,
+                title = stringResource(Res.string.block_properties_row_clearer_title),
+                body = stringResource(Res.string.block_properties_row_clearer_desc),
+            )
+            TutorialSpecialCard(
+                tone = CellTone.Violet,
+                special = SpecialBlockType.Ghost,
+                title = stringResource(Res.string.block_properties_ghost_title),
+                body = stringResource(Res.string.block_properties_ghost_desc),
+            )
+            TutorialSpecialCard(
+                tone = CellTone.Coral,
+                special = SpecialBlockType.Heavy,
+                title = stringResource(Res.string.block_properties_heavy_title),
+                body = stringResource(Res.string.block_properties_heavy_desc),
+            )
+        }
+    }
+}
+
+@Composable
+private fun TutorialReadyStep(launchPreviewColumn: Int? = null) {
+    TutorialSection(
+        title = stringResource(Res.string.tutorial_ready_title),
+        body = stringResource(Res.string.tutorial_ready_body),
+    ) {
+        TutorialLaunchBoardDemo(compact = true, lockedColumn = launchPreviewColumn)
+        TutorialHintCard(text = stringResource(Res.string.block_properties_title))
+        TutorialHintCard(text = stringResource(Res.string.settings_title))
+    }
+}
+
+@Composable
+private fun TutorialLaunchBoardDemo(
+    compact: Boolean = false,
+    lockedColumn: Int? = null,
+) {
+    TutorialMiniGameDemo(
+        scene = remember { tutorialLaunchScene() },
+        compact = compact,
+        lockedColumn = lockedColumn,
+    )
+}
+
+@Composable
+private fun TutorialAnimatedSpecialsShowcase(
+    previewColumns: Map<SpecialBlockType, Int> = emptyMap(),
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            TutorialSpecialBoardDemo(
+                modifier = Modifier.weight(1f),
+                tone = CellTone.Emerald,
+                special = SpecialBlockType.ColumnClearer,
+                lockedColumn = previewColumns[SpecialBlockType.ColumnClearer],
+            )
+            TutorialSpecialBoardDemo(
+                modifier = Modifier.weight(1f),
+                tone = CellTone.Amber,
+                special = SpecialBlockType.RowClearer,
+                lockedColumn = previewColumns[SpecialBlockType.RowClearer],
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            TutorialSpecialBoardDemo(
+                modifier = Modifier.weight(1f),
+                tone = CellTone.Violet,
+                special = SpecialBlockType.Ghost,
+                lockedColumn = previewColumns[SpecialBlockType.Ghost],
+            )
+            TutorialSpecialBoardDemo(
+                modifier = Modifier.weight(1f),
+                tone = CellTone.Coral,
+                special = SpecialBlockType.Heavy,
+                lockedColumn = previewColumns[SpecialBlockType.Heavy],
+            )
+        }
+    }
+}
+
+@Composable
+private fun TutorialSpecialBoardDemo(
+    tone: CellTone,
+    special: SpecialBlockType,
+    modifier: Modifier = Modifier,
+    lockedColumn: Int? = null,
+) {
+    TutorialMiniGameDemo(
+        scene = remember(tone, special) { tutorialSpecialScene(tone = tone, special = special) },
+        modifier = modifier,
+        compact = true,
+        lockedColumn = lockedColumn,
+        badgeTone = tone,
+        badgeSpecial = special,
+    )
+}
+
+@Composable
+private fun TutorialMiniGameDemo(
+    scene: TutorialDemoScene,
+    modifier: Modifier = Modifier,
+    compact: Boolean = false,
+    lockedColumn: Int? = null,
+    badgeTone: CellTone? = null,
+    badgeSpecial: SpecialBlockType = SpecialBlockType.None,
+) {
+    val uiColors = StackShiftThemeTokens.uiColors
+    val settings = LocalAppSettings.current
+    val density = LocalDensity.current
+    val boardStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
+    val gameLogic = remember { GameLogic() }
+    val gameState = scene.gameState
+    val activePiece = gameState.activePiece
+    var hostRectInRoot by remember { mutableStateOf(Rect.Zero) }
+    var boardRectInRoot by remember { mutableStateOf(Rect.Zero) }
+    var trayRectInRoot by remember { mutableStateOf(Rect.Zero) }
+    var overlayTopLeft by remember(scene.gameState.activePiece?.id, lockedColumn) { mutableStateOf<Offset?>(null) }
+    var isDragging by remember { mutableStateOf(false) }
+
+    val boardRect = boardRectInRoot.toLocalRect(hostRectInRoot)
+    val trayRect = trayRectInRoot.toLocalRect(hostRectInRoot)
+    val cellSizePx = if (boardRect != Rect.Zero) {
+        boardRect.width / gameState.config.columns
+    } else {
+        0f
+    }
+    val maxColumn = activePiece?.let { (gameState.config.columns - it.width).coerceAtLeast(0) } ?: 0
+    val resolvedLockedColumn = lockedColumn?.coerceIn(0, maxColumn)
+    val spawnColumn = scene.spawnColumn.coerceIn(0, maxColumn)
+    val spawnTopLeft = pieceSpawnTopLeft(
+        piece = activePiece,
+        trayRect = trayRect,
+        boardRect = boardRect,
+        cellSizePx = cellSizePx,
+        column = resolvedLockedColumn ?: spawnColumn,
+    )
+    val selectedColumn = resolvedLockedColumn ?: resolveSelectedColumn(
+        piece = activePiece,
+        overlayTopLeft = overlayTopLeft,
+        boardRect = boardRect,
+        cellSizePx = cellSizePx,
+        boardColumns = gameState.config.columns,
+    )
+    val placementPreview = remember(gameState, selectedColumn) {
+        selectedColumn?.let { gameLogic.previewPlacement(gameState, it) }
+    }
+    val previewImpactPoints = remember(gameState, placementPreview) {
+        gameLogic.previewImpactPoints(gameState, placementPreview)
+    }
+    val overlayInHost = overlayTopLeft?.takeIf { hostRectInRoot != Rect.Zero }?.let { topLeft ->
+        Offset(topLeft.x - hostRectInRoot.left, topLeft.y - hostRectInRoot.top)
+    }
+    val pieceCellDp = with(density) { cellSizePx.coerceAtLeast(1f).toDp() }
+    val launchCellCornerRadius = boardCellCornerRadiusDp(
+        cellSize = pieceCellDp,
+        style = boardStyle,
+    )
+
+    LaunchedEffect(activePiece?.id, boardRect, trayRect, resolvedLockedColumn, spawnColumn) {
+        if (boardRect == Rect.Zero || trayRect == Rect.Zero || cellSizePx <= 0f) return@LaunchedEffect
+        overlayTopLeft = pieceSpawnTopLeft(
+            piece = activePiece,
+            trayRect = trayRect,
+            boardRect = boardRect,
+            cellSizePx = cellSizePx,
+            column = resolvedLockedColumn ?: spawnColumn,
+        )
+    }
+
+    TutorialMiniBoardShell(modifier = modifier) {
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxWidth()
+                .onGloballyPositioned { coordinates ->
+                    hostRectInRoot = coordinates.boundsInRoot()
+                },
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                if (!compact) {
+                    Text(
+                        text = stringResource(Res.string.launch_drag_hint),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = uiColors.subtitle,
+                    )
+                }
+
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    BoardGrid(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(gameState.config.columns.toFloat() / gameState.config.rows.toFloat())
+                            .onGloballyPositioned { coordinates ->
+                                boardRectInRoot = coordinates.boundsInRoot()
+                            },
+                        gameState = gameState,
+                        preview = placementPreview,
+                        impactedPreviewCells = previewImpactPoints,
+                        activeColumn = selectedColumn,
+                        activePiece = activePiece,
+                        isColumnValid = placementPreview != null,
+                        isDragging = isDragging || resolvedLockedColumn != null,
+                    )
+
+                    if (badgeTone != null && badgeSpecial != SpecialBlockType.None) {
+                        BlockCellPreview(
+                            tone = badgeTone,
+                            palette = settings.blockColorPalette,
+                            style = boardStyle,
+                            size = 18.dp,
+                            special = badgeSpecial,
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(8.dp),
+                        )
+                    }
+                }
+
+                TutorialMiniBottomDock(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(TutorialMiniDockHeight),
+                    activePiece = activePiece,
+                    nextPiece = gameState.nextPiece,
+                    cellSizePx = cellSizePx,
+                    compact = compact,
+                    onTrayPositioned = { trayRectInRoot = it },
+                )
+            }
+
+            if (activePiece != null && overlayInHost != null && cellSizePx > 0f) {
+                PieceBlocks(
+                    piece = activePiece,
+                    cellSize = pieceCellDp,
+                    cellCornerRadius = launchCellCornerRadius,
+                    modifier = Modifier
+                        .graphicsLayer(
+                            translationX = overlayInHost.x,
+                            translationY = overlayInHost.y,
+                            transformOrigin = TransformOrigin(0f, 0f),
+                        )
+                        .then(
+                            if (resolvedLockedColumn == null) {
+                                Modifier.pointerInput(
+                                    activePiece.id,
+                                    boardRect,
+                                    cellSizePx,
+                                ) {
+                                    detectDragGestures(
+                                        onDragStart = {
+                                            isDragging = true
+                                        },
+                                        onDragEnd = {
+                                            isDragging = false
+                                            val column = selectedColumn
+                                            overlayTopLeft = if (column != null) {
+                                                overlayTopLeft?.let { current ->
+                                                    Offset(columnToLeft(column, boardRect, cellSizePx), current.y)
+                                                }
+                                            } else {
+                                                spawnTopLeft
+                                            }
+                                        },
+                                        onDragCancel = {
+                                            isDragging = false
+                                            overlayTopLeft = spawnTopLeft
+                                        },
+                                        onDrag = { change, dragAmount ->
+                                            change.consume()
+                                            val current = overlayTopLeft ?: spawnTopLeft ?: return@detectDragGestures
+                                            val minLeft = boardRect.left
+                                            val maxLeft = (boardRect.right - (activePiece.width * cellSizePx)).coerceAtLeast(minLeft)
+                                            overlayTopLeft = Offset(
+                                                (current.x + dragAmount.x).coerceIn(minLeft, maxLeft),
+                                                current.y,
+                                            )
+                                        },
+                                    )
+                                }
+                            } else {
+                                Modifier
+                            },
+                        ),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TutorialMiniBottomDock(
+    activePiece: Piece?,
+    nextPiece: Piece?,
+    cellSizePx: Float,
+    compact: Boolean,
+    onTrayPositioned: (Rect) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val uiColors = StackShiftThemeTokens.uiColors
+    val density = LocalDensity.current
+    val queueCellSize = with(density) { (cellSizePx * 0.5f).coerceAtLeast(8f).toDp() }
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = uiColors.gameSurface.copy(alpha = 0.90f)),
+        border = BorderStroke(1.dp, uiColors.boardEmptyCellBorder.copy(alpha = 0.68f)),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            uiColors.launchGlow.copy(alpha = 0.16f),
+                            Color.Transparent,
+                        ),
+                    ),
+                )
+                .padding(horizontal = 10.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(uiColors.panelMuted.copy(alpha = 0.48f))
+                    .border(
+                        width = 1.dp,
+                        color = uiColors.boardEmptyCellBorder.copy(alpha = 0.78f),
+                        shape = RoundedCornerShape(18.dp),
+                    )
+                    .onGloballyPositioned { coordinates ->
+                        onTrayPositioned(coordinates.boundsInRoot())
+                    }
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                Text(
+                    text = if (compact) {
+                        stringResource(Res.string.launch_drag_hint)
+                    } else {
+                        stringResource(Res.string.launch_drag_hint)
+                    },
+                    style = if (compact) MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelMedium,
+                    color = uiColors.subtitle,
+                    maxLines = if (compact) 1 else 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(end = queueCellSize * (activePiece?.width ?: 2)),
+                )
+            }
+
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = uiColors.panel.copy(alpha = 0.52f)),
+                border = BorderStroke(1.dp, uiColors.boardEmptyCellBorder.copy(alpha = 0.62f)),
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = stringResource(Res.string.queue_next_short),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = uiColors.subtitle.copy(alpha = 0.72f),
+                    )
+                    nextPiece?.let {
+                        PieceBlocks(
+                            piece = it,
+                            cellSize = queueCellSize,
+                            alpha = 0.58f,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TutorialSection(
+    title: String,
+    body: String,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val uiColors = StackShiftThemeTokens.uiColors
+    Card(
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = uiColors.gameSurface.copy(alpha = 0.84f)),
+        border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.72f)),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = body,
+                style = MaterialTheme.typography.bodyMedium,
+                color = uiColors.subtitle,
+            )
+            content()
+        }
+    }
+}
+
+@Composable
+private fun TutorialPieceCard(
+    title: String,
+    piece: Piece,
+    alpha: Float,
+    modifier: Modifier = Modifier,
+) {
+    val uiColors = StackShiftThemeTokens.uiColors
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = uiColors.panelMuted.copy(alpha = 0.76f)),
+        border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.68f)),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelLarge,
+                color = uiColors.subtitle.copy(alpha = alpha.coerceIn(0f, 1f)),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                fontWeight = FontWeight.SemiBold,
+            )
+            PieceBlocks(
+                piece = piece,
+                cellSize = 22.dp,
+                alpha = alpha,
+            )
+        }
+    }
+}
+
+@Composable
+private fun TutorialActionTile(
+    tone: CellTone,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    modifier: Modifier = Modifier,
+) {
+    val settings = LocalAppSettings.current
+    val blockStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
+    val iconTint = specialBlockIconTint(style = blockStyle, isDarkTheme = isStackShiftDarkTheme(settings))
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                BlockCellPreview(
+                    tone = tone,
+                    palette = settings.blockColorPalette,
+                    style = blockStyle,
+                    size = 34.dp,
+                )
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = iconTint,
+                    modifier = Modifier.size(18.dp),
+                )
+            }
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
+private fun TutorialSpecialCard(
+    tone: CellTone,
+    special: SpecialBlockType,
+    title: String,
+    body: String,
+) {
+    val uiColors = StackShiftThemeTokens.uiColors
+    Card(
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = uiColors.panelMuted.copy(alpha = 0.78f)),
+        border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.70f)),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            BlockCellPreview(
+                tone = tone,
+                palette = LocalAppSettings.current.blockColorPalette,
+                style = resolveBoardBlockStyle(LocalAppSettings.current.blockVisualStyle, LocalAppSettings.current.boardBlockStyleMode),
+                size = 34.dp,
+                special = special,
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = body,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = uiColors.subtitle,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TutorialHintCard(text: String) {
+    val uiColors = StackShiftThemeTokens.uiColors
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = uiColors.metricCard.copy(alpha = 0.84f)),
+        border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.62f)),
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.Medium,
+        )
+    }
+}
+
+private fun resolveSelectedColumn(
+    piece: Piece?,
+    overlayTopLeft: Offset?,
+    boardRect: Rect,
+    cellSizePx: Float,
+    boardColumns: Int,
+): Int? {
+    if (piece == null || overlayTopLeft == null || boardRect == Rect.Zero || cellSizePx <= 0f) return null
+    val maxColumn = boardColumns - piece.width
+    if (maxColumn < 0) return null
+    val approximateColumn = ((overlayTopLeft.x - boardRect.left) / cellSizePx).roundToInt()
+    return approximateColumn.coerceIn(0, maxColumn)
+}
+
+private fun pieceSpawnTopLeft(
+    piece: Piece?,
+    trayRect: Rect,
+    boardRect: Rect,
+    cellSizePx: Float,
+    column: Int?,
+): Offset? {
+    if (piece == null || trayRect == Rect.Zero || boardRect == Rect.Zero || cellSizePx <= 0f || column == null) return null
+    return Offset(
+        x = columnToLeft(column, boardRect, cellSizePx),
+        y = trayRect.center.y - (piece.height * cellSizePx) / 2f,
+    )
+}
+
+private fun columnToLeft(
+    column: Int,
+    boardRect: Rect,
+    cellSizePx: Float,
+): Float = boardRect.left + (column * cellSizePx)
+
+private fun Rect.toLocalRect(hostRect: Rect): Rect {
+    if (this == Rect.Zero || hostRect == Rect.Zero) return Rect.Zero
+    return Rect(
+        left - hostRect.left,
+        top - hostRect.top,
+        right - hostRect.left,
+        bottom - hostRect.top,
+    )
+}
+
+@Composable
+private fun TutorialStepPreviewFrame(
+    currentStep: Int,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    StackShiftTheme(settings = AppSettings()) {
+        val uiColors = StackShiftThemeTokens.uiColors
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background,
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(appBackgroundBrush(uiColors))
+                    .padding(16.dp),
+            ) {
+                Card(
+                    modifier = Modifier.fillMaxSize(),
+                    shape = TutorialCardShape,
+                    colors = CardDefaults.cardColors(containerColor = uiColors.panel.copy(alpha = 0.94f)),
+                    border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.84f)),
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(
+                                        uiColors.panelHighlight.copy(alpha = 0.14f),
+                                        uiColors.launchGlow.copy(alpha = 0.10f),
+                                        Color.Transparent,
+                                    ),
+                                ),
+                            )
+                            .padding(horizontal = 18.dp, vertical = 16.dp),
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            Text(
+                                text = stringResource(Res.string.app_title),
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.weight(1f),
+                            )
+                            TutorialStepChip(
+                                currentStep = currentStep,
+                                totalSteps = 4,
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = stringResource(Res.string.tutorial_subtitle),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = uiColors.subtitle,
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                        ) {
+                            TutorialScrollablePage(content = content)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun TutorialIntroStepPreview() {
+    TutorialStepPreviewFrame(currentStep = 1) {
+        TutorialIntroStep(launchPreviewColumn = 1)
+    }
+}
+
+@Preview
+@Composable
+private fun TutorialSystemsStepPreview() {
+    TutorialStepPreviewFrame(currentStep = 2) {
+        TutorialSystemsStep()
+    }
+}
+
+@Preview
+@Composable
+private fun TutorialSpecialsStepPreview() {
+    TutorialStepPreviewFrame(currentStep = 3) {
+        TutorialSpecialsStep(
+            previewColumns = mapOf(
+                SpecialBlockType.ColumnClearer to 1,
+                SpecialBlockType.RowClearer to 1,
+                SpecialBlockType.Ghost to 1,
+                SpecialBlockType.Heavy to 1,
+            ),
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun TutorialReadyStepPreview() {
+    TutorialStepPreviewFrame(currentStep = 4) {
+        TutorialReadyStep(launchPreviewColumn = 2)
+    }
+}
+
+

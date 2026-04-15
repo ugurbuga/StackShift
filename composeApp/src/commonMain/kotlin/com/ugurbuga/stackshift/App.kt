@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.ui.tooling.preview.Preview
 import com.ugurbuga.stackshift.ads.NoOpGameAdController
 import com.ugurbuga.stackshift.ads.rememberPlatformGameAdController
@@ -20,6 +21,7 @@ import com.ugurbuga.stackshift.settings.GameSessionStorage
 import com.ugurbuga.stackshift.localization.AppEnvironment
 import com.ugurbuga.stackshift.telemetry.AppTelemetry
 import com.ugurbuga.stackshift.ui.game.AppSettingsScreen
+import com.ugurbuga.stackshift.ui.game.GameTutorialScreen
 import com.ugurbuga.stackshift.ui.game.StackShiftGameApp
 import com.ugurbuga.stackshift.presentation.game.GameViewModel
 import com.ugurbuga.stackshift.telemetry.TelemetryActionNames
@@ -54,7 +56,9 @@ fun StackShiftRoot(
     telemetry: AppTelemetry,
     gameViewModel: GameViewModel,
     showSettings: Boolean,
+    showTutorial: Boolean,
     onShowSettingsChange: (Boolean) -> Unit,
+    onShowTutorialChange: (Boolean) -> Unit,
     onSettingsChange: (AppSettings) -> Unit,
 ) {
     val adController = rememberPlatformGameAdController()
@@ -66,7 +70,21 @@ fun StackShiftRoot(
                     telemetry = telemetry,
                     settings = settings,
                     onSettingsChange = onSettingsChange,
+                    onReplayTutorial = {
+                        onShowSettingsChange(false)
+                        onShowTutorialChange(true)
+                    },
                     onBack = { onShowSettingsChange(false) },
+                )
+            } else if (showTutorial || !settings.hasSeenTutorial) {
+                GameTutorialScreen(
+                    telemetry = telemetry,
+                    onFinish = {
+                        onShowTutorialChange(false)
+                        if (!settings.hasSeenTutorial) {
+                            onSettingsChange(settings.copy(hasSeenTutorial = true))
+                        }
+                    },
                 )
             } else {
                 Column(modifier = androidx.compose.ui.Modifier.fillMaxSize()) {
@@ -83,7 +101,11 @@ fun StackShiftRoot(
                         },
                     )
                     if (adController !== NoOpGameAdController) {
-                        adController.Banner(modifier = androidx.compose.ui.Modifier.fillMaxWidth())
+                        adController.Banner(
+                            modifier = androidx.compose.ui.Modifier
+                                .fillMaxWidth()
+                                .navigationBarsPadding()
+                        )
                     }
                 }
             }
@@ -96,6 +118,7 @@ fun StackShiftRoot(
 fun App() {
     var settings by remember { mutableStateOf(AppSettings()) }
     var showSettings by remember { mutableStateOf(false) }
+    var showTutorial by remember { mutableStateOf(false) }
     val telemetry = rememberAppTelemetry()
     val gameViewModel = remember {
         GameViewModel(
@@ -122,11 +145,16 @@ fun App() {
         telemetry = telemetry,
         gameViewModel = gameViewModel,
         showSettings = showSettings,
+        showTutorial = showTutorial,
         onShowSettingsChange = { showSettings = it },
+        onShowTutorialChange = { showTutorial = it },
         onSettingsChange = { updated ->
+            val shouldLogSettingsChange = updated.copy(hasSeenTutorial = settings.hasSeenTutorial) != settings
             settings = updated
             AppSettingsStorage.save(updated)
-            telemetry.logUserAction(TelemetryActionNames.SettingsChanged)
+            if (shouldLogSettingsChange) {
+                telemetry.logUserAction(TelemetryActionNames.SettingsChanged)
+            }
         },
     )
 }

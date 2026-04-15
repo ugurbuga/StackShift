@@ -196,10 +196,6 @@ private class AndroidGameAdController(
 
     private fun initializeMobileAdsIfNeeded() {
         if (mobileAdsInitialized) return
-        if (context == null) {
-            Log.e("GameAds", "Context is null in initializeMobileAdsIfNeeded")
-            return
-        }
         try {
             MobileAds.initialize(context)
             mobileAdsInitialized = true

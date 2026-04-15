@@ -8,6 +8,9 @@
     <string name="settings_block_palette">Block Color Palette</string>
     <string name="settings_block_style">Block Style</string>
     <string name="settings_board_block_style">Board Block Style</string>
+    <string name="settings_tutorial">Tutorial</string>
+    <string name="settings_tutorial_body">Replay the interactive onboarding whenever you want to revisit the controls, special blocks, and launch flow.</string>
+    <string name="settings_tutorial_replay">Show tutorial again</string>
     <string name="app_language_english">English</string>
     <string name="app_language_turkish">Türkçe</string>
     <string name="app_language_spanish">Español</string>
@@ -139,5 +142,18 @@
     <string name="block_properties_heavy_desc">Behaves more aggressively; has a stronger effect after landing.</string>
 
     <string name="block_properties_dot_desc">The small dot in the top-right shows that this block has a special effect. The dot and border color indicate the effect type.</string>
+    <string name="tutorial_subtitle">A quick walkthrough before your first run.</string>
+    <string name="tutorial_step_counter">Step %1$d / %2$d</string>
+    <string name="tutorial_back">Back</string>
+    <string name="tutorial_next">Next</string>
+    <string name="tutorial_finish">Start the game</string>
+    <string name="tutorial_intro_title">Launch pieces from the bottom dock</string>
+    <string name="tutorial_intro_body">Your active piece waits at the bottom. Drag it horizontally to line up a column, then release to launch it upward onto the board. The next preview is intentionally softer so your eye stays on the active piece.</string>
+    <string name="tutorial_systems_title">Use the action blocks when the board gets tight</string>
+    <string name="tutorial_systems_body">Hold lets you swap the current piece, Pause freezes the run, Block Properties explains symbols, and Settings changes the look and feel. These buttons now match your selected board block style.</string>
+    <string name="tutorial_specials_title">Special blocks can rescue a run</string>
+    <string name="tutorial_specials_body">Some pieces carry special effects. Learn their badge and use them to clear pressure, open space, or slip through difficult stacks.</string>
+    <string name="tutorial_ready_title">You are ready to continue this run</string>
+    <string name="tutorial_ready_body">That is it — plan the next column, watch the launch bar, and use specials at the right moment. You can reopen this tutorial any time from Settings.</string>
 </resources>
 

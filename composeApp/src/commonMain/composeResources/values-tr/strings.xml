@@ -8,6 +8,9 @@
     <string name="settings_block_palette">Blok Renkleri</string>
     <string name="settings_block_style">Blok Şekilleri</string>
     <string name="settings_board_block_style">Tahta Blok Stili</string>
+    <string name="settings_tutorial">Tutorial</string>
+    <string name="settings_tutorial_body">Kontrolleri, özel blokları ve launch akışını tekrar görmek istediğinde etkileşimli rehberi yeniden aç.</string>
+    <string name="settings_tutorial_replay">Tutorial’ı tekrar göster</string>
     <string name="app_language_english">English</string>
     <string name="app_language_turkish">Türkçe</string>
     <string name="app_language_spanish">Español</string>
@@ -130,4 +133,17 @@
     <string name="block_properties_heavy_title">Ağır</string>
     <string name="block_properties_heavy_desc">Daha agresif davranır; yerleşim sonrası etkisi daha güçlüdür.</string>
     <string name="block_properties_dot_desc">Sağ üstteki küçük nokta, bu bloğun özel bir etki taşıdığını gösterir. Nokta ve çerçeve rengi, etki türünü belirtir.</string>
+    <string name="tutorial_subtitle">İlk turundan önce kısa bir rehber.</string>
+    <string name="tutorial_step_counter">Adım %1$d / %2$d</string>
+    <string name="tutorial_back">Geri</string>
+    <string name="tutorial_next">İleri</string>
+    <string name="tutorial_finish">Oyunu başlat</string>
+    <string name="tutorial_intro_title">Parçaları alt dock alanından fırlat</string>
+    <string name="tutorial_intro_body">Aktif parçan altta bekler. Sütunu hizalamak için yatay sürükle, sonra bırakıp yukarı fırlat. Next önizlemesi bilerek daha silik gösterilir; odağın aktif parçada kalır.</string>
+    <string name="tutorial_systems_title">Tahta sıkışınca aksiyon bloklarını kullan</string>
+    <string name="tutorial_systems_body">Hold mevcut parçayı saklar/değiştirir, Duraklat oyunu dondurur, Blok Özellikleri simgeleri açıklar, Ayarlar ise görünümü değiştirir. Bu butonlar artık seçtiğin board blok stiliyle aynı görünür.</string>
+    <string name="tutorial_specials_title">Özel bloklar turu kurtarabilir</string>
+    <string name="tutorial_specials_body">Bazı parçalar özel efekt taşır. Rozetlerini öğren; baskıyı düşürmek, alan açmak veya sıkışık yığınların içinden geçmek için doğru anda kullan.</string>
+    <string name="tutorial_ready_title">Bu tura devam etmeye hazırsın</string>
+    <string name="tutorial_ready_body">Hepsi bu kadar — sıradaki sütunu planla, launch bar’ı takip et ve özel blokları doğru anda kullan. Bu rehberi istediğin zaman Ayarlar içinden yeniden açabilirsin.</string>
 </resources>

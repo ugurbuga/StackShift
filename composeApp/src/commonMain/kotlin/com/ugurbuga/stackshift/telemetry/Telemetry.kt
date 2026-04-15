@@ -66,6 +66,7 @@ object TelemetryScreenNames {
     const val Settings = "settings"
     const val BlockProperties = "block_properties"
     const val PieceProperties = "piece_properties"
+    const val Tutorial = "tutorial"
 }
 
 object TelemetryUserPropertyNames {

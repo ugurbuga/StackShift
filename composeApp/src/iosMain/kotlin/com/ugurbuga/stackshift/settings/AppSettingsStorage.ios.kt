@@ -18,6 +18,7 @@ actual object AppSettingsStorage {
         blockColorPalette = BlockColorPalette.entries[defaults.integerForKey(KeyBlockColorPalette).toIntOrDefault(BlockColorPalette.Classic.ordinal)],
         blockVisualStyle = BlockVisualStyle.entries[defaults.integerForKey(KeyBlockVisualStyle).toIntOrDefault(BlockVisualStyle.Flat.ordinal)],
         boardBlockStyleMode = BoardBlockStyleMode.entries[defaults.integerForKey(KeyBoardBlockStyleMode).toIntOrDefault(BoardBlockStyleMode.MatchSelectedBlockStyle.ordinal)],
+        hasSeenTutorial = defaults.boolForKey(KeyHasSeenTutorial),
     )
 
     actual fun save(settings: AppSettings) {
@@ -27,6 +28,7 @@ actual object AppSettingsStorage {
         defaults.setInteger(settings.blockColorPalette.ordinal.toLong(), forKey = KeyBlockColorPalette)
         defaults.setInteger(settings.blockVisualStyle.ordinal.toLong(), forKey = KeyBlockVisualStyle)
         defaults.setInteger(settings.boardBlockStyleMode.ordinal.toLong(), forKey = KeyBoardBlockStyleMode)
+        defaults.setBool(settings.hasSeenTutorial, forKey = KeyHasSeenTutorial)
     }
 
     private const val KeyLanguage = "language"
@@ -35,6 +37,7 @@ actual object AppSettingsStorage {
     private const val KeyBlockColorPalette = "blockColorPalette"
     private const val KeyBlockVisualStyle = "blockVisualStyle"
     private const val KeyBoardBlockStyleMode = "boardBlockStyleMode"
+    private const val KeyHasSeenTutorial = "hasSeenTutorial"
 }
 
 private fun Long.toIntOrDefault(defaultValue: Int): Int = toInt().takeIf { it >= 0 } ?: defaultValue
