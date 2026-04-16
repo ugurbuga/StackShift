@@ -5,10 +5,12 @@ import androidx.compose.runtime.ProvidedValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import platform.Foundation.NSLocale
 import platform.Foundation.NSUserDefaults
+import platform.Foundation.preferredLanguages
 
 actual object LocalAppLocale {
     private const val LanguageKey = "AppleLanguages"
     private const val defaultLocale = "en"
+    private var lastAppliedLocaleTag: String? = null
     private val LocalLocale = staticCompositionLocalOf { defaultLocale }
 
     actual val current: String
@@ -17,6 +19,12 @@ actual object LocalAppLocale {
     @Composable
     actual infix fun provides(value: String?): ProvidedValue<*> {
         val resolved = value ?: defaultLocale
+        if (lastAppliedLocaleTag != resolved) {
+            println(
+                "[LanguageBootstrap][Apply] platform=ios previous=${lastAppliedLocaleTag ?: "<none>"} next=$resolved requested=${value ?: "<device-default>"}"
+            )
+            lastAppliedLocaleTag = resolved
+        }
         if (value == null) {
             NSUserDefaults.standardUserDefaults.removeObjectForKey(LanguageKey)
         } else {
@@ -25,3 +33,9 @@ actual object LocalAppLocale {
         return LocalLocale.provides(resolved)
     }
 }
+
+actual fun currentDeviceLocaleTag(): String =
+    (NSLocale.preferredLanguages.firstOrNull() as? String)
+        ?.takeIf { it.isNotBlank() }
+        ?: "en"
+

@@ -1,6 +1,7 @@
 package com.ugurbuga.stackshift.presentation.game
 
 import com.ugurbuga.stackshift.game.logic.GameLogic
+import com.ugurbuga.stackshift.game.logic.GameEvent
 import com.ugurbuga.stackshift.game.model.GameConfig
 import com.ugurbuga.stackshift.game.model.GameState
 import com.ugurbuga.stackshift.game.model.GridPoint
@@ -46,6 +47,8 @@ class GameViewModel(
 
     fun placePiece(column: Int): InteractionFeedback = dispatch(GameIntent.LaunchColumn(column))
 
+    fun placePieceResult(column: Int): GameDispatchResult = dispatchResult(GameIntent.LaunchColumn(column))
+
     fun holdPiece(): InteractionFeedback = dispatch(GameIntent.HoldPiece)
 
     fun reviveFromReward(): InteractionFeedback = dispatch(GameIntent.ReviveFromReward)
@@ -58,13 +61,27 @@ class GameViewModel(
         return dispatch(GameIntent.Restart(config))
     }
 
+    fun replaceState(state: GameState) {
+        store.replaceState(gameLogic.restoreGame(state))
+    }
+
+    fun snapshotState(): GameState = uiState.value.gameState
+
     fun dispose() {
         store.dispose()
         scope.cancel()
     }
 
     fun dispatch(intent: GameIntent): InteractionFeedback {
-        return feedbackMapper.map(store.dispatch(intent))
+        return dispatchResult(intent).feedback
+    }
+
+    fun dispatchResult(intent: GameIntent): GameDispatchResult {
+        val events = store.dispatch(intent)
+        return GameDispatchResult(
+            events = events,
+            feedback = feedbackMapper.map(events),
+        )
     }
 
     private fun startGameLoop() {
@@ -90,4 +107,9 @@ data class InteractionFeedback(
         val None = InteractionFeedback()
     }
 }
+
+data class GameDispatchResult(
+    val events: Set<GameEvent> = emptySet(),
+    val feedback: InteractionFeedback = InteractionFeedback.None,
+)
 

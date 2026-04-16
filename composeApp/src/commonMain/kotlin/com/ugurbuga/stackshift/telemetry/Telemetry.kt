@@ -31,6 +31,7 @@ object TelemetryEventNames {
 
 object TelemetryActionNames {
     const val OpenSettings = "open_settings"
+    const val OpenTutorial = "open_tutorial"
     const val OpenBlockProperties = "open_block_properties"
     const val OpenPieceProperties = "open_piece_properties"
     const val HoldPiece = "hold_piece"

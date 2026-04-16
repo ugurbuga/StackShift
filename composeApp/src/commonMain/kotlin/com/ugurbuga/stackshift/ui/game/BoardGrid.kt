@@ -67,7 +67,8 @@ import com.ugurbuga.stackshift.localization.LocalAppSettings
 import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
 import com.ugurbuga.stackshift.ui.theme.isStackShiftDarkTheme
 
-private const val PreviewLineAlpha = 0.12f
+private const val DefaultBoardClearFlashDurationMillis = 420
+private const val DefaultBoardShiftDurationMillis = 220
 private val BoardFrameInset = 1.dp
 
 @Composable
@@ -76,11 +77,15 @@ fun BoardGrid(
     gameState: GameState,
     preview: PlacementPreview?,
     impactedPreviewCells: Set<GridPoint>,
+    guidedColumns: Set<Int> = emptySet(),
     activeColumn: Int?,
     activePiece: Piece?,
     isColumnValid: Boolean,
     isDragging: Boolean,
     gameOverClearProgress: Float = 0f,
+    showClearFlash: Boolean = true,
+    clearFlashDurationMillis: Int = DefaultBoardClearFlashDurationMillis,
+    boardShiftDurationMillis: Int = DefaultBoardShiftDurationMillis,
 ) {
     val settings = LocalAppSettings.current
     val colorScheme = MaterialTheme.colorScheme
@@ -133,13 +138,23 @@ fun BoardGrid(
         animationSpec = infiniteRepeatable(animation = tween(durationMillis = 920, easing = FastOutSlowInEasing)),
         label = "impactSweep",
     )
+    val guidePulse by dangerTransition.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(animation = tween(durationMillis = 980, easing = FastOutSlowInEasing)),
+        label = "guidePulse",
+    )
 
     LaunchedEffect(gameState.clearAnimationToken) {
+        if (!showClearFlash) {
+            clearFlashAlpha = 0f
+            return@LaunchedEffect
+        }
         if (gameState.recentlyClearedRows.isEmpty()) return@LaunchedEffect
         animate(
             initialValue = 0.9f,
             targetValue = 0f,
-            animationSpec = tween(durationMillis = 420, easing = FastOutSlowInEasing),
+            animationSpec = tween(durationMillis = clearFlashDurationMillis, easing = FastOutSlowInEasing),
         ) { value, _ ->
             clearFlashAlpha = value
         }
@@ -163,7 +178,7 @@ fun BoardGrid(
         boardShiftProgress.snapTo(0f)
         boardShiftProgress.animateTo(
             1f,
-            animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+            animationSpec = tween(durationMillis = boardShiftDurationMillis, easing = FastOutSlowInEasing),
         )
         boardTransitionSource = gameState.board
         boardTransitionToken = gameState.clearAnimationToken
@@ -184,7 +199,24 @@ fun BoardGrid(
             cellHeight = cellHeightPx,
             style = boardBlockStyle,
         )
-        val previewFillAlpha = if (isDarkTheme) 0.22f else 0.30f
+        val previewFillAlpha = when {
+            isDarkTheme && isDragging -> 0.30f
+            isDarkTheme -> 0.24f
+            isDragging -> 0.46f
+            else -> 0.40f
+        }
+        val previewStrokeAlpha = when {
+            isDarkTheme && isDragging -> 0.24f
+            isDarkTheme -> 0.18f
+            isDragging -> 0.34f
+            else -> 0.30f
+        }
+        val previewBeamAlpha = when {
+            isDarkTheme && isDragging -> 0.24f
+            isDarkTheme -> 0.14f
+            isDragging -> 0.30f
+            else -> 0.22f
+        }
         val cornerRadius = cellVisual.cornerRadius
 
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -253,7 +285,7 @@ fun BoardGrid(
 
             val pieceToneColor = activePiece?.tone?.paletteColor(settings.blockColorPalette)
             val effectivePreviewColor = pieceToneColor ?: uiColors.success
-            val previewLineColor = effectivePreviewColor.copy(alpha = PreviewLineAlpha * boardDecorAlpha)
+            val previewLineColor = effectivePreviewColor.copy(alpha = previewStrokeAlpha * boardDecorAlpha)
             val previewColumnBounds = preview?.occupiedCells
                 ?.groupBy(GridPoint::column)
                 ?.mapValues { (_, points) ->
@@ -268,9 +300,12 @@ fun BoardGrid(
                     column..(column + piece.width - 1)
                 }
             }
+            val guideColumns = guidedColumns.ifEmpty {
+                highlightedColumns?.toSet().orEmpty()
+            }
 
             highlightedColumns?.forEach { column ->
-                val beamAlpha = (if (isDragging) 0.22f else 0.12f) * boardDecorAlpha
+                val beamAlpha = previewBeamAlpha * boardDecorAlpha
                 if (beamAlpha <= 0f || !showDangerDecorations) return@forEach
                 val (barTop, barBottom) = previewColumnBounds?.get(column) ?: (0f to boardHeightPx)
                 val barHeight = (barBottom - barTop).coerceAtLeast(0f)
@@ -281,6 +316,31 @@ fun BoardGrid(
                     topLeft = Offset(x = column * cellWidthPx, y = barTop),
                     size = Size(width = cellWidthPx, height = barHeight),
                     cornerRadius = cornerRadius,
+                )
+            }
+
+            guideColumns.forEach { column ->
+                if (column !in 0 until gameState.config.columns) return@forEach
+                val guideAlpha = (0.12f + (guidePulse * 0.10f)) * boardDecorAlpha
+                val glowAlpha = (0.18f + (guidePulse * 0.16f)) * boardDecorAlpha
+                drawRoundRect(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            uiColors.actionButton.copy(alpha = guideAlpha * 0.55f),
+                            uiColors.actionButton.copy(alpha = guideAlpha),
+                            uiColors.launchGlow.copy(alpha = guideAlpha * 0.78f),
+                        ),
+                    ),
+                    topLeft = Offset(x = column * cellWidthPx, y = 0f),
+                    size = Size(width = cellWidthPx, height = boardHeightPx),
+                    cornerRadius = cornerRadius,
+                )
+                drawRoundRect(
+                    color = uiColors.actionButton.copy(alpha = glowAlpha.coerceAtMost(0.34f)),
+                    topLeft = Offset(x = column * cellWidthPx, y = 0f),
+                    size = Size(width = cellWidthPx, height = boardHeightPx),
+                    cornerRadius = cornerRadius,
+                    style = Stroke(width = 2.4f),
                 )
             }
 
@@ -498,11 +558,21 @@ fun BoardGrid(
             preview?.let { landing ->
                 val previewColor = effectivePreviewColor.copy(alpha = previewFillAlpha)
                 val previewStyle = boardBlockStyle
+                val previewEdgeHighlightAlpha = if (isDarkTheme) 0.10f else 0.22f
 
                 landing.occupiedCells.forEach { point ->
                     val topLeft = Offset(
                         x = point.column * cellWidthPx,
                         y = point.row * cellHeightPx,
+                    )
+                    drawRoundRect(
+                        color = effectivePreviewColor.copy(alpha = (previewFillAlpha * 0.42f) * boardDecorAlpha),
+                        topLeft = topLeft + Offset(cellVisual.previewInsetPx - 1.4f, cellVisual.previewInsetPx - 1.4f),
+                        size = Size(
+                            width = cellWidthPx - ((cellVisual.previewInsetPx - 1.4f).coerceAtLeast(0f) * 2),
+                            height = cellHeightPx - ((cellVisual.previewInsetPx - 1.4f).coerceAtLeast(0f) * 2),
+                        ),
+                        cornerRadius = cornerRadius,
                     )
                     drawPreviewCellBody(
                         baseColor = previewColor.copy(alpha = previewColor.alpha * boardDecorAlpha),
@@ -515,6 +585,16 @@ fun BoardGrid(
                         cornerRadius = cornerRadius,
                     )
                     drawRoundRect(
+                        color = Color.White.copy(alpha = previewEdgeHighlightAlpha * boardDecorAlpha),
+                        topLeft = topLeft + Offset(cellVisual.previewInsetPx, cellVisual.previewInsetPx),
+                        size = Size(
+                            width = cellWidthPx - (cellVisual.previewInsetPx * 2),
+                            height = cellHeightPx - (cellVisual.previewInsetPx * 2),
+                        ),
+                        cornerRadius = cornerRadius,
+                        style = Stroke(width = 1f),
+                    )
+                    drawRoundRect(
                         color = previewLineColor,
                         topLeft = topLeft + Offset(cellVisual.previewInsetPx, cellVisual.previewInsetPx),
                         size = Size(
@@ -522,12 +602,12 @@ fun BoardGrid(
                             height = cellHeightPx - (cellVisual.previewInsetPx * 2),
                         ),
                         cornerRadius = cornerRadius,
-                        style = Stroke(width = 2f),
+                        style = Stroke(width = if (isDragging) 2.4f else 2.1f),
                     )
                 }
             }
 
-            if (clearFlashAlpha > 0f) {
+            if (showClearFlash && clearFlashAlpha > 0f) {
                 gameState.recentlyClearedRows.forEach { row ->
                     drawRoundRect(
                         color = Color.White.copy(alpha = clearFlashAlpha * boardDecorAlpha),

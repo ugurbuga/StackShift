@@ -11,7 +11,7 @@ actual object AppSettingsStorage {
     actual fun load(): AppSettings {
         val parts = BrowserStorage.get(StorageKey)
             ?.split(Separator)
-            ?.takeIf { it.size == FieldCount }
+            ?.takeIf { it.size in SupportedFieldCounts }
             ?: return AppSettings()
 
         return AppSettings(
@@ -22,6 +22,8 @@ actual object AppSettingsStorage {
             blockVisualStyle = BlockVisualStyle.entries.getOrElse(parts[4].toIntOrNull() ?: -1) { BlockVisualStyle.Flat },
             boardBlockStyleMode = BoardBlockStyleMode.entries.getOrElse(parts[5].toIntOrNull() ?: -1) { BoardBlockStyleMode.MatchSelectedBlockStyle },
             hasSeenTutorial = (parts[6].toIntOrNull() ?: 0) == 1,
+            hasInitializedLanguage = (parts.getOrNull(7)?.toIntOrNull() ?: 0) == 1 || parts.isNotEmpty(),
+            hasShownInteractiveOnboarding = (parts.getOrNull(8)?.toIntOrNull() ?: 0) == 1,
         )
     }
 
@@ -36,12 +38,14 @@ actual object AppSettingsStorage {
                 settings.blockVisualStyle.ordinal,
                 settings.boardBlockStyleMode.ordinal,
                 if (settings.hasSeenTutorial) 1 else 0,
+                if (settings.hasInitializedLanguage) 1 else 0,
+                if (settings.hasShownInteractiveOnboarding) 1 else 0,
             ).joinToString(separator = Separator.toString()),
         )
     }
 
     private const val StorageKey = "stackshift.settings"
     private const val Separator = ','
-    private const val FieldCount = 7
+    private val SupportedFieldCounts = 7..9
 }
 

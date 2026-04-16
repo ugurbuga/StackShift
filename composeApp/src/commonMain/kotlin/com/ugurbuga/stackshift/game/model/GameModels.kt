@@ -31,6 +31,38 @@ enum class AppLanguage(
     Arabic(localeTag = "ar", labelRes = Res.string.app_language_arabic),
     Portuguese(localeTag = "pt", labelRes = Res.string.app_language_portuguese),
     Indonesian(localeTag = "id", labelRes = Res.string.app_language_indonesian),
+
+    ;
+
+    companion object {
+        fun fromDeviceLocaleTag(localeTag: String?): AppLanguage? {
+            val normalized = localeTag
+                ?.trim()
+                ?.replace('_', '-')
+                ?.takeIf(String::isNotBlank)
+                ?: return null
+
+            entries.firstOrNull { it.localeTag.equals(normalized, ignoreCase = true) }?.let { return it }
+
+            val lowerTag = normalized.lowercase()
+            when {
+                lowerTag == "zh" ||
+                        lowerTag.startsWith("zh-cn") ||
+                        lowerTag.startsWith("zh-sg") ||
+                        lowerTag.startsWith("zh-hans") -> return ChineseSimplified
+
+                lowerTag.startsWith("zh-tw") ||
+                        lowerTag.startsWith("zh-hk") ||
+                        lowerTag.startsWith("zh-mo") ||
+                        lowerTag.startsWith("zh-hant") -> return null
+            }
+
+            val languageCode = lowerTag.substringBefore('-')
+            return entries.firstOrNull { candidate ->
+                candidate.localeTag.lowercase().substringBefore('-') == languageCode
+            }
+        }
+    }
 }
 
 enum class AppThemeMode(

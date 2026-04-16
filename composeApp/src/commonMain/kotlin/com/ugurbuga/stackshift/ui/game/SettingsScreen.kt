@@ -541,11 +541,27 @@ private fun LanguagePreview(
     language: AppLanguage,
     selected: Boolean,
 ) {
-    Text(
-        text = language.localeTag.uppercase(),
-        style = MaterialTheme.typography.labelSmall,
-        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-    )
+    val uiColors = StackShiftThemeTokens.uiColors
+    Surface(
+        shape = RoundedCornerShape(999.dp),
+        color = if (selected) {
+            uiColors.panelHighlight.copy(alpha = 0.96f)
+        } else {
+            uiColors.panelMuted.copy(alpha = 0.96f)
+        },
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.48f) else uiColors.panelStroke,
+        ),
+    ) {
+        Text(
+            text = language.localeTag.uppercase(),
+            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+        )
+    }
 }
 
 @Composable
@@ -553,17 +569,25 @@ private fun PreviewBlockRow(
     palette: BlockColorPalette,
     style: BlockVisualStyle,
 ) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    val uiColors = StackShiftThemeTokens.uiColors
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = uiColors.panelMuted.copy(alpha = 0.94f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.88f)),
     ) {
-        listOf(CellTone.Coral, CellTone.Blue, CellTone.Gold).forEach { tone ->
-            BlockCellPreview(
-                tone = tone,
-                palette = palette,
-                style = style,
-                size = 18.dp,
-            )
+        Row(
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            listOf(CellTone.Coral, CellTone.Blue, CellTone.Gold).forEach { tone ->
+                BlockCellPreview(
+                    tone = tone,
+                    palette = palette,
+                    style = style,
+                    size = 18.dp,
+                )
+            }
         }
     }
 }
@@ -587,11 +611,20 @@ private fun LiveBoardMiniPreview(settings: AppSettings) {
     val previewAlpha = if (progress < 0.5f) 0.80f else 0.60f
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = Color.Transparent,
-        border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
+        color = uiColors.panelMuted.copy(alpha = 0.94f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.92f)),
     ) {
         Column(
-            modifier = Modifier.padding(8.dp),
+            modifier = Modifier
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            uiColors.panelHighlight.copy(alpha = 0.18f),
+                            Color.Transparent,
+                        ),
+                    ),
+                )
+                .padding(8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             repeat(3) { row ->
@@ -623,9 +656,10 @@ private fun LiveBoardMiniPreview(settings: AppSettings) {
                                     modifier = Modifier
                                         .size(14.dp)
                                         .clip(RoundedCornerShape(6.dp))
+                                        .background(uiColors.boardEmptyCell.copy(alpha = 0.90f))
                                         .border(
                                             width = 1.dp,
-                                            color = uiColors.boardEmptyCellBorder,
+                                            color = uiColors.boardEmptyCellBorder.copy(alpha = 0.92f),
                                             shape = RoundedCornerShape(6.dp),
                                         ),
                                 )
@@ -652,22 +686,33 @@ private fun BoxPreview(
     icon: ImageVector? = null,
     size: androidx.compose.ui.unit.Dp = 12.dp,
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
-        colors.forEachIndexed { index, color ->
-            Card(
-                modifier = Modifier.size(size),
-                colors = CardDefaults.cardColors(containerColor = color),
-                shape = RoundedCornerShape((size.value * 0.35f).dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.28f)),
-            ) {
-                if (icon != null && index == colors.lastIndex) {
-                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(size * 0.52f),
-                        )
+    val uiColors = StackShiftThemeTokens.uiColors
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = uiColors.panelMuted.copy(alpha = 0.94f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.88f)),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            colors.forEachIndexed { index, color ->
+                Card(
+                    modifier = Modifier.size(size),
+                    colors = CardDefaults.cardColors(containerColor = color),
+                    shape = RoundedCornerShape((size.value * 0.35f).dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.72f)),
+                ) {
+                    if (icon != null && index == colors.lastIndex) {
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(size * 0.52f),
+                            )
+                        }
                     }
                 }
             }

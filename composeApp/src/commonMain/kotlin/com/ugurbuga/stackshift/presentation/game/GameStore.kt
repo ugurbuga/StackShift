@@ -71,6 +71,7 @@ class GameStore(
     }
 
     fun replaceState(state: GameState) {
+        effectHandler.handle(GameEffect.CancelSoftLockTimer)
         updateState(state)
     }
 

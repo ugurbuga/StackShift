@@ -15,4 +15,6 @@ data class AppSettings(
     val blockVisualStyle: BlockVisualStyle = BlockVisualStyle.Flat,
     val boardBlockStyleMode: BoardBlockStyleMode = BoardBlockStyleMode.MatchSelectedBlockStyle,
     val hasSeenTutorial: Boolean = false,
+    val hasShownInteractiveOnboarding: Boolean = false,
+    val hasInitializedLanguage: Boolean = false,
 )

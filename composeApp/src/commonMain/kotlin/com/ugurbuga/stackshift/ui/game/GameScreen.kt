@@ -26,12 +26,12 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material.icons.filled.ViewModule
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -79,6 +79,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.ugurbuga.stackshift.StackShiftTheme
 import com.ugurbuga.stackshift.ads.GameAdController
 import com.ugurbuga.stackshift.ads.NoOpGameAdController
+import com.ugurbuga.stackshift.game.logic.GameEvent
 import com.ugurbuga.stackshift.game.model.BoardMatrix
 import com.ugurbuga.stackshift.game.model.CellTone
 import com.ugurbuga.stackshift.game.model.ComboState
@@ -102,9 +103,14 @@ import com.ugurbuga.stackshift.platform.feedback.GameSound
 import com.ugurbuga.stackshift.platform.feedback.NoOpGameHaptics
 import com.ugurbuga.stackshift.platform.feedback.NoOpSoundEffectPlayer
 import com.ugurbuga.stackshift.platform.feedback.SoundEffectPlayer
+import com.ugurbuga.stackshift.presentation.game.GameDispatchResult
+import com.ugurbuga.stackshift.presentation.game.GameIntent
 import com.ugurbuga.stackshift.presentation.game.GameViewModel
 import com.ugurbuga.stackshift.presentation.game.InteractionFeedback
 import com.ugurbuga.stackshift.settings.AppSettings
+import com.ugurbuga.stackshift.settings.FirstRunGameOnboardingStateFactory
+import com.ugurbuga.stackshift.settings.FirstRunOnboardingScene
+import com.ugurbuga.stackshift.settings.FirstRunOnboardingStage
 import com.ugurbuga.stackshift.settings.HighScoreStorage
 import com.ugurbuga.stackshift.telemetry.AppTelemetry
 import com.ugurbuga.stackshift.telemetry.LogScreen
@@ -121,7 +127,6 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
 import stackshift.composeapp.generated.resources.app_title
-import stackshift.composeapp.generated.resources.block_properties_title
 import stackshift.composeapp.generated.resources.boost
 import stackshift.composeapp.generated.resources.continue_label
 import stackshift.composeapp.generated.resources.danger
@@ -188,10 +193,14 @@ import stackshift.composeapp.generated.resources.restart_confirm_title
 import stackshift.composeapp.generated.resources.resume
 import stackshift.composeapp.generated.resources.score
 import stackshift.composeapp.generated.resources.settings_title
+import stackshift.composeapp.generated.resources.settings_tutorial
 import stackshift.composeapp.generated.resources.special_column_clearer
 import stackshift.composeapp.generated.resources.special_ghost
 import stackshift.composeapp.generated.resources.special_heavy
 import stackshift.composeapp.generated.resources.special_row_clearer
+import stackshift.composeapp.generated.resources.tutorial_finish
+import stackshift.composeapp.generated.resources.tutorial_ready_body
+import stackshift.composeapp.generated.resources.tutorial_ready_title
 import kotlin.math.PI
 import kotlin.math.roundToInt
 import kotlin.math.sin
@@ -243,6 +252,9 @@ private const val GameOverBoardRowShakeAmplitudePx = 8f
 private const val GameOverBoardRowBurstAlpha = 0.26f
 private const val GameOverBoardRowBurstStrokeWidthPx = 2.4f
 private const val GameOverBoardRowGlowHeightPx = 12f
+private const val InteractiveOnboardingStageAdvanceDelayMillis = 720L
+private const val InteractiveOnboardingClearAnimationDurationMillis = 620
+private const val InteractiveOnboardingBoardShiftDurationMillis = 360
 private val TopBarActionBlockSize = 28.dp
 private val TopBarActionBlockTones = listOf(
     CellTone.Cyan,
@@ -250,6 +262,19 @@ private val TopBarActionBlockTones = listOf(
     CellTone.Violet,
     CellTone.Lime,
     CellTone.Amber,
+)
+
+private data class InteractiveOnboardingAdvanceRequest(
+    val completedStage: FirstRunOnboardingStage,
+    val nextStage: FirstRunOnboardingStage?,
+)
+
+private fun GameState.hiddenOnboardingPreviewState(): GameState = copy(
+    activePiece = null,
+    nextQueue = emptyList(),
+    holdPiece = null,
+    canHold = false,
+    softLock = null,
 )
 
 @Composable
@@ -614,16 +639,186 @@ private fun GameOverStatChip(
 }
 
 @Composable
+private fun InteractiveOnboardingCompletionDialog(
+    onStart: () -> Unit,
+) {
+    val uiColors = StackShiftThemeTokens.uiColors
+
+    Dialog(
+        onDismissRequest = {},
+        properties = DialogProperties(
+            dismissOnBackPress = false,
+            dismissOnClickOutside = false,
+        ),
+    ) {
+        Card(
+            modifier = Modifier.widthIn(max = GameOverDialogWidth),
+            shape = RoundedCornerShape(32.dp),
+            colors = CardDefaults.cardColors(containerColor = uiColors.panel),
+            border = BorderStroke(1.dp, uiColors.panelStroke),
+        ) {
+            Column(
+                modifier = Modifier
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                uiColors.dialogStart,
+                                uiColors.dialogEnd,
+                            ),
+                        ),
+                    )
+                    .padding(GameOverDialogCardPadding)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(GameOverDialogIconSize)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(
+                            Brush.radialGradient(
+                                colors = listOf(
+                                    uiColors.success.copy(alpha = 0.94f),
+                                    uiColors.success.copy(alpha = 0.72f),
+                                    uiColors.panel.copy(alpha = 0.12f),
+                                ),
+                            ),
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.EmojiEvents,
+                        contentDescription = stringResource(Res.string.tutorial_ready_title),
+                        tint = Color.White,
+                        modifier = Modifier.size(36.dp),
+                    )
+                }
+
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text(
+                        text = stringResource(Res.string.tutorial_ready_title),
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                    )
+                    Text(
+                        text = stringResource(Res.string.tutorial_ready_body),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = uiColors.subtitle,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+
+                Button(
+                    onClick = onStart,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = uiColors.actionButton,
+                        contentColor = uiColors.actionIcon,
+                    ),
+                ) {
+                    Text(stringResource(Res.string.tutorial_finish))
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun StackShiftGameApp(
     modifier: Modifier = Modifier,
     soundPlayer: SoundEffectPlayer = NoOpSoundEffectPlayer,
     telemetry: AppTelemetry = NoOpAppTelemetry,
     adController: GameAdController = NoOpGameAdController,
     viewModel: GameViewModel = remember { GameViewModel() },
+    interactiveOnboardingEnabled: Boolean = false,
+    onInteractiveOnboardingFinished: (GameState) -> Unit = {},
     onOpenSettings: () -> Unit = {},
+    onOpenTutorial: () -> Unit = {},
 ) {
     val haptics = rememberGameHaptics()
     val uiState by viewModel.uiState.collectAsState()
+    val onboardingStages = remember { FirstRunGameOnboardingStateFactory.stages }
+    var onboardingStage by remember(interactiveOnboardingEnabled) {
+        mutableStateOf(
+            if (interactiveOnboardingEnabled) onboardingStages.firstOrNull() else null,
+        )
+    }
+    var onboardingAwaitingCommit by remember(interactiveOnboardingEnabled, onboardingStage) {
+        mutableStateOf(false)
+    }
+    var onboardingAdvanceRequest by remember(interactiveOnboardingEnabled) {
+        mutableStateOf<InteractiveOnboardingAdvanceRequest?>(null)
+    }
+    var showOnboardingCompletionDialog by remember(interactiveOnboardingEnabled) {
+        mutableStateOf(false)
+    }
+    var pendingOnboardingCompletionState by remember(interactiveOnboardingEnabled) {
+        mutableStateOf<GameState?>(null)
+    }
+    val onboardingScene = remember(interactiveOnboardingEnabled, onboardingStage) {
+        onboardingStage?.takeIf { interactiveOnboardingEnabled }?.let(FirstRunGameOnboardingStateFactory::scene)
+    }
+    val displayGameState by remember(
+        uiState.gameState,
+        onboardingAdvanceRequest,
+        showOnboardingCompletionDialog,
+    ) {
+        derivedStateOf {
+            if (onboardingAdvanceRequest != null || showOnboardingCompletionDialog) {
+                uiState.gameState.hiddenOnboardingPreviewState()
+            } else {
+                uiState.gameState
+            }
+        }
+    }
+
+    LaunchedEffect(interactiveOnboardingEnabled, onboardingScene) {
+        if (!interactiveOnboardingEnabled || onboardingScene == null) return@LaunchedEffect
+        onboardingAwaitingCommit = false
+        onboardingAdvanceRequest = null
+        showOnboardingCompletionDialog = false
+        pendingOnboardingCompletionState = null
+        viewModel.replaceState(onboardingScene.gameState)
+        telemetry.logUserAction(
+            action = "interactive_onboarding_stage_shown",
+            parameters = mapOf("stage" to onboardingScene.stage.name),
+        )
+    }
+
+    LaunchedEffect(interactiveOnboardingEnabled, onboardingAdvanceRequest) {
+        val request = onboardingAdvanceRequest ?: return@LaunchedEffect
+        if (!interactiveOnboardingEnabled) {
+            onboardingAdvanceRequest = null
+            onboardingAwaitingCommit = false
+            return@LaunchedEffect
+        }
+
+        delay(InteractiveOnboardingStageAdvanceDelayMillis)
+
+        if (onboardingAdvanceRequest != request || onboardingStage != request.completedStage) return@LaunchedEffect
+
+        telemetry.logUserAction(
+            action = "interactive_onboarding_stage_completed",
+            parameters = mapOf("stage" to request.completedStage.name),
+        )
+
+        if (request.nextStage != null) {
+            onboardingStage = request.nextStage
+        } else {
+            pendingOnboardingCompletionState = FirstRunGameOnboardingStateFactory.cleanGameState()
+            showOnboardingCompletionDialog = true
+            onboardingStage = null
+        }
+
+        onboardingAwaitingCommit = false
+        onboardingAdvanceRequest = null
+    }
 
     var highestScore by remember { mutableIntStateOf(HighScoreStorage.load()) }
     var newHighScoreReached by remember { mutableStateOf(false) }
@@ -648,51 +843,91 @@ fun StackShiftGameApp(
         }
     }
 
-    var showBlockProperties by remember { mutableStateOf(false) }
+    LogScreen(telemetry, TelemetryScreenNames.Game)
+    GameScreen(
+        modifier = modifier,
+        gameState = displayGameState,
+        onRequestPreview = viewModel::previewPlacement,
+        onResolvePreviewImpact = viewModel::previewImpactPoints,
+        onPlacePiece = { column ->
+            if (interactiveOnboardingEnabled && onboardingScene != null) {
+                onboardingAwaitingCommit = true
+                onboardingAdvanceRequest = null
+            }
+            val result = viewModel.placePieceResult(column)
+            if (interactiveOnboardingEnabled && onboardingScene != null) {
+                val currentIndex = onboardingStages.indexOf(onboardingScene.stage)
+                val nextStage = onboardingStages.getOrNull(currentIndex + 1)
+                when {
+                    GameEvent.SoftLockStarted in result.events || GameEvent.SoftLockAdjusted in result.events -> {
+                        val commitResult = viewModel.dispatchResult(GameIntent.CommitSoftLock)
+                        if (GameEvent.PlacementAccepted in commitResult.events) {
+                            onboardingAwaitingCommit = true
+                            onboardingAdvanceRequest = InteractiveOnboardingAdvanceRequest(
+                                completedStage = onboardingScene.stage,
+                                nextStage = nextStage,
+                            )
+                        } else {
+                            onboardingAwaitingCommit = false
+                            onboardingAdvanceRequest = null
+                        }
 
-    if (showBlockProperties) {
-        BlockPropertiesScreen(
-            modifier = modifier,
-            telemetry = telemetry,
-            onBack = { showBlockProperties = false },
-        )
-    } else {
-        LogScreen(telemetry, TelemetryScreenNames.Game)
-        GameScreen(
-            modifier = modifier,
-            gameState = uiState.gameState,
-            onRequestPreview = viewModel::previewPlacement,
-            onResolvePreviewImpact = viewModel::previewImpactPoints,
-            onPlacePiece = viewModel::placePiece,
-            onHoldPiece = {
-                telemetry.logUserAction(TelemetryActionNames.HoldPiece)
-                viewModel.holdPiece()
-            },
-            onPauseToggle = {
-                telemetry.logUserAction(TelemetryActionNames.TogglePause)
-                viewModel.togglePause()
-            },
-            onRestart = {
-                telemetry.logUserAction(TelemetryActionNames.RestartGame)
-                viewModel.restart(uiState.gameState.config)
-            },
-            onOpenSettings = onOpenSettings,
-            onBlockProperties = {
-                telemetry.logUserAction(TelemetryActionNames.OpenBlockProperties)
-                showBlockProperties = true
-            },
-            onRewardedRevive = {
-                telemetry.logUserAction("rewarded_revive")
-                viewModel.reviveFromReward()
-            },
-            telemetry = telemetry,
-            adController = adController,
-            soundPlayer = soundPlayer,
-            haptics = haptics,
-            highestScore = highestScore,
-            showNewHighScoreMessage = newHighScoreReached,
-        )
-    }
+                        result.mergeWith(commitResult)
+                    }
+
+                    GameEvent.InvalidDrop in result.events -> {
+                        onboardingAwaitingCommit = false
+                        onboardingAdvanceRequest = null
+                        result
+                    }
+
+                    else -> {
+                        onboardingAwaitingCommit = false
+                        onboardingAdvanceRequest = null
+                        result
+                    }
+                }
+            } else {
+                result
+            }
+        },
+        onHoldPiece = {
+            telemetry.logUserAction(TelemetryActionNames.HoldPiece)
+            viewModel.holdPiece()
+        },
+        onPauseToggle = {
+            telemetry.logUserAction(TelemetryActionNames.TogglePause)
+            viewModel.togglePause()
+        },
+        onRestart = {
+            telemetry.logUserAction(TelemetryActionNames.RestartGame)
+            viewModel.restart(uiState.gameState.config)
+        },
+        onOpenSettings = onOpenSettings,
+        onOpenTutorial = onOpenTutorial,
+        onRewardedRevive = {
+            telemetry.logUserAction("rewarded_revive")
+            viewModel.reviveFromReward()
+        },
+        telemetry = telemetry,
+        adController = adController,
+        soundPlayer = soundPlayer,
+        haptics = haptics,
+        highestScore = highestScore,
+        showNewHighScoreMessage = newHighScoreReached,
+        interactiveOnboardingScene = if (showOnboardingCompletionDialog) null else onboardingScene,
+        interactiveOnboardingCurrentStep = onboardingScene?.stage?.let { onboardingStages.indexOf(it) + 1 } ?: 0,
+        interactiveOnboardingTotalSteps = onboardingStages.size,
+        interactiveOnboardingAwaitingCommit = onboardingAwaitingCommit,
+        interactiveOnboardingCompletionDialogVisible = showOnboardingCompletionDialog,
+        onInteractiveOnboardingStartGame = {
+            val cleanState = pendingOnboardingCompletionState ?: FirstRunGameOnboardingStateFactory.cleanGameState()
+            viewModel.replaceState(cleanState)
+            showOnboardingCompletionDialog = false
+            pendingOnboardingCompletionState = null
+            onInteractiveOnboardingFinished(cleanState)
+        },
+    )
 }
 
 @Composable
@@ -700,19 +935,25 @@ fun GameScreen(
     gameState: GameState,
     onRequestPreview: (Int) -> PlacementPreview?,
     onResolvePreviewImpact: (PlacementPreview?) -> Set<GridPoint>,
-    onPlacePiece: (Int) -> InteractionFeedback,
+    onPlacePiece: (Int) -> GameDispatchResult,
     onHoldPiece: () -> InteractionFeedback,
     onPauseToggle: () -> InteractionFeedback,
     onRestart: () -> InteractionFeedback,
     onRewardedRevive: () -> InteractionFeedback,
     onOpenSettings: () -> Unit,
-    onBlockProperties: () -> Unit,
+    onOpenTutorial: () -> Unit,
     telemetry: AppTelemetry = NoOpAppTelemetry,
     adController: GameAdController = NoOpGameAdController,
     soundPlayer: SoundEffectPlayer,
     haptics: GameHaptics,
     highestScore: Int,
     showNewHighScoreMessage: Boolean = false,
+    interactiveOnboardingScene: FirstRunOnboardingScene? = null,
+    interactiveOnboardingCurrentStep: Int = 0,
+    interactiveOnboardingTotalSteps: Int = 0,
+    interactiveOnboardingAwaitingCommit: Boolean = false,
+    interactiveOnboardingCompletionDialogVisible: Boolean = false,
+    onInteractiveOnboardingStartGame: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -747,6 +988,18 @@ fun GameScreen(
     var overlayTopLeft by remember { mutableStateOf<Offset?>(null) }
     var isDragging by remember { mutableStateOf(false) }
     var isLaunching by remember { mutableStateOf(false) }
+    val interactiveOnboardingEnabled = interactiveOnboardingScene != null
+    val interactiveOnboardingAcceptedColumns = interactiveOnboardingScene?.acceptedColumns.orEmpty()
+    val interactiveOnboardingGuidedColumns by remember(interactiveOnboardingScene) {
+        derivedStateOf {
+            when {
+                interactiveOnboardingAcceptedColumns.isNotEmpty() -> interactiveOnboardingAcceptedColumns
+                interactiveOnboardingScene?.guideColumn != null -> setOf(interactiveOnboardingScene.guideColumn)
+                else -> emptySet()
+            }
+        }
+    }
+    val topBarControlsEnabled = !interactiveOnboardingEnabled
 
     val activePiece = gameState.activePiece
     val boardRect by remember(boardRectInRoot, overlayHostRectInRoot) {
@@ -808,20 +1061,47 @@ fun GameScreen(
             )
         }
     }
+    val hasDraggedAwayFromSpawn by remember(spawnTopLeft, overlayTopLeft, cellSizePx) {
+        derivedStateOf {
+            val spawn = spawnTopLeft ?: return@derivedStateOf false
+            val overlay = overlayTopLeft ?: return@derivedStateOf false
+            kotlin.math.abs(overlay.x - spawn.x) >= (cellSizePx * 0.45f)
+        }
+    }
 
     val placementPreview by remember(
         selectedColumn,
         activePiece?.id,
         gameState.status,
-        gameState.board
+        gameState.board,
+        interactiveOnboardingAcceptedColumns,
     ) {
         derivedStateOf {
             if (gameState.status != GameStatus.Running) return@derivedStateOf null
+            if (interactiveOnboardingAcceptedColumns.isNotEmpty() && selectedColumn !in interactiveOnboardingAcceptedColumns) {
+                return@derivedStateOf null
+            }
             if (gameState.softLock != null && !isDragging) {
                 gameState.softLock.preview
             } else {
                 selectedColumn?.let(updatedPreviewProvider)
             }
+        }
+    }
+    val interactiveOnboardingTargetAligned by remember(
+        interactiveOnboardingScene,
+        interactiveOnboardingAcceptedColumns,
+        selectedColumn,
+        placementPreview,
+        isDragging,
+    ) {
+        derivedStateOf {
+            interactiveOnboardingScene != null &&
+                interactiveOnboardingScene.stage != FirstRunOnboardingStage.DragAndLaunch &&
+                isDragging &&
+                placementPreview != null &&
+                selectedColumn != null &&
+                (interactiveOnboardingAcceptedColumns.isEmpty() || selectedColumn in interactiveOnboardingAcceptedColumns)
         }
     }
 
@@ -975,6 +1255,10 @@ fun GameScreen(
     }
 
     LaunchedEffect(gameState.impactFlashToken) {
+        if (interactiveOnboardingEnabled) {
+            impactFlashAlpha.snapTo(0f)
+            return@LaunchedEffect
+        }
         if (gameState.impactFlashToken == 0L) return@LaunchedEffect
         impactFlashAlpha.snapTo(0.22f)
         impactFlashAlpha.animateTo(
@@ -1088,6 +1372,7 @@ fun GameScreen(
                         scoreHighlightStrength = if (scoreHighlightActive) 1f else 0f,
                         scoreHighlightScale = scorePulseScale,
                         onHoldPiece = {
+                            if (!topBarControlsEnabled) return@MinimalTopBar
                             dispatchFeedback(
                                 updatedHoldPiece(),
                                 soundPlayer,
@@ -1095,15 +1380,26 @@ fun GameScreen(
                             )
                         },
                         onPauseToggle = {
+                            if (!topBarControlsEnabled) return@MinimalTopBar
                             dispatchFeedback(
                                 updatedPauseToggle(),
                                 soundPlayer,
                                 haptics
                             )
                         },
-                        onRestart = { showRestartDialog = true },
-                        onOpenSettings = onOpenSettings,
-                        onBlockProperties = onBlockProperties,
+                        onRestart = {
+                            if (!topBarControlsEnabled) return@MinimalTopBar
+                            showRestartDialog = true
+                        },
+                        onOpenSettings = {
+                            if (!topBarControlsEnabled) return@MinimalTopBar
+                            onOpenSettings()
+                        },
+                        onOpenTutorial = {
+                            if (!topBarControlsEnabled) return@MinimalTopBar
+                            onOpenTutorial()
+                        },
+                        controlsEnabled = topBarControlsEnabled,
                     )
 
                     BoxWithConstraints(
@@ -1130,11 +1426,23 @@ fun GameScreen(
                                 gameState = gameState,
                                 preview = placementPreview,
                                 impactedPreviewCells = previewImpactPoints,
+                                guidedColumns = interactiveOnboardingGuidedColumns,
                                 activeColumn = selectedColumn,
                                 activePiece = activePiece,
                                 isColumnValid = placementPreview != null,
                                 isDragging = isDragging,
                                 gameOverClearProgress = gameOverBoardClearProgress.value,
+                                showClearFlash = true,
+                                clearFlashDurationMillis = if (interactiveOnboardingEnabled) {
+                                    InteractiveOnboardingClearAnimationDurationMillis
+                                } else {
+                                    420
+                                },
+                                boardShiftDurationMillis = if (interactiveOnboardingEnabled) {
+                                    InteractiveOnboardingBoardShiftDurationMillis
+                                } else {
+                                    220
+                                },
                             )
 
                             if (gameState.status == GameStatus.GameOver || gameOverBoardClearProgress.value > 0f) {
@@ -1171,7 +1479,7 @@ fun GameScreen(
                     )
                 }
 
-                if (impactFlashAlpha.value > 0f) {
+                if (!interactiveOnboardingEnabled && impactFlashAlpha.value > 0f) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -1252,8 +1560,8 @@ fun GameScreen(
                                                 boardRect = boardRect,
                                                 cellSizePx = cellSizePx
                                             )
-                                            val feedback = updatedPlacePiece(column)
-                                            dispatchFeedback(feedback, soundPlayer, haptics)
+                                            val result = updatedPlacePiece(column)
+                                            dispatchFeedback(result.feedback, soundPlayer, haptics)
                                         } else {
                                             isLaunching = true
                                             overlayTopLeft = preview.entryAnchor.toTopLeft(
@@ -1267,8 +1575,8 @@ fun GameScreen(
                                                     cellSizePx = cellSizePx
                                                 )
                                                 delay(LaunchAnimationMillis)
-                                                val feedback = updatedPlacePiece(column)
-                                                dispatchFeedback(feedback, soundPlayer, haptics)
+                                                val result = updatedPlacePiece(column)
+                                                dispatchFeedback(result.feedback, soundPlayer, haptics)
                                                 isLaunching = false
                                             }
                                         }
@@ -1284,6 +1592,22 @@ fun GameScreen(
                             isLaunching -> LaunchPreviewAlpha
                             else -> 1f
                         },
+                    )
+                }
+
+                interactiveOnboardingScene?.let { scene ->
+                    InteractiveGameOnboardingOverlay(
+                        ui = GameInteractiveOnboardingUi(
+                            scene = scene,
+                            currentStep = interactiveOnboardingCurrentStep,
+                            totalSteps = interactiveOnboardingTotalSteps,
+                            hasDraggedAwayFromSpawn = hasDraggedAwayFromSpawn,
+                            isTargetAligned = interactiveOnboardingTargetAligned,
+                            isAwaitingPlacementCommit = interactiveOnboardingAwaitingCommit,
+                        ),
+                        boardRect = boardRect,
+                        trayRect = trayRect,
+                        cellSizePx = cellSizePx,
                     )
                 }
             }
@@ -1325,6 +1649,12 @@ fun GameScreen(
                 )
             }
 
+            if (interactiveOnboardingCompletionDialogVisible) {
+                InteractiveOnboardingCompletionDialog(
+                    onStart = onInteractiveOnboardingStartGame,
+                )
+            }
+
             if (showRestartDialog) {
                 RestartConfirmDialog(
                     onDismissRequest = { showRestartDialog = false },
@@ -1357,7 +1687,8 @@ private fun MinimalTopBar(
     onPauseToggle: () -> Unit,
     onRestart: () -> Unit,
     onOpenSettings: () -> Unit,
-    onBlockProperties: () -> Unit,
+    onOpenTutorial: () -> Unit,
+    controlsEnabled: Boolean = true,
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
     val isNewRecordHighlight = highScoreHighlightStrength > 0.08f
@@ -1435,31 +1766,35 @@ private fun MinimalTopBar(
                                     icon = Icons.Filled.Settings,
                                     contentDescription = stringResource(Res.string.settings_title),
                                     onClick = onOpenSettings,
+                                    enabled = controlsEnabled,
                                 )
                                 TopBarActionBlockButton(
                                     tone = TopBarActionBlockTones[1],
-                                    icon = Icons.Filled.ViewModule,
-                                    contentDescription = stringResource(Res.string.block_properties_title),
-                                    onClick = onBlockProperties,
+                                    icon = Icons.AutoMirrored.Filled.MenuBook,
+                                    contentDescription = stringResource(Res.string.settings_tutorial),
+                                    onClick = onOpenTutorial,
+                                    enabled = controlsEnabled,
                                 )
                                 TopBarActionBlockButton(
                                     tone = TopBarActionBlockTones[2],
                                     icon = Icons.Filled.SwapHoriz,
                                     contentDescription = holdLabel,
                                     onClick = onHoldPiece,
-                                    enabled = gameState.canHold && !gameState.isSoftLockActive,
+                                    enabled = controlsEnabled && gameState.canHold && !gameState.isSoftLockActive,
                                 )
                                 TopBarActionBlockButton(
                                     tone = TopBarActionBlockTones[3],
                                     icon = if (gameState.status == GameStatus.Paused) Icons.Filled.PlayArrow else Icons.Filled.Pause,
                                     contentDescription = pauseLabel,
                                     onClick = onPauseToggle,
+                                    enabled = controlsEnabled,
                                 )
                                 TopBarActionBlockButton(
                                     tone = TopBarActionBlockTones[4],
                                     icon = Icons.Filled.Refresh,
                                     contentDescription = restartLabel,
                                     onClick = onRestart,
+                                    enabled = controlsEnabled,
                                 )
                             }
                             LaunchBarView(gameState = gameState)
@@ -1922,7 +2257,7 @@ private fun GameScreenRunningRecordIconsPreview() {
                     onPauseToggle = {},
                     onRestart = {},
                     onOpenSettings = {},
-                    onBlockProperties = {},
+                    onOpenTutorial = {},
                 )
                 Box(
                     modifier = Modifier
@@ -2514,6 +2849,14 @@ private fun dispatchFeedback(
     feedback.haptics.forEach(haptics::perform)
 }
 
+private fun GameDispatchResult.mergeWith(other: GameDispatchResult): GameDispatchResult = GameDispatchResult(
+    events = events + other.events,
+    feedback = InteractionFeedback(
+        sounds = feedback.sounds + other.feedback.sounds,
+        haptics = feedback.haptics + other.feedback.haptics,
+    ),
+)
+
 private fun resolveSelectedColumn(
     piece: Piece?,
     overlayTopLeft: Offset?,
@@ -2586,13 +2929,13 @@ private fun GameScreenRunningPreview() {
             gameState = previewGameState(),
             onRequestPreview = { previewPlacementPreview() },
             onResolvePreviewImpact = { previewImpactPointsPreview() },
-            onPlacePiece = { InteractionFeedback.None },
+            onPlacePiece = { GameDispatchResult() },
             onHoldPiece = { InteractionFeedback.None },
             onPauseToggle = { InteractionFeedback.None },
             onRestart = { InteractionFeedback.None },
             onRewardedRevive = { InteractionFeedback.None },
             onOpenSettings = {},
-            onBlockProperties = {},
+            onOpenTutorial = {},
             soundPlayer = NoOpSoundEffectPlayer,
             haptics = NoOpGameHaptics,
             highestScore = 142000,
@@ -2654,13 +2997,13 @@ private fun GameScreenPausedPreview() {
             gameState = previewGameState(status = GameStatus.Paused),
             onRequestPreview = { previewPlacementPreview() },
             onResolvePreviewImpact = { emptySet() },
-            onPlacePiece = { InteractionFeedback.None },
+            onPlacePiece = { GameDispatchResult() },
             onHoldPiece = { InteractionFeedback.None },
             onPauseToggle = { InteractionFeedback.None },
             onRestart = { InteractionFeedback.None },
             onRewardedRevive = { InteractionFeedback.None },
             onOpenSettings = {},
-            onBlockProperties = {},
+            onOpenTutorial = {},
             soundPlayer = NoOpSoundEffectPlayer,
             haptics = NoOpGameHaptics,
             highestScore = 142000,
@@ -2676,13 +3019,13 @@ private fun GameScreenGameOverPreview() {
             gameState = previewGameState(status = GameStatus.GameOver),
             onRequestPreview = { previewPlacementPreview() },
             onResolvePreviewImpact = { emptySet() },
-            onPlacePiece = { InteractionFeedback.None },
+            onPlacePiece = { GameDispatchResult() },
             onHoldPiece = { InteractionFeedback.None },
             onPauseToggle = { InteractionFeedback.None },
             onRestart = { InteractionFeedback.None },
             onRewardedRevive = { InteractionFeedback.None },
             onOpenSettings = {},
-            onBlockProperties = {},
+            onOpenTutorial = {},
             soundPlayer = NoOpSoundEffectPlayer,
             haptics = NoOpGameHaptics,
             highestScore = 142000,

@@ -11,15 +11,20 @@ import java.util.prefs.Preferences
 actual object AppSettingsStorage {
     private val prefs = Preferences.userRoot().node(Namespace)
 
-    actual fun load(): AppSettings = AppSettings(
-        language = AppLanguage.entries[prefs.getInt(KeyLanguage, AppLanguage.English.ordinal)],
-        themeMode = AppThemeMode.entries[prefs.getInt(KeyThemeMode, AppThemeMode.System.ordinal)],
-        themeColorPalette = AppColorPalette.entries[prefs.getInt(KeyThemeColorPalette, AppColorPalette.Classic.ordinal)],
-        blockColorPalette = BlockColorPalette.entries[prefs.getInt(KeyBlockColorPalette, BlockColorPalette.Classic.ordinal)],
-        blockVisualStyle = BlockVisualStyle.entries[prefs.getInt(KeyBlockVisualStyle, BlockVisualStyle.Flat.ordinal)],
-        boardBlockStyleMode = BoardBlockStyleMode.entries[prefs.getInt(KeyBoardBlockStyleMode, BoardBlockStyleMode.MatchSelectedBlockStyle.ordinal)],
-        hasSeenTutorial = prefs.getBoolean(KeyHasSeenTutorial, false),
-    )
+    actual fun load(): AppSettings {
+        val hasStoredLanguage = prefs.get(KeyLanguage, null) != null
+        return AppSettings(
+            language = AppLanguage.entries[prefs.getInt(KeyLanguage, AppLanguage.English.ordinal)],
+            themeMode = AppThemeMode.entries[prefs.getInt(KeyThemeMode, AppThemeMode.System.ordinal)],
+            themeColorPalette = AppColorPalette.entries[prefs.getInt(KeyThemeColorPalette, AppColorPalette.Classic.ordinal)],
+            blockColorPalette = BlockColorPalette.entries[prefs.getInt(KeyBlockColorPalette, BlockColorPalette.Classic.ordinal)],
+            blockVisualStyle = BlockVisualStyle.entries[prefs.getInt(KeyBlockVisualStyle, BlockVisualStyle.Flat.ordinal)],
+            boardBlockStyleMode = BoardBlockStyleMode.entries[prefs.getInt(KeyBoardBlockStyleMode, BoardBlockStyleMode.MatchSelectedBlockStyle.ordinal)],
+            hasSeenTutorial = prefs.getBoolean(KeyHasSeenTutorial, false),
+            hasShownInteractiveOnboarding = prefs.getBoolean(KeyHasShownInteractiveOnboarding, false),
+            hasInitializedLanguage = prefs.getBoolean(KeyHasInitializedLanguage, false) || hasStoredLanguage,
+        )
+    }
 
     actual fun save(settings: AppSettings) {
         prefs.putInt(KeyLanguage, settings.language.ordinal)
@@ -29,6 +34,8 @@ actual object AppSettingsStorage {
         prefs.putInt(KeyBlockVisualStyle, settings.blockVisualStyle.ordinal)
         prefs.putInt(KeyBoardBlockStyleMode, settings.boardBlockStyleMode.ordinal)
         prefs.putBoolean(KeyHasSeenTutorial, settings.hasSeenTutorial)
+        prefs.putBoolean(KeyHasShownInteractiveOnboarding, settings.hasShownInteractiveOnboarding)
+        prefs.putBoolean(KeyHasInitializedLanguage, settings.hasInitializedLanguage)
     }
 
     private const val Namespace = "com.ugurbuga.stackshift.settings"
@@ -39,4 +46,6 @@ actual object AppSettingsStorage {
     private const val KeyBlockVisualStyle = "blockVisualStyle"
     private const val KeyBoardBlockStyleMode = "boardBlockStyleMode"
     private const val KeyHasSeenTutorial = "hasSeenTutorial"
+    private const val KeyHasShownInteractiveOnboarding = "hasShownInteractiveOnboarding"
+    private const val KeyHasInitializedLanguage = "hasInitializedLanguage"
 }

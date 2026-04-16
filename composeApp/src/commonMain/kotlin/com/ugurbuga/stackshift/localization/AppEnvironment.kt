@@ -17,6 +17,8 @@ expect object LocalAppLocale {
     infix fun provides(value: String?): ProvidedValue<*>
 }
 
+expect fun currentDeviceLocaleTag(): String
+
 @Composable
 fun AppEnvironment(
     settings: AppSettings,

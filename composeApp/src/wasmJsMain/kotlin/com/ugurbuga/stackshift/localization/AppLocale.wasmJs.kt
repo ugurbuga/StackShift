@@ -6,6 +6,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import kotlinx.browser.window
 
 actual object LocalAppLocale {
+    private var lastAppliedLocaleTag: String? = null
     private val LocalLocale = staticCompositionLocalOf(::browserDefaultLocale)
 
     actual val current: String
@@ -13,11 +14,22 @@ actual object LocalAppLocale {
 
     @Composable
     actual infix fun provides(value: String?): ProvidedValue<*> {
-        return LocalLocale.provides(value?.takeIf(String::isNotBlank) ?: browserDefaultLocale())
+        val resolved = value?.takeIf(String::isNotBlank) ?: browserDefaultLocale()
+        if (lastAppliedLocaleTag != resolved) {
+            println(
+                "[LanguageBootstrap][Apply] platform=wasm previous=${lastAppliedLocaleTag ?: "<none>"} next=$resolved requested=${value ?: "<device-default>"}"
+            )
+            lastAppliedLocaleTag = resolved
+        }
+        return LocalLocale.provides(resolved)
     }
 
     private fun browserDefaultLocale(): String = runCatching {
         window.navigator.language
     }.getOrNull()?.takeIf(String::isNotBlank) ?: "en"
 }
+
+actual fun currentDeviceLocaleTag(): String = runCatching {
+    window.navigator.language
+}.getOrNull()?.takeIf(String::isNotBlank) ?: "en"
 

@@ -118,43 +118,63 @@ fun stackShiftThemeSpec(
 			settingsHeroEnd = colorScheme.secondaryContainer,
 			boardGradientTop = gradients.boardTop,
 			boardGradientBottom = gradients.boardBottom,
-			panel = if (darkTheme) colorScheme.surface.copy(alpha = 0.92f) else colorScheme.surface,
-			panelMuted = colorScheme.surfaceVariant.copy(alpha = if (darkTheme) 0.76f else 0.90f),
-			panelHighlight = colorScheme.primaryContainer.copy(alpha = if (darkTheme) 0.82f else 0.96f),
-			panelStroke = colorScheme.outlineVariant.copy(alpha = if (darkTheme) 0.66f else 0.88f),
+			panel = if (darkTheme) {
+				colorScheme.surface.copy(alpha = 0.92f)
+			} else {
+				mixColors(
+					first = colorScheme.surface,
+					second = colorScheme.background,
+					fraction = 0.10f,
+				).copy(alpha = 0.99f)
+			},
+			panelMuted = colorScheme.surfaceVariant.copy(alpha = if (darkTheme) 0.76f else 0.98f),
+			panelHighlight = colorScheme.primaryContainer.copy(alpha = if (darkTheme) 0.82f else 1f),
+			panelStroke = colorScheme.outlineVariant.copy(alpha = if (darkTheme) 0.66f else 0.98f),
 			actionButton = colorScheme.secondaryContainer.copy(alpha = if (darkTheme) 0.96f else 1f),
-			actionButtonDisabled = colorScheme.surfaceVariant.copy(alpha = if (darkTheme) 0.42f else 0.70f),
+			actionButtonDisabled = colorScheme.surfaceVariant.copy(alpha = if (darkTheme) 0.42f else 0.82f),
 			actionIcon = colorScheme.onSecondaryContainer,
 			actionIconDisabled = colorScheme.onSurfaceVariant.copy(alpha = 0.56f),
-			metricCard = colorScheme.surfaceVariant.copy(alpha = if (darkTheme) 0.70f else 0.86f),
-			chipPreview = colorScheme.surface.copy(alpha = if (darkTheme) 0.84f else 0.96f),
-			chip = colorScheme.surfaceVariant.copy(alpha = if (darkTheme) 0.56f else 0.88f),
+			metricCard = colorScheme.surfaceVariant.copy(alpha = if (darkTheme) 0.70f else 0.94f),
+			chipPreview = colorScheme.surface.copy(alpha = if (darkTheme) 0.84f else 1f),
+			chip = colorScheme.surfaceVariant.copy(alpha = if (darkTheme) 0.56f else 0.94f),
 			chipSelected = colorScheme.primaryContainer.copy(alpha = if (darkTheme) 0.92f else 1f),
-			subtitle = colorScheme.onSurfaceVariant,
+			subtitle = if (darkTheme) {
+				colorScheme.onSurfaceVariant
+			} else {
+				mixColors(
+					first = colorScheme.onSurfaceVariant,
+					second = colorScheme.onSurface,
+					fraction = 0.26f,
+				)
+			},
 			success = feedback.success,
 			warning = feedback.warning,
 			danger = feedback.danger,
-			launchTrack = colorScheme.surface.copy(alpha = if (darkTheme) 0.48f else 0.96f),
-			launchGlow = colorScheme.primary.copy(alpha = if (darkTheme) 0.74f else 0.40f),
+			launchTrack = if (darkTheme) {
+				colorScheme.surface.copy(alpha = 0.48f)
+			} else {
+				colorScheme.surfaceVariant.copy(alpha = 0.98f)
+			},
+			launchGlow = colorScheme.primary.copy(alpha = if (darkTheme) 0.74f else 0.52f),
 			launchAccent = colorScheme.tertiary,
 			dialogStart = colorScheme.surface.copy(alpha = if (darkTheme) 0.98f else 1f),
 			dialogEnd = colorScheme.surfaceVariant.copy(alpha = if (darkTheme) 0.92f else 0.98f),
-			overlay = if (darkTheme) Color(0xC4171E31) else Color(0xA3EDF3FF),
-			boardGridLine = colorScheme.outlineVariant.copy(alpha = if (darkTheme) 0.52f else 0.42f),
-			boardOutline = colorScheme.outline.copy(alpha = if (darkTheme) 0.80f else 0.62f),
-			boardOutlineGlow = colorScheme.primary.copy(alpha = if (darkTheme) 0.30f else 0.16f),
+			overlay = if (darkTheme) Color(0xC4171E31) else Color(0xBDE7EEF9),
+			boardGridLine = colorScheme.outlineVariant.copy(alpha = if (darkTheme) 0.52f else 0.62f),
+			boardOutline = colorScheme.outline.copy(alpha = if (darkTheme) 0.80f else 0.78f),
+			boardOutlineGlow = colorScheme.primary.copy(alpha = if (darkTheme) 0.30f else 0.24f),
 			boardSignaturePrimary = boardSignature.primary,
 			boardSignatureSecondary = boardSignature.secondary,
 			boardEmptyCell = mixColors(
 				first = gradients.boardTop,
 				second = colorScheme.surfaceVariant,
 				fraction = if (darkTheme) 0.28f else 0.40f,
-			).copy(alpha = if (darkTheme) 0.60f else 0.82f),
+			).copy(alpha = if (darkTheme) 0.60f else 0.92f),
 			boardEmptyCellBorder = mixColors(
 				first = gradients.boardBottom,
 				second = colorScheme.outlineVariant,
 				fraction = if (darkTheme) 0.54f else 0.50f,
-			).copy(alpha = if (darkTheme) 0.70f else 0.54f),
+			).copy(alpha = if (darkTheme) 0.70f else 0.76f),
 		),
 	)
 }

@@ -9,8 +9,8 @@
     <string name="settings_block_style">Block Style</string>
     <string name="settings_board_block_style">Board Block Style</string>
     <string name="settings_tutorial">Tutorial</string>
-    <string name="settings_tutorial_body">Replay the interactive onboarding whenever you want to revisit the controls, special blocks, and launch flow.</string>
-    <string name="settings_tutorial_replay">Show tutorial again</string>
+    <string name="settings_tutorial_body">Open the tutorial or guided practice any time to revisit the controls, special blocks, and launch flow.</string>
+    <string name="settings_tutorial_replay">Start guided practice</string>
     <string name="app_language_english">English</string>
     <string name="app_language_turkish">Türkçe</string>
     <string name="app_language_spanish">Español</string>
@@ -150,10 +150,31 @@
     <string name="tutorial_intro_title">Launch pieces from the bottom dock</string>
     <string name="tutorial_intro_body">Your active piece waits at the bottom. Drag it horizontally to line up a column, then release to launch it upward onto the board. The next preview is intentionally softer so your eye stays on the active piece.</string>
     <string name="tutorial_systems_title">Use the action blocks when the board gets tight</string>
-    <string name="tutorial_systems_body">Hold lets you swap the current piece, Pause freezes the run, Block Properties explains symbols, and Settings changes the look and feel. These buttons now match your selected board block style.</string>
+    <string name="tutorial_systems_body">Hold lets you swap the current piece, Pause freezes the run, Tutorial reopens this guide, and Settings changes the look and feel. These buttons now match your selected board block style.</string>
     <string name="tutorial_specials_title">Special blocks can rescue a run</string>
     <string name="tutorial_specials_body">Some pieces carry special effects. Learn their badge and use them to clear pressure, open space, or slip through difficult stacks.</string>
     <string name="tutorial_ready_title">You are ready to continue this run</string>
     <string name="tutorial_ready_body">That is it — plan the next column, watch the launch bar, and use specials at the right moment. You can reopen this tutorial any time from Settings.</string>
+    <string name="tutorial_ready_block_properties_hint">Open Tutorial whenever you want a quick refresher on the controls and special icons.</string>
+    <string name="tutorial_ready_tutorial_hint">Open Tutorial whenever you want a quick refresher on the controls and special icons.</string>
+    <string name="tutorial_ready_settings_hint">Open Settings to change the language, theme, colors, and block style before your next run.</string>
+    <string name="interactive_onboarding_step_counter">Guide %1$d / %2$d</string>
+    <string name="interactive_onboarding_drag_title">Drag the piece from the tray</string>
+    <string name="interactive_onboarding_drag_body">Start by touching the active piece in the bottom tray and sliding it left or right. Release when it lines up with an open column.</string>
+    <string name="interactive_onboarding_drag_to_board">Drag the active piece sideways and line it up with the highlighted launch lane.</string>
+    <string name="interactive_onboarding_drag_ready">Nice — release now. When the piece lands in the highlighted box, the next guide will open automatically.</string>
+    <string name="interactive_onboarding_aim_hint">Drop the piece inside the highlighted box to continue.</string>
+    <string name="interactive_onboarding_target_locked">Perfect — keep it there and release to continue.</string>
+    <string name="interactive_onboarding_waiting">Placement accepted. Preparing the next guided moment…</string>
+    <string name="interactive_onboarding_line_clear_title">Fill a row to clear it</string>
+    <string name="interactive_onboarding_line_clear_body">Normal pieces also clear space when they complete a full row. Drop this piece into the guided column and watch the line fill, flash, and disappear.</string>
+    <string name="interactive_onboarding_column_clearer_title">Column Clearer clears a full lane</string>
+    <string name="interactive_onboarding_column_clearer_body">This special piece wipes the column it lands in. Follow the highlighted lane so you can feel how it relieves pressure immediately.</string>
+    <string name="interactive_onboarding_row_clearer_title">Row Clearer opens horizontal space</string>
+    <string name="interactive_onboarding_row_clearer_body">This one clears the entire row it touches. Aim for the guided column and watch the line open across the board.</string>
+    <string name="interactive_onboarding_ghost_title">Ghost slips through tight stacks</string>
+    <string name="interactive_onboarding_ghost_body">Ghost blocks can pass through existing cells. Drop it into the marked column to see how it reaches spaces normal pieces cannot.</string>
+    <string name="interactive_onboarding_heavy_title">Heavy changes the board aggressively</string>
+    <string name="interactive_onboarding_heavy_body">Heavy blocks reshape the area after landing. Use the guided drop, then continue the run normally from there.</string>
 </resources>
 

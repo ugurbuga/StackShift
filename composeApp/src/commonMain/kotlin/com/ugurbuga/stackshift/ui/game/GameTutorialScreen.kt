@@ -1,7 +1,11 @@
 package com.ugurbuga.stackshift.ui.game
 
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -18,20 +22,18 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -80,7 +82,6 @@ import com.ugurbuga.stackshift.game.model.GameTextKey
 import com.ugurbuga.stackshift.game.model.GridPoint
 import com.ugurbuga.stackshift.game.model.Piece
 import com.ugurbuga.stackshift.game.model.PieceKind
-import com.ugurbuga.stackshift.game.model.PlacementPreview
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
 import com.ugurbuga.stackshift.game.model.gameText
 import com.ugurbuga.stackshift.localization.LocalAppSettings
@@ -92,6 +93,8 @@ import com.ugurbuga.stackshift.telemetry.TelemetryScreenNames
 import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
 import com.ugurbuga.stackshift.ui.theme.appBackgroundBrush
 import com.ugurbuga.stackshift.ui.theme.isStackShiftDarkTheme
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
@@ -110,13 +113,16 @@ import stackshift.composeapp.generated.resources.launch_drag_hint
 import stackshift.composeapp.generated.resources.pause
 import stackshift.composeapp.generated.resources.piece_properties_active
 import stackshift.composeapp.generated.resources.queue_next_short
+import stackshift.composeapp.generated.resources.settings_tutorial
 import stackshift.composeapp.generated.resources.settings_title
 import stackshift.composeapp.generated.resources.tutorial_back
 import stackshift.composeapp.generated.resources.tutorial_finish
 import stackshift.composeapp.generated.resources.tutorial_intro_body
 import stackshift.composeapp.generated.resources.tutorial_intro_title
 import stackshift.composeapp.generated.resources.tutorial_next
+import stackshift.composeapp.generated.resources.tutorial_ready_tutorial_hint
 import stackshift.composeapp.generated.resources.tutorial_ready_body
+import stackshift.composeapp.generated.resources.tutorial_ready_settings_hint
 import stackshift.composeapp.generated.resources.tutorial_ready_title
 import stackshift.composeapp.generated.resources.tutorial_specials_body
 import stackshift.composeapp.generated.resources.tutorial_specials_title
@@ -127,10 +133,21 @@ import stackshift.composeapp.generated.resources.tutorial_systems_title
 import kotlin.math.roundToInt
 
 private val TutorialCardShape = RoundedCornerShape(28.dp)
-private val TutorialMiniBoardCellSize = 16.dp
-private val TutorialMiniBoardCellGap = 4.dp
-private val TutorialMiniDockHeight = 78.dp
-private val TutorialMiniTrayHeight = 54.dp
+private val TutorialMiniDockHeight = 88.dp
+private const val TutorialIntroColumns = 10
+private const val TutorialIntroRows = 10
+private const val TutorialCompactColumns = 5
+private const val TutorialCompactRows = 5
+private const val TutorialDemoAutoplayStartDelayMillis = 720L
+private const val TutorialDemoAutoplayStepDelayMillis = 1650L
+private const val TutorialDemoTravelDurationMillis = 1120
+private const val TutorialDemoSoftLockDelayMillis = 220L
+private const val TutorialDemoResolutionHoldMillis = 980L
+private const val TutorialDemoResetDelayMillis = 480L
+private const val TutorialDemoClearAnimationDurationMillis = 620
+private const val TutorialDemoBoardShiftDurationMillis = 360
+private const val TutorialDemoTrayPulseDurationMillis = 900
+private const val TutorialDemoTrayPulseScaleBoost = 0.05f
 private val TutorialSamplePiece = Piece(
     id = -1,
     kind = PieceKind.T,
@@ -162,6 +179,7 @@ private val TutorialNextPiece = Piece(
 private data class TutorialDemoScene(
     val gameState: GameState,
     val spawnColumn: Int,
+    val autoColumns: List<Int>,
 )
 
 private fun tutorialPreviewGameState(
@@ -186,22 +204,25 @@ private fun tutorialPreviewGameState(
     message = gameText(GameTextKey.GameMessageSelectColumn),
 )
 
-private fun tutorialLaunchScene(): TutorialDemoScene {
-    val board = BoardMatrix.empty(columns = 5, rows = 5)
+private fun tutorialIntroScene(): TutorialDemoScene {
+    val board = BoardMatrix.empty(columns = TutorialIntroColumns, rows = TutorialIntroRows)
         .fill(
             points = listOf(
-                GridPoint(0, 4),
-                GridPoint(1, 4),
-                GridPoint(2, 4),
-                GridPoint(0, 3),
-                GridPoint(4, 4),
+                GridPoint(1, 5),
+                GridPoint(2, 5),
+                GridPoint(3, 5),
+                GridPoint(6, 4),
+                GridPoint(7, 4),
+                GridPoint(8, 4),
+                GridPoint(4, 3),
+                GridPoint(5, 3),
             ),
             tone = CellTone.Blue,
         )
         .fill(
             points = listOf(
-                GridPoint(3, 3),
-                GridPoint(4, 3),
+                GridPoint(2, 4),
+                GridPoint(7, 3),
             ),
             tone = CellTone.Gold,
         )
@@ -209,9 +230,10 @@ private fun tutorialLaunchScene(): TutorialDemoScene {
         gameState = tutorialPreviewGameState(
             board = board,
             activePiece = TutorialSamplePiece.copy(id = -101, tone = CellTone.Cyan),
-            spawnColumn = 1,
+            spawnColumn = 0,
         ),
-        spawnColumn = 1,
+        spawnColumn = 0,
+        autoColumns = listOf(0, 2, 4, 6, 7, 5, 3, 1),
     )
 }
 
@@ -220,81 +242,80 @@ private fun tutorialSpecialScene(
     special: SpecialBlockType,
 ): TutorialDemoScene {
     val board = when (special) {
-        SpecialBlockType.ColumnClearer -> BoardMatrix.empty(columns = 5, rows = 5)
+        SpecialBlockType.ColumnClearer -> BoardMatrix.empty(columns = TutorialCompactColumns, rows = TutorialCompactRows)
             .fill(
                 points = listOf(
-                    GridPoint(1, 4),
+                    GridPoint(0, 3),
                     GridPoint(1, 3),
                     GridPoint(1, 2),
-                    GridPoint(2, 4),
-                    GridPoint(2, 3),
-                    GridPoint(3, 4),
+                    GridPoint(2, 2),
+                    GridPoint(3, 2),
+                    GridPoint(4, 2),
                 ),
                 tone = CellTone.Blue,
             )
             .fill(
                 points = listOf(
-                    GridPoint(4, 4),
-                    GridPoint(4, 3),
+                    GridPoint(4, 1),
                 ),
                 tone = CellTone.Gold,
             )
 
-        SpecialBlockType.RowClearer -> BoardMatrix.empty(columns = 5, rows = 5)
+        SpecialBlockType.RowClearer -> BoardMatrix.empty(columns = TutorialCompactColumns, rows = TutorialCompactRows)
             .fill(
                 points = listOf(
-                    GridPoint(0, 4),
-                    GridPoint(1, 4),
-                    GridPoint(2, 4),
-                    GridPoint(4, 4),
-                    GridPoint(1, 3),
-                    GridPoint(2, 3),
-                    GridPoint(3, 3),
-                    GridPoint(4, 3),
+                    GridPoint(0, 2),
+                    GridPoint(1, 2),
+                    GridPoint(3, 2),
+                    GridPoint(4, 2),
+                    GridPoint(1, 1),
+                    GridPoint(2, 1),
+                    GridPoint(4, 1),
                 ),
                 tone = CellTone.Emerald,
             )
 
-        SpecialBlockType.Ghost -> BoardMatrix.empty(columns = 5, rows = 5)
+        SpecialBlockType.Ghost -> BoardMatrix.empty(columns = TutorialCompactColumns, rows = TutorialCompactRows)
             .fill(
                 points = listOf(
-                    GridPoint(0, 4),
-                    GridPoint(1, 4),
-                    GridPoint(3, 4),
-                    GridPoint(4, 4),
-                    GridPoint(1, 3),
-                    GridPoint(3, 3),
+                    GridPoint(0, 3),
+                    GridPoint(1, 2),
+                    GridPoint(2, 2),
+                    GridPoint(4, 2),
+                    GridPoint(0, 1),
+                    GridPoint(3, 1),
                 ),
                 tone = CellTone.Violet,
             )
             .fill(
-                points = listOf(GridPoint(2, 2)),
+                points = listOf(GridPoint(2, 1)),
                 tone = CellTone.Gold,
             )
 
-        SpecialBlockType.Heavy -> BoardMatrix.empty(columns = 5, rows = 5)
+        SpecialBlockType.Heavy -> BoardMatrix.empty(columns = TutorialCompactColumns, rows = TutorialCompactRows)
             .fill(
                 points = listOf(
-                    GridPoint(0, 4),
-                    GridPoint(1, 4),
-                    GridPoint(2, 4),
-                    GridPoint(3, 4),
-                    GridPoint(2, 3),
-                    GridPoint(4, 3),
+                    GridPoint(0, 3),
+                    GridPoint(1, 3),
+                    GridPoint(3, 2),
                     GridPoint(4, 2),
+                    GridPoint(0, 1),
+                    GridPoint(2, 1),
+                    GridPoint(3, 1),
                 ),
                 tone = CellTone.Coral,
             )
 
-        SpecialBlockType.None -> BoardMatrix.empty(columns = 5, rows = 5)
+        SpecialBlockType.None -> BoardMatrix.empty(columns = TutorialCompactColumns, rows = TutorialCompactRows)
     }
     val activePiece = when (special) {
         SpecialBlockType.Ghost -> TutorialNextPiece.copy(id = -202L, tone = tone, special = special)
         else -> TutorialSamplePiece.copy(id = -201L - special.ordinal, tone = tone, special = special)
     }
-    val spawnColumn = when (special) {
-        SpecialBlockType.Heavy -> 1
-        else -> 1
+    val spawnColumn = if (special == SpecialBlockType.Ghost) 1 else 1
+    val autoColumns = when (special) {
+        SpecialBlockType.Ghost -> listOf(0, 1, 2, 3, 2, 1)
+        else -> listOf(0, 1, 2, 1)
     }
     return TutorialDemoScene(
         gameState = tutorialPreviewGameState(
@@ -303,6 +324,7 @@ private fun tutorialSpecialScene(
             spawnColumn = spawnColumn,
         ),
         spawnColumn = spawnColumn,
+        autoColumns = autoColumns,
     )
 }
 
@@ -553,40 +575,6 @@ private fun TutorialMiniBoardShell(
 }
 
 @Composable
-private fun TutorialMiniBoardCell(
-    tone: CellTone?,
-    style: com.ugurbuga.stackshift.game.model.BlockVisualStyle,
-    alpha: Float = 1f,
-    special: SpecialBlockType = SpecialBlockType.None,
-    isPreview: Boolean = false,
-) {
-    val settings = LocalAppSettings.current
-    val uiColors = StackShiftThemeTokens.uiColors
-    if (tone == null) {
-        Box(
-            modifier = Modifier
-                .size(TutorialMiniBoardCellSize)
-                .clip(RoundedCornerShape(5.dp))
-                .background(uiColors.boardEmptyCell.copy(alpha = if (isPreview) 0.52f else 0.42f))
-                .border(
-                    width = 1.dp,
-                    color = uiColors.boardEmptyCellBorder.copy(alpha = if (isPreview) 0.82f else 0.58f),
-                    shape = RoundedCornerShape(5.dp),
-                ),
-        )
-    } else {
-        BlockCellPreview(
-            tone = tone,
-            palette = settings.blockColorPalette,
-            style = style,
-            size = TutorialMiniBoardCellSize,
-            alpha = alpha,
-            special = special,
-        )
-    }
-}
-
-@Composable
 private fun TutorialIntroStep(launchPreviewColumn: Int? = null) {
     TutorialSection(
         title = stringResource(Res.string.tutorial_intro_title),
@@ -639,8 +627,8 @@ private fun TutorialSystemsStep() {
             TutorialActionTile(
                 modifier = Modifier.weight(1f),
                 tone = CellTone.Violet,
-                icon = Icons.Filled.ViewModule,
-                title = stringResource(Res.string.block_properties_title),
+                icon = Icons.AutoMirrored.Filled.MenuBook,
+                title = stringResource(Res.string.settings_tutorial),
             )
             TutorialActionTile(
                 modifier = Modifier.weight(1f),
@@ -649,6 +637,7 @@ private fun TutorialSystemsStep() {
                 title = stringResource(Res.string.settings_title),
             )
         }
+        TutorialLaunchBoardDemo(lockedColumn = 4)
         TutorialHintCard(text = stringResource(Res.string.launch_drag_hint))
     }
 }
@@ -690,25 +679,24 @@ private fun TutorialSpecialsStep(previewColumns: Map<SpecialBlockType, Int> = em
 }
 
 @Composable
-private fun TutorialReadyStep(launchPreviewColumn: Int? = null) {
+private fun TutorialReadyStep() {
     TutorialSection(
         title = stringResource(Res.string.tutorial_ready_title),
         body = stringResource(Res.string.tutorial_ready_body),
     ) {
-        TutorialLaunchBoardDemo(compact = true, lockedColumn = launchPreviewColumn)
-        TutorialHintCard(text = stringResource(Res.string.block_properties_title))
-        TutorialHintCard(text = stringResource(Res.string.settings_title))
+        TutorialLaunchBoardDemo(lockedColumn = 5)
+        TutorialHintCard(text = stringResource(Res.string.tutorial_ready_tutorial_hint))
+        TutorialHintCard(text = stringResource(Res.string.tutorial_ready_settings_hint))
     }
 }
 
 @Composable
 private fun TutorialLaunchBoardDemo(
-    compact: Boolean = false,
     lockedColumn: Int? = null,
 ) {
     TutorialMiniGameDemo(
-        scene = remember { tutorialLaunchScene() },
-        compact = compact,
+        scene = remember { tutorialIntroScene() },
+        compact = false,
         lockedColumn = lockedColumn,
     )
 }
@@ -786,7 +774,7 @@ private fun TutorialMiniGameDemo(
     val density = LocalDensity.current
     val boardStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
     val gameLogic = remember { GameLogic() }
-    val gameState = scene.gameState
+    var gameState by remember(scene, lockedColumn) { mutableStateOf(scene.gameState) }
     val activePiece = gameState.activePiece
     var hostRectInRoot by remember { mutableStateOf(Rect.Zero) }
     var boardRectInRoot by remember { mutableStateOf(Rect.Zero) }
@@ -809,11 +797,52 @@ private fun TutorialMiniGameDemo(
         trayRect = trayRect,
         boardRect = boardRect,
         cellSizePx = cellSizePx,
-        column = resolvedLockedColumn ?: spawnColumn,
+        column = spawnColumn,
     )
+    val autoColumns = remember(scene.autoColumns, maxColumn, spawnColumn) {
+        scene.autoColumns
+            .ifEmpty { listOf(spawnColumn) }
+            .map { it.coerceIn(0, maxColumn) }
+            .ifEmpty { listOf(spawnColumn) }
+    }
+    val pieceCellDp = with(density) { cellSizePx.coerceAtLeast(1f).toDp() }
+    val launchCellCornerRadius = boardCellCornerRadiusDp(
+        cellSize = pieceCellDp,
+        style = boardStyle,
+    )
+    val trayPulseTransition = rememberInfiniteTransition(label = "tutorialTrayPulse")
+    val trayPulsePhase by trayPulseTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = TutorialDemoTrayPulseDurationMillis),
+        ),
+        label = "tutorialTrayPulsePhase",
+    )
+    val animatedOverlayX by animateFloatAsState(
+        targetValue = overlayTopLeft?.x ?: 0f,
+        animationSpec = if (isDragging) {
+            snap()
+        } else {
+            tween(durationMillis = TutorialDemoTravelDurationMillis)
+        },
+        label = "tutorialOverlayX",
+    )
+    val animatedOverlayY by animateFloatAsState(
+        targetValue = overlayTopLeft?.y ?: 0f,
+        animationSpec = if (isDragging) {
+            snap()
+        } else {
+            tween(durationMillis = TutorialDemoTravelDurationMillis)
+        },
+        label = "tutorialOverlayY",
+    )
+    val overlayPreviewTopLeft = overlayTopLeft?.let {
+        Offset(x = animatedOverlayX, y = animatedOverlayY)
+    }
     val selectedColumn = resolvedLockedColumn ?: resolveSelectedColumn(
         piece = activePiece,
-        overlayTopLeft = overlayTopLeft,
+        overlayTopLeft = overlayPreviewTopLeft,
         boardRect = boardRect,
         cellSizePx = cellSizePx,
         boardColumns = gameState.config.columns,
@@ -824,24 +853,90 @@ private fun TutorialMiniGameDemo(
     val previewImpactPoints = remember(gameState, placementPreview) {
         gameLogic.previewImpactPoints(gameState, placementPreview)
     }
-    val overlayInHost = overlayTopLeft?.takeIf { hostRectInRoot != Rect.Zero }?.let { topLeft ->
-        Offset(topLeft.x - hostRectInRoot.left, topLeft.y - hostRectInRoot.top)
+    val trayPieceScale = when {
+        activePiece == null || overlayTopLeft == null || resolvedLockedColumn != null -> 1f
+        isDragging -> 1f
+        else -> 1f + (TutorialDemoTrayPulseScaleBoost * trayPulsePhase)
     }
-    val pieceCellDp = with(density) { cellSizePx.coerceAtLeast(1f).toDp() }
-    val launchCellCornerRadius = boardCellCornerRadiusDp(
-        cellSize = pieceCellDp,
-        style = boardStyle,
-    )
 
-    LaunchedEffect(activePiece?.id, boardRect, trayRect, resolvedLockedColumn, spawnColumn) {
+    LaunchedEffect(activePiece?.id, boardRect, trayRect, resolvedLockedColumn, spawnColumn, cellSizePx) {
         if (boardRect == Rect.Zero || trayRect == Rect.Zero || cellSizePx <= 0f) return@LaunchedEffect
+        if (resolvedLockedColumn != null && gameState.clearAnimationToken != scene.gameState.clearAnimationToken) {
+            return@LaunchedEffect
+        }
         overlayTopLeft = pieceSpawnTopLeft(
             piece = activePiece,
             trayRect = trayRect,
             boardRect = boardRect,
             cellSizePx = cellSizePx,
-            column = resolvedLockedColumn ?: spawnColumn,
+            column = spawnColumn,
         )
+    }
+
+    LaunchedEffect(activePiece?.id, boardRect, trayRect, resolvedLockedColumn, isDragging, autoColumns) {
+        if (boardRect == Rect.Zero || trayRect == Rect.Zero || cellSizePx <= 0f) return@LaunchedEffect
+        if (resolvedLockedColumn != null || isDragging || activePiece == null) return@LaunchedEffect
+        delay(TutorialDemoAutoplayStartDelayMillis)
+        var autoIndex = 0
+        while (isActive && !isDragging) {
+            val column = autoColumns[autoIndex % autoColumns.size]
+            overlayTopLeft = pieceSpawnTopLeft(
+                piece = activePiece,
+                trayRect = trayRect,
+                boardRect = boardRect,
+                cellSizePx = cellSizePx,
+                column = column,
+            )
+            autoIndex += 1
+            delay(TutorialDemoAutoplayStepDelayMillis)
+        }
+    }
+
+    LaunchedEffect(scene, resolvedLockedColumn, boardRect, trayRect, cellSizePx, isDragging) {
+        if (resolvedLockedColumn == null) return@LaunchedEffect
+        if (boardRect == Rect.Zero || trayRect == Rect.Zero || cellSizePx <= 0f || isDragging) return@LaunchedEffect
+
+        while (isActive && !isDragging) {
+            gameState = scene.gameState
+            overlayTopLeft = pieceSpawnTopLeft(
+                piece = scene.gameState.activePiece,
+                trayRect = trayRect,
+                boardRect = boardRect,
+                cellSizePx = cellSizePx,
+                column = spawnColumn,
+            )
+            delay(TutorialDemoAutoplayStartDelayMillis)
+
+            overlayTopLeft = pieceSpawnTopLeft(
+                piece = scene.gameState.activePiece,
+                trayRect = trayRect,
+                boardRect = boardRect,
+                cellSizePx = cellSizePx,
+                column = resolvedLockedColumn,
+            )
+            delay(TutorialDemoTravelDurationMillis.toLong())
+
+            val placed = gameLogic.placePiece(scene.gameState, resolvedLockedColumn)
+            val lockedPreview = placed.state.softLock?.preview
+            if (lockedPreview == null) {
+                delay(TutorialDemoResetDelayMillis)
+                continue
+            }
+
+            overlayTopLeft = lockedPreview.entryAnchor.toLocalTopLeft(boardRect = boardRect, cellSizePx = cellSizePx)
+            delay((TutorialDemoTravelDurationMillis / 2).toLong())
+            overlayTopLeft = lockedPreview.landingAnchor.toLocalTopLeft(boardRect = boardRect, cellSizePx = cellSizePx)
+            delay((TutorialDemoTravelDurationMillis / 3).toLong())
+
+            gameState = placed.state
+            delay(TutorialDemoSoftLockDelayMillis)
+
+            val committed = gameLogic.commitSoftLock(placed.state)
+            gameState = committed.state
+            overlayTopLeft = null
+            delay(TutorialDemoResolutionHoldMillis)
+            delay(TutorialDemoResetDelayMillis)
+        }
     }
 
     TutorialMiniBoardShell(modifier = modifier) {
@@ -875,10 +970,21 @@ private fun TutorialMiniGameDemo(
                         gameState = gameState,
                         preview = placementPreview,
                         impactedPreviewCells = previewImpactPoints,
+                        guidedColumns = resolvedLockedColumn?.let(::setOf).orEmpty(),
                         activeColumn = selectedColumn,
                         activePiece = activePiece,
                         isColumnValid = placementPreview != null,
-                        isDragging = isDragging || resolvedLockedColumn != null,
+                        isDragging = isDragging || (resolvedLockedColumn == null && autoColumns.size > 1),
+                        clearFlashDurationMillis = if (resolvedLockedColumn != null) {
+                            TutorialDemoClearAnimationDurationMillis
+                        } else {
+                            420
+                        },
+                        boardShiftDurationMillis = if (resolvedLockedColumn != null) {
+                            TutorialDemoBoardShiftDurationMillis
+                        } else {
+                            220
+                        },
                     )
 
                     if (badgeTone != null && badgeSpecial != SpecialBlockType.None) {
@@ -900,22 +1006,23 @@ private fun TutorialMiniGameDemo(
                         .fillMaxWidth()
                         .height(TutorialMiniDockHeight),
                     activePiece = activePiece,
-                    nextPiece = gameState.nextPiece,
                     cellSizePx = cellSizePx,
                     compact = compact,
                     onTrayPositioned = { trayRectInRoot = it },
                 )
             }
 
-            if (activePiece != null && overlayInHost != null && cellSizePx > 0f) {
+            if (activePiece != null && overlayTopLeft != null && cellSizePx > 0f) {
                 PieceBlocks(
                     piece = activePiece,
                     cellSize = pieceCellDp,
                     cellCornerRadius = launchCellCornerRadius,
                     modifier = Modifier
                         .graphicsLayer(
-                            translationX = overlayInHost.x,
-                            translationY = overlayInHost.y,
+                            translationX = animatedOverlayX,
+                            translationY = animatedOverlayY,
+                            scaleX = trayPieceScale,
+                            scaleY = trayPieceScale,
                             transformOrigin = TransformOrigin(0f, 0f),
                         )
                         .then(
@@ -969,22 +1076,19 @@ private fun TutorialMiniGameDemo(
 @Composable
 private fun TutorialMiniBottomDock(
     activePiece: Piece?,
-    nextPiece: Piece?,
     cellSizePx: Float,
     compact: Boolean,
     onTrayPositioned: (Rect) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
-    val density = LocalDensity.current
-    val queueCellSize = with(density) { (cellSizePx * 0.5f).coerceAtLeast(8f).toDp() }
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(containerColor = uiColors.gameSurface.copy(alpha = 0.90f)),
         border = BorderStroke(1.dp, uiColors.boardEmptyCellBorder.copy(alpha = 0.68f)),
     ) {
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
@@ -996,13 +1100,11 @@ private fun TutorialMiniBottomDock(
                     ),
                 )
                 .padding(horizontal = 10.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Box(
                 modifier = Modifier
-                    .weight(1f)
                     .fillMaxHeight()
+                    .fillMaxWidth()
                     .clip(RoundedCornerShape(18.dp))
                     .background(uiColors.panelMuted.copy(alpha = 0.48f))
                     .border(
@@ -1014,44 +1116,35 @@ private fun TutorialMiniBottomDock(
                         onTrayPositioned(coordinates.boundsInRoot())
                     }
                     .padding(horizontal = 12.dp, vertical = 8.dp),
-                contentAlignment = Alignment.CenterStart,
             ) {
                 Text(
-                    text = if (compact) {
-                        stringResource(Res.string.launch_drag_hint)
-                    } else {
-                        stringResource(Res.string.launch_drag_hint)
-                    },
+                    text = stringResource(Res.string.launch_drag_hint),
                     style = if (compact) MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelMedium,
                     color = uiColors.subtitle,
                     maxLines = if (compact) 1 else 2,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(end = queueCellSize * (activePiece?.width ?: 2)),
+                    modifier = Modifier.align(Alignment.TopStart),
                 )
-            }
-
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = uiColors.panel.copy(alpha = 0.52f)),
-                border = BorderStroke(1.dp, uiColors.boardEmptyCellBorder.copy(alpha = 0.62f)),
-            ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .height(18.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(uiColors.launchGlow.copy(alpha = 0.10f))
+                        .border(
+                            width = 1.dp,
+                            color = uiColors.boardEmptyCellBorder.copy(alpha = 0.46f),
+                            shape = RoundedCornerShape(999.dp),
+                        ),
+                )
+                if (activePiece != null) {
                     Text(
-                        text = stringResource(Res.string.queue_next_short),
+                        text = "${activePiece.width}×${activePiece.height}",
                         style = MaterialTheme.typography.labelSmall,
                         color = uiColors.subtitle.copy(alpha = 0.72f),
+                        modifier = Modifier.align(Alignment.TopEnd),
                     )
-                    nextPiece?.let {
-                        PieceBlocks(
-                            piece = it,
-                            cellSize = queueCellSize,
-                            alpha = 0.58f,
-                        )
-                    }
                 }
             }
         }
@@ -1283,6 +1376,14 @@ private fun Rect.toLocalRect(hostRect: Rect): Rect {
     )
 }
 
+private fun GridPoint.toLocalTopLeft(
+    boardRect: Rect,
+    cellSizePx: Float,
+): Offset = Offset(
+    x = boardRect.left + (column * cellSizePx),
+    y = boardRect.top + (row * cellSizePx),
+)
+
 @Composable
 private fun TutorialStepPreviewFrame(
     currentStep: Int,
@@ -1358,7 +1459,7 @@ private fun TutorialStepPreviewFrame(
     }
 }
 
-@Preview
+@Preview(name = "Tutorial - Intro", widthDp = 412, heightDp = 915)
 @Composable
 private fun TutorialIntroStepPreview() {
     TutorialStepPreviewFrame(currentStep = 1) {
@@ -1366,7 +1467,7 @@ private fun TutorialIntroStepPreview() {
     }
 }
 
-@Preview
+@Preview(name = "Tutorial - Systems", widthDp = 412, heightDp = 915)
 @Composable
 private fun TutorialSystemsStepPreview() {
     TutorialStepPreviewFrame(currentStep = 2) {
@@ -1374,7 +1475,7 @@ private fun TutorialSystemsStepPreview() {
     }
 }
 
-@Preview
+@Preview(name = "Tutorial - Specials", widthDp = 412, heightDp = 915)
 @Composable
 private fun TutorialSpecialsStepPreview() {
     TutorialStepPreviewFrame(currentStep = 3) {
@@ -1389,11 +1490,11 @@ private fun TutorialSpecialsStepPreview() {
     }
 }
 
-@Preview
+@Preview(name = "Tutorial - Ready", widthDp = 412, heightDp = 915)
 @Composable
 private fun TutorialReadyStepPreview() {
     TutorialStepPreviewFrame(currentStep = 4) {
-        TutorialReadyStep(launchPreviewColumn = 2)
+        TutorialReadyStep()
     }
 }
 
