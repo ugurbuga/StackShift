@@ -37,6 +37,14 @@ import com.ugurbuga.stackshift.ui.theme.LocalStackShiftUiColors
 import com.ugurbuga.stackshift.ui.theme.isStackShiftDarkTheme
 import com.ugurbuga.stackshift.ui.theme.stackShiftTypography
 import com.ugurbuga.stackshift.ui.theme.stackShiftThemeSpec
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
+
+enum class AppRoute {
+    Game,
+    Settings,
+    Tutorial,
+}
 
 @Composable
 fun StackShiftTheme(
@@ -64,11 +72,11 @@ fun StackShiftRoot(
     settings: AppSettings,
     telemetry: AppTelemetry,
     gameViewModel: GameViewModel,
-    showSettings: Boolean,
-    showTutorial: Boolean,
+    currentRoute: AppRoute,
     showInteractiveOnboarding: Boolean,
-    onShowSettingsChange: (Boolean) -> Unit,
-    onShowTutorialChange: (Boolean) -> Unit,
+    onNavigateToSettings: () -> Unit,
+    onNavigateToTutorial: () -> Unit,
+    onNavigateBack: () -> Unit,
     onShowInteractiveOnboardingChange: (Boolean) -> Unit,
     onSettingsChange: (AppSettings) -> Unit,
     onTutorialFinished: () -> Unit,
@@ -78,23 +86,20 @@ fun StackShiftRoot(
 
     AppEnvironment(settings = settings) {
         StackShiftTheme(settings = settings) {
-            if (showSettings) {
+            if (currentRoute == AppRoute.Settings) {
                 AppSettingsScreen(
                     telemetry = telemetry,
                     settings = settings,
                     onSettingsChange = onSettingsChange,
-                    onReplayTutorial = {
-                        onShowSettingsChange(false)
-                        onShowTutorialChange(true)
-                    },
-                    onBack = { onShowSettingsChange(false) },
+                    onReplayTutorial = onNavigateToTutorial,
+                    onBack = onNavigateBack,
                 )
-            } else if (showTutorial) {
+            } else if (currentRoute == AppRoute.Tutorial) {
                 GameTutorialScreen(
                     telemetry = telemetry,
                     onFinish = {
                         onTutorialFinished()
-                        onShowTutorialChange(false)
+                        onNavigateBack()
                     },
                 )
             } else {
@@ -113,11 +118,11 @@ fun StackShiftRoot(
                         adController = adController,
                         onOpenSettings = {
                             telemetry.logUserAction(TelemetryActionNames.OpenSettings)
-                            onShowSettingsChange(true)
+                            onNavigateToSettings()
                         },
                         onOpenTutorial = {
                             telemetry.logUserAction(TelemetryActionNames.OpenTutorial)
-                            onShowTutorialChange(true)
+                            onNavigateToTutorial()
                         },
                     )
                     if (adController !== NoOpGameAdController) {
@@ -147,15 +152,24 @@ fun App() {
         !initialBootstrapResult.settings.hasShownInteractiveOnboarding
     }
     var settings by remember(initialBootstrapResult) { mutableStateOf(initialBootstrapResult.settings) }
-    var showSettings by remember { mutableStateOf(false) }
-    var showTutorial by remember { mutableStateOf(false) }
+    var routeStack by remember { mutableStateOf(listOf(AppRoute.Game)) }
     var showInteractiveOnboarding by remember { mutableStateOf(false) }
     val persistActiveSession = remember { mutableStateOf(!initialShowInteractiveOnboarding) }
+    var pendingSessionState by remember { mutableStateOf<GameState?>(null) }
+    val currentRoute = routeStack.lastOrNull() ?: AppRoute.Game
+    fun navigateTo(route: AppRoute) {
+        if (routeStack.lastOrNull() == route) return
+        routeStack = routeStack + route
+    }
+    fun navigateBack() {
+        if (routeStack.size <= 1) return
+        routeStack = routeStack.dropLast(1)
+    }
     fun createGameViewModel(initialState: GameState?) = GameViewModel(
         initialState = initialState,
         onStateChanged = { state ->
             if (persistActiveSession.value) {
-                GameSessionStorage.save(state)
+                pendingSessionState = state
             }
         },
     )
@@ -168,6 +182,7 @@ fun App() {
     }
     fun startInteractiveOnboarding() {
         persistActiveSession.value = false
+        pendingSessionState = null
         gameViewModel = createGameViewModel(FirstRunGameOnboardingStateFactory.initialState())
         showInteractiveOnboarding = true
     }
@@ -185,6 +200,14 @@ fun App() {
         if (!initialShowInteractiveOnboarding || showInteractiveOnboarding) return@LaunchedEffect
         startInteractiveOnboarding()
     }
+    LaunchedEffect(persistActiveSession.value, pendingSessionState) {
+        val state = pendingSessionState ?: return@LaunchedEffect
+        if (!persistActiveSession.value) return@LaunchedEffect
+        delay(350.milliseconds)
+        if (persistActiveSession.value && pendingSessionState == state) {
+            GameSessionStorage.save(state)
+        }
+    }
     androidx.compose.runtime.DisposableEffect(gameViewModel) {
         onDispose(gameViewModel::dispose)
     }
@@ -192,11 +215,11 @@ fun App() {
         settings = settings,
         telemetry = telemetry,
         gameViewModel = gameViewModel,
-        showSettings = showSettings,
-        showTutorial = showTutorial,
+        currentRoute = currentRoute,
         showInteractiveOnboarding = showInteractiveOnboarding,
-        onShowSettingsChange = { showSettings = it },
-        onShowTutorialChange = { showTutorial = it },
+        onNavigateToSettings = { navigateTo(AppRoute.Settings) },
+        onNavigateToTutorial = { navigateTo(AppRoute.Tutorial) },
+        onNavigateBack = ::navigateBack,
         onShowInteractiveOnboardingChange = { shouldShow ->
             if (shouldShow && !showInteractiveOnboarding) {
                 startInteractiveOnboarding()
@@ -225,6 +248,7 @@ fun App() {
         },
         onInteractiveOnboardingFinished = { finalState ->
             persistActiveSession.value = true
+            pendingSessionState = finalState
             GameSessionStorage.save(finalState)
             if (!settings.hasShownInteractiveOnboarding) {
                 val updatedSettings = settings.copy(hasShownInteractiveOnboarding = true)

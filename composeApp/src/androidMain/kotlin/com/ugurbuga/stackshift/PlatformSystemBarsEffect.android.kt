@@ -4,14 +4,12 @@ import android.app.Activity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 @Composable
 fun AndroidSystemBarsEffect(
     darkTheme: Boolean,
-    navigationBarColor: Color,
 ) {
     val view = LocalView.current
     if (view.isInEditMode) return
@@ -21,7 +19,7 @@ fun AndroidSystemBarsEffect(
         val window = activity.window
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor = android.graphics.Color.TRANSPARENT
-        window.navigationBarColor = navigationBarColor.toArgb()
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
         WindowCompat.getInsetsController(window, view).apply {
             isAppearanceLightStatusBars = !darkTheme
             isAppearanceLightNavigationBars = !darkTheme

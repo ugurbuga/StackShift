@@ -1,5 +1,6 @@
 package com.ugurbuga.stackshift
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -19,7 +20,8 @@ import com.ugurbuga.stackshift.telemetry.TelemetryActionNames
 import com.ugurbuga.stackshift.telemetry.TelemetryUserPropertyNames
 import com.ugurbuga.stackshift.telemetry.rememberAppTelemetry
 import com.ugurbuga.stackshift.ui.theme.isStackShiftDarkTheme
-import com.ugurbuga.stackshift.ui.theme.stackShiftThemeSpec
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun AndroidApp() {
@@ -34,15 +36,25 @@ fun AndroidApp() {
         !initialBootstrapResult.settings.hasShownInteractiveOnboarding
     }
     var settings by remember(initialBootstrapResult) { mutableStateOf(initialBootstrapResult.settings) }
-    var showSettings by remember { mutableStateOf(false) }
-    var showTutorial by remember { mutableStateOf(false) }
+    var routeStack by remember { mutableStateOf(listOf(AppRoute.Game)) }
     var showInteractiveOnboarding by remember { mutableStateOf(false) }
     val persistActiveSession = remember { mutableStateOf(!initialShowInteractiveOnboarding) }
+    var pendingSessionState by remember { mutableStateOf<GameState?>(null) }
+    val currentRoute = routeStack.lastOrNull() ?: AppRoute.Game
+    val canNavigateBack = routeStack.size > 1
+    fun navigateTo(route: AppRoute) {
+        if (routeStack.lastOrNull() == route) return
+        routeStack = routeStack + route
+    }
+    fun navigateBack() {
+        if (routeStack.size <= 1) return
+        routeStack = routeStack.dropLast(1)
+    }
     fun createGameViewModel(initialState: GameState?) = GameViewModel(
         initialState = initialState,
         onStateChanged = { state ->
             if (persistActiveSession.value) {
-                GameSessionStorage.save(state)
+                pendingSessionState = state
             }
         },
     )
@@ -55,6 +67,7 @@ fun AndroidApp() {
     }
     fun startInteractiveOnboarding() {
         persistActiveSession.value = false
+        pendingSessionState = null
         gameViewModelState.value = createGameViewModel(FirstRunGameOnboardingStateFactory.initialState())
         showInteractiveOnboarding = true
     }
@@ -76,6 +89,15 @@ fun AndroidApp() {
         startInteractiveOnboarding()
     }
 
+    LaunchedEffect(persistActiveSession.value, pendingSessionState) {
+        val state = pendingSessionState ?: return@LaunchedEffect
+        if (!persistActiveSession.value) return@LaunchedEffect
+        delay(350.milliseconds)
+        if (persistActiveSession.value && pendingSessionState == state) {
+            GameSessionStorage.save(state)
+        }
+    }
+
     LaunchedEffect(settings) {
         telemetry.logUserProperty(TelemetryUserPropertyNames.Language, settings.language.localeTag)
         telemetry.logUserProperty(TelemetryUserPropertyNames.ThemeMode, settings.themeMode.name)
@@ -90,21 +112,22 @@ fun AndroidApp() {
     }
 
     val darkTheme = isStackShiftDarkTheme(settings)
-    val systemBarColor = stackShiftThemeSpec(settings = settings, darkTheme = darkTheme).uiColors.screenGradientBottom
     AndroidSystemBarsEffect(
         darkTheme = darkTheme,
-        navigationBarColor = systemBarColor,
     )
+    BackHandler(enabled = canNavigateBack) {
+        navigateBack()
+    }
 
     StackShiftRoot(
         settings = settings,
         telemetry = telemetry,
         gameViewModel = gameViewModel,
-        showSettings = showSettings,
-        showTutorial = showTutorial,
+        currentRoute = currentRoute,
         showInteractiveOnboarding = showInteractiveOnboarding,
-        onShowSettingsChange = { showSettings = it },
-        onShowTutorialChange = { showTutorial = it },
+        onNavigateToSettings = { navigateTo(AppRoute.Settings) },
+        onNavigateToTutorial = { navigateTo(AppRoute.Tutorial) },
+        onNavigateBack = ::navigateBack,
         onShowInteractiveOnboardingChange = { shouldShow ->
             if (shouldShow && !showInteractiveOnboarding) {
                 startInteractiveOnboarding()
@@ -133,6 +156,7 @@ fun AndroidApp() {
         },
         onInteractiveOnboardingFinished = { finalState ->
             persistActiveSession.value = true
+            pendingSessionState = finalState
             GameSessionStorage.save(finalState)
             if (!settings.hasShownInteractiveOnboarding) {
                 val updatedSettings = settings.copy(hasShownInteractiveOnboarding = true)

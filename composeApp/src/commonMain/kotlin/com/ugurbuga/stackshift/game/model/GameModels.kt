@@ -634,6 +634,7 @@ data class GameState(
     val softLock: SoftLockState? = null,
     val status: GameStatus = GameStatus.Running,
     val recentlyClearedRows: Set<Int> = emptySet(),
+    val recentlyClearedColumns: Set<Int> = emptySet(),
     val lastResolvedLines: Int = 0,
     val lastChainDepth: Int = 0,
     val specialChainCount: Int = 0,

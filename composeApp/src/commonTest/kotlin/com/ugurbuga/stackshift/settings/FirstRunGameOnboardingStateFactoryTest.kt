@@ -3,12 +3,22 @@ package com.ugurbuga.stackshift.settings
 import com.ugurbuga.stackshift.game.logic.GameEvent
 import com.ugurbuga.stackshift.game.logic.GameLogic
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class FirstRunGameOnboardingStateFactoryTest {
     private val logic = GameLogic()
     private val onboardingStages = FirstRunGameOnboardingStateFactory.stages
+
+    @Test
+    fun everyStageUsesTenBySixBoardConfig() {
+        onboardingStages.forEach { stage ->
+            val config = FirstRunGameOnboardingStateFactory.scene(stage).gameState.config
+            assertEquals(10, config.columns, "Stage $stage should use 10 columns during interactive onboarding")
+            assertEquals(6, config.rows, "Stage $stage should use 6 rows during interactive onboarding")
+        }
+    }
 
     @Test
     fun everyStageExposesValidGuidance() {

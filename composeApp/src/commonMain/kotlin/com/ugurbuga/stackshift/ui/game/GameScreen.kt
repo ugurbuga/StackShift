@@ -12,6 +12,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,12 +25,17 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Button
@@ -49,6 +55,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -204,10 +211,13 @@ import stackshift.composeapp.generated.resources.tutorial_ready_title
 import kotlin.math.PI
 import kotlin.math.roundToInt
 import kotlin.math.sin
+import kotlin.time.Duration.Companion.milliseconds
 import stackshift.composeapp.generated.resources.launch as launchString
 
 private const val LaunchAnimationMillis = 140L
 private const val EntryAnimationMillis = 70L
+private const val LaunchOverlayDisplayDelayMillis = 32L
+private const val LaunchOverlayFadeDurationMillis = 120
 private const val NextPieceScale = 0.5f
 private const val LaunchPreviewAlpha = 1f
 private const val QueuePreviewAlpha = 0.58f
@@ -248,10 +258,12 @@ private val GameOverBoardOverlayBottomAlpha = 0.22f
 private val GameOverBoardGlowAlpha = 0.24f
 private const val GameOverBoardRowCoverAlpha = 0.92f
 private const val GameOverBoardRowClearDurationMillis = 92
-private const val GameOverBoardRowShakeAmplitudePx = 8f
+private const val GameOverBoardRowShakeAmplitudePx = 5f
 private const val GameOverBoardRowBurstAlpha = 0.26f
 private const val GameOverBoardRowBurstStrokeWidthPx = 2.4f
 private const val GameOverBoardRowGlowHeightPx = 12f
+private const val ScreenShakeStepDurationMillis = 42
+private const val ScreenShakeFinalStepDurationMillis = 48
 private const val InteractiveOnboardingStageAdvanceDelayMillis = 720L
 private const val InteractiveOnboardingClearAnimationDurationMillis = 620
 private const val InteractiveOnboardingBoardShiftDurationMillis = 360
@@ -761,6 +773,7 @@ fun StackShiftGameApp(
     var pendingOnboardingCompletionState by remember(interactiveOnboardingEnabled) {
         mutableStateOf<GameState?>(null)
     }
+    var shouldShowLaunchOverlay by rememberSaveable { mutableStateOf(true) }
     val onboardingScene = remember(interactiveOnboardingEnabled, onboardingStage) {
         onboardingStage?.takeIf { interactiveOnboardingEnabled }?.let(FirstRunGameOnboardingStateFactory::scene)
     }
@@ -844,7 +857,7 @@ fun StackShiftGameApp(
     }
 
     LogScreen(telemetry, TelemetryScreenNames.Game)
-    GameScreen(
+    GameScreenWithLaunchOverlay(
         modifier = modifier,
         gameState = displayGameState,
         onRequestPreview = viewModel::previewPlacement,
@@ -914,6 +927,8 @@ fun StackShiftGameApp(
         soundPlayer = soundPlayer,
         haptics = haptics,
         highestScore = highestScore,
+        showLaunchOverlayInitially = shouldShowLaunchOverlay,
+        onLaunchOverlayFinished = { shouldShowLaunchOverlay = false },
         showNewHighScoreMessage = newHighScoreReached,
         interactiveOnboardingScene = if (showOnboardingCompletionDialog) null else onboardingScene,
         interactiveOnboardingCurrentStep = onboardingScene?.stage?.let { onboardingStages.indexOf(it) + 1 } ?: 0,
@@ -929,6 +944,107 @@ fun StackShiftGameApp(
         },
     )
 }
+
+@Composable
+private fun GameScreenWithLaunchOverlay(
+    gameState: GameState,
+    onRequestPreview: (Int) -> PlacementPreview?,
+    onResolvePreviewImpact: (PlacementPreview?) -> Set<GridPoint>,
+    onPlacePiece: (Int) -> GameDispatchResult,
+    onHoldPiece: () -> InteractionFeedback,
+    onPauseToggle: () -> InteractionFeedback,
+    onRestart: () -> InteractionFeedback,
+    onRewardedRevive: () -> InteractionFeedback,
+    onOpenSettings: () -> Unit,
+    onOpenTutorial: () -> Unit,
+    telemetry: AppTelemetry = NoOpAppTelemetry,
+    adController: GameAdController = NoOpGameAdController,
+    soundPlayer: SoundEffectPlayer,
+    haptics: GameHaptics,
+    highestScore: Int,
+    showLaunchOverlayInitially: Boolean = true,
+    onLaunchOverlayFinished: () -> Unit = {},
+    showNewHighScoreMessage: Boolean = false,
+    interactiveOnboardingScene: FirstRunOnboardingScene? = null,
+    interactiveOnboardingCurrentStep: Int = 0,
+    interactiveOnboardingTotalSteps: Int = 0,
+    interactiveOnboardingAwaitingCommit: Boolean = false,
+    interactiveOnboardingCompletionDialogVisible: Boolean = false,
+    onInteractiveOnboardingStartGame: () -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
+    val uiColors = StackShiftThemeTokens.uiColors
+    Box(modifier = modifier.fillMaxSize()) {
+        GameScreen(
+            gameState = gameState,
+            onRequestPreview = onRequestPreview,
+            onResolvePreviewImpact = onResolvePreviewImpact,
+            onPlacePiece = onPlacePiece,
+            onHoldPiece = onHoldPiece,
+            onPauseToggle = onPauseToggle,
+            onRestart = onRestart,
+            onRewardedRevive = onRewardedRevive,
+            onOpenSettings = onOpenSettings,
+            onOpenTutorial = onOpenTutorial,
+            telemetry = telemetry,
+            adController = adController,
+            soundPlayer = soundPlayer,
+            haptics = haptics,
+            highestScore = highestScore,
+            showNewHighScoreMessage = showNewHighScoreMessage,
+            interactiveOnboardingScene = interactiveOnboardingScene,
+            interactiveOnboardingCurrentStep = interactiveOnboardingCurrentStep,
+            interactiveOnboardingTotalSteps = interactiveOnboardingTotalSteps,
+            interactiveOnboardingAwaitingCommit = interactiveOnboardingAwaitingCommit,
+            interactiveOnboardingCompletionDialogVisible = interactiveOnboardingCompletionDialogVisible,
+            onInteractiveOnboardingStartGame = onInteractiveOnboardingStartGame,
+            modifier = Modifier.fillMaxSize(),
+        )
+
+        if (showLaunchOverlayInitially) {
+            GameLaunchOverlay(
+                uiColors = uiColors,
+                onFinished = onLaunchOverlayFinished,
+            )
+        }
+    }
+}
+
+@Composable
+private fun GameLaunchOverlay(
+    uiColors: com.ugurbuga.stackshift.ui.theme.StackShiftUiColors,
+    onFinished: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val overlayAlpha = remember { Animatable(1f) }
+    val backgroundBrush = remember(
+        uiColors.screenGradientTop,
+        uiColors.screenGradientMiddle,
+        uiColors.screenGradientBottom,
+    ) {
+        appBackgroundBrush(uiColors)
+    }
+
+    LaunchedEffect(Unit) {
+        delay(LaunchOverlayDisplayDelayMillis.milliseconds)
+        overlayAlpha.animateTo(
+            targetValue = 0f,
+            animationSpec = tween(
+                durationMillis = LaunchOverlayFadeDurationMillis,
+                easing = FastOutSlowInEasing,
+            ),
+        )
+        onFinished()
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(backgroundBrush)
+            .graphicsLayer(alpha = overlayAlpha.value),
+    )
+}
+
 
 @Composable
 fun GameScreen(
@@ -974,7 +1090,6 @@ fun GameScreen(
     val comboDriftY = remember { Animatable(18f) }
     val comboAlpha = remember { Animatable(0f) }
     val metricPulsePhase = remember { Animatable(0f) }
-    val overlayPulsePhase = remember { Animatable(0f) }
     val gameOverBoardClearProgress = remember { Animatable(0f) }
     val gameOverDialogRevealProgress = remember { Animatable(0f) }
     var highScoreHighlightActive by remember { mutableStateOf(false) }
@@ -990,15 +1105,6 @@ fun GameScreen(
     var isLaunching by remember { mutableStateOf(false) }
     val interactiveOnboardingEnabled = interactiveOnboardingScene != null
     val interactiveOnboardingAcceptedColumns = interactiveOnboardingScene?.acceptedColumns.orEmpty()
-    val interactiveOnboardingGuidedColumns by remember(interactiveOnboardingScene) {
-        derivedStateOf {
-            when {
-                interactiveOnboardingAcceptedColumns.isNotEmpty() -> interactiveOnboardingAcceptedColumns
-                interactiveOnboardingScene?.guideColumn != null -> setOf(interactiveOnboardingScene.guideColumn)
-                else -> emptySet()
-            }
-        }
-    }
     val topBarControlsEnabled = !interactiveOnboardingEnabled
 
     val activePiece = gameState.activePiece
@@ -1106,7 +1212,7 @@ fun GameScreen(
     }
 
     val scoreHighlightActive = highScoreHighlightActive
-    val anyMetricHighlightActive = highScoreHighlightActive
+    val anyMetricHighlightActive = highScoreHighlightActive && !interactiveOnboardingEnabled
 
     LaunchedEffect(anyMetricHighlightActive, gameState.status) {
         if (!anyMetricHighlightActive || gameState.status == GameStatus.GameOver) {
@@ -1177,81 +1283,32 @@ fun GameScreen(
             current.copy(x = columnToLeft(snappedColumn, boardRect, cellSizePx))
         }
     }
-
-    val overlayX by animateFloatAsState(
-        targetValue = displayOverlayTopLeft?.x ?: 0f,
-        animationSpec = if (isDragging) snap() else tween(
-            durationMillis = 180,
-            easing = FastOutSlowInEasing
-        ),
-        label = "overlayX",
-    )
-    val overlayY by animateFloatAsState(
-        targetValue = displayOverlayTopLeft?.y ?: 0f,
-        animationSpec = if (isDragging) snap() else tween(
-            durationMillis = 180,
-            easing = FastOutSlowInEasing
-        ),
-        label = "overlayY",
-    )
-    val overlayScale by animateFloatAsState(
-        targetValue = when {
-            isLaunching -> 1.06f
-            gameState.isSoftLockActive -> 0.98f
-            else -> 1f
-        },
-        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
-        label = "overlayScale",
-    )
     val shouldPulseTrayPiece =
         activePiece != null &&
                 spawnTopLeft != null &&
                 gameState.status == GameStatus.Running &&
                 gameState.softLock == null &&
+                !interactiveOnboardingEnabled &&
                 !isDragging &&
                 !isLaunching
-    LaunchedEffect(shouldPulseTrayPiece, activePiece?.id) {
-        if (!shouldPulseTrayPiece) {
-            overlayPulsePhase.snapTo(0f)
-            return@LaunchedEffect
-        }
-
-        overlayPulsePhase.snapTo(0f)
-        while (isActive && shouldPulseTrayPiece) {
-            overlayPulsePhase.animateTo(
-                targetValue = 1f,
-                animationSpec = tween(
-                    durationMillis = TrayPulseUpDurationMillis,
-                    easing = FastOutSlowInEasing,
-                ),
-            )
-            overlayPulsePhase.animateTo(
-                targetValue = 0f,
-                animationSpec = tween(
-                    durationMillis = TrayPulseDownDurationMillis,
-                    easing = FastOutSlowInEasing,
-                ),
-            )
-        }
-    }
-    val trayPulseScale = if (shouldPulseTrayPiece) {
-        1f + (TrayPulseScaleBoost * overlayPulsePhase.value)
-    } else {
-        1f
-    }
 
     LaunchedEffect(gameState.screenShakeToken) {
         if (gameState.screenShakeToken == 0L) return@LaunchedEffect
+        if (interactiveOnboardingEnabled) {
+            screenShakeX.snapTo(0f)
+            screenShakeY.snapTo(0f)
+            return@LaunchedEffect
+        }
         screenShakeX.snapTo(0f)
         screenShakeY.snapTo(0f)
-        listOf(14f, -10f, 8f, -6f, 3f, 0f).forEachIndexed { index, value ->
-            screenShakeX.animateTo(value, animationSpec = tween(durationMillis = 34))
+        listOf(8f, -5.5f, 3.5f, -2f, 0f).forEachIndexed { index, value ->
+            screenShakeX.animateTo(value, animationSpec = tween(durationMillis = ScreenShakeStepDurationMillis))
             screenShakeY.animateTo(
-                if (index % 2 == 0) 3f else -2f,
-                animationSpec = tween(durationMillis = 34)
+                if (index % 2 == 0) 1.6f else -1.1f,
+                animationSpec = tween(durationMillis = ScreenShakeStepDurationMillis)
             )
         }
-        screenShakeY.animateTo(0f, animationSpec = tween(durationMillis = 40))
+        screenShakeY.animateTo(0f, animationSpec = tween(durationMillis = ScreenShakeFinalStepDurationMillis))
     }
 
     LaunchedEffect(gameState.impactFlashToken) {
@@ -1268,6 +1325,11 @@ fun GameScreen(
     }
 
     LaunchedEffect(gameState.comboPopupToken, gameState.floatingFeedback?.token) {
+        if (interactiveOnboardingEnabled) {
+            comboDriftY.snapTo(0f)
+            comboAlpha.snapTo(0f)
+            return@LaunchedEffect
+        }
         if (gameState.floatingFeedback == null || gameState.comboPopupToken == 0L) return@LaunchedEffect
         comboDriftY.snapTo(26f)
         comboAlpha.snapTo(0f)
@@ -1406,7 +1468,7 @@ fun GameScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f),
-                        contentAlignment = Alignment.Center,
+                        contentAlignment = if (interactiveOnboardingEnabled) Alignment.BottomCenter else Alignment.Center,
                     ) {
                         val boardRatio = gameState.config.columns / gameState.config.rows.toFloat()
                         val boardWidth = when {
@@ -1426,7 +1488,7 @@ fun GameScreen(
                                 gameState = gameState,
                                 preview = placementPreview,
                                 impactedPreviewCells = previewImpactPoints,
-                                guidedColumns = interactiveOnboardingGuidedColumns,
+                                guidedColumns = emptySet(),
                                 activeColumn = selectedColumn,
                                 activePiece = activePiece,
                                 isColumnValid = placementPreview != null,
@@ -1464,133 +1526,110 @@ fun GameScreen(
                             },
                         gameState = gameState,
                         cellSizePx = cellSizePx,
+                        showNextPiece = !interactiveOnboardingEnabled,
                     )
                 }
 
                 gameState.floatingFeedback?.let { floatingFeedback ->
-                    FloatingFeedbackBubble(
+                    FloatingFeedbackOverlay(
                         text = resolveGameText(floatingFeedback.text),
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(top = 96.dp),
                         isBonus = floatingFeedback.emphasis != FeedbackEmphasis.Info,
                         alpha = comboAlpha.value,
                         driftY = comboDriftY.value,
                     )
                 }
 
-                if (!interactiveOnboardingEnabled && impactFlashAlpha.value > 0f) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.White.copy(alpha = impactFlashAlpha.value)),
-                    )
+                if (!interactiveOnboardingEnabled) {
+                    ImpactFlashOverlay(alpha = impactFlashAlpha.value)
                 }
 
                 if (activePiece != null && overlayTopLeft != null && cellSizePx > 0f) {
-                    val pieceCellDp = with(density) { cellSizePx.toDp() }
-                    val resolvedPreviewStyle = resolveBoardBlockStyle(
-                        selectedStyle = LocalAppSettings.current.blockVisualStyle,
-                        mode = LocalAppSettings.current.boardBlockStyleMode,
-                    )
-                    val launchCellCornerRadius = boardCellCornerRadiusDp(
-                        cellSize = pieceCellDp,
-                        style = resolvedPreviewStyle,
-                    )
-                    PieceBlocks(
+                    ActivePieceOverlay(
                         piece = activePiece,
-                        cellSize = pieceCellDp,
-                        cellCornerRadius = launchCellCornerRadius,
-                        modifier = Modifier
-                            .graphicsLayer(
-                                translationX = overlayX,
-                                translationY = overlayY,
-                                scaleX = overlayScale * trayPulseScale,
-                                scaleY = overlayScale * trayPulseScale,
-                                transformOrigin = TransformOrigin(0f, 0f),
-                            )
-                            .pointerInput(
-                                activePiece.id,
-                                gameState.status,
-                                isLaunching,
-                                boardRect,
-                                cellSizePx,
-                            ) {
-                                detectDragGestures(
-                                    onDragStart = {
-                                        if (gameState.status != GameStatus.Running || isLaunching) return@detectDragGestures
-                                        isDragging = true
+                        cellSizePx = cellSizePx,
+                        displayOverlayTopLeft = displayOverlayTopLeft,
+                        isDragging = isDragging,
+                        isLaunching = isLaunching,
+                        isSoftLockActive = gameState.isSoftLockActive,
+                        isPaused = gameState.status == GameStatus.Paused,
+                        shouldPulseTrayPiece = shouldPulseTrayPiece,
+                        pointerModifier = Modifier.pointerInput(
+                            activePiece.id,
+                            gameState.status,
+                            isLaunching,
+                            boardRect,
+                            cellSizePx,
+                        ) {
+                            detectDragGestures(
+                                onDragStart = {
+                                    if (gameState.status != GameStatus.Running || isLaunching) return@detectDragGestures
+                                    isDragging = true
+                                    dispatchFeedback(
+                                        InteractionFeedback(
+                                            sounds = setOf(GameSound.Grab),
+                                            haptics = setOf(GameHaptic.Light),
+                                        ),
+                                        soundPlayer = soundPlayer,
+                                        haptics = haptics,
+                                    )
+                                },
+                                onDrag = { change, dragAmount ->
+                                    if (gameState.status != GameStatus.Running || isLaunching) return@detectDragGestures
+                                    change.consume()
+                                    val current = overlayTopLeft ?: return@detectDragGestures
+                                    overlayTopLeft = current.copy(x = current.x + dragAmount.x)
+                                },
+                                onDragEnd = {
+                                    if (gameState.status != GameStatus.Running || isLaunching) return@detectDragGestures
+                                    isDragging = false
+
+                                    val preview = placementPreview
+                                    val column = selectedColumn
+                                    val currentSpawn = spawnTopLeft
+                                    if (preview == null || column == null || currentSpawn == null) {
+                                        overlayTopLeft = currentSpawn
                                         dispatchFeedback(
                                             InteractionFeedback(
-                                                sounds = setOf(GameSound.Grab),
-                                                haptics = setOf(GameHaptic.Light),
+                                                sounds = setOf(GameSound.DropInvalid),
+                                                haptics = setOf(GameHaptic.Warning),
                                             ),
                                             soundPlayer = soundPlayer,
                                             haptics = haptics,
                                         )
-                                    },
-                                    onDrag = { change, dragAmount ->
-                                        if (gameState.status != GameStatus.Running || isLaunching) return@detectDragGestures
-                                        change.consume()
-                                        val current = overlayTopLeft ?: return@detectDragGestures
-                                        overlayTopLeft = current.copy(x = current.x + dragAmount.x)
-                                    },
-                                    onDragEnd = {
-                                        if (gameState.status != GameStatus.Running || isLaunching) return@detectDragGestures
-                                        isDragging = false
+                                        return@detectDragGestures
+                                    }
 
-                                        val preview = placementPreview
-                                        val column = selectedColumn
-                                        val currentSpawn = spawnTopLeft
-                                        if (preview == null || column == null || currentSpawn == null) {
-                                            overlayTopLeft = currentSpawn
-                                            dispatchFeedback(
-                                                InteractionFeedback(
-                                                    sounds = setOf(GameSound.DropInvalid),
-                                                    haptics = setOf(GameHaptic.Warning),
-                                                ),
-                                                soundPlayer = soundPlayer,
-                                                haptics = haptics,
-                                            )
-                                            return@detectDragGestures
-                                        }
-
-                                        if (gameState.softLock != null) {
+                                    if (gameState.softLock != null) {
+                                        overlayTopLeft = preview.landingAnchor.toTopLeft(
+                                            boardRect = boardRect,
+                                            cellSizePx = cellSizePx
+                                        )
+                                        val result = updatedPlacePiece(column)
+                                        dispatchFeedback(result.feedback, soundPlayer, haptics)
+                                    } else {
+                                        isLaunching = true
+                                        overlayTopLeft = preview.entryAnchor.toTopLeft(
+                                            boardRect = boardRect,
+                                            cellSizePx = cellSizePx
+                                        )
+                                        coroutineScope.launch {
+                                            delay(EntryAnimationMillis)
                                             overlayTopLeft = preview.landingAnchor.toTopLeft(
                                                 boardRect = boardRect,
                                                 cellSizePx = cellSizePx
                                             )
+                                            delay(LaunchAnimationMillis)
                                             val result = updatedPlacePiece(column)
                                             dispatchFeedback(result.feedback, soundPlayer, haptics)
-                                        } else {
-                                            isLaunching = true
-                                            overlayTopLeft = preview.entryAnchor.toTopLeft(
-                                                boardRect = boardRect,
-                                                cellSizePx = cellSizePx
-                                            )
-                                            coroutineScope.launch {
-                                                delay(EntryAnimationMillis)
-                                                overlayTopLeft = preview.landingAnchor.toTopLeft(
-                                                    boardRect = boardRect,
-                                                    cellSizePx = cellSizePx
-                                                )
-                                                delay(LaunchAnimationMillis)
-                                                val result = updatedPlacePiece(column)
-                                                dispatchFeedback(result.feedback, soundPlayer, haptics)
-                                                isLaunching = false
-                                            }
+                                            isLaunching = false
                                         }
-                                    },
-                                    onDragCancel = {
-                                        isDragging = false
-                                        spawnTopLeft?.let { overlayTopLeft = it }
-                                    },
-                                )
-                            },
-                        alpha = when {
-                            gameState.status == GameStatus.Paused -> 0.42f
-                            isLaunching -> LaunchPreviewAlpha
-                            else -> 1f
+                                    }
+                                },
+                                onDragCancel = {
+                                    isDragging = false
+                                    spawnTopLeft?.let { overlayTopLeft = it }
+                                },
+                            )
                         },
                     )
                 }
@@ -1673,6 +1712,141 @@ fun GameScreen(
             }
         }
     }
+}
+
+@Composable
+private fun BoxScope.FloatingFeedbackOverlay(
+    text: String,
+    isBonus: Boolean,
+    alpha: Float,
+    driftY: Float,
+    modifier: Modifier = Modifier,
+) {
+    if (alpha <= 0.001f) return
+    FloatingFeedbackBubble(
+        text = text,
+        modifier = modifier
+            .align(Alignment.TopCenter)
+            .padding(top = 96.dp),
+        isBonus = isBonus,
+        alpha = alpha,
+        driftY = driftY,
+    )
+}
+
+@Composable
+private fun BoxScope.ImpactFlashOverlay(
+    alpha: Float,
+    modifier: Modifier = Modifier,
+) {
+    if (alpha <= 0.001f) return
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color.White.copy(alpha = alpha)),
+    )
+}
+
+@Composable
+private fun ActivePieceOverlay(
+    piece: Piece,
+    cellSizePx: Float,
+    displayOverlayTopLeft: Offset?,
+    isDragging: Boolean,
+    isLaunching: Boolean,
+    isSoftLockActive: Boolean,
+    isPaused: Boolean,
+    shouldPulseTrayPiece: Boolean,
+    pointerModifier: Modifier,
+    modifier: Modifier = Modifier,
+) {
+    if (displayOverlayTopLeft == null || cellSizePx <= 0f) return
+    val density = LocalDensity.current
+    val settings = LocalAppSettings.current
+    val overlayPulsePhase = remember { Animatable(0f) }
+    val overlayX by animateFloatAsState(
+        targetValue = displayOverlayTopLeft.x,
+        animationSpec = if (isDragging) snap() else tween(
+            durationMillis = 180,
+            easing = FastOutSlowInEasing,
+        ),
+        label = "overlayX",
+    )
+    val overlayY by animateFloatAsState(
+        targetValue = displayOverlayTopLeft.y,
+        animationSpec = if (isDragging) snap() else tween(
+            durationMillis = 180,
+            easing = FastOutSlowInEasing,
+        ),
+        label = "overlayY",
+    )
+    val overlayScale by animateFloatAsState(
+        targetValue = when {
+            isLaunching -> 1.06f
+            isSoftLockActive -> 0.98f
+            else -> 1f
+        },
+        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        label = "overlayScale",
+    )
+    LaunchedEffect(shouldPulseTrayPiece, piece.id) {
+        if (!shouldPulseTrayPiece) {
+            overlayPulsePhase.snapTo(0f)
+            return@LaunchedEffect
+        }
+
+        overlayPulsePhase.snapTo(0f)
+        while (isActive && shouldPulseTrayPiece) {
+            overlayPulsePhase.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(
+                    durationMillis = TrayPulseUpDurationMillis,
+                    easing = FastOutSlowInEasing,
+                ),
+            )
+            overlayPulsePhase.animateTo(
+                targetValue = 0f,
+                animationSpec = tween(
+                    durationMillis = TrayPulseDownDurationMillis,
+                    easing = FastOutSlowInEasing,
+                ),
+            )
+        }
+    }
+    val trayPulseScale = if (shouldPulseTrayPiece) {
+        1f + (TrayPulseScaleBoost * overlayPulsePhase.value)
+    } else {
+        1f
+    }
+    val pieceCellDp = with(density) { cellSizePx.toDp() }
+    val resolvedPreviewStyle = resolveBoardBlockStyle(
+        selectedStyle = settings.blockVisualStyle,
+        mode = settings.boardBlockStyleMode,
+    )
+    val launchCellCornerRadius = boardCellCornerRadiusDp(
+        cellSize = pieceCellDp,
+        style = resolvedPreviewStyle,
+    )
+
+    PieceBlocks(
+        piece = piece,
+        cellSize = pieceCellDp,
+        cellCornerRadius = launchCellCornerRadius,
+        modifier = modifier
+            .graphicsLayer(
+                translationX = overlayX,
+                translationY = overlayY,
+                scaleX = overlayScale * trayPulseScale,
+                scaleY = overlayScale * trayPulseScale,
+                transformOrigin = TransformOrigin(0f, 0f),
+            )
+            .then(pointerModifier),
+        alpha = when {
+            isPaused -> 0.42f
+            isLaunching -> LaunchPreviewAlpha
+            else -> 1f
+        },
+    )
 }
 
 @Composable
@@ -2018,6 +2192,7 @@ private fun EqualWidthMetricColumn(
 private fun MinimalBottomDock(
     gameState: GameState,
     cellSizePx: Float,
+    showNextPiece: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
@@ -2053,10 +2228,12 @@ private fun MinimalBottomDock(
                 .padding(horizontal = 12.dp, vertical = 10.dp),
             contentAlignment = Alignment.CenterEnd,
         ) {
-            HoldAndQueueStrip(
-                queue = queuePieces,
-                cellSizePx = cellSizePx,
-            )
+            if (showNextPiece) {
+                HoldAndQueueStrip(
+                    queue = queuePieces,
+                    cellSizePx = cellSizePx,
+                )
+            }
         }
     }
 }

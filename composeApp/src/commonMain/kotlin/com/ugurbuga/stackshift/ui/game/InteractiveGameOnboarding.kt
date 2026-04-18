@@ -25,23 +25,26 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ugurbuga.stackshift.StackShiftTheme
+import com.ugurbuga.stackshift.game.logic.GameLogic
 import com.ugurbuga.stackshift.game.model.AppThemeMode
-import com.ugurbuga.stackshift.game.model.CellTone
-import com.ugurbuga.stackshift.game.model.SpecialBlockType
+import com.ugurbuga.stackshift.game.model.PlacementPreview
 import com.ugurbuga.stackshift.settings.AppSettings
 import com.ugurbuga.stackshift.settings.FirstRunOnboardingStage
 import com.ugurbuga.stackshift.settings.FirstRunOnboardingTarget
@@ -70,6 +73,7 @@ import stackshift.composeapp.generated.resources.interactive_onboarding_step_cou
 import stackshift.composeapp.generated.resources.interactive_onboarding_target_locked
 import stackshift.composeapp.generated.resources.interactive_onboarding_waiting
 
+@Immutable
 data class GameInteractiveOnboardingUi(
     val scene: FirstRunOnboardingScene,
     val currentStep: Int,
@@ -77,6 +81,21 @@ data class GameInteractiveOnboardingUi(
     val hasDraggedAwayFromSpawn: Boolean,
     val isTargetAligned: Boolean,
     val isAwaitingPlacementCommit: Boolean,
+)
+
+private val onboardingGuideLogic = GameLogic()
+private const val InteractiveOnboardingTargetPulseDurationMillis = 1880
+
+@Immutable
+private data class InteractiveOnboardingVisualState(
+    val title: String,
+    val body: String,
+    val hint: String,
+    val guideColor: Color,
+    val guideBadgeTextColor: Color,
+    val hintContainerAlpha: Float,
+    val hintBorderAlpha: Float,
+    val isSuccessState: Boolean,
 )
 
 @Composable
@@ -88,152 +107,112 @@ fun InteractiveGameOnboardingOverlay(
     modifier: Modifier = Modifier,
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
-    val targetPulseTransition = rememberInfiniteTransition(label = "interactiveOnboardingTargetPulse")
-    val targetPulsePhase = targetPulseTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 980,
-                easing = FastOutSlowInEasing,
-            ),
-        ),
-        label = "interactiveOnboardingTargetPulsePhase",
-    )
-    val targetRect = onboardingTargetRect(
-        scene = ui.scene,
-        boardRect = boardRect,
-        trayRect = trayRect,
-        cellSizePx = cellSizePx,
-    )
-    val guideColumns = onboardingGuideColumns(ui.scene)
-    val title = when (ui.scene.stage) {
-        FirstRunOnboardingStage.DragAndLaunch -> stringResource(Res.string.interactive_onboarding_drag_title)
-        FirstRunOnboardingStage.LineClear -> stringResource(Res.string.interactive_onboarding_line_clear_title)
-        FirstRunOnboardingStage.ColumnClearer -> stringResource(Res.string.interactive_onboarding_column_clearer_title)
-        FirstRunOnboardingStage.RowClearer -> stringResource(Res.string.interactive_onboarding_row_clearer_title)
-        FirstRunOnboardingStage.Ghost -> stringResource(Res.string.interactive_onboarding_ghost_title)
-        FirstRunOnboardingStage.Heavy -> stringResource(Res.string.interactive_onboarding_heavy_title)
+    val targetRect = remember(ui.scene, boardRect, trayRect, cellSizePx) {
+        onboardingTargetRect(
+            scene = ui.scene,
+            boardRect = boardRect,
+            trayRect = trayRect,
+            cellSizePx = cellSizePx,
+        )
     }
-    val body = when (ui.scene.stage) {
-        FirstRunOnboardingStage.DragAndLaunch -> stringResource(Res.string.interactive_onboarding_drag_body)
-        FirstRunOnboardingStage.LineClear -> stringResource(Res.string.interactive_onboarding_line_clear_body)
-        FirstRunOnboardingStage.ColumnClearer -> stringResource(Res.string.interactive_onboarding_column_clearer_body)
-        FirstRunOnboardingStage.RowClearer -> stringResource(Res.string.interactive_onboarding_row_clearer_body)
-        FirstRunOnboardingStage.Ghost -> stringResource(Res.string.interactive_onboarding_ghost_body)
-        FirstRunOnboardingStage.Heavy -> stringResource(Res.string.interactive_onboarding_heavy_body)
-    }
-    val isDragStepReady = ui.scene.stage == FirstRunOnboardingStage.DragAndLaunch && ui.hasDraggedAwayFromSpawn
-    val isLaterStepReady = ui.scene.stage != FirstRunOnboardingStage.DragAndLaunch && ui.isTargetAligned
-    val isSuccessState = isDragStepReady || isLaterStepReady
-    val hint = when {
-        ui.isAwaitingPlacementCommit -> stringResource(Res.string.interactive_onboarding_waiting)
-        isLaterStepReady -> stringResource(Res.string.interactive_onboarding_target_locked)
-        isDragStepReady -> stringResource(Res.string.interactive_onboarding_drag_ready)
-        ui.scene.stage == FirstRunOnboardingStage.DragAndLaunch -> stringResource(Res.string.interactive_onboarding_drag_to_board)
-        else -> stringResource(Res.string.interactive_onboarding_aim_hint)
-    }
-    val guideColor = when {
-        ui.isAwaitingPlacementCommit -> uiColors.warning
-        isSuccessState -> uiColors.success
-        else -> uiColors.actionButton
-    }
-    val hintContainerAlpha = when {
-        ui.isAwaitingPlacementCommit -> 0.26f
-        isSuccessState -> 0.20f
-        else -> 0.18f
-    }
-    val hintBorderAlpha = when {
-        ui.isAwaitingPlacementCommit -> 0.72f
-        isSuccessState -> 0.58f
-        else -> 0.48f
-    }
-    val guideBadgeTextColor = if (guideColor.luminance() > 0.58f) {
-        Color(0xFF101114)
-    } else {
-        Color.White
+    val dragTitle = stringResource(Res.string.interactive_onboarding_drag_title)
+    val lineClearTitle = stringResource(Res.string.interactive_onboarding_line_clear_title)
+    val columnClearTitle = stringResource(Res.string.interactive_onboarding_column_clearer_title)
+    val rowClearTitle = stringResource(Res.string.interactive_onboarding_row_clearer_title)
+    val ghostTitle = stringResource(Res.string.interactive_onboarding_ghost_title)
+    val heavyTitle = stringResource(Res.string.interactive_onboarding_heavy_title)
+    val dragBody = stringResource(Res.string.interactive_onboarding_drag_body)
+    val lineClearBody = stringResource(Res.string.interactive_onboarding_line_clear_body)
+    val columnClearBody = stringResource(Res.string.interactive_onboarding_column_clearer_body)
+    val rowClearBody = stringResource(Res.string.interactive_onboarding_row_clearer_body)
+    val ghostBody = stringResource(Res.string.interactive_onboarding_ghost_body)
+    val heavyBody = stringResource(Res.string.interactive_onboarding_heavy_body)
+    val waitingHint = stringResource(Res.string.interactive_onboarding_waiting)
+    val targetLockedHint = stringResource(Res.string.interactive_onboarding_target_locked)
+    val dragReadyHint = stringResource(Res.string.interactive_onboarding_drag_ready)
+    val dragToBoardHint = stringResource(Res.string.interactive_onboarding_drag_to_board)
+    val aimHint = stringResource(Res.string.interactive_onboarding_aim_hint)
+    val visualState = remember(
+        ui,
+        uiColors.warning,
+        uiColors.success,
+        uiColors.actionButton,
+        dragTitle,
+        lineClearTitle,
+        columnClearTitle,
+        rowClearTitle,
+        ghostTitle,
+        heavyTitle,
+        dragBody,
+        lineClearBody,
+        columnClearBody,
+        rowClearBody,
+        ghostBody,
+        heavyBody,
+        waitingHint,
+        targetLockedHint,
+        dragReadyHint,
+        dragToBoardHint,
+        aimHint,
+    ) {
+        val isDragStepReady = ui.scene.stage == FirstRunOnboardingStage.DragAndLaunch && ui.hasDraggedAwayFromSpawn
+        val isLaterStepReady = ui.scene.stage != FirstRunOnboardingStage.DragAndLaunch && ui.isTargetAligned
+        val isSuccessState = isDragStepReady || isLaterStepReady
+        val title = when (ui.scene.stage) {
+            FirstRunOnboardingStage.DragAndLaunch -> dragTitle
+            FirstRunOnboardingStage.LineClear -> lineClearTitle
+            FirstRunOnboardingStage.ColumnClearer -> columnClearTitle
+            FirstRunOnboardingStage.RowClearer -> rowClearTitle
+            FirstRunOnboardingStage.Ghost -> ghostTitle
+            FirstRunOnboardingStage.Heavy -> heavyTitle
+        }
+        val body = when (ui.scene.stage) {
+            FirstRunOnboardingStage.DragAndLaunch -> dragBody
+            FirstRunOnboardingStage.LineClear -> lineClearBody
+            FirstRunOnboardingStage.ColumnClearer -> columnClearBody
+            FirstRunOnboardingStage.RowClearer -> rowClearBody
+            FirstRunOnboardingStage.Ghost -> ghostBody
+            FirstRunOnboardingStage.Heavy -> heavyBody
+        }
+        val hint = when {
+            ui.isAwaitingPlacementCommit -> waitingHint
+            isLaterStepReady -> targetLockedHint
+            isDragStepReady -> dragReadyHint
+            ui.scene.stage == FirstRunOnboardingStage.DragAndLaunch -> dragToBoardHint
+            else -> aimHint
+        }
+        val guideColor = when {
+            ui.isAwaitingPlacementCommit -> uiColors.warning
+            isSuccessState -> uiColors.success
+            else -> uiColors.actionButton
+        }
+        InteractiveOnboardingVisualState(
+            title = title,
+            body = body,
+            hint = hint,
+            guideColor = guideColor,
+            guideBadgeTextColor = if (guideColor.luminance() > 0.58f) Color(0xFF101114) else Color.White,
+            hintContainerAlpha = when {
+                ui.isAwaitingPlacementCommit -> 0.26f
+                isSuccessState -> 0.20f
+                else -> 0.18f
+            },
+            hintBorderAlpha = when {
+                ui.isAwaitingPlacementCommit -> 0.72f
+                isSuccessState -> 0.58f
+                else -> 0.48f
+            },
+            isSuccessState = isSuccessState,
+        )
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            if (
-                ui.scene.target == FirstRunOnboardingTarget.Board &&
-                boardRect != Rect.Zero &&
-                cellSizePx > 0f &&
-                guideColumns.isNotEmpty()
-            ) {
-                val highlightedColumns = (ui.scene.gameState.activePiece?.width ?: 1).coerceAtLeast(1)
-                guideColumns.forEach { column ->
-                    val laneLeft = boardRect.left + (column * cellSizePx)
-                    val laneWidth = (highlightedColumns * cellSizePx).coerceAtMost(boardRect.right - laneLeft)
-                    if (laneWidth <= 0f) return@forEach
-                    drawRoundRect(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                guideColor.copy(alpha = 0.14f + (targetPulsePhase.value * 0.06f)),
-                                guideColor.copy(alpha = 0.20f + (targetPulsePhase.value * 0.08f)),
-                                uiColors.launchGlow.copy(alpha = 0.16f + (targetPulsePhase.value * 0.08f)),
-                            ),
-                        ),
-                        topLeft = Offset(laneLeft, boardRect.top),
-                        size = androidx.compose.ui.geometry.Size(laneWidth, boardRect.height),
-                        cornerRadius = CornerRadius(22f, 22f),
-                    )
-                }
-            }
-            if (targetRect != null) {
-                val pulsePhase = targetPulsePhase.value
-                val pulseScale = when {
-                    ui.isAwaitingPlacementCommit -> 1.005f
-                    isSuccessState -> 1.008f + (pulsePhase * 0.015f)
-                    else -> 1.015f + (pulsePhase * 0.025f)
-                }
-                val pulseRect = targetRect.scaleAroundCenter(pulseScale)
-                val cornerRadius = CornerRadius(24f, 24f)
-                drawRoundRect(
-                    color = guideColor.copy(
-                        alpha = when {
-                            ui.isAwaitingPlacementCommit -> 0.14f
-                            isSuccessState -> 0.16f
-                            else -> 0.12f
-                        }
-                    ),
-                    topLeft = Offset(targetRect.left, targetRect.top),
-                    size = targetRect.size,
-                    cornerRadius = cornerRadius,
-                )
-                drawRoundRect(
-                    color = guideColor.copy(alpha = if (isSuccessState) 0.94f else 0.86f),
-                    topLeft = Offset(targetRect.left, targetRect.top),
-                    size = targetRect.size,
-                    cornerRadius = cornerRadius,
-                    style = Stroke(width = if (isSuccessState) 4.5f else 4f),
-                )
-                drawRoundRect(
-                    color = Color.White.copy(alpha = if (isSuccessState) 0.18f else 0.12f),
-                    topLeft = Offset(targetRect.left + 2f, targetRect.top + 2f),
-                    size = targetRect.size.copy(
-                        width = targetRect.size.width - 4f,
-                        height = targetRect.size.height - 4f,
-                    ),
-                    cornerRadius = CornerRadius(20f, 20f),
-                    style = Stroke(width = 1.2f),
-                )
-                drawRoundRect(
-                    color = guideColor.copy(
-                        alpha = when {
-                            ui.isAwaitingPlacementCommit -> 0.18f
-                            isSuccessState -> 0.20f + (pulsePhase * 0.05f)
-                            else -> 0.14f + (pulsePhase * 0.10f)
-                        }
-                    ),
-                    topLeft = Offset(pulseRect.left, pulseRect.top),
-                    size = pulseRect.size,
-                    cornerRadius = CornerRadius(30f, 30f),
-                    style = Stroke(width = if (isSuccessState) 7f else 6f),
-                )
-            }
-        }
+        InteractiveOnboardingTargetHighlight(
+            targetRect = targetRect,
+            guideColor = visualState.guideColor,
+            isSuccessState = visualState.isSuccessState,
+            isAwaitingPlacementCommit = ui.isAwaitingPlacementCommit,
+        )
 
         Card(
             modifier = Modifier
@@ -247,7 +226,7 @@ fun InteractiveGameOnboardingOverlay(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
-                        Brush.verticalGradient(
+                        androidx.compose.ui.graphics.Brush.verticalGradient(
                             colors = listOf(
                                 uiColors.panelHighlight.copy(alpha = 0.18f),
                                 uiColors.launchGlow.copy(alpha = 0.10f),
@@ -265,7 +244,7 @@ fun InteractiveGameOnboardingOverlay(
                 ) {
                     Surface(
                         shape = RoundedCornerShape(14.dp),
-                        color = guideColor.copy(alpha = 0.94f),
+                        color = visualState.guideColor.copy(alpha = 0.94f),
                         border = BorderStroke(1.dp, Color.White.copy(alpha = 0.14f)),
                     ) {
                         Text(
@@ -275,35 +254,31 @@ fun InteractiveGameOnboardingOverlay(
                                 ui.totalSteps,
                             ),
                             style = MaterialTheme.typography.labelMedium,
-                            color = guideBadgeTextColor,
+                            color = visualState.guideBadgeTextColor,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                         )
                     }
                 }
                 Text(
-                    text = title,
+                    text = visualState.title,
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    text = body,
+                    text = visualState.body,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.86f),
-                )
-                InteractiveOnboardingScenePreview(
-                    scene = ui.scene,
-                    guideColor = guideColor,
                 )
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    color = guideColor.copy(alpha = hintContainerAlpha),
-                    border = BorderStroke(1.dp, guideColor.copy(alpha = hintBorderAlpha)),
+                    color = visualState.guideColor.copy(alpha = visualState.hintContainerAlpha),
+                    border = BorderStroke(1.dp, visualState.guideColor.copy(alpha = visualState.hintBorderAlpha)),
                 ) {
                     Text(
-                        text = hint,
+                        text = visualState.hint,
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold,
@@ -316,106 +291,91 @@ fun InteractiveGameOnboardingOverlay(
 }
 
 @Composable
-private fun InteractiveOnboardingScenePreview(
-    scene: FirstRunOnboardingScene,
+private fun InteractiveOnboardingTargetHighlight(
+    targetRect: Rect?,
     guideColor: Color,
+    isSuccessState: Boolean,
+    isAwaitingPlacementCommit: Boolean,
+    modifier: Modifier = Modifier,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
-    val settings = com.ugurbuga.stackshift.localization.LocalAppSettings.current
-    val blockStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
-    val guideColumns = onboardingGuideColumns(scene)
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    val rect = targetRect ?: return
+    val density = LocalDensity.current
+    val shouldAnimatePulse = !isAwaitingPlacementCommit && !isSuccessState
+    val pulsePhase = if (!shouldAnimatePulse) {
+        0f
+    } else {
+        val targetPulseTransition = rememberInfiniteTransition(label = "interactiveOnboardingTargetPulse")
+        targetPulseTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(
+                    durationMillis = InteractiveOnboardingTargetPulseDurationMillis,
+                    easing = FastOutSlowInEasing,
+                ),
+            ),
+            label = "interactiveOnboardingTargetPulsePhase",
+        ).value
+    }
+    val widthDp = with(density) { rect.width.toDp() }
+    val heightDp = with(density) { rect.height.toDp() }
+
+    Canvas(
+        modifier = modifier
+            .graphicsLayer(
+                translationX = rect.left,
+                translationY = rect.top,
+            )
+            .size(width = widthDp, height = heightDp)
     ) {
-        Surface(
-            modifier = Modifier.weight(1f),
-            shape = RoundedCornerShape(18.dp),
-            color = uiColors.panelMuted.copy(alpha = 0.78f),
-            border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.70f)),
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                scene.gameState.activePiece?.let { piece ->
-                    PieceBlocks(
-                        piece = piece,
-                        cellSize = 14.dp,
-                    )
+        val localTargetRect = Rect(0f, 0f, size.width, size.height)
+        val pulseScale = when {
+            isAwaitingPlacementCommit -> 1f
+            isSuccessState -> 1f
+            else -> 1.004f + (pulsePhase * 0.010f)
+        }
+        val pulseRect = localTargetRect.scaleAroundCenter(pulseScale)
+        val cornerRadius = CornerRadius(24f, 24f)
+
+        drawRoundRect(
+            color = guideColor.copy(
+                alpha = when {
+                    isAwaitingPlacementCommit -> 0.10f
+                    isSuccessState -> 0.12f
+                    else -> 0.09f
                 }
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        repeat(scene.gameState.config.columns.coerceAtMost(10)) { column ->
-                            val isGuided = guideColumns.any { guided ->
-                                val activeWidth = (scene.gameState.activePiece?.width ?: 1).coerceAtLeast(1)
-                                column in guided until (guided + activeWidth)
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .size(width = 14.dp, height = 10.dp)
-                                    .clip(RoundedCornerShape(999.dp))
-                                    .background(
-                                        if (isGuided) {
-                                            guideColor.copy(alpha = 0.92f)
-                                        } else {
-                                            uiColors.boardEmptyCell.copy(alpha = 0.52f)
-                                        }
-                                    ),
-                            )
-                        }
-                    }
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        val activePiece = scene.gameState.activePiece
-                        BlockCellPreview(
-                            tone = activePiece?.tone ?: CellTone.Blue,
-                            palette = settings.blockColorPalette,
-                            style = blockStyle,
-                            size = 18.dp,
-                            special = activePiece?.special ?: SpecialBlockType.None,
-                        )
-                        if (scene.target == FirstRunOnboardingTarget.Board) {
-                            guideColumns.forEach { column ->
-                                Surface(
-                                    shape = RoundedCornerShape(999.dp),
-                                    color = guideColor.copy(alpha = 0.18f),
-                                    border = BorderStroke(1.dp, guideColor.copy(alpha = 0.64f)),
-                                ) {
-                                    Text(
-                                        text = "${column + 1}",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.88f),
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                    )
-                                }
-                            }
-                        } else {
-                            repeat(3) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(width = 16.dp, height = 8.dp)
-                                        .clip(RoundedCornerShape(999.dp))
-                                        .background(guideColor.copy(alpha = 0.42f)),
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+            ),
+            topLeft = Offset.Zero,
+            size = localTargetRect.size,
+            cornerRadius = cornerRadius,
+        )
+        drawRoundRect(
+            color = guideColor.copy(alpha = if (isSuccessState) 0.88f else 0.82f),
+            topLeft = Offset.Zero,
+            size = localTargetRect.size,
+            cornerRadius = cornerRadius,
+            style = Stroke(width = if (isSuccessState) 4f else 3.6f),
+        )
+        drawRoundRect(
+            color = Color.White.copy(alpha = if (isSuccessState) 0.12f else 0.08f),
+            topLeft = Offset(2f, 2f),
+            size = Size(
+                width = (size.width - 4f).coerceAtLeast(0f),
+                height = (size.height - 4f).coerceAtLeast(0f),
+            ),
+            cornerRadius = CornerRadius(20f, 20f),
+            style = Stroke(width = 1f),
+        )
+        if (shouldAnimatePulse) {
+            drawRoundRect(
+                color = guideColor.copy(
+                    alpha = 0.08f + (pulsePhase * 0.04f)
+                ),
+                topLeft = Offset(pulseRect.left, pulseRect.top),
+                size = pulseRect.size,
+                cornerRadius = CornerRadius(28f, 28f),
+                style = Stroke(width = 4f),
+            )
         }
     }
 }
@@ -429,23 +389,33 @@ private fun onboardingTargetRect(
     FirstRunOnboardingTarget.Tray -> trayRect.takeIf { it != Rect.Zero }?.expand(padding = 14f)
     FirstRunOnboardingTarget.Board -> {
         if (boardRect == Rect.Zero || cellSizePx <= 0f) return null
-        val guideColumn = scene.guideColumn ?: return boardRect.expand(padding = 6f)
-        val highlightedColumns = (scene.gameState.activePiece?.width ?: 1).coerceAtLeast(1)
-        val left = boardRect.left + (guideColumn * cellSizePx)
-        val right = (left + (highlightedColumns * cellSizePx)).coerceAtMost(boardRect.right)
-        Rect(
-            left = (left - (cellSizePx * 0.08f)).coerceAtLeast(boardRect.left),
-            top = boardRect.top,
-            right = (right + (cellSizePx * 0.08f)).coerceAtMost(boardRect.right),
-            bottom = boardRect.bottom,
-        ).expand(padding = 8f)
+        onboardingTargetPreview(scene)?.toBoardRect(boardRect, cellSizePx)?.expand(padding = 8f)
+            ?: boardRect.expand(padding = 6f)
     }
 }
 
-private fun onboardingGuideColumns(scene: FirstRunOnboardingScene): List<Int> = when {
-    scene.acceptedColumns.isNotEmpty() -> scene.acceptedColumns.sorted()
-    scene.guideColumn != null -> listOf(scene.guideColumn)
-    else -> emptyList()
+private fun onboardingTargetPreview(scene: FirstRunOnboardingScene): PlacementPreview? {
+    val candidateColumns = buildList {
+        scene.guideColumn?.let(::add)
+        addAll(scene.acceptedColumns.sorted())
+    }.distinct()
+    return candidateColumns.firstNotNullOfOrNull { column ->
+        onboardingGuideLogic.previewPlacement(scene.gameState, column)
+    }
+}
+
+private fun PlacementPreview.toBoardRect(boardRect: Rect, cellSizePx: Float): Rect? {
+    if (occupiedCells.isEmpty() || boardRect == Rect.Zero || cellSizePx <= 0f) return null
+    val minColumn = occupiedCells.minOf { it.column }
+    val maxColumn = occupiedCells.maxOf { it.column }
+    val minRow = occupiedCells.minOf { it.row }
+    val maxRow = occupiedCells.maxOf { it.row }
+    return Rect(
+        left = boardRect.left + (minColumn * cellSizePx),
+        top = boardRect.top + (minRow * cellSizePx),
+        right = boardRect.left + ((maxColumn + 1) * cellSizePx),
+        bottom = boardRect.top + ((maxRow + 1) * cellSizePx),
+    )
 }
 
 private fun Rect.expand(padding: Float): Rect = Rect(
@@ -549,7 +519,7 @@ private fun InteractiveGameOnboardingOverlayPreviewHost(
 ) {
     val onboardingStages = FirstRunGameOnboardingStateFactory.stages
     val scene = FirstRunGameOnboardingStateFactory.scene(stage)
-    val boardRect = Rect(left = 76f, top = 174f, right = 716f, bottom = 948f)
+    val boardRect = Rect(left = 76f, top = 560f, right = 716f, bottom = 944f)
     val trayRect = Rect(left = 68f, top = 1006f, right = 724f, bottom = 1134f)
     StackShiftTheme(settings = settings) {
         Box(

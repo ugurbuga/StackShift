@@ -101,56 +101,79 @@ fun BoardGrid(
     val partialClearAlpha = 1f - (clearRows - fullyClearedRows).coerceIn(0f, 1f)
     val boardDecorAlpha = (1f - clearProgress).coerceIn(0f, 1f)
     val showDangerDecorations = gameState.status != GameStatus.GameOver
+    val hasDangerPulse = showDangerDecorations && (
+        gameState.criticalColumns.isNotEmpty() ||
+            gameState.columnPressure.any { pressure ->
+                pressure.level == PressureLevel.Critical || pressure.level == PressureLevel.Overflow
+            }
+        )
+    val hasImpactPulse = impactedPreviewCells.isNotEmpty()
     var clearFlashAlpha by remember { mutableFloatStateOf(0f) }
     var boardTransitionSource by remember { mutableStateOf(gameState.board) }
     var boardTransitionToken by remember { mutableLongStateOf(gameState.clearAnimationToken) }
     val boardShiftProgress = remember { Animatable(1f) }
     val shouldAnimateBoardShift =
         gameState.status == GameStatus.Running && gameState.clearAnimationToken != boardTransitionToken
-    val animatedBoardCells = if (shouldAnimateBoardShift) {
-        buildAnimatedBoardCells(boardTransitionSource, gameState.board)
-    } else {
-        emptyList()
+    val animatedBoardCells = remember(boardTransitionSource, gameState.board, shouldAnimateBoardShift) {
+        if (shouldAnimateBoardShift) {
+            buildAnimatedBoardCells(boardTransitionSource, gameState.board)
+        } else {
+            emptyList()
+        }
     }
 
-    val dangerTransition = rememberInfiniteTransition(label = "dangerTransition")
-    val dangerPulse by dangerTransition.animateFloat(
-        initialValue = 0.2f,
-        targetValue = 0.55f,
-        animationSpec = infiniteRepeatable(animation = tween(durationMillis = 900, easing = FastOutSlowInEasing)),
-        label = "dangerPulseAlpha",
-    )
-    val dangerSweep by dangerTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(animation = tween(durationMillis = 1600, easing = FastOutSlowInEasing)),
-        label = "dangerSweep",
-    )
-    val impactPulse by dangerTransition.animateFloat(
-        initialValue = 0.45f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(animation = tween(durationMillis = 560, easing = FastOutSlowInEasing)),
-        label = "impactPulse",
-    )
-    val impactSweep by dangerTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(animation = tween(durationMillis = 920, easing = FastOutSlowInEasing)),
-        label = "impactSweep",
-    )
-    val guidePulse by dangerTransition.animateFloat(
-        initialValue = 0.35f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(animation = tween(durationMillis = 980, easing = FastOutSlowInEasing)),
-        label = "guidePulse",
-    )
+    val boardEffectsTransition = if (hasDangerPulse || hasImpactPulse) {
+        rememberInfiniteTransition(label = "boardEffectsTransition")
+    } else {
+        null
+    }
+    val dangerPulse = if (hasDangerPulse) {
+        boardEffectsTransition!!.animateFloat(
+            initialValue = 0.2f,
+            targetValue = 0.55f,
+            animationSpec = infiniteRepeatable(animation = tween(durationMillis = 900, easing = FastOutSlowInEasing)),
+            label = "dangerPulseAlpha",
+        ).value
+    } else {
+        0.2f
+    }
+    val dangerSweep = if (hasDangerPulse) {
+        boardEffectsTransition!!.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(animation = tween(durationMillis = 1600, easing = FastOutSlowInEasing)),
+            label = "dangerSweep",
+        ).value
+    } else {
+        0f
+    }
+    val impactPulse = if (hasImpactPulse) {
+        boardEffectsTransition!!.animateFloat(
+            initialValue = 0.45f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(animation = tween(durationMillis = 560, easing = FastOutSlowInEasing)),
+            label = "impactPulse",
+        ).value
+    } else {
+        0.45f
+    }
+    val impactSweep = if (hasImpactPulse) {
+        boardEffectsTransition!!.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(animation = tween(durationMillis = 920, easing = FastOutSlowInEasing)),
+            label = "impactSweep",
+        ).value
+    } else {
+        0f
+    }
 
     LaunchedEffect(gameState.clearAnimationToken) {
         if (!showClearFlash) {
             clearFlashAlpha = 0f
             return@LaunchedEffect
         }
-        if (gameState.recentlyClearedRows.isEmpty()) return@LaunchedEffect
+        if (gameState.recentlyClearedRows.isEmpty() && gameState.recentlyClearedColumns.isEmpty()) return@LaunchedEffect
         animate(
             initialValue = 0.9f,
             targetValue = 0f,
@@ -189,16 +212,18 @@ fun BoardGrid(
             .padding(BoardFrameInset)
             .clip(RoundedCornerShape(boardFrameCornerRadiusDp(boardBlockStyle)))
     ) {
+        val density = LocalDensity.current
         val cellWidth = maxWidth / gameState.config.columns
         val cellHeight = maxHeight / gameState.config.rows
-        val cellWidthPx = with(LocalDensity.current) { cellWidth.toPx() }
-        val cellHeightPx = with(LocalDensity.current) { cellHeight.toPx() }
-        val boardCornerRadiusPx = with(LocalDensity.current) { boardFrameCornerRadiusDp(boardBlockStyle).toPx() }
+        val cellWidthPx = with(density) { cellWidth.toPx() }
+        val cellHeightPx = with(density) { cellHeight.toPx() }
+        val boardCornerRadiusPx = with(density) { boardFrameCornerRadiusDp(boardBlockStyle).toPx() }
         val cellVisual = boardCellVisual(
             cellWidth = cellWidthPx,
             cellHeight = cellHeightPx,
             style = boardBlockStyle,
         )
+        val hasCriticalColumns = gameState.criticalColumns.isNotEmpty()
         val previewFillAlpha = when {
             isDarkTheme && isDragging -> 0.30f
             isDarkTheme -> 0.24f
@@ -218,75 +243,15 @@ fun BoardGrid(
             else -> 0.22f
         }
         val cornerRadius = cellVisual.cornerRadius
-
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val boardWidthPx = size.width
-            val boardHeightPx = size.height
-            val boardFrameCornerRadius = CornerRadius(boardCornerRadiusPx, boardCornerRadiusPx)
-            val scanlineStep = (cellHeightPx * 1.65f).coerceAtLeast(10f)
-
-            drawRoundRect(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        uiColors.boardGradientTop.copy(alpha = 0.98f),
-                        uiColors.gameSurface.copy(alpha = 0.94f),
-                        uiColors.boardGradientBottom.copy(alpha = 0.98f),
-                    ),
-                ),
-                size = Size(boardWidthPx, boardHeightPx),
-                cornerRadius = boardFrameCornerRadius,
-            )
-            drawRoundRect(
-                brush = Brush.radialGradient(
-                    colors = listOf(
-                        uiColors.boardSignaturePrimary.copy(alpha = 0.22f * boardDecorAlpha),
-                        Color.Transparent,
-                    ),
-                    center = Offset(boardWidthPx * 0.22f, boardHeightPx * 0.14f),
-                    radius = boardWidthPx * 0.72f,
-                ),
-                size = Size(boardWidthPx, boardHeightPx),
-                cornerRadius = boardFrameCornerRadius,
-            )
-            drawRoundRect(
-                brush = Brush.radialGradient(
-                    colors = listOf(
-                        uiColors.boardSignatureSecondary.copy(alpha = 0.18f * boardDecorAlpha),
-                        Color.Transparent,
-                    ),
-                    center = Offset(boardWidthPx * 0.78f, boardHeightPx * 0.88f),
-                    radius = boardWidthPx * 0.84f,
-                ),
-                size = Size(boardWidthPx, boardHeightPx),
-                cornerRadius = boardFrameCornerRadius,
-            )
-            drawRoundRect(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color.White.copy(alpha = 0.05f * boardDecorAlpha),
-                        Color.Transparent,
-                        Color.Black.copy(alpha = 0.12f * boardDecorAlpha),
-                    ),
-                ),
-                size = Size(boardWidthPx, boardHeightPx),
-                cornerRadius = boardFrameCornerRadius,
-            )
-
-            var scanlineY = scanlineStep * 0.5f
-            while (scanlineY < boardHeightPx) {
-                drawLine(
-                    color = uiColors.boardGridLine.copy(alpha = 0.08f * boardDecorAlpha),
-                    start = Offset(0f, scanlineY),
-                    end = Offset(boardWidthPx, scanlineY),
-                    strokeWidth = 1f,
-                )
-                scanlineY += scanlineStep
-            }
-
-            val pieceToneColor = activePiece?.tone?.paletteColor(settings.blockColorPalette)
-            val effectivePreviewColor = pieceToneColor ?: uiColors.success
-            val previewLineColor = effectivePreviewColor.copy(alpha = previewStrokeAlpha * boardDecorAlpha)
-            val previewColumnBounds = preview?.occupiedCells
+        val pieceToneColor = remember(activePiece?.id, settings.blockColorPalette) {
+            activePiece?.tone?.paletteColor(settings.blockColorPalette)
+        }
+        val effectivePreviewColor = pieceToneColor ?: uiColors.success
+        val previewLineColor = remember(effectivePreviewColor, previewStrokeAlpha, boardDecorAlpha) {
+            effectivePreviewColor.copy(alpha = previewStrokeAlpha * boardDecorAlpha)
+        }
+        val previewColumnBounds = remember(preview, cellHeightPx, cellVisual.previewInsetPx) {
+            preview?.occupiedCells
                 ?.groupBy(GridPoint::column)
                 ?.mapValues { (_, points) ->
                     val highestOccupiedRow = points.minOf(GridPoint::row)
@@ -294,16 +259,30 @@ fun BoardGrid(
                     val bottom = (preview.entryAnchor.row * cellHeightPx) + cellHeightPx - cellVisual.previewInsetPx
                     top to bottom
                 }
-
-            val highlightedColumns = preview?.coveredColumns ?: activePiece?.let { piece ->
+        }
+        val highlightedColumns = remember(preview, activePiece?.id, activeColumn, gameState.config.columns) {
+            preview?.coveredColumns ?: activePiece?.let { piece ->
                 activeColumn?.coerceIn(0, (gameState.config.columns - piece.width).coerceAtLeast(0))?.let { column ->
                     column..(column + piece.width - 1)
                 }
             }
-            val guideColumns = guidedColumns.ifEmpty {
-                highlightedColumns?.toSet().orEmpty()
-            }
+        }
+        val guideColumns = remember(guidedColumns, highlightedColumns) {
+            guidedColumns.ifEmpty { highlightedColumns?.toSet().orEmpty() }
+        }
 
+        BoardGridBackgroundLayer(
+            uiColors = uiColors,
+            boardDecorAlpha = boardDecorAlpha,
+            boardCornerRadiusPx = boardCornerRadiusPx,
+            cellHeightPx = cellHeightPx,
+            modifier = Modifier.fillMaxSize(),
+        )
+
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val boardWidthPx = size.width
+            val boardHeightPx = size.height
+            val boardFrameCornerRadius = CornerRadius(boardCornerRadiusPx, boardCornerRadiusPx)
             highlightedColumns?.forEach { column ->
                 val beamAlpha = previewBeamAlpha * boardDecorAlpha
                 if (beamAlpha <= 0f || !showDangerDecorations) return@forEach
@@ -321,8 +300,8 @@ fun BoardGrid(
 
             guideColumns.forEach { column ->
                 if (column !in 0 until gameState.config.columns) return@forEach
-                val guideAlpha = (0.12f + (guidePulse * 0.10f)) * boardDecorAlpha
-                val glowAlpha = (0.18f + (guidePulse * 0.16f)) * boardDecorAlpha
+                val guideAlpha = 0.18f * boardDecorAlpha
+                val glowAlpha = 0.24f * boardDecorAlpha
                 drawRoundRect(
                     brush = Brush.verticalGradient(
                         colors = listOf(
@@ -382,7 +361,7 @@ fun BoardGrid(
                 }
             }
 
-            if (gameState.criticalColumns.isNotEmpty()) {
+            if (hasCriticalColumns) {
                 drawRoundRect(
                     brush = Brush.linearGradient(
                         colors = listOf(
@@ -449,7 +428,7 @@ fun BoardGrid(
                         size = slotSize,
                         cornerRadius = slotCornerRadius,
                     )
-                    val gridLineColor = if (showDangerDecorations && gameState.criticalColumns.isNotEmpty()) {
+                    val gridLineColor = if (showDangerDecorations && hasCriticalColumns) {
                         uiColors.danger.copy(alpha = (0.10f + (dangerPulse * 0.26f)) * renderedCellAlpha)
                     } else {
                         uiColors.boardGridLine.copy(alpha = 0.52f * renderedCellAlpha)
@@ -462,7 +441,7 @@ fun BoardGrid(
                         style = Stroke(width = 1f),
                     )
 
-                    if (showDangerDecorations && gameState.criticalColumns.isNotEmpty()) {
+                    if (showDangerDecorations && hasCriticalColumns) {
                         drawRoundRect(
                             color = uiColors.danger.copy(alpha = (0.04f + (dangerPulse * 0.18f)) * renderedCellAlpha),
                             topLeft = topLeft,
@@ -616,6 +595,14 @@ fun BoardGrid(
                         cornerRadius = cornerRadius,
                     )
                 }
+                gameState.recentlyClearedColumns.forEach { column ->
+                    drawRoundRect(
+                        color = Color.White.copy(alpha = clearFlashAlpha * boardDecorAlpha),
+                        topLeft = Offset(x = column * cellWidthPx, y = 0f),
+                        size = Size(width = cellWidthPx, height = boardHeightPx),
+                        cornerRadius = cornerRadius,
+                    )
+                }
             }
 
             if (shouldAnimateBoardShift) {
@@ -691,6 +678,82 @@ fun BoardGrid(
                     iconAlpha = 0.92f,
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun BoardGridBackgroundLayer(
+    uiColors: com.ugurbuga.stackshift.ui.theme.StackShiftUiColors,
+    boardDecorAlpha: Float,
+    boardCornerRadiusPx: Float,
+    cellHeightPx: Float,
+    modifier: Modifier = Modifier,
+) {
+    Canvas(
+        modifier = modifier.graphicsLayer(alpha = boardDecorAlpha)
+    ) {
+        val boardWidthPx = size.width
+        val boardHeightPx = size.height
+        val boardFrameCornerRadius = CornerRadius(boardCornerRadiusPx, boardCornerRadiusPx)
+        val scanlineStep = (cellHeightPx * 1.65f).coerceAtLeast(10f)
+
+        drawRoundRect(
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    uiColors.boardGradientTop.copy(alpha = 0.98f),
+                    uiColors.gameSurface.copy(alpha = 0.94f),
+                    uiColors.boardGradientBottom.copy(alpha = 0.98f),
+                ),
+            ),
+            size = Size(boardWidthPx, boardHeightPx),
+            cornerRadius = boardFrameCornerRadius,
+        )
+        drawRoundRect(
+            brush = Brush.radialGradient(
+                colors = listOf(
+                    uiColors.boardSignaturePrimary.copy(alpha = 0.22f),
+                    Color.Transparent,
+                ),
+                center = Offset(boardWidthPx * 0.22f, boardHeightPx * 0.14f),
+                radius = boardWidthPx * 0.72f,
+            ),
+            size = Size(boardWidthPx, boardHeightPx),
+            cornerRadius = boardFrameCornerRadius,
+        )
+        drawRoundRect(
+            brush = Brush.radialGradient(
+                colors = listOf(
+                    uiColors.boardSignatureSecondary.copy(alpha = 0.18f),
+                    Color.Transparent,
+                ),
+                center = Offset(boardWidthPx * 0.78f, boardHeightPx * 0.88f),
+                radius = boardWidthPx * 0.84f,
+            ),
+            size = Size(boardWidthPx, boardHeightPx),
+            cornerRadius = boardFrameCornerRadius,
+        )
+        drawRoundRect(
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    Color.White.copy(alpha = 0.05f),
+                    Color.Transparent,
+                    Color.Black.copy(alpha = 0.12f),
+                ),
+            ),
+            size = Size(boardWidthPx, boardHeightPx),
+            cornerRadius = boardFrameCornerRadius,
+        )
+
+        var scanlineY = scanlineStep * 0.5f
+        while (scanlineY < boardHeightPx) {
+            drawLine(
+                color = uiColors.boardGridLine.copy(alpha = 0.08f),
+                start = Offset(0f, scanlineY),
+                end = Offset(boardWidthPx, scanlineY),
+                strokeWidth = 1f,
+            )
+            scanlineY += scanlineStep
         }
     }
 }

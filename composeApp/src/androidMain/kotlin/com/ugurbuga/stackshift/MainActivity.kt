@@ -1,22 +1,61 @@
 package com.ugurbuga.stackshift
 
+import android.content.res.Configuration
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.tooling.preview.Preview
+import com.ugurbuga.stackshift.settings.AppSettingsStorage
 import com.ugurbuga.stackshift.settings.AppContextHolder
+import com.ugurbuga.stackshift.ui.theme.stackShiftThemeSpec
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
-        super.onCreate(savedInstanceState)
         AppContextHolder.context = applicationContext
+        val initialSettings = AppSettingsStorage.load()
+        val initialDarkTheme = initialSettings.themeMode.isDark ?: isSystemDarkTheme()
+        val initialThemeSpec = stackShiftThemeSpec(
+            settings = initialSettings,
+            darkTheme = initialDarkTheme,
+        )
+
+        setTheme(R.style.Theme_StackShift)
+        enableEdgeToEdge(
+            statusBarStyle = if (initialDarkTheme) {
+                SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+            } else {
+                SystemBarStyle.light(
+                    android.graphics.Color.TRANSPARENT,
+                    android.graphics.Color.TRANSPARENT,
+                )
+            },
+            navigationBarStyle = if (initialDarkTheme) {
+                SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+            } else {
+                SystemBarStyle.light(
+                    android.graphics.Color.TRANSPARENT,
+                    android.graphics.Color.TRANSPARENT,
+                )
+            }
+        )
+        super.onCreate(savedInstanceState)
+        window.setBackgroundDrawable(
+            ColorDrawable(initialThemeSpec.uiColors.screenGradientBottom.toArgb())
+        )
 
         setContent {
             AndroidApp()
         }
+    }
+
+    private fun isSystemDarkTheme(): Boolean {
+        val nightMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+        return nightMode == Configuration.UI_MODE_NIGHT_YES
     }
 }
 

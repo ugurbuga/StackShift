@@ -42,7 +42,7 @@ object FirstRunGameOnboardingStateFactory {
     private val guideLogic = GameLogic()
     private val config = GameConfig(
         columns = 10,
-        rows = 12,
+        rows = 10,
         difficultyIntervalSeconds = 9_999,
         linesPerLevel = 9_999,
     )
@@ -164,14 +164,14 @@ object FirstRunGameOnboardingStateFactory {
                 board = BoardMatrix.empty(columns = config.columns, rows = config.rows)
                     .fill(
                         points = raised(listOf(
+                            GridPoint(4, 2),
+                            GridPoint(4, 3),
+                            GridPoint(4, 4),
                             GridPoint(4, 5),
                             GridPoint(4, 6),
-                            GridPoint(4, 7),
-                            GridPoint(4, 8),
-                            GridPoint(4, 9),
-                            GridPoint(5, 7),
-                            GridPoint(5, 8),
-                            GridPoint(6, 9),
+                            GridPoint(5, 4),
+                            GridPoint(5, 5),
+                            GridPoint(6, 6),
                         )),
                         tone = CellTone.Blue,
                     )
@@ -243,17 +243,17 @@ object FirstRunGameOnboardingStateFactory {
                 board = BoardMatrix.empty(columns = config.columns, rows = config.rows)
                     .fill(
                         points = raised(listOf(
-                            GridPoint(2, 5),
+                            GridPoint(2, 2),
+                            GridPoint(3, 2),
+                            GridPoint(5, 2),
+                            GridPoint(6, 2),
+                            GridPoint(2, 3),
+                            GridPoint(6, 3),
+                            GridPoint(2, 4),
+                            GridPoint(6, 4),
                             GridPoint(3, 5),
+                            GridPoint(4, 5),
                             GridPoint(5, 5),
-                            GridPoint(6, 5),
-                            GridPoint(2, 6),
-                            GridPoint(6, 6),
-                            GridPoint(2, 7),
-                            GridPoint(6, 7),
-                            GridPoint(3, 8),
-                            GridPoint(4, 8),
-                            GridPoint(5, 8),
                         )),
                         tone = CellTone.Violet,
                     ),
@@ -281,23 +281,23 @@ object FirstRunGameOnboardingStateFactory {
                 board = BoardMatrix.empty(columns = config.columns, rows = config.rows)
                     .fill(
                         points = raised(listOf(
-                            GridPoint(3, 6),
-                            GridPoint(4, 6),
-                            GridPoint(5, 6),
-                            GridPoint(3, 7),
-                            GridPoint(5, 7),
-                            GridPoint(3, 8),
-                            GridPoint(4, 8),
-                            GridPoint(5, 8),
-                            GridPoint(7, 7),
-                            GridPoint(7, 8),
+                            GridPoint(3, 3),
+                            GridPoint(3, 4),
+                            GridPoint(3, 5),
+                            GridPoint(4, 3),
+                            GridPoint(4, 5),
+                            GridPoint(5, 3),
+                            GridPoint(5, 4),
+                            GridPoint(5, 5),
+                            GridPoint(7, 4),
+                            GridPoint(7, 5),
                         )),
                         tone = CellTone.Coral,
                     )
                     .fill(
                         points = raised(listOf(
-                            GridPoint(6, 5),
-                            GridPoint(7, 5),
+                            GridPoint(6, 2),
+                            GridPoint(7, 2),
                         )),
                         tone = CellTone.Gold,
                     ),

@@ -59,6 +59,7 @@ class GameLogic(
             softLock = null,
             status = GameStatus.Running,
             recentlyClearedRows = emptySet(),
+            recentlyClearedColumns = emptySet(),
             lastResolvedLines = 0,
             lastChainDepth = 0,
             clearAnimationToken = 0L,
@@ -211,6 +212,8 @@ class GameLogic(
             board = specialResult.board,
             specialTriggered = specialResult.specialTriggered,
             initialTriggeredSpecials = specialResult.initialTriggeredSpecials,
+            initiallyClearedRows = specialResult.clearedRows,
+            initiallyClearedColumns = specialResult.clearedColumns,
         )
         val perfectDrop = preview.isPerfectDrop
         val nextPerfectStreak = if (perfectDrop) state.perfectDropStreak + 1 else 0
@@ -309,15 +312,16 @@ class GameLogic(
                 softLock = null,
                 status = nextStatus,
                 recentlyClearedRows = resolution.firstClearedRows,
+                recentlyClearedColumns = resolution.firstClearedColumns,
                 lastResolvedLines = resolution.totalLinesCleared,
                 lastChainDepth = resolution.chainDepth,
                 specialChainCount = resolution.triggeredSpecialCells,
-                clearAnimationToken = if (resolution.totalLinesCleared == 0 && resolution.triggeredSpecialCells == 0) {
+                clearAnimationToken = if (resolution.totalLinesCleared == 0 && resolution.triggeredSpecialCells == 0 && resolution.firstClearedRows.isEmpty() && resolution.firstClearedColumns.isEmpty()) {
                     state.clearAnimationToken
                 } else {
                     state.clearAnimationToken + 1L
                 },
-                screenShakeToken = if (nextStatus == GameStatus.GameOver || resolution.totalLinesCleared > 0 || resolution.triggeredSpecialCells > 0) {
+                screenShakeToken = if (nextStatus == GameStatus.GameOver || resolution.totalLinesCleared > 0 || resolution.triggeredSpecialCells > 0 || resolution.firstClearedRows.isNotEmpty() || resolution.firstClearedColumns.isNotEmpty()) {
                     state.screenShakeToken + 1L
                 } else {
                     state.screenShakeToken
@@ -396,6 +400,7 @@ class GameLogic(
                 softLock = null,
                 status = GameStatus.Running,
                 recentlyClearedRows = revivedRows,
+                recentlyClearedColumns = emptySet(),
                 lastResolvedLines = revivedRows.size,
                 lastChainDepth = if (revivedRows.isEmpty()) 0 else 1,
                 specialChainCount = 0,
@@ -528,9 +533,12 @@ class GameLogic(
         board: BoardMatrix,
         specialTriggered: Boolean,
         initialTriggeredSpecials: List<TriggeredSpecial>,
+        initiallyClearedRows: Set<Int> = emptySet(),
+        initiallyClearedColumns: Set<Int> = emptySet(),
     ): ResolutionResult {
         var resolvedBoard = board
-        var firstWaveRows = emptySet<Int>()
+        var firstWaveRows = initiallyClearedRows
+        var firstWaveColumns = initiallyClearedColumns
         var totalLinesCleared = 0
         var chainDepth = 0
         var triggeredSpecialCells = 0
@@ -546,6 +554,16 @@ class GameLogic(
                 resolvedBoard = burstResult.board
                 triggeredSpecialCells += burstResult.triggeredCount
                 didTriggerSpecial = didTriggerSpecial || burstResult.triggeredCount > 0
+
+                if (firstWaveRows.isEmpty() && firstWaveColumns.isEmpty()) {
+                    pendingTriggers.forEach { trigger ->
+                        when (trigger.special) {
+                            SpecialBlockType.RowClearer -> firstWaveRows = firstWaveRows + trigger.point.row
+                            SpecialBlockType.ColumnClearer -> firstWaveColumns = firstWaveColumns + trigger.point.column
+                            else -> {}
+                        }
+                    }
+                }
                 pendingTriggers = emptyList()
             }
 
@@ -568,6 +586,7 @@ class GameLogic(
         return ResolutionResult(
             board = resolvedBoard,
             firstClearedRows = firstWaveRows,
+            firstClearedColumns = firstWaveColumns,
             totalLinesCleared = totalLinesCleared,
             chainDepth = chainDepth,
             triggeredSpecialCells = triggeredSpecialCells,
@@ -593,12 +612,22 @@ class GameLogic(
             )
             else -> emptyList()
         }
+        val clearedRows = if (piece.special == SpecialBlockType.RowClearer) {
+            preview.occupiedCells.map(GridPoint::row).toSet()
+        } else {
+            emptySet()
+        }
+        val clearedColumns = if (piece.special == SpecialBlockType.ColumnClearer) {
+            preview.coveredColumns.toSet()
+        } else {
+            emptySet()
+        }
         val resolvedBoard = when (piece.special) {
             SpecialBlockType.None,
             SpecialBlockType.Ghost,
             -> placedBoard
-            SpecialBlockType.ColumnClearer -> placedBoard.clearColumns(preview.coveredColumns.toSet())
-            SpecialBlockType.RowClearer -> placedBoard.clearRows(preview.occupiedCells.map(GridPoint::row).toSet())
+            SpecialBlockType.ColumnClearer -> placedBoard.clearColumns(clearedColumns)
+            SpecialBlockType.RowClearer -> placedBoard.clearRows(clearedRows)
             SpecialBlockType.Heavy -> placedBoard.pushColumnsDown(
                 columnsToPush = preview.coveredColumns.toSet(),
                 protectedPoints = preview.occupiedCells.toSet(),
@@ -608,6 +637,8 @@ class GameLogic(
             board = resolvedBoard,
             specialTriggered = piece.special != SpecialBlockType.None,
             initialTriggeredSpecials = initialTriggeredSpecials,
+            clearedRows = clearedRows,
+            clearedColumns = clearedColumns,
         )
     }
 
@@ -1144,6 +1175,7 @@ enum class GameEvent {
 private data class ResolutionResult(
     val board: BoardMatrix,
     val firstClearedRows: Set<Int>,
+    val firstClearedColumns: Set<Int>,
     val totalLinesCleared: Int,
     val chainDepth: Int,
     val triggeredSpecialCells: Int,
@@ -1159,6 +1191,8 @@ private data class SpecialResolution(
     val board: BoardMatrix,
     val specialTriggered: Boolean,
     val initialTriggeredSpecials: List<TriggeredSpecial>,
+    val clearedRows: Set<Int>,
+    val clearedColumns: Set<Int>,
 )
 
 private data class TriggeredSpecial(
