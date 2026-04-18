@@ -1,4 +1,4 @@
-package com.ugurbuga.stackshift
+package com.ugurbuga.stackshift.app
 
 import android.content.res.Configuration
 import android.graphics.drawable.ColorDrawable
@@ -12,11 +12,16 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.tooling.preview.Preview
 import com.ugurbuga.stackshift.settings.AppSettingsStorage
 import com.ugurbuga.stackshift.settings.AppContextHolder
+import com.ugurbuga.stackshift.ads.AndroidAdMobIds
 import com.ugurbuga.stackshift.ui.theme.stackShiftThemeSpec
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         AppContextHolder.context = applicationContext
+        AndroidAdMobIds.BannerAdUnitId = BuildConfig.ADS_BANNER_UNIT_ID
+        AndroidAdMobIds.InterstitialAdUnitId = BuildConfig.ADS_INTERSTITIAL_UNIT_ID
+        AndroidAdMobIds.RewardedAdUnitId = BuildConfig.ADS_REWARDED_UNIT_ID
+
         val initialSettings = AppSettingsStorage.load()
         val initialDarkTheme = initialSettings.themeMode.isDark ?: isSystemDarkTheme()
         val initialThemeSpec = stackShiftThemeSpec(

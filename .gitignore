@@ -10,16 +10,9 @@ google.properties
 keystore.properties
 iosApp/Configuration/GeneratedAds.xcconfig
 iosApp/iosApp/ads.properties
-iosApp/iosApp/google.properties
-iosApp/iosApp/GoogleService-Info.plist
 composeApp/google-services.json
-composeApp/src/main/google-services.json
-composeApp/src/dev/google-services.json
-composeApp/src/prod/google-services.json
-composeApp/src/debug/google-services.json
-composeApp/src/release/google-services.json
-composeApp/src/jvmMain/resources/firebase-desktop.properties
-composeApp/src/androidMain/assets/adi-registration.properties
+androidApp/google-services.json
+androidApp/src/main/assets/adi-registration.properties
 
 # Log/OS Files
 *.log

@@ -5,6 +5,7 @@ plugins {
     // in each subproject's classloader
     alias(libs.plugins.androidApplication) apply false
     alias(libs.plugins.androidLibrary) apply false
+    alias(libs.plugins.androidMultiplatformLibrary) apply false
     alias(libs.plugins.composeHotReload) apply false
     alias(libs.plugins.composeMultiplatform) apply false
     alias(libs.plugins.composeCompiler) apply false
@@ -15,8 +16,8 @@ plugins {
 
 private val BUILD_ALL_ARTIFACTS_TASK_NAME = "buildAllArtifacts"
 private val ARTIFACTS_DIR_NAME = "artifacts"
-private val ANDROID_DEBUG_APK_SOURCE = "composeApp/build/outputs/apk/debug/composeApp-debug.apk"
-private val ANDROID_DEBUG_APK_TARGET = "artifacts/android/composeApp-debug.apk"
+private val ANDROID_DEBUG_APK_SOURCE = "androidApp/build/outputs/apk/debug/androidApp-debug.apk"
+private val ANDROID_DEBUG_APK_TARGET = "artifacts/android/androidApp-debug.apk"
 private val IOS_ARCHIVE_TARGET = "artifacts/ios/StackShift.xcarchive"
 private val MACOS_APP_SOURCE = "composeApp/build/compose/binaries/main/app/com.ugurbuga.stackshift.app"
 private val MACOS_APP_TARGET = "artifacts/macos/app/com.ugurbuga.stackshift.app"
@@ -93,7 +94,7 @@ tasks.register(BUILD_ALL_ARTIFACTS_TASK_NAME) {
     doLast {
         File(ARTIFACTS_DIR_NAME).mkdirs()
 
-        runCommand("android", listOf("./gradlew", *CHILD_GRADLE_FLAGS.toTypedArray(), ":composeApp:assembleDebug"))
+        runCommand("android", listOf("./gradlew", *CHILD_GRADLE_FLAGS.toTypedArray(), ":androidApp:assembleDebug"))
         moveIfExists(ANDROID_DEBUG_APK_SOURCE, ANDROID_DEBUG_APK_TARGET)
 
         val iosArchiveTarget = File(IOS_ARCHIVE_TARGET)

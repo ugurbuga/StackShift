@@ -1,4 +1,4 @@
-package com.ugurbuga.stackshift
+package com.ugurbuga.stackshift.app
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
@@ -8,6 +8,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.ugurbuga.stackshift.AndroidSystemBarsEffect
+import com.ugurbuga.stackshift.AppRoute
+import com.ugurbuga.stackshift.StackShiftRoot
 import com.ugurbuga.stackshift.game.model.GameState
 import com.ugurbuga.stackshift.localization.currentDeviceLocaleTag
 import com.ugurbuga.stackshift.settings.FirstRunGameOnboardingStateFactory
