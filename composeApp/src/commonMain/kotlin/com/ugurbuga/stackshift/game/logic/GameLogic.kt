@@ -519,13 +519,32 @@ class GameLogic(
 
         val landingAnchor = GridPoint(column = selectedColumn, row = landingRow)
         val coveredColumns = selectedColumn..(selectedColumn + piece.width - 1)
-        return PlacementPreview(
+        val basePreview = PlacementPreview(
             selectedColumn = selectedColumn,
             entryAnchor = entryAnchor,
             landingAnchor = landingAnchor,
             occupiedCells = piece.cellsAt(landingAnchor),
             coveredColumns = coveredColumns,
             isPerfectDrop = coveredColumns.all(board::isColumnEmpty),
+        )
+
+        val specialResult = applyPlacementAndSpecial(
+            board = board,
+            piece = piece,
+            preview = basePreview,
+        )
+
+        val resolution = resolveBoard(
+            board = specialResult.board,
+            specialTriggered = specialResult.specialTriggered,
+            initialTriggeredSpecials = specialResult.initialTriggeredSpecials,
+            initiallyClearedRows = specialResult.clearedRows,
+            initiallyClearedColumns = specialResult.clearedColumns,
+        )
+
+        return basePreview.copy(
+            clearedRows = resolution.firstClearedRows,
+            clearedColumns = resolution.firstClearedColumns,
         )
     }
 

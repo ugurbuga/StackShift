@@ -34,8 +34,9 @@
     <string name="block_style_outline">描边</string>
     <string name="block_style_sharp_3d">锐利 3D</string>
     <string name="block_style_wood">木纹</string>
-    <string name="block_style_liquid_glass">液态玻璃</string>
-    <string name="block_style_neon">霓虹</string>
+    <string name="block_style_pixel_art">像素风</string>
+    <string name="block_style_crystal">水晶</string>
+    <string name="block_style_dynamic_liquid">动态液体</string>
     <string name="board_block_style_always_flat">始终平面</string>
     <string name="board_block_style_match_selected">与所选样式一致</string>
     <string name="hold">暂存</string>
@@ -53,7 +54,7 @@
     <string name="boost">加速</string>
     <string name="danger">危险</string>
     <string name="danger_none">-</string>
-    <string name="launch">发射</string>
+    <string name="launch_label">发射</string>
     <string name="launch_bar">发射条</string>
     <string name="launch_boost_active">加速生效 • %1$s 回合</string>
     <string name="launch_special_chance">特殊方块概率 +%1$s%%</string>
@@ -147,7 +148,7 @@
     <string name="tutorial_intro_title">从底部托盘发射方块</string>
     <string name="tutorial_intro_body">当前方块会在底部等待。左右拖动它来对准列，然后松手把它发射到棋盘上。下一块预览会故意更淡一些，让注意力留在当前方块上。</string>
     <string name="tutorial_systems_title">棋盘变紧时使用操作方块</string>
-    <string name="tutorial_systems_body">Hold 用来交换当前方块，暂停会冻结本局，方块属性解释图标含义，设置可以调整外观。这些按钮也会匹配你当前选择的棋盘方块风格。</string>
+    <string name="tutorial_systems_body">暂存用于交换当前方块，暂停会冻结本局，方块属性解释图标含义，设置可以调整外观。这些按钮也会匹配你当前选择的棋盘方块风格。</string>
     <string name="tutorial_specials_title">特殊方块可以拯救一局</string>
     <string name="tutorial_specials_body">有些方块带有特殊效果。记住它们的标记，并在需要减压、腾出空间或穿过困难堆叠时使用它们。</string>
     <string name="tutorial_ready_title">你已经准备好继续这一局了</string>

@@ -8,9 +8,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,8 +35,8 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -46,10 +46,10 @@ import com.ugurbuga.stackshift.game.logic.GameLogic
 import com.ugurbuga.stackshift.game.model.AppThemeMode
 import com.ugurbuga.stackshift.game.model.PlacementPreview
 import com.ugurbuga.stackshift.settings.AppSettings
+import com.ugurbuga.stackshift.settings.FirstRunGameOnboardingStateFactory
+import com.ugurbuga.stackshift.settings.FirstRunOnboardingScene
 import com.ugurbuga.stackshift.settings.FirstRunOnboardingStage
 import com.ugurbuga.stackshift.settings.FirstRunOnboardingTarget
-import com.ugurbuga.stackshift.settings.FirstRunOnboardingScene
-import com.ugurbuga.stackshift.settings.FirstRunGameOnboardingStateFactory
 import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
 import com.ugurbuga.stackshift.ui.theme.appBackgroundBrush
 import org.jetbrains.compose.resources.stringResource
@@ -103,15 +103,17 @@ fun InteractiveGameOnboardingOverlay(
     ui: GameInteractiveOnboardingUi,
     boardRect: Rect,
     trayRect: Rect,
+    spawnRect: Rect = Rect.Zero,
     cellSizePx: Float,
     modifier: Modifier = Modifier,
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
-    val targetRect = remember(ui.scene, boardRect, trayRect, cellSizePx) {
+    val targetRect = remember(ui.scene, boardRect, trayRect, spawnRect, cellSizePx) {
         onboardingTargetRect(
             scene = ui.scene,
             boardRect = boardRect,
             trayRect = trayRect,
+            spawnRect = spawnRect,
             cellSizePx = cellSizePx,
         )
     }
@@ -155,8 +157,8 @@ fun InteractiveGameOnboardingOverlay(
         dragToBoardHint,
         aimHint,
     ) {
-        val isDragStepReady = ui.scene.stage == FirstRunOnboardingStage.DragAndLaunch && ui.hasDraggedAwayFromSpawn
-        val isLaterStepReady = ui.scene.stage != FirstRunOnboardingStage.DragAndLaunch && ui.isTargetAligned
+        val isDragStepReady = (ui.scene.stage == FirstRunOnboardingStage.DragAndLaunch) && ui.hasDraggedAwayFromSpawn
+        val isLaterStepReady = (ui.scene.stage != FirstRunOnboardingStage.DragAndLaunch) && ui.isTargetAligned
         val isSuccessState = isDragStepReady || isLaterStepReady
         val title = when (ui.scene.stage) {
             FirstRunOnboardingStage.DragAndLaunch -> dragTitle
@@ -326,7 +328,7 @@ private fun InteractiveOnboardingTargetHighlight(
                 translationX = rect.left,
                 translationY = rect.top,
             )
-            .size(width = widthDp, height = heightDp)
+            .size(width = widthDp, height = heightDp),
     ) {
         val localTargetRect = Rect(0f, 0f, size.width, size.height)
         val pulseScale = when {
@@ -343,7 +345,7 @@ private fun InteractiveOnboardingTargetHighlight(
                     isAwaitingPlacementCommit -> 0.10f
                     isSuccessState -> 0.12f
                     else -> 0.09f
-                }
+                },
             ),
             topLeft = Offset.Zero,
             size = localTargetRect.size,
@@ -384,11 +386,19 @@ private fun onboardingTargetRect(
     scene: FirstRunOnboardingScene,
     boardRect: Rect,
     trayRect: Rect,
+    spawnRect: Rect,
     cellSizePx: Float,
 ): Rect? = when (scene.target) {
-    FirstRunOnboardingTarget.Tray -> trayRect.takeIf { it != Rect.Zero }?.expand(padding = 14f)
+    FirstRunOnboardingTarget.Tray -> when {
+        scene.stage == FirstRunOnboardingStage.DragAndLaunch && trayRect != Rect.Zero -> {
+            trayRect.expand(horizontalPadding = -14f, verticalPadding = -10f)
+        }
+        spawnRect != Rect.Zero -> spawnRect.expand(horizontalPadding = 10f, verticalPadding = 8f)
+        trayRect != Rect.Zero -> trayRect.expand(horizontalPadding = 14f, verticalPadding = 8f)
+        else -> null
+    }
     FirstRunOnboardingTarget.Board -> {
-        if (boardRect == Rect.Zero || cellSizePx <= 0f) return null
+        if ((boardRect == Rect.Zero) || (cellSizePx <= 0f)) return null
         onboardingTargetPreview(scene)?.toBoardRect(boardRect, cellSizePx)?.expand(padding = 8f)
             ?: boardRect.expand(padding = 6f)
     }
@@ -405,7 +415,7 @@ private fun onboardingTargetPreview(scene: FirstRunOnboardingScene): PlacementPr
 }
 
 private fun PlacementPreview.toBoardRect(boardRect: Rect, cellSizePx: Float): Rect? {
-    if (occupiedCells.isEmpty() || boardRect == Rect.Zero || cellSizePx <= 0f) return null
+    if (occupiedCells.isEmpty() || (boardRect == Rect.Zero) || (cellSizePx <= 0f)) return null
     val minColumn = occupiedCells.minOf { it.column }
     val maxColumn = occupiedCells.maxOf { it.column }
     val minRow = occupiedCells.minOf { it.row }
@@ -423,6 +433,13 @@ private fun Rect.expand(padding: Float): Rect = Rect(
     top = top - padding,
     right = right + padding,
     bottom = bottom + padding,
+)
+
+private fun Rect.expand(horizontalPadding: Float, verticalPadding: Float): Rect = Rect(
+    left = left - horizontalPadding,
+    top = top - verticalPadding,
+    right = right + horizontalPadding,
+    bottom = bottom + verticalPadding,
 )
 
 private fun Rect.scaleAroundCenter(scale: Float): Rect {
@@ -519,8 +536,31 @@ private fun InteractiveGameOnboardingOverlayPreviewHost(
 ) {
     val onboardingStages = FirstRunGameOnboardingStateFactory.stages
     val scene = FirstRunGameOnboardingStateFactory.scene(stage)
-    val boardRect = Rect(left = 76f, top = 560f, right = 716f, bottom = 944f)
-    val trayRect = Rect(left = 68f, top = 1006f, right = 724f, bottom = 1134f)
+    val boardRect = Rect(left = 76f, top = 372f, right = 716f, bottom = 756f)
+    val trayRect = Rect(left = 68f, top = 818f, right = 724f, bottom = 946f)
+    val previewCellSizePx = boardRect.width / scene.gameState.config.columns
+    val previewSpawnColumn = resolveSpawnColumn(
+        piece = scene.gameState.activePiece,
+        boardColumns = scene.gameState.config.columns,
+        lastPlacementColumn = scene.gameState.lastPlacementColumn,
+    )
+    val spawnTopLeft = pieceSpawnTopLeft(
+        piece = scene.gameState.activePiece,
+        trayRect = trayRect,
+        boardRect = boardRect,
+        cellSizePx = previewCellSizePx,
+        column = previewSpawnColumn,
+    )
+    val spawnRect = if (scene.gameState.activePiece != null && spawnTopLeft != null) {
+        Rect(
+            left = spawnTopLeft.x,
+            top = spawnTopLeft.y,
+            right = spawnTopLeft.x + (scene.gameState.activePiece.width * previewCellSizePx),
+            bottom = spawnTopLeft.y + (scene.gameState.activePiece.height * previewCellSizePx),
+        )
+    } else {
+        Rect.Zero
+    }
     StackShiftTheme(settings = settings) {
         Box(
             modifier = Modifier
@@ -531,15 +571,6 @@ private fun InteractiveGameOnboardingOverlayPreviewHost(
             Column(
                 modifier = Modifier.fillMaxSize(),
             ) {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(106.dp),
-                    shape = RoundedCornerShape(24.dp),
-                    color = StackShiftThemeTokens.uiColors.gameSurface.copy(alpha = 0.62f),
-                    border = BorderStroke(1.dp, StackShiftThemeTokens.uiColors.panelStroke.copy(alpha = 0.48f)),
-                ) {}
-                Spacer(modifier = Modifier.height(10.dp))
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -570,7 +601,8 @@ private fun InteractiveGameOnboardingOverlayPreviewHost(
                 ),
                 boardRect = boardRect,
                 trayRect = trayRect,
-                cellSizePx = boardRect.width / scene.gameState.config.columns,
+                spawnRect = spawnRect,
+                cellSizePx = previewCellSizePx,
             )
         }
     }

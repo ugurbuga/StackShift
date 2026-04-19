@@ -1,4 +1,3 @@
-import java.io.File
 import java.util.Properties
 
 plugins {
@@ -9,26 +8,26 @@ plugins {
     alias(libs.plugins.firebaseCrashlytics)
 }
 
-private val AdsPropertiesFileName = "ads.properties"
-private val AdsAndroidApplicationIdProperty = "ads.android.applicationId"
+private val adsPropertiesFileName = "ads.properties"
+private val adsAndroidApplicationIdProperty = "ads.android.applicationId"
 
-private val KeystorePropertiesFileName = "keystore.properties"
-private val KeystoreStoreFileProperty = "keystore.storeFile"
-private val KeystoreStorePasswordProperty = "keystore.storePassword"
-private val KeystoreKeyAliasProperty = "keystore.keyAlias"
-private val KeystoreKeyPasswordProperty = "keystore.keyPassword"
+private val keystorePropertiesFileName = "keystore.properties"
+private val keystoreStoreFileProperty = "keystore.storeFile"
+private val keystoreStorePasswordProperty = "keystore.storePassword"
+private val keystoreKeyAliasProperty = "keystore.keyAlias"
+private val keystoreKeyPasswordProperty = "keystore.keyPassword"
 
-private val GooglePropertiesFileName = "google.properties"
+private val googlePropertiesFileName = "google.properties"
 
 private val adsProperties = Properties().apply {
-    val adsPropertiesFile = File(rootProject.projectDir, AdsPropertiesFileName)
+    val adsPropertiesFile = File(rootProject.projectDir, adsPropertiesFileName)
     if (adsPropertiesFile.exists()) {
         adsPropertiesFile.inputStream().use(::load)
     }
 }
 
 private val keystoreProperties = Properties().apply {
-    val keystorePropertiesFile = File(rootProject.projectDir, KeystorePropertiesFileName)
+    val keystorePropertiesFile = File(rootProject.projectDir, keystorePropertiesFileName)
     if (keystorePropertiesFile.exists()) {
         keystorePropertiesFile.inputStream().use(::load)
     }
@@ -41,7 +40,7 @@ private fun keystoreProperty(name: String): String = keystoreProperties.getPrope
 val generateLocalFirebaseConfig by tasks.registering {
     group = "build setup"
     description = "Generates local Firebase config files from google.properties when available."
-    val sourcePropertiesFile = rootProject.layout.projectDirectory.file(GooglePropertiesFileName)
+    val sourcePropertiesFile = rootProject.layout.projectDirectory.file(googlePropertiesFileName)
     val androidGoogleServicesFile = layout.projectDirectory.file("google-services.json")
     val defaultAndroidPackageName = "com.ugurbuga.stackshift"
 
@@ -87,7 +86,7 @@ val generateLocalFirebaseConfig by tasks.registering {
         val androidPackageName = googleProperties.trimmed("firebase.android.packageName")
             ?: defaultAndroidPackageName
 
-        if (projectNumber == null || projectId == null || androidAppId == null || androidApiKey == null) {
+        if ((projectNumber == null) || (projectId == null) || (androidAppId == null) || (androidApiKey == null)) {
             if (androidConfigFile.exists()) {
                 androidConfigFile.delete()
             }
@@ -127,7 +126,7 @@ val generateLocalFirebaseConfig by tasks.registering {
         """.trimIndent() + "\n"
 
         androidConfigFile.parentFile?.mkdirs()
-        if (!androidConfigFile.exists() || androidConfigFile.readText() != googleServicesJson) {
+        if ((!androidConfigFile.exists()) || (androidConfigFile.readText() != googleServicesJson)) {
             androidConfigFile.writeText(googleServicesJson)
         }
     }
@@ -145,13 +144,13 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = keystoreProperty(KeystoreStoreFileProperty)
+            storeFile = keystoreProperty(keystoreStoreFileProperty)
                 .takeIf(String::isNotBlank)
                 ?.let(rootProject::file)
                 ?: rootProject.file("keystore/StackShift.jks")
-            storePassword = keystoreProperty(KeystoreStorePasswordProperty)
-            keyAlias = keystoreProperty(KeystoreKeyAliasProperty)
-            keyPassword = keystoreProperty(KeystoreKeyPasswordProperty)
+            storePassword = keystoreProperty(keystoreStorePasswordProperty)
+            keyAlias = keystoreProperty(keystoreKeyAliasProperty)
+            keyPassword = keystoreProperty(keystoreKeyPasswordProperty)
         }
     }
 
@@ -163,9 +162,9 @@ android {
         applicationId = "com.ugurbuga.stackshift"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0"
-        manifestPlaceholders["adsApplicationId"] = adsProperty(AdsAndroidApplicationIdProperty)
+        versionCode = 2
+        versionName = "1.0.1"
+        manifestPlaceholders["adsApplicationId"] = adsProperty(adsAndroidApplicationIdProperty)
         buildConfigField("String", "ADS_BANNER_UNIT_ID", "\"${adsProperty("ads.android.bannerUnitId")}\"")
         buildConfigField("String", "ADS_INTERSTITIAL_UNIT_ID", "\"${adsProperty("ads.android.interstitialUnitId")}\"")
         buildConfigField("String", "ADS_REWARDED_UNIT_ID", "\"${adsProperty("ads.android.rewardedUnitId")}\"")

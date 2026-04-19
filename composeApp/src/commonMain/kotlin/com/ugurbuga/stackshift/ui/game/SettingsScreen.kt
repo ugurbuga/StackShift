@@ -1,5 +1,7 @@
 package com.ugurbuga.stackshift.ui.game
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -15,6 +17,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -52,7 +55,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.ugurbuga.stackshift.ads.GameAdController
+import com.ugurbuga.stackshift.ads.NoOpGameAdController
 import com.ugurbuga.stackshift.game.model.AppColorPalette
 import com.ugurbuga.stackshift.game.model.AppLanguage
 import com.ugurbuga.stackshift.game.model.AppThemeMode
@@ -80,10 +86,11 @@ import stackshift.composeapp.generated.resources.block_palette_classic
 import stackshift.composeapp.generated.resources.block_palette_earth
 import stackshift.composeapp.generated.resources.block_palette_neon
 import stackshift.composeapp.generated.resources.block_style_bubble
+import stackshift.composeapp.generated.resources.block_style_crystal
+import stackshift.composeapp.generated.resources.block_style_dynamic_liquid
 import stackshift.composeapp.generated.resources.block_style_flat
-import stackshift.composeapp.generated.resources.block_style_liquid_glass
-import stackshift.composeapp.generated.resources.block_style_neon
 import stackshift.composeapp.generated.resources.block_style_outline
+import stackshift.composeapp.generated.resources.block_style_pixel_art
 import stackshift.composeapp.generated.resources.block_style_sharp_3d
 import stackshift.composeapp.generated.resources.block_style_wood
 import stackshift.composeapp.generated.resources.settings_block_palette
@@ -91,10 +98,10 @@ import stackshift.composeapp.generated.resources.settings_block_style
 import stackshift.composeapp.generated.resources.settings_language
 import stackshift.composeapp.generated.resources.settings_theme
 import stackshift.composeapp.generated.resources.settings_theme_palette
+import stackshift.composeapp.generated.resources.settings_title
 import stackshift.composeapp.generated.resources.settings_tutorial
 import stackshift.composeapp.generated.resources.settings_tutorial_body
 import stackshift.composeapp.generated.resources.settings_tutorial_replay
-import stackshift.composeapp.generated.resources.settings_title
 import stackshift.composeapp.generated.resources.theme_palette_aurora
 import stackshift.composeapp.generated.resources.theme_palette_classic
 import stackshift.composeapp.generated.resources.theme_palette_sunset
@@ -102,7 +109,6 @@ import stackshift.composeapp.generated.resources.theme_palette_sunset
 private val ScreenContentMaxWidth = 920.dp
 private val ChipShape = RoundedCornerShape(22.dp)
 private val SettingsCardShape = RoundedCornerShape(24.dp)
-private val PremiumPreviewCardShape = RoundedCornerShape(12.dp)
 
 @Composable
 fun AppSettingsScreen(
@@ -111,12 +117,23 @@ fun AppSettingsScreen(
     onSettingsChange: (AppSettings) -> Unit,
     onReplayTutorial: () -> Unit,
     onBack: () -> Unit,
+    adController: GameAdController = NoOpGameAdController,
     modifier: Modifier = Modifier,
 ) {
     LogScreen(telemetry, TelemetryScreenNames.Settings)
     val scrollState = rememberScrollState()
     val uiColors = StackShiftThemeTokens.uiColors
     val darkTheme = isStackShiftDarkTheme(settings)
+    val transition = rememberInfiniteTransition(label = "settingsStylePulse")
+    val stylePulse by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "stylePulse",
+    )
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -130,82 +147,116 @@ fun AppSettingsScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .safeDrawingPadding()
-                    .verticalScroll(scrollState)
-                    .padding(horizontal = 16.dp, vertical = 18.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                    .safeDrawingPadding(),
             ) {
-                HeaderCard(onBack = onBack)
-
-                SettingsSectionCard(
-                    title = stringResource(Res.string.settings_language),
-                    icon = Icons.Filled.Translate,
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    SettingsGroup(
+                    HeaderCard(onBack = onBack)
+                }
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .verticalScroll(scrollState)
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    SettingsSectionCard(
                         title = stringResource(Res.string.settings_language),
-                        selectedValue = settings.language,
-                        options = languageOptions(settings.language),
-                        onSelected = { onSettingsChange(settings.copy(language = it)) },
-                    )
-                }
-
-                SettingsSectionCard(
-                    title = stringResource(Res.string.settings_theme),
-                    icon = Icons.Filled.Palette,
-                ) {
-                    SettingsGroup(
-                        title = stringResource(Res.string.settings_theme),
-                        selectedValue = settings.themeMode,
-                        options = themeModeOptions(),
-                        onSelected = { onSettingsChange(settings.copy(themeMode = it)) },
-                    )
-                    SettingsGroup(
-                        title = stringResource(Res.string.settings_theme_palette),
-                        selectedValue = settings.themeColorPalette,
-                        options = themePaletteOptions(darkTheme = darkTheme),
-                        onSelected = { onSettingsChange(settings.copy(themeColorPalette = it)) },
-                    )
-                }
-
-                SettingsSectionCard(
-                    title = stringResource(Res.string.settings_block_style),
-                    icon = Icons.Filled.ViewModule,
-                    trailingContent = {
-                        LiveBoardMiniPreview(settings = settings)
-                    },
-                ) {
-                    SettingsGroup(
-                        title = stringResource(Res.string.settings_block_palette),
-                        selectedValue = settings.blockColorPalette,
-                        options = blockPaletteOptions(style = settings.blockVisualStyle),
-                        onSelected = { onSettingsChange(settings.copy(blockColorPalette = it)) },
-                    )
-                    SettingsGroup(
-                        title = stringResource(Res.string.settings_block_style),
-                        selectedValue = settings.blockVisualStyle,
-                        options = blockStyleOptions(settings.blockColorPalette),
-                        onSelected = { onSettingsChange(settings.copy(blockVisualStyle = it)) },
-                    )
-                }
-
-                SettingsSectionCard(
-                    title = stringResource(Res.string.settings_tutorial),
-                    icon = Icons.Filled.PlayArrow,
-                ) {
-                    Text(
-                        text = stringResource(Res.string.settings_tutorial_body),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = uiColors.subtitle,
-                    )
-                    Button(
-                        onClick = onReplayTutorial,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = uiColors.actionButton,
-                            contentColor = uiColors.actionIcon,
-                        ),
+                        icon = Icons.Filled.Translate,
                     ) {
-                        Text(stringResource(Res.string.settings_tutorial_replay))
+                        SettingsGroup(
+                            title = stringResource(Res.string.settings_language),
+                            selectedValue = settings.language,
+                            options = languageOptions(settings.language),
+                            onSelected = { onSettingsChange(settings.copy(language = it)) },
+                        )
                     }
+
+                    SettingsSectionCard(
+                        title = stringResource(Res.string.settings_theme),
+                        icon = Icons.Filled.Palette,
+                    ) {
+                        SettingsGroup(
+                            title = stringResource(Res.string.settings_theme),
+                            selectedValue = settings.themeMode,
+                            options = themeModeOptions(),
+                            onSelected = { onSettingsChange(settings.copy(themeMode = it)) },
+                        )
+                        SettingsGroup(
+                            title = stringResource(Res.string.settings_theme_palette),
+                            selectedValue = settings.themeColorPalette,
+                            options = themePaletteOptions(darkTheme = darkTheme),
+                            onSelected = { onSettingsChange(settings.copy(themeColorPalette = it)) },
+                        )
+                    }
+
+                    SettingsSectionCard(
+                        title = stringResource(Res.string.settings_block_style),
+                        icon = Icons.Filled.ViewModule,
+                        trailingContent = {
+                            LiveBoardMiniPreview(settings = settings, pulse = stylePulse)
+                        },
+                    ) {
+                        SettingsGroup(
+                            title = stringResource(Res.string.settings_block_palette),
+                            selectedValue = settings.blockColorPalette,
+                            options = blockPaletteOptions(
+                                style = settings.blockVisualStyle,
+                                pulse = stylePulse
+                            ),
+                            onSelected = { onSettingsChange(settings.copy(blockColorPalette = it)) },
+                        )
+                        SettingsGroup(
+                            title = stringResource(Res.string.settings_block_style),
+                            selectedValue = settings.blockVisualStyle,
+                            options = blockStyleOptions(
+                                settings.blockColorPalette,
+                                pulse = stylePulse
+                            ),
+                            onSelected = { onSettingsChange(settings.copy(blockVisualStyle = it)) },
+                        )
+                    }
+
+                    SettingsSectionCard(
+                        title = stringResource(Res.string.settings_tutorial),
+                        icon = Icons.Filled.PlayArrow,
+                    ) {
+                        Text(
+                            text = stringResource(Res.string.settings_tutorial_body),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = uiColors.subtitle,
+                        )
+                        Button(
+                            onClick = onReplayTutorial,
+                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                            shape = androidx.compose.foundation.shape.CircleShape,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = uiColors.actionButton,
+                                contentColor = uiColors.actionIcon,
+                            ),
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                Color.White.copy(alpha = 0.22f)
+                            ),
+                        ) {
+                            Text(
+                                text = stringResource(Res.string.settings_tutorial_replay),
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
+                    }
+                }
+
+                if (adController !== NoOpGameAdController) {
+                    adController.Banner(
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
             }
         }
@@ -300,8 +351,8 @@ private fun SettingsSectionCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(uiColors.panel.copy(alpha = 0.96f))
-                .padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             SectionHeader(
                 title = title,
@@ -365,34 +416,44 @@ private fun <T> SettingsGroup(
     onSelected: (T) -> Unit,
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-        Text(text = title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelMedium,
+            color = uiColors.subtitle,
+            modifier = Modifier.padding(horizontal = 4.dp),
+        )
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(-(6).dp),
+        ) {
             options.forEach { option ->
                 val selected = option.value == selectedValue
                 FilterChip(
                     modifier = Modifier.shadow(
-                        elevation = if (selected) 9.dp else 1.dp,
+                        elevation = if (selected) 6.dp else 0.dp,
                         shape = ChipShape,
-                        ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = if (selected) 0.20f else 0.04f),
-                        spotColor = MaterialTheme.colorScheme.primary.copy(alpha = if (selected) 0.20f else 0.04f),
+                        ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                        spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                     ),
                     selected = selected,
                     onClick = { onSelected(option.value) },
                     shape = ChipShape,
                     label = {
                         Row(
-                            modifier = Modifier
-                                .padding(vertical = 3.dp)
-                                .wrapContentWidth(),
+                            modifier = Modifier.wrapContentWidth(),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
                             option.preview?.invoke()
                             Text(
                                 text = option.label,
                                 style = if (selected) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelMedium,
-                                maxLines = 2,
+                                maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
                         }
@@ -400,14 +461,14 @@ private fun <T> SettingsGroup(
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = uiColors.chipSelected,
                         selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        containerColor = uiColors.chip,
+                        containerColor = uiColors.chip.copy(alpha = 0.62f),
                         labelColor = MaterialTheme.colorScheme.onSurface,
                     ),
                     border = FilterChipDefaults.filterChipBorder(
                         enabled = true,
                         selected = selected,
-                        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.76f),
-                        selectedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.94f),
+                        borderColor = uiColors.panelStroke.copy(alpha = 0.42f),
+                        selectedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.82f),
                     ),
                     elevation = FilterChipDefaults.filterChipElevation(
                         elevation = 0.dp,
@@ -430,42 +491,48 @@ private data class SettingsOption<T>(
 )
 
 @Composable
-private fun languageOptions(selected: AppLanguage): List<SettingsOption<AppLanguage>> = AppLanguage.entries.map { language ->
-    SettingsOption(
-        value = language,
-        label = stringResource(language.labelRes),
-        preview = { LanguagePreview(language = language, selected = language == selected) },
-    )
-}
+private fun languageOptions(selected: AppLanguage): List<SettingsOption<AppLanguage>> =
+    AppLanguage.entries.map { language ->
+        SettingsOption(
+            value = language,
+            label = stringResource(language.labelRes),
+            preview = { LanguagePreview(language = language, selected = language == selected) },
+        )
+    }
 
 @Composable
-private fun themeModeOptions(): List<SettingsOption<AppThemeMode>> = AppThemeMode.entries.map { mode ->
-    SettingsOption(
-        value = mode,
-        label = when (mode) {
-            AppThemeMode.System -> stringResource(Res.string.app_theme_system)
-            AppThemeMode.Light -> stringResource(Res.string.app_theme_light)
-            AppThemeMode.Dark -> stringResource(Res.string.app_theme_dark)
-        },
-        preview = { ThemeModePreview(mode) },
-    )
-}
+private fun themeModeOptions(): List<SettingsOption<AppThemeMode>> =
+    AppThemeMode.entries.map { mode ->
+        SettingsOption(
+            value = mode,
+            label = when (mode) {
+                AppThemeMode.System -> stringResource(Res.string.app_theme_system)
+                AppThemeMode.Light -> stringResource(Res.string.app_theme_light)
+                AppThemeMode.Dark -> stringResource(Res.string.app_theme_dark)
+            },
+            preview = { ThemeModePreview(mode) },
+        )
+    }
 
 @Composable
-private fun themePaletteOptions(darkTheme: Boolean): List<SettingsOption<AppColorPalette>> = AppColorPalette.entries.map { palette ->
-    SettingsOption(
-        value = palette,
-        label = when (palette) {
-            AppColorPalette.Classic -> stringResource(Res.string.theme_palette_classic)
-            AppColorPalette.Aurora -> stringResource(Res.string.theme_palette_aurora)
-            AppColorPalette.Sunset -> stringResource(Res.string.theme_palette_sunset)
-        },
-        preview = { ThemePalettePreview(palette = palette, darkTheme = darkTheme) },
-    )
-}
+private fun themePaletteOptions(darkTheme: Boolean): List<SettingsOption<AppColorPalette>> =
+    AppColorPalette.entries.map { palette ->
+        SettingsOption(
+            value = palette,
+            label = when (palette) {
+                AppColorPalette.Classic -> stringResource(Res.string.theme_palette_classic)
+                AppColorPalette.Aurora -> stringResource(Res.string.theme_palette_aurora)
+                AppColorPalette.Sunset -> stringResource(Res.string.theme_palette_sunset)
+            },
+            preview = { ThemePalettePreview(palette = palette, darkTheme = darkTheme) },
+        )
+    }
 
 @Composable
-private fun blockPaletteOptions(style: BlockVisualStyle): List<SettingsOption<BlockColorPalette>> = BlockColorPalette.entries.map { palette ->
+private fun blockPaletteOptions(
+    style: BlockVisualStyle,
+    pulse: Float
+): List<SettingsOption<BlockColorPalette>> = BlockColorPalette.entries.map { palette ->
     SettingsOption(
         value = palette,
         label = when (palette) {
@@ -474,12 +541,15 @@ private fun blockPaletteOptions(style: BlockVisualStyle): List<SettingsOption<Bl
             BlockColorPalette.Neon -> stringResource(Res.string.block_palette_neon)
             BlockColorPalette.Earth -> stringResource(Res.string.block_palette_earth)
         },
-        preview = { BlockPalettePreview(palette = palette, style = style) },
+        preview = { BlockPalettePreview(palette = palette, style = style, pulse = pulse) },
     )
 }
 
 @Composable
-private fun blockStyleOptions(palette: BlockColorPalette): List<SettingsOption<BlockVisualStyle>> = BlockVisualStyle.entries.map { style ->
+private fun blockStyleOptions(
+    palette: BlockColorPalette,
+    pulse: Float
+): List<SettingsOption<BlockVisualStyle>> = BlockVisualStyle.entries.map { style ->
     SettingsOption(
         value = style,
         label = when (style) {
@@ -488,10 +558,11 @@ private fun blockStyleOptions(palette: BlockColorPalette): List<SettingsOption<B
             BlockVisualStyle.Outline -> stringResource(Res.string.block_style_outline)
             BlockVisualStyle.Sharp3D -> stringResource(Res.string.block_style_sharp_3d)
             BlockVisualStyle.Wood -> stringResource(Res.string.block_style_wood)
-            BlockVisualStyle.LiquidGlass -> stringResource(Res.string.block_style_liquid_glass)
-            BlockVisualStyle.Neon -> stringResource(Res.string.block_style_neon)
+            BlockVisualStyle.PixelArt -> stringResource(Res.string.block_style_pixel_art)
+            BlockVisualStyle.Crystal -> stringResource(Res.string.block_style_crystal)
+            BlockVisualStyle.DynamicLiquid -> stringResource(Res.string.block_style_dynamic_liquid)
         },
-        preview = { BlockStylePreview(style = style, palette = palette) },
+        preview = { BlockStylePreview(style = style, palette = palette, pulse = pulse) },
     )
 }
 
@@ -524,16 +595,18 @@ private fun ThemePalettePreview(
 private fun BlockPalettePreview(
     palette: BlockColorPalette,
     style: BlockVisualStyle,
+    pulse: Float,
 ) {
-    PreviewBlockRow(palette = palette, style = style)
+    PreviewBlockRow(palette = palette, style = style, pulse = pulse)
 }
 
 @Composable
 private fun BlockStylePreview(
     style: BlockVisualStyle,
     palette: BlockColorPalette,
+    pulse: Float,
 ) {
-    PreviewBlockRow(palette = palette, style = style)
+    PreviewBlockRow(palette = palette, style = style, pulse = pulse)
 }
 
 @Composable
@@ -542,21 +615,25 @@ private fun LanguagePreview(
     selected: Boolean,
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
-    Surface(
-        shape = RoundedCornerShape(999.dp),
-        color = if (selected) {
-            uiColors.panelHighlight.copy(alpha = 0.96f)
-        } else {
-            uiColors.panelMuted.copy(alpha = 0.96f)
-        },
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.48f) else uiColors.panelStroke,
-        ),
+    Box(
+        modifier = Modifier
+            .background(
+                color = if (selected) {
+                    uiColors.panelHighlight.copy(alpha = 0.96f)
+                } else {
+                    uiColors.panelMuted.copy(alpha = 0.96f)
+                },
+                shape = RoundedCornerShape(999.dp)
+            )
+            .border(
+                width = 1.dp,
+                color = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.48f) else uiColors.panelStroke,
+                shape = RoundedCornerShape(999.dp)
+            )
     ) {
         Text(
             text = language.localeTag.uppercase(),
-            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+            modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
             style = MaterialTheme.typography.labelSmall,
             color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
@@ -568,32 +645,26 @@ private fun LanguagePreview(
 private fun PreviewBlockRow(
     palette: BlockColorPalette,
     style: BlockVisualStyle,
+    pulse: Float,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
-    Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = uiColors.panelMuted.copy(alpha = 0.94f),
-        border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.88f)),
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            listOf(CellTone.Coral, CellTone.Blue, CellTone.Gold).forEach { tone ->
-                BlockCellPreview(
-                    tone = tone,
-                    palette = palette,
-                    style = style,
-                    size = 18.dp,
-                )
-            }
+        listOf(CellTone.Coral, CellTone.Blue, CellTone.Gold).forEach { tone ->
+            BlockCellPreview(
+                tone = tone,
+                palette = palette,
+                style = style,
+                size = 15.dp,
+                pulse = pulse,
+            )
         }
     }
 }
 
 @Composable
-private fun LiveBoardMiniPreview(settings: AppSettings) {
+private fun LiveBoardMiniPreview(settings: AppSettings, pulse: Float) {
     val uiColors = StackShiftThemeTokens.uiColors
     val boardStyle = settings.blockVisualStyle
     val transition = rememberInfiniteTransition(label = "liveBoardPreview")
@@ -612,7 +683,10 @@ private fun LiveBoardMiniPreview(settings: AppSettings) {
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = uiColors.panelMuted.copy(alpha = 0.94f),
-        border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.92f)),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            uiColors.panelStroke.copy(alpha = 0.92f)
+        ),
     ) {
         Column(
             modifier = Modifier
@@ -630,14 +704,14 @@ private fun LiveBoardMiniPreview(settings: AppSettings) {
             repeat(3) { row ->
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     repeat(4) { column ->
-                        val tone = when {
-                            row == 0 && column in 1..2 -> CellTone.Cyan
-                            row == 1 && column == 1 -> CellTone.Gold
-                            row == 2 && column == 2 -> CellTone.Violet
+                        val tone = when (row) {
+                            0 -> if (column in (1..2)) CellTone.Cyan else null
+                            1 -> if (column == 1) CellTone.Gold else null
+                            2 -> if (column == 2) CellTone.Violet else null
                             else -> null
                         }
                         val isAnimatedPreviewCell = when (row) {
-                            0 -> column == previewColumn || column == previewColumn + 1
+                            0 -> (column == previewColumn) || (column == (previewColumn + 1))
                             1 -> column == previewColumn + 1
                             else -> false
                         }
@@ -650,6 +724,7 @@ private fun LiveBoardMiniPreview(settings: AppSettings) {
                                     size = 14.dp,
                                     alpha = previewAlpha,
                                     special = SpecialBlockType.ColumnClearer,
+                                    pulse = pulse,
                                 )
                             } else {
                                 Box(
@@ -671,6 +746,7 @@ private fun LiveBoardMiniPreview(settings: AppSettings) {
                                 style = boardStyle,
                                 size = 14.dp,
                                 special = if (row == 2 && column == 2) SpecialBlockType.Ghost else SpecialBlockType.None,
+                                pulse = pulse,
                             )
                         }
                     }
@@ -684,35 +760,32 @@ private fun LiveBoardMiniPreview(settings: AppSettings) {
 private fun BoxPreview(
     colors: List<Color>,
     icon: ImageVector? = null,
-    size: androidx.compose.ui.unit.Dp = 12.dp,
+    size: Dp = 10.dp,
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
-    Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = uiColors.panelMuted.copy(alpha = 0.94f),
-        border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.88f)),
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            colors.forEachIndexed { index, color ->
-                Card(
-                    modifier = Modifier.size(size),
-                    colors = CardDefaults.cardColors(containerColor = color),
-                    shape = RoundedCornerShape((size.value * 0.35f).dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.72f)),
-                ) {
-                    if (icon != null && index == colors.lastIndex) {
-                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                            Icon(
-                                imageVector = icon,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(size * 0.52f),
-                            )
-                        }
+        colors.forEachIndexed { index, color ->
+            Box(
+                modifier = Modifier
+                    .size(size)
+                    .background(color, shape = RoundedCornerShape((size.value * 0.35f).dp))
+                    .border(
+                        width = 1.dp,
+                        color = uiColors.panelStroke.copy(alpha = 0.32f),
+                        shape = RoundedCornerShape((size.value * 0.35f).dp),
+                    ),
+            ) {
+                if (icon != null && index == colors.lastIndex) {
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(size * 0.52f),
+                        )
                     }
                 }
             }
@@ -724,7 +797,7 @@ private fun BoxPreview(
 @Composable
 private fun AppSettingsScreenPreview() {
     AppSettingsScreen(
-        settings = AppSettings(),
+        settings = AppSettings(themeMode = AppThemeMode.Light),
         onSettingsChange = {},
         onReplayTutorial = {},
         onBack = {},

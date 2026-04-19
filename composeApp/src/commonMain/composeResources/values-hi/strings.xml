@@ -34,11 +34,12 @@
     <string name="block_style_outline">आउटलाइन</string>
     <string name="block_style_sharp_3d">तीक्ष्ण 3D</string>
     <string name="block_style_wood">लकड़ी</string>
-    <string name="block_style_liquid_glass">तरल काँच</string>
-    <string name="block_style_neon">नियॉन</string>
+    <string name="block_style_pixel_art">पिक्सेल आर्ट</string>
+    <string name="block_style_crystal">क्रिस्टल</string>
+    <string name="block_style_dynamic_liquid">गतिशील द्रव</string>
     <string name="board_block_style_always_flat">हमेशा सादा</string>
     <string name="board_block_style_match_selected">चयनित शैली से मिलाएँ</string>
-    <string name="hold">Hold</string>
+    <string name="hold">संग्रह</string>
     <string name="pause">रोकें</string>
     <string name="resume">जारी रखें</string>
     <string name="restart">पुनः प्रारंभ</string>
@@ -53,7 +54,7 @@
     <string name="boost">बूस्ट</string>
     <string name="danger">खतरा</string>
     <string name="danger_none">-</string>
-    <string name="launch">लॉन्च</string>
+    <string name="launch_label">प्रक्षेपण</string>
     <string name="launch_bar">लॉन्च बार</string>
     <string name="launch_boost_active">बूस्ट सक्रिय • %1$s टर्न</string>
     <string name="launch_special_chance">विशेष ब्लॉक संभावना +%1$s%%</string>
@@ -62,7 +63,7 @@
     <string name="launch_paused">रुका हुआ</string>
     <string name="launch_game_over">नई रन के लिए पुनः प्रारंभ करें</string>
     <string name="launch_drag_hint">क्षैतिज रूप से खींचें → छोड़ें</string>
-    <string name="queue_hold">Hold</string>
+    <string name="queue_hold">संग्रह</string>
     <string name="queue_next_short">अगला</string>
     <string name="queue_empty">—</string>
     <string name="pause_title">रुका हुआ</string>
@@ -84,7 +85,7 @@
     <string name="game_message_chain_lines">चेन x%1$s! %2$s लाइनें साफ़ की गईं।</string>
     <string name="game_message_lines_cleared">%1$s लाइनें साफ़ की गईं।</string>
     <string name="game_message_good_shot">अच्छा शॉट। अगला कॉलम योजनाबद्ध करें।</string>
-    <string name="game_message_hold_updated">Hold अपडेट हुआ। नया कॉलम चुनें।</string>
+    <string name="game_message_hold_updated">संग्रह अपडेट हुआ। नया कॉलम चुनें।</string>
     <string name="game_message_tempo_critical">गति बढ़ गई है। महत्वपूर्ण कॉलम साफ़ करें।</string>
     <string name="game_message_tempo_up">गति बढ़ गई है। और कठिन पीस आने वाले हैं।</string>
     <string name="game_message_paused">खेल रोक दिया गया है।</string>
@@ -94,7 +95,7 @@
     <string name="feedback_perfect_lane">परफेक्ट लेन x%1$s</string>
     <string name="feedback_micro_adjust">सूक्ष्म समायोजन</string>
     <string name="feedback_soft_lock">सॉफ्ट लॉक</string>
-    <string name="feedback_hold_armed">Hold तैयार</string>
+    <string name="feedback_hold_armed">संग्रह तैयार</string>
     <string name="feedback_swap">स्वैप किया गया</string>
     <string name="feedback_special_chain">विशेष चेन +%1$s</string>
     <string name="feedback_special">विशेष +%1$s</string>
@@ -147,7 +148,7 @@
     <string name="tutorial_intro_title">नीचे के डॉक से पीस लॉन्च करें</string>
     <string name="tutorial_intro_body">आपका सक्रिय पीस नीचे इंतज़ार करता है। कॉलम मिलाने के लिए उसे क्षैतिज रूप से खींचें, फिर छोड़कर बोर्ड पर लॉन्च करें। अगले पीस की झलक जानबूझकर हल्की रखी गई है ताकि ध्यान सक्रिय पीस पर रहे।</string>
     <string name="tutorial_systems_title">जब बोर्ड भरने लगे तो एक्शन ब्लॉक्स का उपयोग करें</string>
-    <string name="tutorial_systems_body">Hold वर्तमान पीस को बदलता है, Pause रन को रोक देता है, Block Properties प्रतीकों को समझाता है, और Settings रूप-रंग बदलता है। ये बटन आपके चुने हुए बोर्ड ब्लॉक स्टाइल से भी मेल खाते हैं।</string>
+    <string name="tutorial_systems_body">संग्रह वर्तमान पीस को बदलता है, विराम रन को रोक देता है, ब्लॉक गुण प्रतीकों को समझाता है, और सेटिंग्स रूप-रंग बदलती हैं। ये बटन आपके चुने हुए बोर्ड ब्लॉक स्टाइल से भी मेल खाते हैं।</string>
     <string name="tutorial_specials_title">स्पेशल ब्लॉक रन बचा सकते हैं</string>
     <string name="tutorial_specials_body">कुछ पीस विशेष प्रभाव लाते हैं। उनके बैज पहचानें और दबाव घटाने, जगह खोलने या कठिन स्टैक के बीच से निकलने के लिए सही समय पर उनका उपयोग करें।</string>
     <string name="tutorial_ready_title">अब आप इस रन को जारी रखने के लिए तैयार हैं</string>
@@ -168,12 +169,12 @@
     <string name="interactive_onboarding_waiting">प्लेसमेंट स्वीकार हो गया। अगला निर्देशित चरण तैयार हो रहा है…</string>
     <string name="interactive_onboarding_line_clear_title">एक पूरी पंक्ति भरकर साफ़ करें</string>
     <string name="interactive_onboarding_line_clear_body">सामान्य पीस भी तब जगह बनाते हैं जब वे पूरी पंक्ति पूरी कर देते हैं। इस पीस को गाइड किए गए कॉलम में छोड़ें और देखें कि लाइन भरती है, चमकती है और गायब हो जाती है।</string>
-    <string name="interactive_onboarding_column_clearer_title">Column Clearer पूरी लेन साफ़ करता है</string>
+    <string name="interactive_onboarding_column_clearer_title">स्तंभ साफ़क पूरी लेन साफ़ करता है</string>
     <string name="interactive_onboarding_column_clearer_body">यह विशेष पीस जिस कॉलम में उतरता है, उसे साफ़ कर देता है। हाइलाइट किए गए कॉलम का पालन करें और महसूस करें कि यह दबाव को तुरंत कैसे कम करता है।</string>
-    <string name="interactive_onboarding_row_clearer_title">Row Clearer क्षैतिज जगह खोलता है</string>
+    <string name="interactive_onboarding_row_clearer_title">पंक्ति साफ़क क्षैतिज जगह खोलता है</string>
     <string name="interactive_onboarding_row_clearer_body">यह पीस जिस पंक्ति को छूता है, पूरी पंक्ति साफ़ कर देता है। गाइड किए गए कॉलम पर निशाना लगाएँ और देखें कि लाइन पूरे बोर्ड में कैसे खुलती है।</string>
-    <string name="interactive_onboarding_ghost_title">Ghost तंग ढेरों के बीच से निकल जाता है</string>
-    <string name="interactive_onboarding_ghost_body">Ghost ब्लॉक मौजूद सेल्स के आर-पार जा सकते हैं। इसे चिन्हित कॉलम में छोड़ें और देखें कि यह उन जगहों तक कैसे पहुँचता है जहाँ सामान्य पीस नहीं पहुँच पाते।</string>
-    <string name="interactive_onboarding_heavy_title">Heavy बोर्ड को ज़्यादा ताक़त से बदलता है</string>
-    <string name="interactive_onboarding_heavy_body">Heavy ब्लॉक लैंड करने के बाद आसपास के क्षेत्र को तेज़ी से बदल देते हैं। गाइडेड ड्रॉप करें, फिर वहीं से खेल सामान्य रूप से जारी रखें।</string>
+    <string name="interactive_onboarding_ghost_title">भूत तंग ढेरों के बीच से निकल जाता है</string>
+    <string name="interactive_onboarding_ghost_body">भूत ब्लॉक मौजूद सेल्स के आर-पार जा सकते हैं। इसे चिन्हित कॉलम में छोड़ें और देखें कि यह उन जगहों तक कैसे पहुँचता है जहाँ सामान्य पीस नहीं पहुँच पाते।</string>
+    <string name="interactive_onboarding_heavy_title">भारी ब्लॉक बोर्ड को ज़्यादा ताक़त से बदलता है</string>
+    <string name="interactive_onboarding_heavy_body">भारी ब्लॉक लैंड करने के बाद आसपास के क्षेत्र को तेज़ी से बदल देते हैं। निर्देशित ड्रॉप करें, फिर वहीं से खेल सामान्य रूप से जारी रखें।</string>
 </resources>

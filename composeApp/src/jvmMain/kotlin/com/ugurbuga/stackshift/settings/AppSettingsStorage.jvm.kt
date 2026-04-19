@@ -13,16 +13,17 @@ actual object AppSettingsStorage {
 
     actual fun load(): AppSettings {
         val hasStoredLanguage = prefs.get(KeyLanguage, null) != null
+        val defaultSettings = AppSettings()
         return AppSettings(
-            language = AppLanguage.entries[prefs.getInt(KeyLanguage, AppLanguage.English.ordinal)],
-            themeMode = AppThemeMode.entries[prefs.getInt(KeyThemeMode, AppThemeMode.System.ordinal)],
-            themeColorPalette = AppColorPalette.entries[prefs.getInt(KeyThemeColorPalette, AppColorPalette.Classic.ordinal)],
-            blockColorPalette = BlockColorPalette.entries[prefs.getInt(KeyBlockColorPalette, BlockColorPalette.Classic.ordinal)],
-            blockVisualStyle = BlockVisualStyle.entries[prefs.getInt(KeyBlockVisualStyle, BlockVisualStyle.Flat.ordinal)],
-            boardBlockStyleMode = BoardBlockStyleMode.entries[prefs.getInt(KeyBoardBlockStyleMode, BoardBlockStyleMode.MatchSelectedBlockStyle.ordinal)],
-            hasSeenTutorial = prefs.getBoolean(KeyHasSeenTutorial, false),
-            hasShownInteractiveOnboarding = prefs.getBoolean(KeyHasShownInteractiveOnboarding, false),
-            hasInitializedLanguage = prefs.getBoolean(KeyHasInitializedLanguage, false) || hasStoredLanguage,
+            language = AppLanguage.entries.getOrElse(prefs.getInt(KeyLanguage, defaultSettings.language.ordinal)) { defaultSettings.language },
+            themeMode = AppThemeMode.entries.getOrElse(prefs.getInt(KeyThemeMode, defaultSettings.themeMode.ordinal)) { defaultSettings.themeMode },
+            themeColorPalette = AppColorPalette.entries.getOrElse(prefs.getInt(KeyThemeColorPalette, defaultSettings.themeColorPalette.ordinal)) { defaultSettings.themeColorPalette },
+            blockColorPalette = BlockColorPalette.entries.getOrElse(prefs.getInt(KeyBlockColorPalette, defaultSettings.blockColorPalette.ordinal)) { defaultSettings.blockColorPalette },
+            blockVisualStyle = BlockVisualStyle.entries.getOrElse(prefs.getInt(KeyBlockVisualStyle, defaultSettings.blockVisualStyle.ordinal)) { defaultSettings.blockVisualStyle },
+            boardBlockStyleMode = BoardBlockStyleMode.entries.getOrElse(prefs.getInt(KeyBoardBlockStyleMode, defaultSettings.boardBlockStyleMode.ordinal)) { defaultSettings.boardBlockStyleMode },
+            hasSeenTutorial = prefs.getBoolean(KeyHasSeenTutorial, defaultSettings.hasSeenTutorial),
+            hasShownInteractiveOnboarding = prefs.getBoolean(KeyHasShownInteractiveOnboarding, defaultSettings.hasShownInteractiveOnboarding),
+            hasInitializedLanguage = prefs.getBoolean(KeyHasInitializedLanguage, defaultSettings.hasInitializedLanguage) || hasStoredLanguage,
         )
     }
 

@@ -2,7 +2,9 @@ package com.ugurbuga.stackshift.telemetry
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 
+@Stable
 interface AppTelemetry {
     fun logScreen(screenName: String)
     fun logEvent(eventName: String, parameters: Map<String, String> = emptyMap())

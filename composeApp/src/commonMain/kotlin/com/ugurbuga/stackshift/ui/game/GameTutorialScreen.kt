@@ -17,28 +17,29 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material.icons.filled.ViewModule
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -72,6 +73,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ugurbuga.stackshift.StackShiftTheme
+import com.ugurbuga.stackshift.ads.GameAdController
+import com.ugurbuga.stackshift.ads.NoOpGameAdController
 import com.ugurbuga.stackshift.game.logic.GameLogic
 import com.ugurbuga.stackshift.game.model.BoardMatrix
 import com.ugurbuga.stackshift.game.model.CellTone
@@ -107,30 +110,28 @@ import stackshift.composeapp.generated.resources.block_properties_heavy_desc
 import stackshift.composeapp.generated.resources.block_properties_heavy_title
 import stackshift.composeapp.generated.resources.block_properties_row_clearer_desc
 import stackshift.composeapp.generated.resources.block_properties_row_clearer_title
-import stackshift.composeapp.generated.resources.block_properties_title
 import stackshift.composeapp.generated.resources.hold
 import stackshift.composeapp.generated.resources.launch_drag_hint
 import stackshift.composeapp.generated.resources.pause
 import stackshift.composeapp.generated.resources.piece_properties_active
 import stackshift.composeapp.generated.resources.queue_next_short
-import stackshift.composeapp.generated.resources.settings_tutorial
 import stackshift.composeapp.generated.resources.settings_title
+import stackshift.composeapp.generated.resources.settings_tutorial
 import stackshift.composeapp.generated.resources.tutorial_back
 import stackshift.composeapp.generated.resources.tutorial_finish
 import stackshift.composeapp.generated.resources.tutorial_intro_body
 import stackshift.composeapp.generated.resources.tutorial_intro_title
 import stackshift.composeapp.generated.resources.tutorial_next
-import stackshift.composeapp.generated.resources.tutorial_ready_tutorial_hint
 import stackshift.composeapp.generated.resources.tutorial_ready_body
 import stackshift.composeapp.generated.resources.tutorial_ready_settings_hint
 import stackshift.composeapp.generated.resources.tutorial_ready_title
+import stackshift.composeapp.generated.resources.tutorial_ready_tutorial_hint
 import stackshift.composeapp.generated.resources.tutorial_specials_body
 import stackshift.composeapp.generated.resources.tutorial_specials_title
 import stackshift.composeapp.generated.resources.tutorial_step_counter
 import stackshift.composeapp.generated.resources.tutorial_subtitle
 import stackshift.composeapp.generated.resources.tutorial_systems_body
 import stackshift.composeapp.generated.resources.tutorial_systems_title
-import kotlin.math.roundToInt
 
 private val TutorialCardShape = RoundedCornerShape(28.dp)
 private val TutorialMiniDockHeight = 88.dp
@@ -333,15 +334,16 @@ private fun tutorialSpecialScene(
 fun GameTutorialScreen(
     modifier: Modifier = Modifier,
     telemetry: AppTelemetry = NoOpAppTelemetry,
+    adController: GameAdController = NoOpGameAdController,
     onFinish: () -> Unit,
 ) {
     LogScreen(telemetry, TelemetryScreenNames.Tutorial)
     val totalSteps = 4
     val uiColors = StackShiftThemeTokens.uiColors
-    val pagerState = rememberPagerState(pageCount = { totalSteps })
+    val pagerState = rememberPagerState { totalSteps }
     val coroutineScope = rememberCoroutineScope()
     val currentStep = pagerState.currentPage
-    val isLastStep = currentStep == totalSteps - 1
+    val isLastStep = (currentStep == (totalSteps - 1))
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -351,109 +353,133 @@ fun GameTutorialScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(appBackgroundBrush(uiColors))
-                .safeDrawingPadding()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .safeDrawingPadding(),
         ) {
-            Card(
+            Column(
                 modifier = Modifier.fillMaxSize(),
-                shape = TutorialCardShape,
-                colors = CardDefaults.cardColors(containerColor = uiColors.panel.copy(alpha = 0.94f)),
-                border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.84f)),
             ) {
-                Column(
+                Card(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                        .weight(1f)
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    shape = TutorialCardShape,
+                    colors = CardDefaults.cardColors(containerColor = uiColors.panel.copy(alpha = 0.94f)),
+                    border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.84f)),
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                            brush = Brush.verticalGradient(
                                 colors = listOf(
                                     uiColors.panelHighlight.copy(alpha = 0.14f),
                                     uiColors.launchGlow.copy(alpha = 0.10f),
-                                    androidx.compose.ui.graphics.Color.Transparent,
+                                    Color.Transparent,
                                 ),
                             ),
                         )
-                        .padding(horizontal = 18.dp, vertical = 16.dp),
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            .padding(horizontal = 18.dp, vertical = 16.dp),
                     ) {
-                        Text(
-                            text = stringResource(Res.string.app_title),
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.weight(1f),
-                        )
-                        TutorialStepChip(
-                            currentStep = currentStep + 1,
-                            totalSteps = totalSteps,
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = stringResource(Res.string.tutorial_subtitle),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = uiColors.subtitle,
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    HorizontalPager(
-                        state = pagerState,
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth(),
-                    ) {
-                        TutorialScrollablePage {
-                            when (it) {
-                                0 -> TutorialIntroStep()
-                                1 -> TutorialSystemsStep()
-                                2 -> TutorialSpecialsStep()
-                                else -> TutorialReadyStep()
-                            }
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        if (currentStep > 0) {
-                            TextButton(onClick = {
-                                coroutineScope.launch {
-                                    pagerState.animateScrollToPage(currentStep - 1)
-                                }
-                            }) {
-                                Text(stringResource(Res.string.tutorial_back))
-                            }
-                        } else {
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
-                        Spacer(modifier = Modifier.weight(1f))
-                        Button(
-                            onClick = {
-                                if (isLastStep) {
-                                    onFinish()
-                                } else {
-                                    coroutineScope.launch {
-                                        pagerState.animateScrollToPage(currentStep + 1)
-                                    }
-                                }
-                            },
-                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                                containerColor = uiColors.actionButton,
-                                contentColor = uiColors.actionIcon,
-                            ),
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
                             Text(
-                                text = if (isLastStep) {
-                                    stringResource(Res.string.tutorial_finish)
-                                } else {
-                                    stringResource(Res.string.tutorial_next)
-                                },
+                                text = stringResource(Res.string.app_title),
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.weight(1f),
+                            )
+                            TutorialStepChip(
+                                currentStep = currentStep + 1,
+                                totalSteps = totalSteps,
                             )
                         }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = stringResource(Res.string.tutorial_subtitle),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = uiColors.subtitle,
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        HorizontalPager(
+                            state = pagerState,
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                        ) {
+                            TutorialScrollablePage {
+                                when (it) {
+                                    0 -> TutorialIntroStep()
+                                    1 -> TutorialSystemsStep()
+                                    2 -> TutorialSpecialsStep()
+                                    else -> TutorialReadyStep()
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            if (currentStep > 0) {
+                                TextButton(
+                                    onClick = {
+                                        coroutineScope.launch {
+                                            pagerState.animateScrollToPage(currentStep - 1)
+                                        }
+                                    },
+                                    modifier = Modifier.height(48.dp).clip(androidx.compose.foundation.shape.CircleShape),
+                                    shape = androidx.compose.foundation.shape.CircleShape,
+                                ) {
+                                    Text(
+                                        text = stringResource(Res.string.tutorial_back),
+                                        color = uiColors.subtitle,
+                                    )
+                                }
+                            } else {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
+                            Spacer(modifier = Modifier.weight(1f))
+                            Button(
+                                onClick = {
+                                    if (isLastStep) {
+                                        onFinish()
+                                    } else {
+                                        coroutineScope.launch {
+                                            pagerState.animateScrollToPage(currentStep + 1)
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.height(48.dp),
+                                shape = androidx.compose.foundation.shape.CircleShape,
+                                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = uiColors.actionButton,
+                                    contentColor = uiColors.actionIcon,
+                                ),
+                                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.22f)),
+                            ) {
+                                Text(
+                                    text = if (isLastStep) {
+                                        stringResource(Res.string.tutorial_finish)
+                                    } else {
+                                        stringResource(Res.string.tutorial_next)
+                                    },
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            }
+                        }
                     }
+                }
+
+                if (adController !== NoOpGameAdController) {
+                    adController.Banner(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                    )
                 }
             }
         }
@@ -637,8 +663,6 @@ private fun TutorialSystemsStep() {
                 title = stringResource(Res.string.settings_title),
             )
         }
-        TutorialLaunchBoardDemo(lockedColumn = 4)
-        TutorialHintCard(text = stringResource(Res.string.launch_drag_hint))
     }
 }
 
@@ -684,7 +708,6 @@ private fun TutorialReadyStep() {
         title = stringResource(Res.string.tutorial_ready_title),
         body = stringResource(Res.string.tutorial_ready_body),
     ) {
-        TutorialLaunchBoardDemo(lockedColumn = 5)
         TutorialHintCard(text = stringResource(Res.string.tutorial_ready_tutorial_hint))
         TutorialHintCard(text = stringResource(Res.string.tutorial_ready_settings_hint))
     }
@@ -780,7 +803,7 @@ private fun TutorialMiniGameDemo(
     var boardRectInRoot by remember { mutableStateOf(Rect.Zero) }
     var trayRectInRoot by remember { mutableStateOf(Rect.Zero) }
     var overlayTopLeft by remember(scene.gameState.activePiece?.id, lockedColumn) { mutableStateOf<Offset?>(null) }
-    var isDragging by remember { mutableStateOf(false) }
+    var isDragging by remember { mutableStateOf(value = false) }
 
     val boardRect = boardRectInRoot.toLocalRect(hostRectInRoot)
     val trayRect = trayRectInRoot.toLocalRect(hostRectInRoot)
@@ -854,7 +877,7 @@ private fun TutorialMiniGameDemo(
         gameLogic.previewImpactPoints(gameState, placementPreview)
     }
     val trayPieceScale = when {
-        activePiece == null || overlayTopLeft == null || resolvedLockedColumn != null -> 1f
+        (activePiece == null) || (overlayTopLeft == null) || (resolvedLockedColumn != null) -> 1f
         isDragging -> 1f
         else -> 1f + (TutorialDemoTrayPulseScaleBoost * trayPulsePhase)
     }
@@ -973,7 +996,6 @@ private fun TutorialMiniGameDemo(
                         guidedColumns = resolvedLockedColumn?.let(::setOf).orEmpty(),
                         activeColumn = selectedColumn,
                         activePiece = activePiece,
-                        isColumnValid = placementPreview != null,
                         isDragging = isDragging || (resolvedLockedColumn == null && autoColumns.size > 1),
                         clearFlashDurationMillis = if (resolvedLockedColumn != null) {
                             TutorialDemoClearAnimationDurationMillis
@@ -1038,14 +1060,13 @@ private fun TutorialMiniGameDemo(
                                         },
                                         onDragEnd = {
                                             isDragging = false
-                                            val column = selectedColumn
-                                            overlayTopLeft = if (column != null) {
-                                                overlayTopLeft?.let { current ->
-                                                    Offset(columnToLeft(column, boardRect, cellSizePx), current.y)
-                                                }
-                                            } else {
-                                                spawnTopLeft
+                                            overlayTopLeft = if (selectedColumn != null) {
+                                            overlayTopLeft?.let { current ->
+                                                Offset(columnToLeft(selectedColumn, boardRect, cellSizePx), current.y)
                                             }
+                                        } else {
+                                            spawnTopLeft
+                                        }
                                         },
                                         onDragCancel = {
                                             isDragging = false
@@ -1236,7 +1257,7 @@ private fun TutorialActionTile(
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -1331,40 +1352,6 @@ private fun TutorialHintCard(text: String) {
         )
     }
 }
-
-private fun resolveSelectedColumn(
-    piece: Piece?,
-    overlayTopLeft: Offset?,
-    boardRect: Rect,
-    cellSizePx: Float,
-    boardColumns: Int,
-): Int? {
-    if (piece == null || overlayTopLeft == null || boardRect == Rect.Zero || cellSizePx <= 0f) return null
-    val maxColumn = boardColumns - piece.width
-    if (maxColumn < 0) return null
-    val approximateColumn = ((overlayTopLeft.x - boardRect.left) / cellSizePx).roundToInt()
-    return approximateColumn.coerceIn(0, maxColumn)
-}
-
-private fun pieceSpawnTopLeft(
-    piece: Piece?,
-    trayRect: Rect,
-    boardRect: Rect,
-    cellSizePx: Float,
-    column: Int?,
-): Offset? {
-    if (piece == null || trayRect == Rect.Zero || boardRect == Rect.Zero || cellSizePx <= 0f || column == null) return null
-    return Offset(
-        x = columnToLeft(column, boardRect, cellSizePx),
-        y = trayRect.center.y - (piece.height * cellSizePx) / 2f,
-    )
-}
-
-private fun columnToLeft(
-    column: Int,
-    boardRect: Rect,
-    cellSizePx: Float,
-): Float = boardRect.left + (column * cellSizePx)
 
 private fun Rect.toLocalRect(hostRect: Rect): Rect {
     if (this == Rect.Zero || hostRect == Rect.Zero) return Rect.Zero

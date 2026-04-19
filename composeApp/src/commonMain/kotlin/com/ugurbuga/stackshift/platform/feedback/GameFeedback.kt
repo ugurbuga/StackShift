@@ -1,5 +1,7 @@
 package com.ugurbuga.stackshift.platform.feedback
 
+import androidx.compose.runtime.Stable
+
 enum class GameSound {
     Grab,
     DropSuccess,
@@ -14,14 +16,18 @@ enum class GameSound {
 
 enum class GameHaptic {
     Light,
+    Medium,
+    Heavy,
     Success,
     Warning,
 }
 
+@Stable
 interface SoundEffectPlayer {
     fun play(effect: GameSound)
 }
 
+@Stable
 interface GameHaptics {
     fun perform(effect: GameHaptic)
 }

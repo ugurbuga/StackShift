@@ -13,13 +13,14 @@ actual object AppSettingsStorage {
 
     actual fun load(): AppSettings {
         val hasStoredLanguage = defaults.objectForKey(KeyLanguage) != null
+        val defaultSettings = AppSettings()
         return AppSettings(
-            language = AppLanguage.entries[defaults.integerForKey(KeyLanguage).toIntOrDefault(AppLanguage.English.ordinal)],
-            themeMode = AppThemeMode.entries[defaults.integerForKey(KeyThemeMode).toIntOrDefault(AppThemeMode.System.ordinal)],
-            themeColorPalette = AppColorPalette.entries[defaults.integerForKey(KeyThemeColorPalette).toIntOrDefault(AppColorPalette.Classic.ordinal)],
-            blockColorPalette = BlockColorPalette.entries[defaults.integerForKey(KeyBlockColorPalette).toIntOrDefault(BlockColorPalette.Classic.ordinal)],
-            blockVisualStyle = BlockVisualStyle.entries[defaults.integerForKey(KeyBlockVisualStyle).toIntOrDefault(BlockVisualStyle.Flat.ordinal)],
-            boardBlockStyleMode = BoardBlockStyleMode.entries[defaults.integerForKey(KeyBoardBlockStyleMode).toIntOrDefault(BoardBlockStyleMode.MatchSelectedBlockStyle.ordinal)],
+            language = AppLanguage.entries.getOrElse(defaults.integerForKey(KeyLanguage).toInt()) { defaultSettings.language },
+            themeMode = AppThemeMode.entries.getOrElse(defaults.integerForKey(KeyThemeMode).toInt()) { defaultSettings.themeMode },
+            themeColorPalette = AppColorPalette.entries.getOrElse(defaults.integerForKey(KeyThemeColorPalette).toInt()) { defaultSettings.themeColorPalette },
+            blockColorPalette = BlockColorPalette.entries.getOrElse(defaults.integerForKey(KeyBlockColorPalette).toInt()) { defaultSettings.blockColorPalette },
+            blockVisualStyle = BlockVisualStyle.entries.getOrElse(defaults.integerForKey(KeyBlockVisualStyle).toInt()) { defaultSettings.blockVisualStyle },
+            boardBlockStyleMode = BoardBlockStyleMode.entries.getOrElse(defaults.integerForKey(KeyBoardBlockStyleMode).toInt()) { defaultSettings.boardBlockStyleMode },
             hasSeenTutorial = defaults.boolForKey(KeyHasSeenTutorial),
             hasShownInteractiveOnboarding = defaults.boolForKey(KeyHasShownInteractiveOnboarding),
             hasInitializedLanguage = defaults.boolForKey(KeyHasInitializedLanguage) || hasStoredLanguage,
@@ -49,4 +50,3 @@ actual object AppSettingsStorage {
     private const val KeyHasInitializedLanguage = "hasInitializedLanguage"
 }
 
-private fun Long.toIntOrDefault(defaultValue: Int): Int = toInt().takeIf { it >= 0 } ?: defaultValue

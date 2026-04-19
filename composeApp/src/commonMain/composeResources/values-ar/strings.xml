@@ -34,11 +34,12 @@
     <string name="block_style_outline">محدّد</string>
     <string name="block_style_sharp_3d">3D حاد</string>
     <string name="block_style_wood">خشب</string>
-    <string name="block_style_liquid_glass">زجاج سائل</string>
-    <string name="block_style_neon">نيون</string>
+    <string name="block_style_pixel_art">فن البكسل</string>
+    <string name="block_style_crystal">كريستال</string>
+    <string name="block_style_dynamic_liquid">سائل ديناميكي</string>
     <string name="board_block_style_always_flat">مسطح دائمًا</string>
     <string name="board_block_style_match_selected">مطابق للنمط المحدد</string>
-    <string name="hold">Hold</string>
+    <string name="hold">احتفاظ</string>
     <string name="pause">إيقاف</string>
     <string name="resume">متابعة</string>
     <string name="restart">إعادة البدء</string>
@@ -53,7 +54,7 @@
     <string name="boost">تعزيز</string>
     <string name="danger">خطر</string>
     <string name="danger_none">-</string>
-    <string name="launch">إطلاق</string>
+    <string name="launch_label">إطلاق</string>
     <string name="launch_bar">شريط الإطلاق</string>
     <string name="launch_boost_active">التعزيز نشط • %1$s دورات</string>
     <string name="launch_special_chance">احتمال الكتلة الخاصة +%1$s%%</string>
@@ -62,7 +63,7 @@
     <string name="launch_paused">متوقف مؤقتًا</string>
     <string name="launch_game_over">أعد البدء لجولة جديدة</string>
     <string name="launch_drag_hint">اسحب أفقيًا → حرّر</string>
-    <string name="queue_hold">Hold</string>
+    <string name="queue_hold">احتفاظ</string>
     <string name="queue_next_short">التالي</string>
     <string name="queue_empty">—</string>
     <string name="pause_title">متوقف مؤقتًا</string>
@@ -84,7 +85,7 @@
     <string name="game_message_chain_lines">سلسلة x%1$s! تم مسح %2$s من الخطوط.</string>
     <string name="game_message_lines_cleared">تم مسح %1$s من الخطوط.</string>
     <string name="game_message_good_shot">إطلاق جيد. خطط للعمود التالي.</string>
-    <string name="game_message_hold_updated">تم تحديث Hold. اختر عمودًا جديدًا.</string>
+    <string name="game_message_hold_updated">تم تحديث الاحتفاظ. اختر عمودًا جديدًا.</string>
     <string name="game_message_tempo_critical">زاد الإيقاع. أفرغ الأعمدة الحرجة.</string>
     <string name="game_message_tempo_up">زاد الإيقاع. ستأتي قطع أصعب.</string>
     <string name="game_message_paused">اللعبة متوقفة مؤقتًا.</string>
@@ -94,7 +95,7 @@
     <string name="feedback_perfect_lane">مسار مثالي x%1$s</string>
     <string name="feedback_micro_adjust">ضبط دقيق</string>
     <string name="feedback_soft_lock">قفل ناعم</string>
-    <string name="feedback_hold_armed">Hold جاهز</string>
+    <string name="feedback_hold_armed">الاحتفاظ جاهز</string>
     <string name="feedback_swap">تم التبديل</string>
     <string name="feedback_special_chain">سلسلة خاصة +%1$s</string>
     <string name="feedback_special">خاص +%1$s</string>
@@ -147,7 +148,7 @@
     <string name="tutorial_intro_title">أطلق القطع من الشريط السفلي</string>
     <string name="tutorial_intro_body">تنتظر قطعتك النشطة في الأسفل. اسحبها أفقياً لمطابقة العمود ثم أفلتها لإطلاقها نحو اللوحة. يتم عرض معاينة القطعة التالية بشكل أخف عمداً ليبقى تركيزك على القطعة النشطة.</string>
     <string name="tutorial_systems_title">استخدم كتل الإجراءات عندما تضيق اللوحة</string>
-    <string name="tutorial_systems_body">يبدّل Hold القطعة الحالية، ويجمّد Pause الجولة، وتشرح خصائص الكتلة الرموز، بينما تغيّر الإعدادات المظهر العام. كما أن هذه الأزرار تطابق نمط كتل اللوحة الذي اخترته.</string>
+    <string name="tutorial_systems_body">يبدّل الاحتفاظ القطعة الحالية، ويجمّد الإيقاف المؤقت الجولة، وتشرح خصائص الكتلة الرموز، بينما تغيّر الإعدادات المظهر العام. كما أن هذه الأزرار تطابق نمط كتل اللوحة الذي اخترته.</string>
     <string name="tutorial_specials_title">قد تنقذ الكتل الخاصة الجولة</string>
     <string name="tutorial_specials_body">تحمل بعض القطع تأثيرات خاصة. تعلّم شاراتها واستخدمها لخفض الضغط أو فتح مساحة أو تجاوز التكدسات الصعبة.</string>
     <string name="tutorial_ready_title">أنت جاهز لمتابعة هذه الجولة</string>

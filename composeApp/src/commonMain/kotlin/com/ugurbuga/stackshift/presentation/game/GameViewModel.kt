@@ -113,3 +113,11 @@ data class GameDispatchResult(
     val feedback: InteractionFeedback = InteractionFeedback.None,
 )
 
+fun GameDispatchResult.mergeWith(other: GameDispatchResult): GameDispatchResult = GameDispatchResult(
+    events = events + other.events,
+    feedback = InteractionFeedback(
+        sounds = feedback.sounds + other.feedback.sounds,
+        haptics = feedback.haptics + other.feedback.haptics,
+    ),
+)
+

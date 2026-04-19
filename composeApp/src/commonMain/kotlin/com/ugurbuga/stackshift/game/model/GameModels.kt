@@ -1,8 +1,17 @@
 package com.ugurbuga.stackshift.game.model
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
+import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material.icons.filled.ViewModule
 import androidx.compose.runtime.Immutable
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import org.jetbrains.compose.resources.StringResource
-import kotlin.math.max
 import stackshift.composeapp.generated.resources.Res
 import stackshift.composeapp.generated.resources.app_language_arabic
 import stackshift.composeapp.generated.resources.app_language_chinese_simplified
@@ -15,6 +24,7 @@ import stackshift.composeapp.generated.resources.app_language_portuguese
 import stackshift.composeapp.generated.resources.app_language_russian
 import stackshift.composeapp.generated.resources.app_language_spanish
 import stackshift.composeapp.generated.resources.app_language_turkish
+import kotlin.math.max
 
 enum class AppLanguage(
     val localeTag: String,
@@ -92,8 +102,9 @@ enum class BlockVisualStyle {
     Outline,
     Sharp3D,
     Wood,
-    LiquidGlass,
-    Neon,
+    PixelArt,
+    Crystal,
+    DynamicLiquid,
 }
 
 enum class BoardBlockStyleMode {
@@ -215,6 +226,7 @@ enum class GameTextKey {
     SpecialRowClearer,
     SpecialGhost,
     SpecialHeavy,
+    PiecePropertiesNone,
 }
 
 @Immutable
@@ -375,7 +387,10 @@ data class LaunchBarState(
     val progress: Float = 0f,
     val boostTurnsRemaining: Int = 0,
     val lastGain: Float = 0f,
-)
+) {
+    val isBoostActive: Boolean get() = boostTurnsRemaining > 0
+    val specialPieceChance: Float get() = (0.06f + (progress * 0.18f) + if (isBoostActive) 0.18f else 0f).coerceAtMost(0.55f)
+}
 
 @Immutable
 data class SoftLockState(
@@ -610,6 +625,8 @@ data class PlacementPreview(
     val occupiedCells: List<GridPoint>,
     val coveredColumns: IntRange,
     val isPerfectDrop: Boolean = false,
+    val clearedRows: Set<Int> = emptySet(),
+    val clearedColumns: Set<Int> = emptySet(),
 )
 
 @Immutable
@@ -665,3 +682,76 @@ fun gameText(
     args = args.map(Any::toString),
 )
 
+fun GridPoint.toTopLeft(
+    boardRect: Rect,
+    cellSizePx: Float,
+): Offset = Offset(
+    x = boardRect.left + (column * cellSizePx),
+    y = boardRect.top + (row * cellSizePx),
+)
+
+fun CellTone.paletteColor(palette: BlockColorPalette): Color = when (palette) {
+    BlockColorPalette.Classic -> when (this) {
+        CellTone.Cyan -> Color(0xFF4FC3F7)
+        CellTone.Gold -> Color(0xFFFFD166)
+        CellTone.Violet -> Color(0xFF9B8CFF)
+        CellTone.Emerald -> Color(0xFF57E389)
+        CellTone.Coral -> Color(0xFFFF7A90)
+        CellTone.Blue -> Color(0xFF6AA7FF)
+        CellTone.Rose -> Color(0xFFFF8FAB)
+        CellTone.Lime -> Color(0xFFB8F15F)
+        CellTone.Amber -> Color(0xFFFFB74D)
+    }
+
+    BlockColorPalette.Candy -> when (this) {
+        CellTone.Cyan -> Color(0xFFFF7A90)
+        CellTone.Gold -> Color(0xFFFFD166)
+        CellTone.Violet -> Color(0xFFC77DFF)
+        CellTone.Emerald -> Color(0xFF7AE582)
+        CellTone.Coral -> Color(0xFF9B8CFF)
+        CellTone.Blue -> Color(0xFF5BC0EB)
+        CellTone.Rose -> Color(0xFFFFB5E8)
+        CellTone.Lime -> Color(0xFFFEE440)
+        CellTone.Amber -> Color(0xFFF7B267)
+    }
+
+    BlockColorPalette.Neon -> when (this) {
+        CellTone.Cyan -> Color(0xFF00F5D4)
+        CellTone.Gold -> Color(0xFFFFE66D)
+        CellTone.Violet -> Color(0xFF9B5DE5)
+        CellTone.Emerald -> Color(0xFF00F5A0)
+        CellTone.Coral -> Color(0xFFFF5C8A)
+        CellTone.Blue -> Color(0xFF00BBF9)
+        CellTone.Rose -> Color(0xFFFF4D6D)
+        CellTone.Lime -> Color(0xFFB9F700)
+        CellTone.Amber -> Color(0xFFFFBE0B)
+    }
+
+    BlockColorPalette.Earth -> when (this) {
+        CellTone.Cyan -> Color(0xFF4D908E)
+        CellTone.Gold -> Color(0xFFE9C46A)
+        CellTone.Violet -> Color(0xFF8D6A9F)
+        CellTone.Emerald -> Color(0xFF7A9E7E)
+        CellTone.Coral -> Color(0xFFCE8460)
+        CellTone.Blue -> Color(0xFF5E7CE2)
+        CellTone.Rose -> Color(0xFFB56B83)
+        CellTone.Lime -> Color(0xFFA7C957)
+        CellTone.Amber -> Color(0xFFDDA15E)
+    }
+}
+
+fun resolveBoardBlockStyle(
+    selectedStyle: BlockVisualStyle,
+    mode: BoardBlockStyleMode,
+): BlockVisualStyle = when (mode) {
+    BoardBlockStyleMode.AlwaysFlat -> BlockVisualStyle.Flat
+    BoardBlockStyleMode.MatchSelectedBlockStyle -> selectedStyle
+}
+
+fun boardSpecialIcon(type: SpecialBlockType): ImageVector = when (type) {
+    SpecialBlockType.ColumnClearer -> Icons.Filled.SwapVert
+    SpecialBlockType.RowClearer -> Icons.Filled.SwapHoriz
+    SpecialBlockType.Ghost -> Icons.Filled.ViewModule
+    SpecialBlockType.Heavy -> Icons.Filled.FitnessCenter
+    SpecialBlockType.None -> Icons.AutoMirrored.Filled.HelpOutline
+}

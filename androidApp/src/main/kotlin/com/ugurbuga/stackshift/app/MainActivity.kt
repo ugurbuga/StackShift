@@ -1,7 +1,6 @@
 package com.ugurbuga.stackshift.app
 
 import android.content.res.Configuration
-import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -10,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.graphics.drawable.toDrawable
 import com.ugurbuga.stackshift.settings.AppSettingsStorage
 import com.ugurbuga.stackshift.settings.AppContextHolder
 import com.ugurbuga.stackshift.ads.AndroidAdMobIds
@@ -46,11 +46,11 @@ class MainActivity : ComponentActivity() {
                     android.graphics.Color.TRANSPARENT,
                     android.graphics.Color.TRANSPARENT,
                 )
-            }
+            },
         )
         super.onCreate(savedInstanceState)
         window.setBackgroundDrawable(
-            ColorDrawable(initialThemeSpec.uiColors.screenGradientBottom.toArgb())
+            initialThemeSpec.uiColors.screenGradientBottom.toArgb().toDrawable()
         )
 
         setContent {

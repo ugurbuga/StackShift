@@ -14,16 +14,16 @@ plugins {
     alias(libs.plugins.firebaseCrashlytics) apply false
 }
 
-private val BUILD_ALL_ARTIFACTS_TASK_NAME = "buildAllArtifacts"
-private val ARTIFACTS_DIR_NAME = "artifacts"
-private val ANDROID_DEBUG_APK_SOURCE = "androidApp/build/outputs/apk/debug/androidApp-debug.apk"
-private val ANDROID_DEBUG_APK_TARGET = "artifacts/android/androidApp-debug.apk"
-private val IOS_ARCHIVE_TARGET = "artifacts/ios/StackShift.xcarchive"
-private val MACOS_APP_SOURCE = "composeApp/build/compose/binaries/main/app/com.ugurbuga.stackshift.app"
-private val MACOS_APP_TARGET = "artifacts/macos/app/com.ugurbuga.stackshift.app"
-private val MACOS_DMG_SOURCE = "composeApp/build/compose/binaries/main/dmg/com.ugurbuga.stackshift-1.0.0.dmg"
-private val MACOS_DMG_TARGET = "artifacts/macos/dmg/com.ugurbuga.stackshift-1.0.0.dmg"
-private val CHILD_GRADLE_FLAGS = listOf("--no-configuration-cache", "--no-daemon")
+private val buildAllArtifactsTaskName = "buildAllArtifacts"
+private val artifactsDirName = "artifacts"
+private val androidDebugApkSource = "androidApp/build/outputs/apk/debug/androidApp-debug.apk"
+private val androidDebugApkTarget = "artifacts/android/androidApp-debug.apk"
+private val iosArchiveTargetName = "artifacts/ios/StackShift.xcarchive"
+private val macosAppSource = "composeApp/build/compose/binaries/main/app/com.ugurbuga.stackshift.app"
+private val macosAppTarget = "artifacts/macos/app/com.ugurbuga.stackshift.app"
+private val macosDmgSource = "composeApp/build/compose/binaries/main/dmg/com.ugurbuga.stackshift-1.0.0.dmg"
+private val macosDmgTarget = "artifacts/macos/dmg/com.ugurbuga.stackshift-1.0.0.dmg"
+private val childGradleFlags = listOf("--no-configuration-cache", "--no-daemon")
 
 private fun Project.runCommand(stepName: String, command: List<String>, workingDirectory: File = projectDir): Boolean {
     logger.lifecycle("[$stepName] starting")
@@ -86,18 +86,18 @@ private fun Project.moveIfExists(sourcePath: String, targetPath: String) {
     logger.lifecycle("[artifacts] moved $sourcePath -> $targetPath")
 }
 
-tasks.register(BUILD_ALL_ARTIFACTS_TASK_NAME) {
+tasks.register(buildAllArtifactsTaskName) {
     group = "distribution"
     description = "Attempts Android, iOS, macOS, and Windows builds, then collects the available outputs under artifacts/."
     notCompatibleWithConfigurationCache("Runs external build tools and child Gradle processes.")
 
     doLast {
-        File(ARTIFACTS_DIR_NAME).mkdirs()
+        File(artifactsDirName).mkdirs()
 
-        runCommand("android", listOf("./gradlew", *CHILD_GRADLE_FLAGS.toTypedArray(), ":androidApp:assembleDebug"))
-        moveIfExists(ANDROID_DEBUG_APK_SOURCE, ANDROID_DEBUG_APK_TARGET)
+        runCommand("android", listOf("./gradlew", *childGradleFlags.toTypedArray(), ":androidApp:assembleDebug"))
+        moveIfExists(androidDebugApkSource, androidDebugApkTarget)
 
-        val iosArchiveTarget = File(IOS_ARCHIVE_TARGET)
+        val iosArchiveTarget = File(iosArchiveTargetName)
         iosArchiveTarget.parentFile.mkdirs()
         if (iosArchiveTarget.exists()) {
             iosArchiveTarget.deleteRecursively()
@@ -116,7 +116,7 @@ tasks.register(BUILD_ALL_ARTIFACTS_TASK_NAME) {
                 "-destination",
                 "generic/platform=iOS",
                 "-archivePath",
-                "../$IOS_ARCHIVE_TARGET",
+                "../$iosArchiveTargetName",
                 "CODE_SIGNING_ALLOWED=NO",
                 "CODE_SIGNING_REQUIRED=NO",
                 "DEVELOPMENT_TEAM=",
@@ -124,13 +124,13 @@ tasks.register(BUILD_ALL_ARTIFACTS_TASK_NAME) {
             File("iosApp"),
         )
 
-        runCommand("macos-app", listOf("./gradlew", *CHILD_GRADLE_FLAGS.toTypedArray(), ":composeApp:packageDesktopApp"))
-        moveIfExists(MACOS_APP_SOURCE, MACOS_APP_TARGET)
+        runCommand("macos-app", listOf("./gradlew", *childGradleFlags.toTypedArray(), ":composeApp:packageDesktopApp"))
+        moveIfExists(macosAppSource, macosAppTarget)
 
-        runCommand("macos-dmg", listOf("./gradlew", *CHILD_GRADLE_FLAGS.toTypedArray(), ":composeApp:packageDmg"))
-        moveIfExists(MACOS_DMG_SOURCE, MACOS_DMG_TARGET)
+        runCommand("macos-dmg", listOf("./gradlew", *childGradleFlags.toTypedArray(), ":composeApp:packageDmg"))
+        moveIfExists(macosDmgSource, macosDmgTarget)
 
-        runCommand("windows-msi", listOf("./gradlew", *CHILD_GRADLE_FLAGS.toTypedArray(), ":composeApp:packageMsi"))
+        runCommand("windows-msi", listOf("./gradlew", *childGradleFlags.toTypedArray(), ":composeApp:packageMsi"))
 
         logger.lifecycle("[artifacts] collection finished")
     }

@@ -37,8 +37,9 @@
     <string name="block_style_outline">Outline</string>
     <string name="block_style_sharp_3d">Sharp 3D</string>
     <string name="block_style_wood">Wood</string>
-    <string name="block_style_liquid_glass">Liquid Glass</string>
-    <string name="block_style_neon">Neon</string>
+    <string name="block_style_pixel_art">Pixel Art</string>
+    <string name="block_style_crystal">Crystal</string>
+    <string name="block_style_dynamic_liquid">Dynamic Liquid</string>
     <string name="board_block_style_always_flat">Always flat</string>
     <string name="board_block_style_match_selected">Match selected block style</string>
     <string name="hold">Hold</string>
@@ -56,7 +57,7 @@
     <string name="boost">Boost</string>
     <string name="danger">Danger</string>
     <string name="danger_none">-</string>
-    <string name="launch">Launch</string>
+    <string name="launch_label">Launch</string>
     <string name="launch_bar">Launch bar</string>
     <string name="launch_boost_active">Boost active • %1$s turns</string>
     <string name="launch_special_chance">Special block chance +%1$s%%</string>

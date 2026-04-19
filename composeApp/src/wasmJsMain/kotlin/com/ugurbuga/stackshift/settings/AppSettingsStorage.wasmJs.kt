@@ -14,13 +14,14 @@ actual object AppSettingsStorage {
             ?.takeIf { it.size in SupportedFieldCounts }
             ?: return AppSettings()
 
+        val defaultSettings = AppSettings()
         return AppSettings(
-            language = AppLanguage.entries.getOrElse(parts[0].toIntOrNull() ?: -1) { AppLanguage.English },
-            themeMode = AppThemeMode.entries.getOrElse(parts[1].toIntOrNull() ?: -1) { AppThemeMode.System },
-            themeColorPalette = AppColorPalette.entries.getOrElse(parts[2].toIntOrNull() ?: -1) { AppColorPalette.Classic },
-            blockColorPalette = BlockColorPalette.entries.getOrElse(parts[3].toIntOrNull() ?: -1) { BlockColorPalette.Classic },
-            blockVisualStyle = BlockVisualStyle.entries.getOrElse(parts[4].toIntOrNull() ?: -1) { BlockVisualStyle.Flat },
-            boardBlockStyleMode = BoardBlockStyleMode.entries.getOrElse(parts[5].toIntOrNull() ?: -1) { BoardBlockStyleMode.MatchSelectedBlockStyle },
+            language = AppLanguage.entries.getOrElse(parts[0].toIntOrNull() ?: -1) { defaultSettings.language },
+            themeMode = AppThemeMode.entries.getOrElse(parts[1].toIntOrNull() ?: -1) { defaultSettings.themeMode },
+            themeColorPalette = AppColorPalette.entries.getOrElse(parts[2].toIntOrNull() ?: -1) { defaultSettings.themeColorPalette },
+            blockColorPalette = BlockColorPalette.entries.getOrElse(parts[3].toIntOrNull() ?: -1) { defaultSettings.blockColorPalette },
+            blockVisualStyle = BlockVisualStyle.entries.getOrElse(parts[4].toIntOrNull() ?: -1) { defaultSettings.blockVisualStyle },
+            boardBlockStyleMode = BoardBlockStyleMode.entries.getOrElse(parts[5].toIntOrNull() ?: -1) { defaultSettings.boardBlockStyleMode },
             hasSeenTutorial = (parts[6].toIntOrNull() ?: 0) == 1,
             hasInitializedLanguage = (parts.getOrNull(7)?.toIntOrNull() ?: 0) == 1 || parts.isNotEmpty(),
             hasShownInteractiveOnboarding = (parts.getOrNull(8)?.toIntOrNull() ?: 0) == 1,

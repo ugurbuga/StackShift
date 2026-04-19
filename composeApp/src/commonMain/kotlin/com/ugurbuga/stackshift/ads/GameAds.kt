@@ -1,8 +1,10 @@
 package com.ugurbuga.stackshift.ads
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
 
+@Stable
 interface GameAdController {
     fun showRestartInterstitial(onFinished: () -> Unit)
 
