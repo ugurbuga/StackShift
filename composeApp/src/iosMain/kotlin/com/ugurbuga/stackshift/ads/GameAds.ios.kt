@@ -18,6 +18,8 @@ actual fun rememberPlatformGameAdController(): GameAdController {
 }
 
 private class IosGameAdController : GameAdController {
+    override val bannerPresentationMode: BannerPresentationMode = BannerPresentationMode.External
+
     private val interstitialCallbacks = mutableMapOf<String, () -> Unit>()
     private val rewardedCallbacks = mutableMapOf<String, (Boolean) -> Unit>()
     private var nextRequestId = 0L
@@ -82,7 +84,7 @@ private class IosGameAdController : GameAdController {
     }
 
     @Composable
-    override fun Banner(modifier: Modifier) = Unit
+    override fun Banner(modifier: Modifier, onLoadStateChanged: (Boolean) -> Unit) = Unit
 
     private fun nextRequestId(): String = (++nextRequestId).toString()
 }

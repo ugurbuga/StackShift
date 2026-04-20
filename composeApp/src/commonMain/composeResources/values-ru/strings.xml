@@ -25,10 +25,14 @@
     <string name="theme_palette_classic">Классическая</string>
     <string name="theme_palette_aurora">Аврора</string>
     <string name="theme_palette_sunset">Закат</string>
+    <string name="theme_palette_modern_neon">Современный неон</string>
+    <string name="theme_palette_soft_pastel">Пастель</string>
+    <string name="theme_palette_minimal_monochrome">Монохром</string>
     <string name="block_palette_classic">Классическая</string>
     <string name="block_palette_candy">Конфетная</string>
     <string name="block_palette_neon">Неон</string>
     <string name="block_palette_earth">Земляная</string>
+    <string name="block_palette_monochrome">Монохром</string>
     <string name="block_style_flat">Плоский</string>
     <string name="block_style_bubble">Пузырь</string>
     <string name="block_style_outline">Контур</string>
@@ -47,6 +51,9 @@
     <string name="restart_confirm_body">Текущий прогресс будет сброшен. Продолжить?</string>
     <string name="restart_confirm">Да, перезапустить</string>
     <string name="restart_cancel">Отмена</string>
+    <string name="leave_session_confirm_title">Leave this session?</string>
+    <string name="leave_session_confirm_body">Your current progress will be lost. Are you sure you want to go back?</string>
+    <string name="leave_session_confirm">Yes, leave</string>
     <string name="score">Счёт</string>
     <string name="high_score">Рекорд</string>
     <string name="high_score_new_record">Новый рекорд</string>
@@ -69,7 +76,7 @@
     <string name="pause_title">Пауза</string>
     <string name="game_over_title">Игра окончена</string>
     <string name="continue_label">Продолжить</string>
-    <string name="game_over_extra_life">Смотреть рекламу + продолжить</string>
+    <string name="game_over_extra_life">Смотреть рекламу за дополнительную жизнь</string>
     <string name="game_over_extra_life_loading">Загрузка рекламы…</string>
     <string name="play_again">Играть снова</string>
     <string name="game_over_new_high_score">Новый рекорд!</string>
@@ -134,8 +141,10 @@
     <string name="tutorial_subtitle">Короткое руководство перед первым запуском.</string>
     <string name="tutorial_step_counter">Шаг %1$d / %2$d</string>
     <string name="tutorial_back">Назад</string>
+    <string name="cancel">Отмена</string>
     <string name="tutorial_next">Далее</string>
     <string name="tutorial_finish">Начать игру</string>
+    <string name="return_home">Вернуться на главный экран</string>
     <string name="tutorial_intro_title">Запускайте фигуры из нижнего дока</string>
     <string name="tutorial_intro_body">Активная фигура ждёт внизу. Перетащите её по горизонтали, чтобы выбрать колонку, затем отпустите, чтобы запустить её на поле. Следующая фигура показана более мягко, чтобы внимание оставалось на активной.</string>
     <string name="tutorial_systems_title">Используйте блоки действий, когда поле заполняется</string>
@@ -148,7 +157,7 @@
     <string name="tutorial_ready_settings_hint">Откройте Настройки, чтобы изменить язык, тему, цвета и стиль блоков перед следующей игрой.</string>
     <string name="settings_tutorial">Обучение</string>
     <string name="settings_tutorial_body">Открывайте обучение или пошаговую практику в любой момент, чтобы снова посмотреть управление, специальные блоки и процесс запуска.</string>
-    <string name="settings_tutorial_replay">Начать пошаговую практику</string>
+    <string name="settings_tutorial_replay">Практика</string>
     <string name="tutorial_ready_tutorial_hint">Открывайте обучение, когда хотите быстро освежить в памяти управление и специальные значки.</string>
     <string name="interactive_onboarding_step_counter">Шаг %1$d / %2$d</string>
     <string name="interactive_onboarding_drag_title">Перетащите фигуру из нижней панели</string>

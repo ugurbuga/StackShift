@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -26,27 +25,26 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -93,9 +91,10 @@ import com.ugurbuga.stackshift.telemetry.AppTelemetry
 import com.ugurbuga.stackshift.telemetry.LogScreen
 import com.ugurbuga.stackshift.telemetry.NoOpAppTelemetry
 import com.ugurbuga.stackshift.telemetry.TelemetryScreenNames
+import com.ugurbuga.stackshift.ui.theme.GameUiShapeTokens
 import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
 import com.ugurbuga.stackshift.ui.theme.appBackgroundBrush
-import com.ugurbuga.stackshift.ui.theme.isStackShiftDarkTheme
+import com.ugurbuga.stackshift.ui.theme.stackShiftSurfaceShadow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -110,11 +109,10 @@ import stackshift.composeapp.generated.resources.block_properties_heavy_desc
 import stackshift.composeapp.generated.resources.block_properties_heavy_title
 import stackshift.composeapp.generated.resources.block_properties_row_clearer_desc
 import stackshift.composeapp.generated.resources.block_properties_row_clearer_title
-import stackshift.composeapp.generated.resources.hold
 import stackshift.composeapp.generated.resources.launch_drag_hint
-import stackshift.composeapp.generated.resources.pause
 import stackshift.composeapp.generated.resources.piece_properties_active
 import stackshift.composeapp.generated.resources.queue_next_short
+import stackshift.composeapp.generated.resources.restart
 import stackshift.composeapp.generated.resources.settings_title
 import stackshift.composeapp.generated.resources.settings_tutorial
 import stackshift.composeapp.generated.resources.tutorial_back
@@ -133,7 +131,6 @@ import stackshift.composeapp.generated.resources.tutorial_subtitle
 import stackshift.composeapp.generated.resources.tutorial_systems_body
 import stackshift.composeapp.generated.resources.tutorial_systems_title
 
-private val TutorialCardShape = RoundedCornerShape(28.dp)
 private val TutorialMiniDockHeight = 88.dp
 private const val TutorialIntroColumns = 10
 private const val TutorialIntroRows = 10
@@ -353,7 +350,7 @@ fun GameTutorialScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(appBackgroundBrush(uiColors))
-                .safeDrawingPadding(),
+                .statusBarsPadding(),
         ) {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -361,8 +358,12 @@ fun GameTutorialScreen(
                 Card(
                     modifier = Modifier
                         .weight(1f)
+                        .stackShiftSurfaceShadow(
+                            shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
+                            elevation = 8.dp,
+                        )
                         .padding(horizontal = 12.dp, vertical = 10.dp),
-                    shape = TutorialCardShape,
+                    shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
                     colors = CardDefaults.cardColors(containerColor = uiColors.panel.copy(alpha = 0.94f)),
                     border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.84f)),
                 ) {
@@ -425,25 +426,32 @@ fun GameTutorialScreen(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             if (currentStep > 0) {
-                                TextButton(
+                                TopBarActionBlockButton(
+                                    tone = CellTone.Cyan,
+                                    icon = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = stringResource(Res.string.tutorial_back),
                                     onClick = {
                                         coroutineScope.launch {
                                             pagerState.animateScrollToPage(currentStep - 1)
                                         }
                                     },
-                                    modifier = Modifier.height(48.dp).clip(androidx.compose.foundation.shape.CircleShape),
-                                    shape = androidx.compose.foundation.shape.CircleShape,
-                                ) {
-                                    Text(
-                                        text = stringResource(Res.string.tutorial_back),
-                                        color = uiColors.subtitle,
-                                    )
-                                }
+                                    size = 40.dp,
+                                )
                             } else {
-                                Spacer(modifier = Modifier.weight(1f))
+                                Spacer(modifier = Modifier.size(40.dp))
                             }
                             Spacer(modifier = Modifier.weight(1f))
-                            Button(
+                            BlockStyleActionButton(
+                                text = if (isLastStep) {
+                                    stringResource(Res.string.tutorial_finish)
+                                } else {
+                                    stringResource(Res.string.tutorial_next)
+                                },
+                                icon = if (isLastStep) {
+                                    Icons.Filled.PlayArrow
+                                } else {
+                                    Icons.AutoMirrored.Filled.ArrowForward
+                                },
                                 onClick = {
                                     if (isLastStep) {
                                         onFinish()
@@ -453,34 +461,16 @@ fun GameTutorialScreen(
                                         }
                                     }
                                 },
-                                modifier = Modifier.height(48.dp),
-                                shape = androidx.compose.foundation.shape.CircleShape,
-                                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = uiColors.actionButton,
-                                    contentColor = uiColors.actionIcon,
-                                ),
-                                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.22f)),
-                            ) {
-                                Text(
-                                    text = if (isLastStep) {
-                                        stringResource(Res.string.tutorial_finish)
-                                    } else {
-                                        stringResource(Res.string.tutorial_next)
-                                    },
-                                    fontWeight = FontWeight.Bold,
-                                )
-                            }
+                                modifier = Modifier
+                                    .fillMaxWidth(0.52f)
+                                    .height(48.dp),
+                                tone = CellTone.Emerald,
+                                height = 48.dp,
+                            )
                         }
                     }
                 }
 
-                if (adController !== NoOpGameAdController) {
-                    adController.Banner(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                    )
-                }
             }
         }
     }
@@ -490,7 +480,7 @@ fun GameTutorialScreen(
 private fun TutorialStepChip(currentStep: Int, totalSteps: Int) {
     val uiColors = StackShiftThemeTokens.uiColors
     Card(
-        shape = RoundedCornerShape(999.dp),
+        shape = RoundedCornerShape(GameUiShapeTokens.chipCorner),
         colors = CardDefaults.cardColors(containerColor = uiColors.panelMuted.copy(alpha = 0.92f)),
         border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.68f)),
     ) {
@@ -578,7 +568,10 @@ private fun TutorialMiniBoardShell(
     val settings = LocalAppSettings.current
     val boardStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
     Card(
-        modifier = modifier,
+        modifier = modifier.stackShiftSurfaceShadow(
+            shape = RoundedCornerShape(boardFrameCornerRadiusDp(boardStyle)),
+            elevation = 6.dp,
+        ),
         shape = RoundedCornerShape(boardFrameCornerRadiusDp(boardStyle)),
         colors = CardDefaults.cardColors(containerColor = uiColors.gameSurface.copy(alpha = 0.88f)),
         border = BorderStroke(1.dp, uiColors.boardOutline.copy(alpha = 0.84f)),
@@ -641,14 +634,14 @@ private fun TutorialSystemsStep() {
             TutorialActionTile(
                 modifier = Modifier.weight(1f),
                 tone = CellTone.Cyan,
-                icon = Icons.Filled.SwapHoriz,
-                title = stringResource(Res.string.hold),
+                icon = Icons.AutoMirrored.Filled.ArrowBack,
+                title = stringResource(Res.string.tutorial_back),
             )
             TutorialActionTile(
                 modifier = Modifier.weight(1f),
                 tone = CellTone.Gold,
-                icon = Icons.Filled.Pause,
-                title = stringResource(Res.string.pause),
+                icon = Icons.Filled.Refresh,
+                title = stringResource(Res.string.restart),
             )
             TutorialActionTile(
                 modifier = Modifier.weight(1f),
@@ -663,6 +656,15 @@ private fun TutorialSystemsStep() {
                 title = stringResource(Res.string.settings_title),
             )
         }
+        TutorialMiniBottomDock(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(TutorialMiniDockHeight),
+            activePiece = TutorialSamplePiece,
+            cellSizePx = 18f,
+            compact = false,
+            onTrayPositioned = {},
+        )
     }
 }
 
@@ -1009,6 +1011,14 @@ private fun TutorialMiniGameDemo(
                         },
                     )
 
+                    LaunchGuideLineOverlay(
+                        preview = placementPreview,
+                        activePiece = activePiece,
+                        pieceTopLeft = overlayPreviewTopLeft,
+                        boardRect = boardRect,
+                        cellSizePx = cellSizePx,
+                    )
+
                     if (badgeTone != null && badgeSpecial != SpecialBlockType.None) {
                         BlockCellPreview(
                             tone = badgeTone,
@@ -1104,8 +1114,11 @@ private fun TutorialMiniBottomDock(
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
     Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(22.dp),
+        modifier = modifier.stackShiftSurfaceShadow(
+            shape = RoundedCornerShape(GameUiShapeTokens.dockCorner),
+            elevation = 5.dp,
+        ),
+        shape = RoundedCornerShape(GameUiShapeTokens.dockCorner),
         colors = CardDefaults.cardColors(containerColor = uiColors.gameSurface.copy(alpha = 0.90f)),
         border = BorderStroke(1.dp, uiColors.boardEmptyCellBorder.copy(alpha = 0.68f)),
     ) {
@@ -1126,12 +1139,12 @@ private fun TutorialMiniBottomDock(
                 modifier = Modifier
                     .fillMaxHeight()
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(18.dp))
+                    .clip(RoundedCornerShape(GameUiShapeTokens.surfaceCorner))
                     .background(uiColors.panelMuted.copy(alpha = 0.48f))
                     .border(
                         width = 1.dp,
                         color = uiColors.boardEmptyCellBorder.copy(alpha = 0.78f),
-                        shape = RoundedCornerShape(18.dp),
+                        shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
                     )
                     .onGloballyPositioned { coordinates ->
                         onTrayPositioned(coordinates.boundsInRoot())
@@ -1151,12 +1164,12 @@ private fun TutorialMiniBottomDock(
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
                         .height(18.dp)
-                        .clip(RoundedCornerShape(999.dp))
+                        .clip(RoundedCornerShape(GameUiShapeTokens.chipCorner))
                         .background(uiColors.launchGlow.copy(alpha = 0.10f))
                         .border(
                             width = 1.dp,
                             color = uiColors.boardEmptyCellBorder.copy(alpha = 0.46f),
-                            shape = RoundedCornerShape(999.dp),
+                            shape = RoundedCornerShape(GameUiShapeTokens.chipCorner),
                         ),
                 )
                 if (activePiece != null) {
@@ -1180,7 +1193,11 @@ private fun TutorialSection(
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
     Card(
-        shape = RoundedCornerShape(22.dp),
+        modifier = Modifier.stackShiftSurfaceShadow(
+            shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
+            elevation = 5.dp,
+        ),
+        shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
         colors = CardDefaults.cardColors(containerColor = uiColors.gameSurface.copy(alpha = 0.84f)),
         border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.72f)),
     ) {
@@ -1215,8 +1232,11 @@ private fun TutorialPieceCard(
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
     Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(18.dp),
+        modifier = modifier.stackShiftSurfaceShadow(
+            shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
+            elevation = 4.dp,
+        ),
+        shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
         colors = CardDefaults.cardColors(containerColor = uiColors.panelMuted.copy(alpha = 0.76f)),
         border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.68f)),
     ) {
@@ -1253,10 +1273,14 @@ private fun TutorialActionTile(
 ) {
     val settings = LocalAppSettings.current
     val blockStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
-    val iconTint = specialBlockIconTint(style = blockStyle, isDarkTheme = isStackShiftDarkTheme(settings))
+    val stylePulse = rememberBlockStylePulse(style = blockStyle)
+    val iconTint = blockStyleIconTint(style = blockStyle)
     Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
+        modifier = modifier.stackShiftSurfaceShadow(
+            shape = RoundedCornerShape(GameUiShapeTokens.buttonCorner),
+            elevation = 3.dp,
+        ),
+        shape = RoundedCornerShape(GameUiShapeTokens.buttonCorner),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
     ) {
         Column(
@@ -1270,6 +1294,7 @@ private fun TutorialActionTile(
                     palette = settings.blockColorPalette,
                     style = blockStyle,
                     size = 34.dp,
+                    pulse = stylePulse,
                 )
                 Icon(
                     imageVector = icon,
@@ -1299,7 +1324,11 @@ private fun TutorialSpecialCard(
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
     Card(
-        shape = RoundedCornerShape(18.dp),
+        modifier = Modifier.stackShiftSurfaceShadow(
+            shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
+            elevation = 4.dp,
+        ),
+        shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
         colors = CardDefaults.cardColors(containerColor = uiColors.panelMuted.copy(alpha = 0.78f)),
         border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.70f)),
     ) {
@@ -1339,7 +1368,11 @@ private fun TutorialSpecialCard(
 private fun TutorialHintCard(text: String) {
     val uiColors = StackShiftThemeTokens.uiColors
     Card(
-        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.stackShiftSurfaceShadow(
+            shape = RoundedCornerShape(GameUiShapeTokens.hintCorner),
+            elevation = 3.dp,
+        ),
+        shape = RoundedCornerShape(GameUiShapeTokens.hintCorner),
         colors = CardDefaults.cardColors(containerColor = uiColors.metricCard.copy(alpha = 0.84f)),
         border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.62f)),
     ) {
@@ -1390,7 +1423,7 @@ private fun TutorialStepPreviewFrame(
             ) {
                 Card(
                     modifier = Modifier.fillMaxSize(),
-                    shape = TutorialCardShape,
+                    shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
                     colors = CardDefaults.cardColors(containerColor = uiColors.panel.copy(alpha = 0.94f)),
                     border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.84f)),
                 ) {

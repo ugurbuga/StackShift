@@ -25,10 +25,14 @@
     <string name="theme_palette_classic">क्लासिक</string>
     <string name="theme_palette_aurora">ऑरोरा</string>
     <string name="theme_palette_sunset">सूर्यास्त</string>
+    <string name="theme_palette_modern_neon">मॉडर्न नीयॉन</string>
+    <string name="theme_palette_soft_pastel">पेस्टल</string>
+    <string name="theme_palette_minimal_monochrome">मोनोक्रोम</string>
     <string name="block_palette_classic">क्लासिक</string>
     <string name="block_palette_candy">कैंडी</string>
     <string name="block_palette_neon">नियॉन</string>
     <string name="block_palette_earth">पृथ्वी</string>
+    <string name="block_palette_monochrome">मोनोक्रोम</string>
     <string name="block_style_flat">सादा</string>
     <string name="block_style_bubble">बबल</string>
     <string name="block_style_outline">आउटलाइन</string>
@@ -47,6 +51,9 @@
     <string name="restart_confirm_body">वर्तमान प्रगति रीसेट हो जाएगी। क्या आप जारी रखना चाहते हैं?</string>
     <string name="restart_confirm">हाँ, पुनः प्रारंभ करें</string>
     <string name="restart_cancel">रद्द करें</string>
+    <string name="leave_session_confirm_title">Leave this session?</string>
+    <string name="leave_session_confirm_body">Your current progress will be lost. Are you sure you want to go back?</string>
+    <string name="leave_session_confirm">Yes, leave</string>
     <string name="score">स्कोर</string>
     <string name="high_score">सर्वश्रेष्ठ</string>
     <string name="high_score_new_record">नया रिकॉर्ड</string>
@@ -69,7 +76,7 @@
     <string name="pause_title">रुका हुआ</string>
     <string name="game_over_title">खेल समाप्त</string>
     <string name="continue_label">जारी रखें</string>
-    <string name="game_over_extra_life">विज्ञापन देखें + जारी रखें</string>
+    <string name="game_over_extra_life">एक अतिरिक्त जीवन के लिए विज्ञापन देखें</string>
     <string name="game_over_extra_life_loading">विज्ञापन लोड हो रहा है…</string>
     <string name="play_again">फिर से खेलें</string>
     <string name="game_over_new_high_score">नया उच्च स्कोर!</string>
@@ -143,7 +150,9 @@
     <string name="tutorial_subtitle">आपकी पहली रन से पहले एक छोटा मार्गदर्शन।</string>
     <string name="tutorial_step_counter">चरण %1$d / %2$d</string>
     <string name="tutorial_back">वापस</string>
+    <string name="cancel">रद्द करें</string>
     <string name="tutorial_next">आगे</string>
+    <string name="return_home">होम पर लौटें</string>
     <string name="tutorial_finish">गेम शुरू करें</string>
     <string name="tutorial_intro_title">नीचे के डॉक से पीस लॉन्च करें</string>
     <string name="tutorial_intro_body">आपका सक्रिय पीस नीचे इंतज़ार करता है। कॉलम मिलाने के लिए उसे क्षैतिज रूप से खींचें, फिर छोड़कर बोर्ड पर लॉन्च करें। अगले पीस की झलक जानबूझकर हल्की रखी गई है ताकि ध्यान सक्रिय पीस पर रहे।</string>
@@ -157,7 +166,7 @@
     <string name="tutorial_ready_settings_hint">अगली रन से पहले भाषा, थीम, रंग और ब्लॉक स्टाइल बदलने के लिए Settings खोलें।</string>
     <string name="settings_tutorial">ट्यूटोरियल</string>
     <string name="settings_tutorial_body">कंट्रोल, विशेष ब्लॉक और लॉन्च फ़्लो दोबारा देखने के लिए कभी भी ट्यूटोरियल या गाइडेड प्रैक्टिस खोलें।</string>
-    <string name="settings_tutorial_replay">गाइडेड प्रैक्टिस शुरू करें</string>
+    <string name="settings_tutorial_replay">अभ्यास</string>
     <string name="tutorial_ready_tutorial_hint">कंट्रोल और विशेष आइकन जल्दी से दोहराने के लिए कभी भी ट्यूटोरियल खोलें।</string>
     <string name="interactive_onboarding_step_counter">गाइड %1$d / %2$d</string>
     <string name="interactive_onboarding_drag_title">ट्रे से पीस को खींचें</string>

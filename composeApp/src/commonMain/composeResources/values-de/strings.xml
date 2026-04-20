@@ -25,10 +25,14 @@
     <string name="theme_palette_classic">Klassisch</string>
     <string name="theme_palette_aurora">Morgenröte</string>
     <string name="theme_palette_sunset">Sonnenuntergang</string>
+    <string name="theme_palette_modern_neon">Modernes Neon</string>
+    <string name="theme_palette_soft_pastel">Pastell</string>
+    <string name="theme_palette_minimal_monochrome">Monochrom</string>
     <string name="block_palette_classic">Klassisch</string>
     <string name="block_palette_candy">Bonbon</string>
     <string name="block_palette_neon">Neon</string>
     <string name="block_palette_earth">Erde</string>
+    <string name="block_palette_monochrome">Monochrom</string>
     <string name="block_style_flat">Flach</string>
     <string name="block_style_bubble">Blase</string>
     <string name="block_style_outline">Umriss</string>
@@ -47,6 +51,9 @@
     <string name="restart_confirm_body">Der aktuelle Fortschritt wird zurückgesetzt. Möchtest du fortfahren?</string>
     <string name="restart_confirm">Ja, neu starten</string>
     <string name="restart_cancel">Abbrechen</string>
+    <string name="leave_session_confirm_title">Leave this session?</string>
+    <string name="leave_session_confirm_body">Your current progress will be lost. Are you sure you want to go back?</string>
+    <string name="leave_session_confirm">Yes, leave</string>
     <string name="score">Punkte</string>
     <string name="high_score">Bestwert</string>
     <string name="high_score_new_record">Neuer Rekord</string>
@@ -69,7 +76,7 @@
     <string name="pause_title">Pausiert</string>
     <string name="game_over_title">Spiel vorbei</string>
     <string name="continue_label">Weiter</string>
-    <string name="game_over_extra_life">Werbung ansehen + weiter</string>
+    <string name="game_over_extra_life">Werbung für ein Extraleben ansehen</string>
     <string name="game_over_extra_life_loading">Werbung lädt…</string>
     <string name="play_again">Nochmal spielen</string>
     <string name="game_over_new_high_score">Neuer Bestwert!</string>
@@ -134,8 +141,10 @@
     <string name="tutorial_subtitle">Eine kurze Einführung vor deiner ersten Runde.</string>
     <string name="tutorial_step_counter">Schritt %1$d / %2$d</string>
     <string name="tutorial_back">Zurück</string>
+    <string name="cancel">Abbrechen</string>
     <string name="tutorial_next">Weiter</string>
     <string name="tutorial_finish">Spiel starten</string>
+    <string name="return_home">Zur Startseite</string>
     <string name="tutorial_intro_title">Starte Teile aus dem unteren Dock</string>
     <string name="tutorial_intro_body">Dein aktives Teil wartet unten. Ziehe es horizontal, um eine Spalte auszurichten, und lass los, um es auf das Spielfeld zu starten. Die Vorschau auf das nächste Teil ist absichtlich dezenter, damit dein Blick auf dem aktiven Teil bleibt.</string>
     <string name="tutorial_systems_title">Nutze die Aktionsblöcke, wenn es eng wird</string>
@@ -148,7 +157,7 @@
     <string name="tutorial_ready_settings_hint">Öffne Einstellungen, um Sprache, Thema, Farben und Blockstil vor deiner nächsten Runde anzupassen.</string>
     <string name="settings_tutorial">Anleitung</string>
     <string name="settings_tutorial_body">Öffne das Tutorial oder die geführte Übung jederzeit, um Steuerung, Spezialsteine und den Abschussablauf erneut anzusehen.</string>
-    <string name="settings_tutorial_replay">Geführte Übung starten</string>
+    <string name="settings_tutorial_replay">Übung</string>
     <string name="tutorial_ready_tutorial_hint">Öffne das Tutorial, wenn du eine kurze Auffrischung zu Steuerung und Spezialsymbolen möchtest.</string>
     <string name="interactive_onboarding_step_counter">Anleitung %1$d / %2$d</string>
     <string name="interactive_onboarding_drag_title">Ziehe das Teil aus der Ablage</string>

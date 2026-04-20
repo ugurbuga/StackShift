@@ -8,11 +8,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.graphics.drawable.toDrawable
-import com.ugurbuga.stackshift.settings.AppSettingsStorage
-import com.ugurbuga.stackshift.settings.AppContextHolder
 import com.ugurbuga.stackshift.ads.AndroidAdMobIds
+import com.ugurbuga.stackshift.settings.AppContextHolder
+import com.ugurbuga.stackshift.settings.AppSettingsStorage
 import com.ugurbuga.stackshift.ui.theme.stackShiftThemeSpec
 
 class MainActivity : ComponentActivity() {
@@ -64,7 +63,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Preview
 @Composable
 fun AppAndroidPreview() {
     AndroidApp()

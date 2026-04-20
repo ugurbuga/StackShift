@@ -25,10 +25,14 @@
     <string name="theme_palette_classic">كلاسيكي</string>
     <string name="theme_palette_aurora">فجر الشفق</string>
     <string name="theme_palette_sunset">غروب الشمس</string>
+    <string name="theme_palette_modern_neon">نيون عصري</string>
+    <string name="theme_palette_soft_pastel">باستيل</string>
+    <string name="theme_palette_minimal_monochrome">أحادي اللون</string>
     <string name="block_palette_classic">كلاسيكي</string>
     <string name="block_palette_candy">حلوى</string>
     <string name="block_palette_neon">نيون</string>
     <string name="block_palette_earth">أرضي</string>
+    <string name="block_palette_monochrome">أحادي اللون</string>
     <string name="block_style_flat">مسطح</string>
     <string name="block_style_bubble">فقاعة</string>
     <string name="block_style_outline">محدّد</string>
@@ -47,6 +51,9 @@
     <string name="restart_confirm_body">سيتم إعادة تعيين التقدم الحالي. هل تريد المتابعة؟</string>
     <string name="restart_confirm">نعم، أعد البدء</string>
     <string name="restart_cancel">إلغاء</string>
+    <string name="leave_session_confirm_title">Leave this session?</string>
+    <string name="leave_session_confirm_body">Your current progress will be lost. Are you sure you want to go back?</string>
+    <string name="leave_session_confirm">Yes, leave</string>
     <string name="score">النتيجة</string>
     <string name="high_score">الأفضل</string>
     <string name="high_score_new_record">رقم قياسي جديد</string>
@@ -69,7 +76,7 @@
     <string name="pause_title">متوقف مؤقتًا</string>
     <string name="game_over_title">انتهت اللعبة</string>
     <string name="continue_label">متابعة</string>
-    <string name="game_over_extra_life">شاهد إعلانًا + تابع</string>
+    <string name="game_over_extra_life">شاهد إعلانًا للحصول على حياة إضافية</string>
     <string name="game_over_extra_life_loading">جارٍ تحميل الإعلان…</string>
     <string name="play_again">العب مرة أخرى</string>
     <string name="game_over_new_high_score">رقم قياسي جديد!</string>
@@ -143,7 +150,9 @@
     <string name="tutorial_subtitle">دليل سريع قبل أول جولة لك.</string>
     <string name="tutorial_step_counter">الخطوة %1$d / %2$d</string>
     <string name="tutorial_back">رجوع</string>
+    <string name="cancel">إلغاء</string>
     <string name="tutorial_next">التالي</string>
+    <string name="return_home">العودة إلى الرئيسية</string>
     <string name="tutorial_finish">ابدأ اللعبة</string>
     <string name="tutorial_intro_title">أطلق القطع من الشريط السفلي</string>
     <string name="tutorial_intro_body">تنتظر قطعتك النشطة في الأسفل. اسحبها أفقياً لمطابقة العمود ثم أفلتها لإطلاقها نحو اللوحة. يتم عرض معاينة القطعة التالية بشكل أخف عمداً ليبقى تركيزك على القطعة النشطة.</string>
@@ -157,7 +166,7 @@
     <string name="tutorial_ready_settings_hint">افتح الإعدادات لتغيير اللغة والمظهر والألوان ونمط الكتل قبل جولتك التالية.</string>
     <string name="settings_tutorial">البرنامج التعليمي</string>
     <string name="settings_tutorial_body">افتح البرنامج التعليمي أو التدريب الموجّه في أي وقت لمراجعة عناصر التحكم والقطع الخاصة وتدفق الإطلاق.</string>
-    <string name="settings_tutorial_replay">ابدأ التدريب الموجّه</string>
+    <string name="settings_tutorial_replay">تدريب</string>
     <string name="tutorial_ready_tutorial_hint">افتح البرنامج التعليمي متى أردت مراجعة سريعة لعناصر التحكم والأيقونات الخاصة.</string>
     <string name="interactive_onboarding_step_counter">الدليل %1$d / %2$d</string>
     <string name="interactive_onboarding_drag_title">اسحب القطعة من الحاوية</string>

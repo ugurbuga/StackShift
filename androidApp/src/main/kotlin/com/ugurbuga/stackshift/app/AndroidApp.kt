@@ -17,12 +17,14 @@ import com.ugurbuga.stackshift.settings.FirstRunGameOnboardingStateFactory
 import com.ugurbuga.stackshift.presentation.game.GameViewModel
 import com.ugurbuga.stackshift.settings.AppSettingsStorage
 import com.ugurbuga.stackshift.settings.GameSessionStorage
+import com.ugurbuga.stackshift.settings.HighScoreStorage
 import com.ugurbuga.stackshift.settings.initializeAppSettingsForFirstLaunch
 import com.ugurbuga.stackshift.settings.logLanguageBootstrapDecision
 import com.ugurbuga.stackshift.telemetry.TelemetryActionNames
 import com.ugurbuga.stackshift.telemetry.TelemetryUserPropertyNames
 import com.ugurbuga.stackshift.telemetry.rememberAppTelemetry
 import com.ugurbuga.stackshift.ui.theme.isStackShiftDarkTheme
+import com.ugurbuga.stackshift.ui.theme.stackShiftThemeSpec
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -35,24 +37,11 @@ fun AndroidApp() {
             deviceLocaleTag = currentDeviceLocaleTag(),
         )
     }
-    val initialShowInteractiveOnboarding = remember(initialBootstrapResult) {
-        !initialBootstrapResult.settings.hasShownInteractiveOnboarding
-    }
     var settings by remember(initialBootstrapResult) { mutableStateOf(initialBootstrapResult.settings) }
-    var routeStack by remember { mutableStateOf(listOf(AppRoute.Game)) }
-    var showInteractiveOnboarding by remember { mutableStateOf(false) }
-    val persistActiveSession = remember { mutableStateOf(!initialShowInteractiveOnboarding) }
+    var routeStack by remember { mutableStateOf(listOf(AppRoute.Home)) }
+    var showLeaveSessionDialog by remember { mutableStateOf(false) }
+    val persistActiveSession = remember { mutableStateOf(true) }
     var pendingSessionState by remember { mutableStateOf<GameState?>(null) }
-    val currentRoute = routeStack.lastOrNull() ?: AppRoute.Game
-    val canNavigateBack = routeStack.size > 1
-    fun navigateTo(route: AppRoute) {
-        if (routeStack.lastOrNull() == route) return
-        routeStack = routeStack + route
-    }
-    fun navigateBack() {
-        if (routeStack.size <= 1) return
-        routeStack = routeStack.dropLast(1)
-    }
     fun createGameViewModel(initialState: GameState?) = GameViewModel(
         initialState = initialState,
         onStateChanged = { state ->
@@ -68,11 +57,58 @@ fun AndroidApp() {
             )
         )
     }
-    fun startInteractiveOnboarding() {
+    val currentRoute = routeStack.lastOrNull() ?: AppRoute.Home
+    val canNavigateBack = routeStack.size > 1
+    fun navigateTo(route: AppRoute) {
+        if (routeStack.lastOrNull() == route) return
+        routeStack = routeStack + route
+    }
+    fun replaceTop(route: AppRoute) {
+        routeStack = if (routeStack.isEmpty()) {
+            listOf(route)
+        } else {
+            routeStack.dropLast(1) + route
+        }
+    }
+    fun navigateBack() {
+        if (routeStack.size <= 1) return
+        showLeaveSessionDialog = false
+        val leavingRoute = routeStack.lastOrNull()
+        routeStack = routeStack.dropLast(1)
+        if (leavingRoute == AppRoute.InteractiveOnboarding) {
+            persistActiveSession.value = true
+            pendingSessionState = null
+            gameViewModelState.value = createGameViewModel(GameSessionStorage.load())
+        }
+    }
+    fun navigateHome() {
+        showLeaveSessionDialog = false
+        routeStack = listOf(AppRoute.Home)
+    }
+    fun requestBackNavigation() {
+        if (currentRoute == AppRoute.Game || currentRoute == AppRoute.InteractiveOnboarding) {
+            showLeaveSessionDialog = true
+        } else {
+            navigateBack()
+        }
+    }
+    fun prepareInteractiveOnboarding() {
         persistActiveSession.value = false
         pendingSessionState = null
         gameViewModelState.value = createGameViewModel(FirstRunGameOnboardingStateFactory.initialState())
-        showInteractiveOnboarding = true
+    }
+    fun startPlayFlow() {
+        if (!settings.hasShownInteractiveOnboarding) {
+            prepareInteractiveOnboarding()
+            navigateTo(AppRoute.InteractiveOnboarding)
+        } else {
+            persistActiveSession.value = true
+            navigateTo(AppRoute.Game)
+        }
+    }
+    fun openInteractiveOnboarding() {
+        prepareInteractiveOnboarding()
+        navigateTo(AppRoute.InteractiveOnboarding)
     }
     val gameViewModel = gameViewModelState.value
 
@@ -85,11 +121,6 @@ fun AndroidApp() {
         if (initialBootstrapResult.shouldPersist) {
             AppSettingsStorage.save(initialBootstrapResult.settings)
         }
-    }
-
-    LaunchedEffect(initialShowInteractiveOnboarding) {
-        if (!initialShowInteractiveOnboarding || showInteractiveOnboarding) return@LaunchedEffect
-        startInteractiveOnboarding()
     }
 
     LaunchedEffect(persistActiveSession.value, pendingSessionState) {
@@ -115,11 +146,17 @@ fun AndroidApp() {
     }
 
     val darkTheme = isStackShiftDarkTheme(settings)
-    AndroidSystemBarsEffect(
+    val themeSpec = stackShiftThemeSpec(
+        settings = settings,
         darkTheme = darkTheme,
     )
+    AndroidSystemBarsEffect(
+        darkTheme = darkTheme,
+        navigationBarColor = themeSpec.uiColors.screenGradientBottom,
+        windowBackgroundColor = themeSpec.uiColors.screenGradientBottom,
+    )
     BackHandler(enabled = canNavigateBack) {
-        navigateBack()
+        requestBackNavigation()
     }
 
     StackShiftRoot(
@@ -127,17 +164,19 @@ fun AndroidApp() {
         telemetry = telemetry,
         gameViewModel = gameViewModel,
         currentRoute = currentRoute,
-        showInteractiveOnboarding = showInteractiveOnboarding,
-        onNavigateToSettings = { navigateTo(AppRoute.Settings) },
-        onNavigateToTutorial = { navigateTo(AppRoute.Tutorial) },
-        onNavigateBack = ::navigateBack,
-        onShowInteractiveOnboardingChange = { shouldShow ->
-            if (shouldShow && !showInteractiveOnboarding) {
-                startInteractiveOnboarding()
-            } else {
-                showInteractiveOnboarding = shouldShow
-            }
+        highestScore = HighScoreStorage.load(),
+        onPlayRequested = {
+            telemetry.logUserAction(TelemetryActionNames.StartGameFromHome)
+            startPlayFlow()
         },
+        onNavigateToInteractiveOnboarding = {
+            telemetry.logUserAction(TelemetryActionNames.OpenInteractiveOnboarding)
+            openInteractiveOnboarding()
+        },
+        onNavigateToTheme = { navigateTo(AppRoute.Settings) },
+        onNavigateToLanguage = { navigateTo(AppRoute.Language) },
+        onNavigateToTutorial = { navigateTo(AppRoute.Tutorial) },
+        onNavigateBack = ::requestBackNavigation,
         onSettingsChange = { updated ->
             val shouldLogSettingsChange = updated.copy(
                 hasSeenTutorial = settings.hasSeenTutorial,
@@ -166,7 +205,22 @@ fun AndroidApp() {
                 settings = updatedSettings
                 AppSettingsStorage.save(updatedSettings)
             }
+            replaceTop(AppRoute.Game)
         },
+        onInteractiveOnboardingReturnHome = { finalState ->
+            persistActiveSession.value = true
+            pendingSessionState = finalState
+            GameSessionStorage.save(finalState)
+            if (!settings.hasShownInteractiveOnboarding) {
+                val updatedSettings = settings.copy(hasShownInteractiveOnboarding = true)
+                settings = updatedSettings
+                AppSettingsStorage.save(updatedSettings)
+            }
+            navigateHome()
+        },
+        showLeaveSessionDialog = showLeaveSessionDialog,
+        onDismissLeaveSessionDialog = { showLeaveSessionDialog = false },
+        onConfirmLeaveSessionDialog = ::navigateBack,
     )
 }
 

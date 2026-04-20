@@ -87,6 +87,9 @@ enum class AppColorPalette {
     Classic,
     Aurora,
     Sunset,
+    ModernNeon,
+    SoftPastel,
+    MinimalMonochrome,
 }
 
 enum class BlockColorPalette {
@@ -94,6 +97,7 @@ enum class BlockColorPalette {
     Candy,
     Neon,
     Earth,
+    Monochrome,
 }
 
 enum class BlockVisualStyle {
@@ -737,6 +741,18 @@ fun CellTone.paletteColor(palette: BlockColorPalette): Color = when (palette) {
         CellTone.Rose -> Color(0xFFB56B83)
         CellTone.Lime -> Color(0xFFA7C957)
         CellTone.Amber -> Color(0xFFDDA15E)
+    }
+
+    BlockColorPalette.Monochrome -> when (this) {
+        CellTone.Cyan -> Color(0xFFF1F5F9)
+        CellTone.Gold -> Color(0xFFDCE3EA)
+        CellTone.Violet -> Color(0xFFC4CDD6)
+        CellTone.Emerald -> Color(0xFFADB7C2)
+        CellTone.Coral -> Color(0xFF97A1AC)
+        CellTone.Blue -> Color(0xFF818B96)
+        CellTone.Rose -> Color(0xFF6C7682)
+        CellTone.Lime -> Color(0xFF59616E)
+        CellTone.Amber -> Color(0xFF464D59)
     }
 }
 

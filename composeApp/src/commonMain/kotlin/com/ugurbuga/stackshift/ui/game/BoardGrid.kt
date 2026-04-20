@@ -278,8 +278,9 @@ fun BoardGrid(
                 ?.groupBy(GridPoint::column)
                 ?.mapValues { (_, points) ->
                     val highestOccupiedRow = points.minOf(GridPoint::row)
+                    val lowestOccupiedRow = points.maxOf(GridPoint::row)
                     val top = (highestOccupiedRow * cellHeightPx) + cellVisual.previewInsetPx
-                    val bottom = (preview.entryAnchor.row * cellHeightPx) + cellHeightPx - cellVisual.previewInsetPx
+                    val bottom = ((lowestOccupiedRow + 1) * cellHeightPx) - cellVisual.previewInsetPx
                     top to bottom
                 }
         }
@@ -364,10 +365,11 @@ fun BoardGrid(
             val boardWidthPx = size.width
             val boardHeightPx = size.height
             val boardFrameCornerRadius = CornerRadius(boardCornerRadiusPx, boardCornerRadiusPx)
+
             highlightedColumns?.forEach { column ->
                 val beamAlpha = previewBeamAlpha * boardDecorAlpha
                 if (beamAlpha <= 0f || !showDangerDecorations) return@forEach
-                val (barTop, barBottom) = previewColumnBounds?.get(column) ?: (0f to boardHeightPx)
+                val (barTop, barBottom) = previewColumnBounds?.get(column) ?: return@forEach
                 val barHeight = (barBottom - barTop).coerceAtLeast(0f)
                 if (barHeight <= 0f) return@forEach
 
@@ -381,26 +383,14 @@ fun BoardGrid(
 
             guideColumns.forEach { column ->
                 if (column !in 0 until gameState.config.columns) return@forEach
-                val guideAlpha = 0.18f * boardDecorAlpha
-                val glowAlpha = 0.24f * boardDecorAlpha
+                val (barTop, barBottom) = previewColumnBounds?.get(column) ?: return@forEach
+                val barHeight = (barBottom - barTop).coerceAtLeast(0f)
+                if (barHeight <= 0f) return@forEach
                 drawRoundRect(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            uiColors.actionButton.copy(alpha = guideAlpha * 0.55f),
-                            uiColors.actionButton.copy(alpha = guideAlpha),
-                            uiColors.launchGlow.copy(alpha = guideAlpha * 0.78f),
-                        ),
-                    ),
-                    topLeft = Offset(x = column * cellWidthPx, y = 0f),
-                    size = Size(width = cellWidthPx, height = boardHeightPx),
+                    color = effectivePreviewColor.copy(alpha = 0.14f * boardDecorAlpha),
+                    topLeft = Offset(x = column * cellWidthPx, y = barTop),
+                    size = Size(width = cellWidthPx, height = barHeight),
                     cornerRadius = cornerRadius,
-                )
-                drawRoundRect(
-                    color = uiColors.actionButton.copy(alpha = glowAlpha.coerceAtMost(0.34f)),
-                    topLeft = Offset(x = column * cellWidthPx, y = 0f),
-                    size = Size(width = cellWidthPx, height = boardHeightPx),
-                    cornerRadius = cornerRadius,
-                    style = Stroke(width = 2.4f),
                 )
             }
 
@@ -1027,6 +1017,7 @@ private fun BoardSpecialIconOverlay(
             tint = specialBlockIconTint(
                 style = resolvedBoardStyle,
                 isDarkTheme = isDarkTheme,
+                palette = settings.blockColorPalette,
             ).copy(alpha = iconAlpha),
             modifier = Modifier.size(minOf(cellWidth, cellHeight) * iconSizeRatio),
         )
@@ -1072,12 +1063,32 @@ private fun boardCellKey(cell: BoardCell): Int = (cell.tone.ordinal shl 8) or ce
 internal fun specialBlockIconTint(
     style: BlockVisualStyle,
     isDarkTheme: Boolean,
-): Color = when (style) {
-    BlockVisualStyle.Outline, BlockVisualStyle.PixelArt, BlockVisualStyle.Crystal -> {
-        if (isDarkTheme) Color.White else Color.Black
+    palette: BlockColorPalette,
+): Color {
+    if (palette == BlockColorPalette.Monochrome) {
+        return Color.Black
     }
 
-    else -> Color.White
+    return when (style) {
+        BlockVisualStyle.Outline, BlockVisualStyle.PixelArt, BlockVisualStyle.Crystal -> {
+            if (isDarkTheme) Color.White else Color.Black
+        }
+
+        else -> Color.White
+    }
+}
+
+@Composable
+internal fun blockStyleIconTint(
+    style: BlockVisualStyle,
+    enabled: Boolean = true,
+): Color {
+    val settings = LocalAppSettings.current
+    return specialBlockIconTint(
+        style = style,
+        isDarkTheme = isStackShiftDarkTheme(settings),
+        palette = settings.blockColorPalette,
+    ).copy(alpha = if (enabled) 1f else 0.58f)
 }
 
 private fun DrawScope.drawWoodGrain(
@@ -1145,7 +1156,11 @@ internal fun BlockCellPreview(
             Icon(
                 imageVector = boardSpecialIcon(special),
                 contentDescription = null,
-                tint = specialBlockIconTint(style = style, isDarkTheme = isDarkTheme),
+                tint = specialBlockIconTint(
+                    style = style,
+                    isDarkTheme = isDarkTheme,
+                    palette = palette,
+                ),
                 modifier = Modifier
                     .size((size.value * 0.36f).dp),
             )
@@ -1204,7 +1219,11 @@ fun PieceBlocks(
                     Icon(
                         imageVector = boardSpecialIcon(piece.special),
                         contentDescription = null,
-                        tint = specialBlockIconTint(style = visualStyle, isDarkTheme = isDarkTheme),
+                        tint = specialBlockIconTint(
+                            style = visualStyle,
+                            isDarkTheme = isDarkTheme,
+                            palette = settings.blockColorPalette,
+                        ),
                         modifier = Modifier
                             .size((cellSize.value * 0.40f).dp),
                     )
@@ -1422,27 +1441,72 @@ private fun DrawScope.drawCellBody(
         }
 
         BlockVisualStyle.DynamicLiquid -> {
-            // Glass container
+            val constrainedPulse = pulse.coerceIn(0f, 1f)
+            val glassColor = Color.White.copy(alpha = 0.16f * alpha)
+            val frameWidth = (minOf(size.width, size.height) * 0.08f).coerceIn(1.4f, 3.4f)
+            val liquidInset = frameWidth * 0.92f
+            val liquidAreaTopLeft = topLeft + Offset(liquidInset, liquidInset)
+            val liquidAreaSize = Size(
+                width = (size.width - (liquidInset * 2f)).coerceAtLeast(0f),
+                height = (size.height - (liquidInset * 2f)).coerceAtLeast(0f),
+            )
+            val liquidHeightFraction = 0.10f + (0.90f * constrainedPulse)
+            val liquidHeight = liquidAreaSize.height * liquidHeightFraction
+            val liquidTopY = liquidAreaTopLeft.y + (liquidAreaSize.height - liquidHeight)
+
             drawRoundRect(
-                color = Color.White.copy(alpha = 0.12f * alpha),
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        glassColor,
+                        Color.White.copy(alpha = 0.06f * alpha),
+                    ),
+                    startY = topLeft.y,
+                    endY = topLeft.y + size.height,
+                ),
                 topLeft = topLeft,
                 size = size,
                 cornerRadius = cornerRadius,
             )
-            // Liquid fill
-            val liquidHeight = 0.5f + (0.5f * pulse.coerceIn(0f, 1f))
-            val liquidTopY = topLeft.y + size.height * (1f - liquidHeight)
+            drawRoundRect(
+                color = baseColor.copy(alpha = 0.34f * alpha),
+                topLeft = topLeft,
+                size = size,
+                cornerRadius = cornerRadius,
+                style = Stroke(width = frameWidth),
+            )
+            drawRoundRect(
+                color = Color.White.copy(alpha = 0.34f * alpha),
+                topLeft = topLeft + Offset(frameWidth * 0.38f, frameWidth * 0.38f),
+                size = Size(
+                    width = (size.width - (frameWidth * 0.76f)).coerceAtLeast(0f),
+                    height = (size.height - (frameWidth * 0.76f)).coerceAtLeast(0f),
+                ),
+                cornerRadius = CornerRadius(
+                    (cornerRadius.x - (frameWidth * 0.38f)).coerceAtLeast(0f),
+                    (cornerRadius.y - (frameWidth * 0.38f)).coerceAtLeast(0f),
+                ),
+                style = Stroke(width = (frameWidth * 0.34f).coerceAtLeast(0.9f)),
+            )
             drawRoundRect(
                 brush = Brush.verticalGradient(
-                    colors = listOf(baseColor, baseColor.copy(alpha = 0.6f)),
+                    colors = listOf(
+                        baseColor.copy(alpha = 0.98f),
+                        baseColor.copy(alpha = 0.82f),
+                        baseColor.copy(alpha = 0.62f),
+                    ),
                     startY = liquidTopY,
-                    endY = topLeft.y + size.height
+                    endY = liquidAreaTopLeft.y + liquidAreaSize.height,
                 ),
-                topLeft = topLeft + Offset(0f, size.height * (1f - liquidHeight)),
-                size = Size(size.width, size.height * liquidHeight),
-                cornerRadius = CornerRadius(cornerRadius.x * 0.8f, cornerRadius.y * 0.8f),
+                topLeft = Offset(liquidAreaTopLeft.x, liquidTopY),
+                size = Size(liquidAreaSize.width, liquidHeight),
+                cornerRadius = CornerRadius(cornerRadius.x * 0.68f, cornerRadius.y * 0.68f),
             )
-            // Shine
+            drawRoundRect(
+                color = Color.White.copy(alpha = 0.22f * alpha),
+                topLeft = Offset(liquidAreaTopLeft.x, liquidTopY),
+                size = Size(liquidAreaSize.width, liquidHeight.coerceAtMost(liquidAreaSize.height * 0.20f)),
+                cornerRadius = CornerRadius(cornerRadius.x * 0.58f, cornerRadius.y * 0.58f),
+            )
             drawRoundRect(
                 color = Color.White.copy(alpha = 0.18f * alpha),
                 topLeft = topLeft + Offset(size.width * 0.1f, size.height * 0.1f),
@@ -1510,23 +1574,28 @@ internal fun boardCellCornerRadiusDp(
     }
 }
 
+internal fun boardCellCornerRadiusPx(
+    cellSizePx: Float,
+    style: BlockVisualStyle,
+): Float = (cellSizePx * 0.16f * blockStyleCornerScale(style)).coerceAtLeast(0f)
+
 internal fun boardFrameCornerRadiusDp(style: BlockVisualStyle): Dp = when (style) {
     BlockVisualStyle.Flat -> 18.dp
-    BlockVisualStyle.Bubble -> 20.dp
-    BlockVisualStyle.Outline -> 16.dp
-    BlockVisualStyle.Sharp3D -> 10.dp
-    BlockVisualStyle.Wood -> 15.dp
-    BlockVisualStyle.PixelArt -> 4.dp
-    BlockVisualStyle.Crystal -> 6.dp
+    BlockVisualStyle.Bubble -> 22.dp
+    BlockVisualStyle.Outline -> 14.dp
+    BlockVisualStyle.Sharp3D -> 6.dp
+    BlockVisualStyle.Wood -> 12.dp
+    BlockVisualStyle.PixelArt -> 0.dp
+    BlockVisualStyle.Crystal -> 0.dp
     BlockVisualStyle.DynamicLiquid -> 18.dp
 }
 
 private fun blockStyleCornerScale(style: BlockVisualStyle): Float = when (style) {
     BlockVisualStyle.Flat -> 1.0f
     BlockVisualStyle.Bubble -> 1.20f
-    BlockVisualStyle.Outline -> 0.88f
-    BlockVisualStyle.Sharp3D -> 0.58f
-    BlockVisualStyle.Wood -> 0.90f
+    BlockVisualStyle.Outline -> 0.82f
+    BlockVisualStyle.Sharp3D -> 0.34f
+    BlockVisualStyle.Wood -> 0.76f
     BlockVisualStyle.PixelArt -> 0f
     BlockVisualStyle.Crystal -> 0f
     BlockVisualStyle.DynamicLiquid -> 0.85f
@@ -1578,6 +1647,17 @@ internal fun CellTone.paletteColor(palette: BlockColorPalette): Color = when (pa
         CellTone.Rose -> Color(0xFFB56B83)
         CellTone.Lime -> Color(0xFFA7C957)
         CellTone.Amber -> Color(0xFFDDA15E)
+    }
+    BlockColorPalette.Monochrome -> when (this) {
+        CellTone.Cyan -> Color(0xFFF1F5F9)
+        CellTone.Gold -> Color(0xFFDCE3EA)
+        CellTone.Violet -> Color(0xFFC4CDD6)
+        CellTone.Emerald -> Color(0xFFADB7C2)
+        CellTone.Coral -> Color(0xFF97A1AC)
+        CellTone.Blue -> Color(0xFF818B96)
+        CellTone.Rose -> Color(0xFF6C7682)
+        CellTone.Lime -> Color(0xFF59616E)
+        CellTone.Amber -> Color(0xFF464D59)
     }
 }
 

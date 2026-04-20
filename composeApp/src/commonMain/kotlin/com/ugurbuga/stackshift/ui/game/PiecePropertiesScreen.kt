@@ -6,13 +6,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -21,12 +20,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.ugurbuga.stackshift.game.model.CellTone
 import com.ugurbuga.stackshift.game.model.Piece
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
 import com.ugurbuga.stackshift.telemetry.AppTelemetry
 import com.ugurbuga.stackshift.telemetry.LogScreen
 import com.ugurbuga.stackshift.telemetry.NoOpAppTelemetry
 import com.ugurbuga.stackshift.telemetry.TelemetryScreenNames
+import com.ugurbuga.stackshift.ui.theme.GameUiShapeTokens
 import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
 import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
@@ -61,10 +62,11 @@ fun PiecePropertiesScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .safeDrawingPadding()
+                .statusBarsPadding()
                 .padding(horizontal = 12.dp, vertical = 10.dp),
         ) {
             Card(
+                shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
                 colors = CardDefaults.cardColors(containerColor = uiColors.panel),
                 border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
             ) {
@@ -73,13 +75,13 @@ fun PiecePropertiesScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp, vertical = 10.dp),
                 ) {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(Res.string.piece_properties_title),
-                            tint = MaterialTheme.colorScheme.onSurface,
-                        )
-                    }
+                    TopBarActionBlockButton(
+                        tone = CellTone.Cyan,
+                        icon = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(Res.string.piece_properties_title),
+                        onClick = onBack,
+                        size = 40.dp,
+                    )
                     Text(
                         text = stringResource(Res.string.piece_properties_title),
                         style = MaterialTheme.typography.headlineSmall,
@@ -99,6 +101,7 @@ fun PiecePropertiesScreen(
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
                 colors = CardDefaults.cardColors(containerColor = uiColors.panelMuted),
                 border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.72f)),
             ) {

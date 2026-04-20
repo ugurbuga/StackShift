@@ -3,17 +3,20 @@ package com.ugurbuga.stackshift.ads
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.viewinterop.AndroidView
+import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
@@ -24,7 +27,6 @@ import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
-import android.util.Log
 import kotlinx.coroutines.delay
 
 private const val BannerRefreshIntervalMillis = 60_000L
@@ -55,6 +57,8 @@ private class AndroidGameAdController(
     private val context: Context,
     private val activityProvider: () -> Activity?,
 ) : GameAdController {
+    override val bannerPresentationMode: BannerPresentationMode = BannerPresentationMode.Inline
+
     private var mobileAdsInitialized = false
     private var interstitialAd: InterstitialAd? = null
     private var rewardedAd: RewardedAd? = null
@@ -154,9 +158,14 @@ private class AndroidGameAdController(
     }
 
     @Composable
-    override fun Banner(modifier: Modifier) {
+    override fun Banner(modifier: Modifier, onLoadStateChanged: (Boolean) -> Unit) {
         val inspectionMode = LocalInspectionMode.current
+        val currentOnLoadStateChanged by rememberUpdatedState(onLoadStateChanged)
+        LaunchedEffect(inspectionMode) {
+            currentOnLoadStateChanged(false)
+        }
         if (inspectionMode) return
+        if (AndroidAdMobIds.BannerAdUnitId.isBlank()) return
 
         var bannerAdView by remember { mutableStateOf<AdView?>(null) }
 
@@ -166,9 +175,29 @@ private class AndroidGameAdController(
                 AdView(viewContext).apply {
                     setAdSize(AdSize.BANNER)
                     adUnitId = AndroidAdMobIds.BannerAdUnitId
+                    adListener = object : AdListener() {
+                        override fun onAdLoaded() {
+                            currentOnLoadStateChanged(true)
+                        }
+
+                        override fun onAdFailedToLoad(loadAdError: LoadAdError) {
+                            currentOnLoadStateChanged(false)
+                            Log.e("GameAds", "Banner ad failed to load: $loadAdError")
+                        }
+                    }
                 }
             },
             update = { view ->
+                view.adListener = object : AdListener() {
+                    override fun onAdLoaded() {
+                        currentOnLoadStateChanged(true)
+                    }
+
+                    override fun onAdFailedToLoad(loadAdError: LoadAdError) {
+                        currentOnLoadStateChanged(false)
+                        Log.e("GameAds", "Banner ad failed to load: $loadAdError")
+                    }
+                }
                 if (bannerAdView !== view) {
                     bannerAdView = view
                 }
@@ -187,6 +216,7 @@ private class AndroidGameAdController(
 
         DisposableEffect(currentBannerAdView) {
             onDispose {
+                currentOnLoadStateChanged(false)
                 currentBannerAdView.destroy()
                 bannerAdView = null
             }

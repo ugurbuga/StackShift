@@ -32,7 +32,11 @@ object TelemetryEventNames {
 }
 
 object TelemetryActionNames {
+    const val StartGameFromHome = "start_game_from_home"
+    const val OpenInteractiveOnboarding = "open_interactive_onboarding"
     const val OpenSettings = "open_settings"
+    const val OpenTheme = "open_theme"
+    const val OpenLanguage = "open_language"
     const val OpenTutorial = "open_tutorial"
     const val OpenBlockProperties = "open_block_properties"
     const val OpenPieceProperties = "open_piece_properties"
@@ -65,8 +69,12 @@ object TelemetryParamKeys {
 }
 
 object TelemetryScreenNames {
+    const val Home = "home"
     const val Game = "game"
+    const val InteractiveOnboarding = "interactive_onboarding"
     const val Settings = "settings"
+    const val Theme = "theme"
+    const val Language = "language"
     const val BlockProperties = "block_properties"
     const val PieceProperties = "piece_properties"
     const val Tutorial = "tutorial"

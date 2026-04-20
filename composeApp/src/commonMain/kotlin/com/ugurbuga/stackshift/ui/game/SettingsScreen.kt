@@ -14,13 +14,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
@@ -29,17 +27,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.ViewModule
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -57,8 +51,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.ugurbuga.stackshift.ads.GameAdController
-import com.ugurbuga.stackshift.ads.NoOpGameAdController
 import com.ugurbuga.stackshift.game.model.AppColorPalette
 import com.ugurbuga.stackshift.game.model.AppLanguage
 import com.ugurbuga.stackshift.game.model.AppThemeMode
@@ -71,9 +63,11 @@ import com.ugurbuga.stackshift.telemetry.AppTelemetry
 import com.ugurbuga.stackshift.telemetry.LogScreen
 import com.ugurbuga.stackshift.telemetry.NoOpAppTelemetry
 import com.ugurbuga.stackshift.telemetry.TelemetryScreenNames
+import com.ugurbuga.stackshift.ui.theme.GameUiShapeTokens
 import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
 import com.ugurbuga.stackshift.ui.theme.appBackgroundBrush
 import com.ugurbuga.stackshift.ui.theme.isStackShiftDarkTheme
+import com.ugurbuga.stackshift.ui.theme.stackShiftSurfaceShadow
 import com.ugurbuga.stackshift.ui.theme.stackShiftThemeSpec
 import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
@@ -84,6 +78,7 @@ import stackshift.composeapp.generated.resources.app_title
 import stackshift.composeapp.generated.resources.block_palette_candy
 import stackshift.composeapp.generated.resources.block_palette_classic
 import stackshift.composeapp.generated.resources.block_palette_earth
+import stackshift.composeapp.generated.resources.block_palette_monochrome
 import stackshift.composeapp.generated.resources.block_palette_neon
 import stackshift.composeapp.generated.resources.block_style_bubble
 import stackshift.composeapp.generated.resources.block_style_crystal
@@ -98,29 +93,23 @@ import stackshift.composeapp.generated.resources.settings_block_style
 import stackshift.composeapp.generated.resources.settings_language
 import stackshift.composeapp.generated.resources.settings_theme
 import stackshift.composeapp.generated.resources.settings_theme_palette
-import stackshift.composeapp.generated.resources.settings_title
-import stackshift.composeapp.generated.resources.settings_tutorial
-import stackshift.composeapp.generated.resources.settings_tutorial_body
-import stackshift.composeapp.generated.resources.settings_tutorial_replay
 import stackshift.composeapp.generated.resources.theme_palette_aurora
 import stackshift.composeapp.generated.resources.theme_palette_classic
+import stackshift.composeapp.generated.resources.theme_palette_minimal_monochrome
+import stackshift.composeapp.generated.resources.theme_palette_modern_neon
+import stackshift.composeapp.generated.resources.theme_palette_soft_pastel
 import stackshift.composeapp.generated.resources.theme_palette_sunset
 
 private val ScreenContentMaxWidth = 920.dp
-private val ChipShape = RoundedCornerShape(22.dp)
-private val SettingsCardShape = RoundedCornerShape(24.dp)
-
 @Composable
 fun AppSettingsScreen(
     telemetry: AppTelemetry = NoOpAppTelemetry,
     settings: AppSettings,
     onSettingsChange: (AppSettings) -> Unit,
-    onReplayTutorial: () -> Unit,
     onBack: () -> Unit,
-    adController: GameAdController = NoOpGameAdController,
     modifier: Modifier = Modifier,
 ) {
-    LogScreen(telemetry, TelemetryScreenNames.Settings)
+    LogScreen(telemetry, TelemetryScreenNames.Theme)
     val scrollState = rememberScrollState()
     val uiColors = StackShiftThemeTokens.uiColors
     val darkTheme = isStackShiftDarkTheme(settings)
@@ -147,7 +136,7 @@ fun AppSettingsScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .safeDrawingPadding(),
+                    .statusBarsPadding(),
             ) {
                 Box(
                     modifier = Modifier
@@ -155,7 +144,17 @@ fun AppSettingsScreen(
                         .padding(horizontal = 16.dp, vertical = 10.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    HeaderCard(onBack = onBack)
+                    HeaderCard(
+                        onBack = onBack,
+                        title = stringResource(Res.string.settings_theme),
+                        summary = buildString {
+                            append(stringResource(Res.string.settings_theme_palette))
+                            append(" • ")
+                            append(stringResource(Res.string.settings_block_palette))
+                            append(" • ")
+                            append(stringResource(Res.string.settings_block_style))
+                        },
+                    )
                 }
 
                 Column(
@@ -166,18 +165,6 @@ fun AppSettingsScreen(
                         .padding(horizontal = 16.dp, vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    SettingsSectionCard(
-                        title = stringResource(Res.string.settings_language),
-                        icon = Icons.Filled.Translate,
-                    ) {
-                        SettingsGroup(
-                            title = stringResource(Res.string.settings_language),
-                            selectedValue = settings.language,
-                            options = languageOptions(settings.language),
-                            onSelected = { onSettingsChange(settings.copy(language = it)) },
-                        )
-                    }
-
                     SettingsSectionCard(
                         title = stringResource(Res.string.settings_theme),
                         icon = Icons.Filled.Palette,
@@ -222,41 +209,71 @@ fun AppSettingsScreen(
                             onSelected = { onSettingsChange(settings.copy(blockVisualStyle = it)) },
                         )
                     }
-
-                    SettingsSectionCard(
-                        title = stringResource(Res.string.settings_tutorial),
-                        icon = Icons.Filled.PlayArrow,
-                    ) {
-                        Text(
-                            text = stringResource(Res.string.settings_tutorial_body),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = uiColors.subtitle,
-                        )
-                        Button(
-                            onClick = onReplayTutorial,
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                            shape = androidx.compose.foundation.shape.CircleShape,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = uiColors.actionButton,
-                                contentColor = uiColors.actionIcon,
-                            ),
-                            border = androidx.compose.foundation.BorderStroke(
-                                1.dp,
-                                Color.White.copy(alpha = 0.22f)
-                            ),
-                        ) {
-                            Text(
-                                text = stringResource(Res.string.settings_tutorial_replay),
-                                fontWeight = FontWeight.Bold,
-                            )
-                        }
-                    }
                 }
 
-                if (adController !== NoOpGameAdController) {
-                    adController.Banner(
-                        modifier = Modifier.fillMaxWidth(),
+            }
+        }
+    }
+}
+
+@Composable
+fun AppLanguageScreen(
+    telemetry: AppTelemetry = NoOpAppTelemetry,
+    settings: AppSettings,
+    onSettingsChange: (AppSettings) -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    LogScreen(telemetry, TelemetryScreenNames.Language)
+    val scrollState = rememberScrollState()
+    val uiColors = StackShiftThemeTokens.uiColors
+
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(appBackgroundBrush(uiColors)),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding(),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    HeaderCard(
+                        onBack = onBack,
+                        title = stringResource(Res.string.settings_language),
+                        summary = stringResource(Res.string.app_title),
                     )
+                }
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .verticalScroll(scrollState)
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    SettingsSectionCard(
+                        title = stringResource(Res.string.settings_language),
+                        icon = Icons.Filled.Translate,
+                    ) {
+                        SettingsGroup(
+                            title = stringResource(Res.string.settings_language),
+                            selectedValue = settings.language,
+                            options = languageOptions(settings.language),
+                            onSelected = { onSettingsChange(settings.copy(language = it)) },
+                        )
+                    }
                 }
             }
         }
@@ -266,14 +283,21 @@ fun AppSettingsScreen(
 @Composable
 private fun HeaderCard(
     onBack: () -> Unit,
+    title: String,
+    summary: String,
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .stackShiftSurfaceShadow(
+                shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
+                elevation = 9.dp,
+            )
             .widthIn(max = ScreenContentMaxWidth),
-        shape = SettingsCardShape,
+        shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
         colors = CardDefaults.cardColors(containerColor = uiColors.panel),
+        elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
     ) {
         Row(
@@ -289,21 +313,21 @@ private fun HeaderCard(
                 )
                 .padding(horizontal = 12.dp, vertical = 14.dp),
             verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            IconButton(onClick = onBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-            Spacer(Modifier.size(6.dp))
+            TopBarActionBlockButton(
+                tone = CellTone.Cyan,
+                icon = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = title,
+                onClick = onBack,
+                size = 40.dp,
+            )
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 Text(
-                    text = stringResource(Res.string.settings_title),
+                    text = title,
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     fontWeight = FontWeight.SemiBold,
@@ -314,13 +338,7 @@ private fun HeaderCard(
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.78f),
                 )
                 Text(
-                    text = buildString {
-                        append(stringResource(Res.string.settings_theme))
-                        append(" • ")
-                        append(stringResource(Res.string.settings_block_style))
-                        append(" • ")
-                        append(stringResource(Res.string.settings_language))
-                    },
+                    text = summary,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.72f),
                     maxLines = 2,
@@ -342,9 +360,14 @@ private fun SettingsSectionCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .stackShiftSurfaceShadow(
+                shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
+                elevation = 7.dp,
+            )
             .widthIn(max = ScreenContentMaxWidth),
-        shape = SettingsCardShape,
+        shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
         colors = CardDefaults.cardColors(containerColor = uiColors.panel),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
     ) {
         Column(
@@ -377,8 +400,13 @@ private fun SectionHeader(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Surface(
-            modifier = Modifier.size(40.dp),
-            shape = RoundedCornerShape(14.dp),
+            modifier = Modifier
+                .size(40.dp)
+                .stackShiftSurfaceShadow(
+                    shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
+                    elevation = 4.dp,
+                ),
+            shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
             color = uiColors.panelHighlight,
             border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
         ) {
@@ -436,13 +464,13 @@ private fun <T> SettingsGroup(
                 FilterChip(
                     modifier = Modifier.shadow(
                         elevation = if (selected) 6.dp else 0.dp,
-                        shape = ChipShape,
+                        shape = RoundedCornerShape(GameUiShapeTokens.chipCorner),
                         ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                         spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                     ),
                     selected = selected,
                     onClick = { onSelected(option.value) },
-                    shape = ChipShape,
+                    shape = RoundedCornerShape(GameUiShapeTokens.chipCorner),
                     label = {
                         Row(
                             modifier = Modifier.wrapContentWidth(),
@@ -523,6 +551,9 @@ private fun themePaletteOptions(darkTheme: Boolean): List<SettingsOption<AppColo
                 AppColorPalette.Classic -> stringResource(Res.string.theme_palette_classic)
                 AppColorPalette.Aurora -> stringResource(Res.string.theme_palette_aurora)
                 AppColorPalette.Sunset -> stringResource(Res.string.theme_palette_sunset)
+                AppColorPalette.ModernNeon -> stringResource(Res.string.theme_palette_modern_neon)
+                AppColorPalette.SoftPastel -> stringResource(Res.string.theme_palette_soft_pastel)
+                AppColorPalette.MinimalMonochrome -> stringResource(Res.string.theme_palette_minimal_monochrome)
             },
             preview = { ThemePalettePreview(palette = palette, darkTheme = darkTheme) },
         )
@@ -540,6 +571,7 @@ private fun blockPaletteOptions(
             BlockColorPalette.Candy -> stringResource(Res.string.block_palette_candy)
             BlockColorPalette.Neon -> stringResource(Res.string.block_palette_neon)
             BlockColorPalette.Earth -> stringResource(Res.string.block_palette_earth)
+            BlockColorPalette.Monochrome -> stringResource(Res.string.block_palette_monochrome)
         },
         preview = { BlockPalettePreview(palette = palette, style = style, pulse = pulse) },
     )
@@ -623,12 +655,12 @@ private fun LanguagePreview(
                 } else {
                     uiColors.panelMuted.copy(alpha = 0.96f)
                 },
-                shape = RoundedCornerShape(999.dp)
+                shape = RoundedCornerShape(GameUiShapeTokens.chipCorner)
             )
             .border(
                 width = 1.dp,
                 color = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.48f) else uiColors.panelStroke,
-                shape = RoundedCornerShape(999.dp)
+                shape = RoundedCornerShape(GameUiShapeTokens.chipCorner)
             )
     ) {
         Text(
@@ -664,7 +696,7 @@ private fun PreviewBlockRow(
 }
 
 @Composable
-private fun LiveBoardMiniPreview(settings: AppSettings, pulse: Float) {
+internal fun LiveBoardMiniPreview(settings: AppSettings, pulse: Float) {
     val uiColors = StackShiftThemeTokens.uiColors
     val boardStyle = settings.blockVisualStyle
     val transition = rememberInfiniteTransition(label = "liveBoardPreview")
@@ -681,7 +713,7 @@ private fun LiveBoardMiniPreview(settings: AppSettings, pulse: Float) {
     }
     val previewAlpha = if (progress < 0.5f) 0.80f else 0.60f
     Surface(
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
         color = uiColors.panelMuted.copy(alpha = 0.94f),
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
@@ -730,12 +762,12 @@ private fun LiveBoardMiniPreview(settings: AppSettings, pulse: Float) {
                                 Box(
                                     modifier = Modifier
                                         .size(14.dp)
-                                        .clip(RoundedCornerShape(6.dp))
+                                        .clip(RoundedCornerShape(GameUiShapeTokens.previewSlotCorner))
                                         .background(uiColors.boardEmptyCell.copy(alpha = 0.90f))
                                         .border(
                                             width = 1.dp,
                                             color = uiColors.boardEmptyCellBorder.copy(alpha = 0.92f),
-                                            shape = RoundedCornerShape(6.dp),
+                                            shape = RoundedCornerShape(GameUiShapeTokens.previewSlotCorner),
                                         ),
                                 )
                             }
@@ -799,7 +831,17 @@ private fun AppSettingsScreenPreview() {
     AppSettingsScreen(
         settings = AppSettings(themeMode = AppThemeMode.Light),
         onSettingsChange = {},
-        onReplayTutorial = {},
         onBack = {},
     )
 }
+
+@Preview
+@Composable
+private fun AppLanguageScreenPreview() {
+    AppLanguageScreen(
+        settings = AppSettings(themeMode = AppThemeMode.Light),
+        onSettingsChange = {},
+        onBack = {},
+    )
+}
+

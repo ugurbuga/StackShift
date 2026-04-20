@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +41,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ugurbuga.stackshift.StackShiftTheme
@@ -50,8 +53,10 @@ import com.ugurbuga.stackshift.settings.FirstRunGameOnboardingStateFactory
 import com.ugurbuga.stackshift.settings.FirstRunOnboardingScene
 import com.ugurbuga.stackshift.settings.FirstRunOnboardingStage
 import com.ugurbuga.stackshift.settings.FirstRunOnboardingTarget
+import com.ugurbuga.stackshift.ui.theme.GameUiShapeTokens
 import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
 import com.ugurbuga.stackshift.ui.theme.appBackgroundBrush
+import com.ugurbuga.stackshift.ui.theme.stackShiftSurfaceShadow
 import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
 import stackshift.composeapp.generated.resources.interactive_onboarding_aim_hint
@@ -72,6 +77,7 @@ import stackshift.composeapp.generated.resources.interactive_onboarding_row_clea
 import stackshift.composeapp.generated.resources.interactive_onboarding_step_counter
 import stackshift.composeapp.generated.resources.interactive_onboarding_target_locked
 import stackshift.composeapp.generated.resources.interactive_onboarding_waiting
+import stackshift.composeapp.generated.resources.tutorial_back
 
 @Immutable
 data class GameInteractiveOnboardingUi(
@@ -87,7 +93,7 @@ private val onboardingGuideLogic = GameLogic()
 private const val InteractiveOnboardingTargetPulseDurationMillis = 1880
 
 @Immutable
-private data class InteractiveOnboardingVisualState(
+internal data class InteractiveOnboardingVisualState(
     val title: String,
     val body: String,
     val hint: String,
@@ -107,7 +113,6 @@ fun InteractiveGameOnboardingOverlay(
     cellSizePx: Float,
     modifier: Modifier = Modifier,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
     val targetRect = remember(ui.scene, boardRect, trayRect, spawnRect, cellSizePx) {
         onboardingTargetRect(
             scene = ui.scene,
@@ -117,6 +122,64 @@ fun InteractiveGameOnboardingOverlay(
             cellSizePx = cellSizePx,
         )
     }
+    val visualState = rememberInteractiveOnboardingVisualState(ui = ui)
+
+    Box(modifier = modifier.fillMaxSize()) {
+        InteractiveOnboardingTargetHighlight(
+            targetRect = targetRect,
+            guideColor = visualState.guideColor,
+            isSuccessState = visualState.isSuccessState,
+            isAwaitingPlacementCommit = ui.isAwaitingPlacementCommit,
+        )
+
+        InteractiveOnboardingInfoCard(
+            ui = ui,
+            visualState = visualState,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+internal fun InteractiveOnboardingTargetOverlay(
+    ui: GameInteractiveOnboardingUi,
+    boardRect: Rect,
+    trayRect: Rect,
+    spawnRect: Rect = Rect.Zero,
+    cellSizePx: Float,
+    modifier: Modifier = Modifier,
+) {
+    val suppressTargetRect = ui.scene.stage == FirstRunOnboardingStage.DragAndLaunch && ui.hasDraggedAwayFromSpawn
+    val targetRect = remember(ui.scene, boardRect, trayRect, spawnRect, cellSizePx, suppressTargetRect) {
+        if (suppressTargetRect) {
+            null
+        } else {
+            onboardingTargetRect(
+                scene = ui.scene,
+                boardRect = boardRect,
+                trayRect = trayRect,
+                spawnRect = spawnRect,
+                cellSizePx = cellSizePx,
+            )
+        }
+    }
+    val visualState = rememberInteractiveOnboardingVisualState(ui = ui)
+    Box(modifier = modifier.fillMaxSize()) {
+        InteractiveOnboardingTargetHighlight(
+            targetRect = targetRect,
+            guideColor = visualState.guideColor,
+            isSuccessState = visualState.isSuccessState,
+            isAwaitingPlacementCommit = ui.isAwaitingPlacementCommit,
+        )
+    }
+}
+
+@Composable
+internal fun rememberInteractiveOnboardingVisualState(
+    ui: GameInteractiveOnboardingUi,
+): InteractiveOnboardingVisualState {
     val dragTitle = stringResource(Res.string.interactive_onboarding_drag_title)
     val lineClearTitle = stringResource(Res.string.interactive_onboarding_line_clear_title)
     val columnClearTitle = stringResource(Res.string.interactive_onboarding_column_clearer_title)
@@ -134,11 +197,12 @@ fun InteractiveGameOnboardingOverlay(
     val dragReadyHint = stringResource(Res.string.interactive_onboarding_drag_ready)
     val dragToBoardHint = stringResource(Res.string.interactive_onboarding_drag_to_board)
     val aimHint = stringResource(Res.string.interactive_onboarding_aim_hint)
-    val visualState = remember(
+    val uiColors = StackShiftThemeTokens.uiColors
+    return remember(
         ui,
         uiColors.warning,
         uiColors.success,
-        uiColors.actionButton,
+        uiColors.guideAccent,
         dragTitle,
         lineClearTitle,
         columnClearTitle,
@@ -186,7 +250,7 @@ fun InteractiveGameOnboardingOverlay(
         val guideColor = when {
             ui.isAwaitingPlacementCommit -> uiColors.warning
             isSuccessState -> uiColors.success
-            else -> uiColors.actionButton
+            else -> uiColors.guideAccent
         }
         InteractiveOnboardingVisualState(
             title = title,
@@ -194,99 +258,107 @@ fun InteractiveGameOnboardingOverlay(
             hint = hint,
             guideColor = guideColor,
             guideBadgeTextColor = if (guideColor.luminance() > 0.58f) Color(0xFF101114) else Color.White,
-            hintContainerAlpha = when {
-                ui.isAwaitingPlacementCommit -> 0.26f
-                isSuccessState -> 0.20f
-                else -> 0.18f
-            },
-            hintBorderAlpha = when {
-                ui.isAwaitingPlacementCommit -> 0.72f
-                isSuccessState -> 0.58f
-                else -> 0.48f
-            },
+            hintContainerAlpha = 0.20f,
+            hintBorderAlpha = 0.58f,
             isSuccessState = isSuccessState,
         )
     }
+}
 
-    Box(modifier = modifier.fillMaxSize()) {
-        InteractiveOnboardingTargetHighlight(
-            targetRect = targetRect,
-            guideColor = visualState.guideColor,
-            isSuccessState = visualState.isSuccessState,
-            isAwaitingPlacementCommit = ui.isAwaitingPlacementCommit,
-        )
-
-        Card(
+@Composable
+internal fun InteractiveOnboardingInfoCard(
+    ui: GameInteractiveOnboardingUi,
+    visualState: InteractiveOnboardingVisualState = rememberInteractiveOnboardingVisualState(ui),
+    onBack: (() -> Unit)? = null,
+    stylePulse: Float = 0f,
+    modifier: Modifier = Modifier,
+) {
+    val uiColors = StackShiftThemeTokens.uiColors
+    Card(
+        modifier = modifier.stackShiftSurfaceShadow(
+            shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
+            elevation = 10.dp,
+        ),
+        shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
+        colors = CardDefaults.cardColors(containerColor = uiColors.gameSurface.copy(alpha = 0.95f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.82f)),
+    ) {
+        Column(
             modifier = Modifier
-                .align(Alignment.TopCenter)
-                .fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = uiColors.gameSurface.copy(alpha = 0.95f)),
-            border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.82f)),
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        androidx.compose.ui.graphics.Brush.verticalGradient(
-                            colors = listOf(
-                                uiColors.panelHighlight.copy(alpha = 0.18f),
-                                uiColors.launchGlow.copy(alpha = 0.10f),
-                                Color.Transparent,
-                            ),
+                .fillMaxWidth()
+                .background(
+                    androidx.compose.ui.graphics.Brush.verticalGradient(
+                        colors = listOf(
+                            uiColors.panelHighlight.copy(alpha = 0.18f),
+                            uiColors.launchGlow.copy(alpha = 0.10f),
+                            Color.Transparent,
                         ),
-                    )
-                    .padding(horizontal = 14.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ),
+                )
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Surface(
-                        shape = RoundedCornerShape(14.dp),
-                        color = visualState.guideColor.copy(alpha = 0.94f),
-                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.14f)),
-                    ) {
-                        Text(
-                            text = stringResource(
-                                Res.string.interactive_onboarding_step_counter,
-                                ui.currentStep,
-                                ui.totalSteps,
-                            ),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = visualState.guideBadgeTextColor,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                        )
-                    }
+                if (onBack != null) {
+                    TopBarActionBlockButton(
+                        tone = com.ugurbuga.stackshift.game.model.CellTone.Cyan,
+                        icon = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(Res.string.tutorial_back),
+                        onClick = onBack,
+                        pulse = stylePulse,
+                        size = 28.dp,
+                    )
                 }
-                Text(
-                    text = visualState.title,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    text = visualState.body,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.86f),
-                )
                 Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    color = visualState.guideColor.copy(alpha = visualState.hintContainerAlpha),
-                    border = BorderStroke(1.dp, visualState.guideColor.copy(alpha = visualState.hintBorderAlpha)),
+                    shape = RoundedCornerShape(GameUiShapeTokens.badgeCorner),
+                    color = visualState.guideColor.copy(alpha = 0.94f),
+                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.14f)),
                 ) {
                     Text(
-                        text = visualState.hint,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        text = stringResource(
+                            Res.string.interactive_onboarding_step_counter,
+                            ui.currentStep,
+                            ui.totalSteps,
+                        ),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = visualState.guideBadgeTextColor,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                     )
                 }
+            }
+            Text(
+                text = visualState.title,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = visualState.body,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.86f),
+            )
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(GameUiShapeTokens.hintCorner),
+                color = visualState.guideColor.copy(alpha = visualState.hintContainerAlpha),
+                border = BorderStroke(1.dp, visualState.guideColor.copy(alpha = visualState.hintBorderAlpha)),
+            ) {
+                Text(
+                    text = visualState.hint,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
+                    minLines = 2,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
         }
     }
@@ -321,6 +393,7 @@ private fun InteractiveOnboardingTargetHighlight(
     }
     val widthDp = with(density) { rect.width.toDp() }
     val heightDp = with(density) { rect.height.toDp() }
+    val targetCornerPx = with(density) { GameUiShapeTokens.targetCorner.toPx() }
 
     Canvas(
         modifier = modifier
@@ -337,7 +410,7 @@ private fun InteractiveOnboardingTargetHighlight(
             else -> 1.004f + (pulsePhase * 0.010f)
         }
         val pulseRect = localTargetRect.scaleAroundCenter(pulseScale)
-        val cornerRadius = CornerRadius(24f, 24f)
+        val cornerRadius = CornerRadius(targetCornerPx, targetCornerPx)
 
         drawRoundRect(
             color = guideColor.copy(
@@ -365,7 +438,7 @@ private fun InteractiveOnboardingTargetHighlight(
                 width = (size.width - 4f).coerceAtLeast(0f),
                 height = (size.height - 4f).coerceAtLeast(0f),
             ),
-            cornerRadius = CornerRadius(20f, 20f),
+            cornerRadius = CornerRadius((targetCornerPx - 4f).coerceAtLeast(0f), (targetCornerPx - 4f).coerceAtLeast(0f)),
             style = Stroke(width = 1f),
         )
         if (shouldAnimatePulse) {
@@ -375,7 +448,7 @@ private fun InteractiveOnboardingTargetHighlight(
                 ),
                 topLeft = Offset(pulseRect.left, pulseRect.top),
                 size = pulseRect.size,
-                cornerRadius = CornerRadius(28f, 28f),
+                cornerRadius = CornerRadius(targetCornerPx + 4f, targetCornerPx + 4f),
                 style = Stroke(width = 4f),
             )
         }
@@ -575,7 +648,7 @@ private fun InteractiveGameOnboardingOverlayPreviewHost(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),
-                    shape = RoundedCornerShape(28.dp),
+                    shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
                     color = StackShiftThemeTokens.uiColors.panel.copy(alpha = 0.34f),
                     border = BorderStroke(1.dp, StackShiftThemeTokens.uiColors.panelStroke.copy(alpha = 0.38f)),
                 ) {}
@@ -584,7 +657,7 @@ private fun InteractiveGameOnboardingOverlayPreviewHost(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(104.dp),
-                    shape = RoundedCornerShape(22.dp),
+                    shape = RoundedCornerShape(GameUiShapeTokens.dockCorner),
                     color = StackShiftThemeTokens.uiColors.gameSurface.copy(alpha = 0.52f),
                     border = BorderStroke(1.dp, StackShiftThemeTokens.uiColors.panelStroke.copy(alpha = 0.42f)),
                 ) {}

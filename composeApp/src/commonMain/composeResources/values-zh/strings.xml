@@ -25,10 +25,14 @@
     <string name="theme_palette_classic">经典</string>
     <string name="theme_palette_aurora">极光</string>
     <string name="theme_palette_sunset">日落</string>
+    <string name="theme_palette_modern_neon">现代霓虹</string>
+    <string name="theme_palette_soft_pastel">粉彩</string>
+    <string name="theme_palette_minimal_monochrome">单色</string>
     <string name="block_palette_classic">经典</string>
     <string name="block_palette_candy">糖果</string>
     <string name="block_palette_neon">霓虹</string>
     <string name="block_palette_earth">大地</string>
+    <string name="block_palette_monochrome">单色</string>
     <string name="block_style_flat">平面</string>
     <string name="block_style_bubble">气泡</string>
     <string name="block_style_outline">描边</string>
@@ -47,6 +51,9 @@
     <string name="restart_confirm_body">当前进度将被重置。要继续吗？</string>
     <string name="restart_confirm">是，重新开始</string>
     <string name="restart_cancel">取消</string>
+    <string name="leave_session_confirm_title">Leave this session?</string>
+    <string name="leave_session_confirm_body">Your current progress will be lost. Are you sure you want to go back?</string>
+    <string name="leave_session_confirm">Yes, leave</string>
     <string name="score">分数</string>
     <string name="high_score">最高分</string>
     <string name="high_score_new_record">新纪录</string>
@@ -69,7 +76,7 @@
     <string name="pause_title">已暂停</string>
     <string name="game_over_title">游戏结束</string>
     <string name="continue_label">继续</string>
-    <string name="game_over_extra_life">观看广告 + 继续</string>
+    <string name="game_over_extra_life">观看广告获得额外生命</string>
     <string name="game_over_extra_life_loading">广告加载中…</string>
     <string name="play_again">再玩一次</string>
     <string name="game_over_new_high_score">达到新高分！</string>
@@ -143,7 +150,9 @@
     <string name="tutorial_subtitle">开始第一局前的简短说明。</string>
     <string name="tutorial_step_counter">步骤 %1$d / %2$d</string>
     <string name="tutorial_back">返回</string>
+    <string name="cancel">取消</string>
     <string name="tutorial_next">下一步</string>
+    <string name="return_home">返回主页</string>
     <string name="tutorial_finish">开始游戏</string>
     <string name="tutorial_intro_title">从底部托盘发射方块</string>
     <string name="tutorial_intro_body">当前方块会在底部等待。左右拖动它来对准列，然后松手把它发射到棋盘上。下一块预览会故意更淡一些，让注意力留在当前方块上。</string>
@@ -157,7 +166,7 @@
     <string name="tutorial_ready_settings_hint">在下一局开始前，你可以打开设置来调整语言、主题、颜色和方块风格。</string>
     <string name="settings_tutorial">教程</string>
     <string name="settings_tutorial_body">你可以随时打开教程或引导练习，重新查看操作方式、特殊方块和发射流程。</string>
-    <string name="settings_tutorial_replay">开始引导练习</string>
+    <string name="settings_tutorial_replay">练习</string>
     <string name="tutorial_ready_tutorial_hint">想快速回顾操作和特殊图标时，随时打开教程。</string>
     <string name="interactive_onboarding_step_counter">引导 %1$d / %2$d</string>
     <string name="interactive_onboarding_drag_title">从底部托盘拖动方块</string>

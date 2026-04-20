@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-ANDROID_RES = ROOT / "composeApp" / "src" / "androidMain" / "res"
+ANDROID_RES = ROOT / "androidApp" / "src" / "main" / "res"
 IOS_APPICON = ROOT / "iosApp" / "iosApp" / "Assets.xcassets" / "AppIcon.appiconset"
 DESKTOP_RES = ROOT / "composeApp" / "src" / "jvmMain" / "resources"
 DESKTOP_ICONS = ROOT / "composeApp" / "desktop-icons"
@@ -203,11 +203,11 @@ def foreground_icon_svg() -> str:
     return board_icon_svg(
         include_background=False,
         clip_shape="rounded_rect",
-        board_scale=0.97,
-        clip_inset=76,
+        board_scale=0.84,
+        clip_inset=96,
         clip_radius=188,
-        surface_inset=92,
-        surface_radius=180,
+        surface_inset=138,
+        surface_radius=168,
     )
 
 
@@ -215,16 +215,16 @@ def macos_foreground_icon_svg() -> str:
     return board_icon_svg(
         include_background=False,
         clip_shape="rounded_rect",
-        board_scale=0.95,
+        board_scale=0.90,
         clip_inset=82,
         clip_radius=192,
-        surface_inset=90,
-        surface_radius=184,
+        surface_inset=112,
+        surface_radius=180,
     )
 
 
 def android_round_icon_svg() -> str:
-    return board_icon_svg(include_background=True, clip_shape="circle")
+    return board_icon_svg(include_background=True, clip_shape="circle", board_scale=0.88)
 
 
 def board_icon_svg(
@@ -373,17 +373,17 @@ def board_slots(geometry: dict[str, int], board_scale: float) -> str:
 
 def placed_blocks(geometry: dict[str, int]) -> str:
     placements = [
-        ((0, 0), "#00BBF9"),
-        ((0, 1), "#00BBF9"),
-        ((0, 3), "#FFE66D"),
-        ((1, 1), "#00BBF9"),
-        ((1, 2), "#9B5DE5"),
-        ((2, 0), "#00F5D4"),
-        ((2, 2), "#9B5DE5"),
-        ((2, 3), "#FFBE0B"),
-        ((3, 0), "#FF5C8A"),
-        ((3, 1), "#FF5C8A"),
-        ((3, 3), "#FFBE0B"),
+        ((0, 0), "#00BBF9", None),
+        ((0, 1), "#00BBF9", "column"),
+        ((0, 3), "#FFE66D", None),
+        ((1, 1), "#00F5D4", None),
+        ((1, 2), "#9B5DE5", "ghost"),
+        ((2, 0), "#00F5D4", None),
+        ((2, 2), "#9B5DE5", None),
+        ((2, 3), "#FFBE0B", "row"),
+        ((3, 0), "#FF5C8A", "heavy"),
+        ((3, 1), "#FF5C8A", None),
+        ((3, 3), "#FFBE0B", None),
     ]
     return "\n".join(
         tile_block(
@@ -391,17 +391,67 @@ def placed_blocks(geometry: dict[str, int]) -> str:
             y=geometry["board_y"] + row * (geometry["cell_size"] + geometry["gap"]),
             color=color,
             size=geometry["cell_size"],
+            special=special,
         )
-        for (row, column), color in placements
+        for (row, column), color, special in placements
     )
 
 
-def tile_block(x: int, y: int, color: str, size: int = 150) -> str:
+def tile_block(x: int, y: int, color: str, size: int = 150, special: str | None = None) -> str:
     corner = round(size * 0.21)
+    overlay = "" if special is None else special_overlay(x=x, y=y, size=size, kind=special)
     return f"""
   <g>
     <rect x=\"{x}\" y=\"{y}\" width=\"{size}\" height=\"{size}\" rx=\"{corner}\" fill=\"{color}\"/>
+    <rect x=\"{x + round(size * 0.08)}\" y=\"{y + round(size * 0.08)}\" width=\"{round(size * 0.84)}\" height=\"{round(size * 0.30)}\" rx=\"{round(size * 0.12)}\" fill=\"#FFFFFF\" fill-opacity=\"0.12\"/>
+{overlay}
   </g>"""
+
+
+def special_overlay(x: int, y: int, size: int, kind: str) -> str:
+    center_x = x + (size / 2)
+    center_y = y + (size / 2)
+    stroke = max(5, round(size * 0.060))
+    if kind == "column":
+        shaft_top = round(y + size * 0.25)
+        shaft_bottom = round(y + size * 0.75)
+        arrow_width = round(size * 0.18)
+        return f'''    <line x1="{round(center_x)}" y1="{shaft_top}" x2="{round(center_x)}" y2="{shaft_bottom}" stroke="#FFFFFF" stroke-opacity="0.94" stroke-width="{stroke}" stroke-linecap="round"/>
+    <path d="M {round(center_x)} {round(y + size * 0.18)} L {round(center_x - arrow_width)} {round(y + size * 0.34)} H {round(center_x - round(arrow_width * 0.42))} V {round(y + size * 0.46)} H {round(center_x + round(arrow_width * 0.42))} V {round(y + size * 0.34)} H {round(center_x + arrow_width)} Z" fill="#FFFFFF" fill-opacity="0.94"/>
+    <path d="M {round(center_x)} {round(y + size * 0.82)} L {round(center_x - arrow_width)} {round(y + size * 0.66)} H {round(center_x - round(arrow_width * 0.42))} V {round(y + size * 0.54)} H {round(center_x + round(arrow_width * 0.42))} V {round(y + size * 0.66)} H {round(center_x + arrow_width)} Z" fill="#FFFFFF" fill-opacity="0.94"/>'''
+    if kind == "row":
+        shaft_left = round(x + size * 0.25)
+        shaft_right = round(x + size * 0.75)
+        arrow_height = round(size * 0.18)
+        return f'''    <line x1="{shaft_left}" y1="{round(center_y)}" x2="{shaft_right}" y2="{round(center_y)}" stroke="#FFFFFF" stroke-opacity="0.94" stroke-width="{stroke}" stroke-linecap="round"/>
+    <path d="M {round(x + size * 0.18)} {round(center_y)} L {round(x + size * 0.34)} {round(center_y - arrow_height)} V {round(center_y - round(arrow_height * 0.42))} H {round(x + size * 0.46)} V {round(center_y + round(arrow_height * 0.42))} H {round(x + size * 0.34)} V {round(center_y + arrow_height)} Z" fill="#FFFFFF" fill-opacity="0.94"/>
+    <path d="M {round(x + size * 0.82)} {round(center_y)} L {round(x + size * 0.66)} {round(center_y - arrow_height)} V {round(center_y - round(arrow_height * 0.42))} H {round(x + size * 0.54)} V {round(center_y + round(arrow_height * 0.42))} H {round(x + size * 0.66)} V {round(center_y + arrow_height)} Z" fill="#FFFFFF" fill-opacity="0.94"/>'''
+    if kind == "ghost":
+        module = round(size * 0.16)
+        gap = round(size * 0.06)
+        start_x = round(center_x - module - (gap / 2))
+        start_y = round(center_y - module - (gap / 2))
+        radius = round(size * 0.05)
+        return "\n".join(
+            f'    <rect x="{start_x + (column * (module + gap))}" y="{start_y + (row * (module + gap))}" width="{module}" height="{module}" rx="{radius}" fill="#FFFFFF" fill-opacity="0.94"/>'
+            for row in range(2)
+            for column in range(2)
+        )
+    plate_width = round(size * 0.10)
+    plate_height = round(size * 0.32)
+    gap = round(size * 0.05)
+    bar_half = round(size * 0.12)
+    left_outer = round(center_x - bar_half - gap - (plate_width * 2))
+    left_inner = round(center_x - bar_half - gap - plate_width)
+    right_inner = round(center_x + bar_half + gap)
+    right_outer = round(center_x + bar_half + gap + plate_width)
+    plate_top = round(center_y - (plate_height / 2))
+    plate_radius = round(size * 0.04)
+    return f'''    <rect x="{left_outer}" y="{plate_top}" width="{plate_width}" height="{plate_height}" rx="{plate_radius}" fill="#FFFFFF" fill-opacity="0.94"/>
+    <rect x="{left_inner}" y="{plate_top}" width="{plate_width}" height="{plate_height}" rx="{plate_radius}" fill="#FFFFFF" fill-opacity="0.94"/>
+    <rect x="{round(center_x - bar_half)}" y="{round(center_y - stroke / 2)}" width="{bar_half * 2}" height="{stroke}" rx="{round(stroke / 2)}" fill="#FFFFFF" fill-opacity="0.94"/>
+    <rect x="{right_inner}" y="{plate_top}" width="{plate_width}" height="{plate_height}" rx="{plate_radius}" fill="#FFFFFF" fill-opacity="0.94"/>
+    <rect x="{right_outer}" y="{plate_top}" width="{plate_width}" height="{plate_height}" rx="{plate_radius}" fill="#FFFFFF" fill-opacity="0.94"/>'''
 
 
 if __name__ == "__main__":

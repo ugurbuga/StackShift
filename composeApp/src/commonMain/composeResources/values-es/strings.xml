@@ -25,10 +25,14 @@
     <string name="theme_palette_classic">Clásica</string>
     <string name="theme_palette_aurora">Aurora</string>
     <string name="theme_palette_sunset">Atardecer</string>
+    <string name="theme_palette_modern_neon">Neón moderno</string>
+    <string name="theme_palette_soft_pastel">Pastel</string>
+    <string name="theme_palette_minimal_monochrome">Monocromo</string>
     <string name="block_palette_classic">Clásica</string>
     <string name="block_palette_candy">Dulce</string>
     <string name="block_palette_neon">Neón</string>
     <string name="block_palette_earth">Tierra</string>
+    <string name="block_palette_monochrome">Monocromo</string>
     <string name="block_style_flat">Plano</string>
     <string name="block_style_bubble">Burbuja</string>
     <string name="block_style_outline">Contorno</string>
@@ -47,6 +51,9 @@
     <string name="restart_confirm_body">Se restablecerá el progreso actual. ¿Quieres continuar?</string>
     <string name="restart_confirm">Sí, reiniciar</string>
     <string name="restart_cancel">Cancelar</string>
+    <string name="leave_session_confirm_title">Leave this session?</string>
+    <string name="leave_session_confirm_body">Your current progress will be lost. Are you sure you want to go back?</string>
+    <string name="leave_session_confirm">Yes, leave</string>
     <string name="score">Puntuación</string>
     <string name="high_score">Récord</string>
     <string name="high_score_new_record">Nuevo récord</string>
@@ -69,7 +76,7 @@
     <string name="pause_title">En pausa</string>
     <string name="game_over_title">Fin de la partida</string>
     <string name="continue_label">Continuar</string>
-    <string name="game_over_extra_life">Ver anuncio + continuar</string>
+    <string name="game_over_extra_life">Ver anuncio para una vida extra</string>
     <string name="game_over_extra_life_loading">Cargando anuncio…</string>
     <string name="play_again">Jugar de nuevo</string>
     <string name="game_over_new_high_score">¡Nuevo récord!</string>
@@ -134,8 +141,10 @@
     <string name="tutorial_subtitle">Una guía rápida antes de tu primera partida.</string>
     <string name="tutorial_step_counter">Paso %1$d / %2$d</string>
     <string name="tutorial_back">Atrás</string>
+    <string name="cancel">Cancelar</string>
     <string name="tutorial_next">Siguiente</string>
     <string name="tutorial_finish">Iniciar juego</string>
+    <string name="return_home">Volver al inicio</string>
     <string name="tutorial_intro_title">Lanza piezas desde el dock inferior</string>
     <string name="tutorial_intro_body">Tu pieza activa espera abajo. Arrástrala horizontalmente para alinear una columna y suéltala para lanzarla hacia el tablero. La vista previa de la siguiente pieza se muestra más tenue para mantener el foco en la pieza activa.</string>
     <string name="tutorial_systems_title">Usa los bloques de acción cuando el tablero se apriete</string>
@@ -148,7 +157,7 @@
     <string name="tutorial_ready_settings_hint">Abre Ajustes para cambiar el idioma, el tema, los colores y el estilo de los bloques antes de tu próxima partida.</string>
     <string name="settings_tutorial">Tutorial</string>
     <string name="settings_tutorial_body">Abre el tutorial o la práctica guiada en cualquier momento para repasar los controles, los bloques especiales y el flujo de lanzamiento.</string>
-    <string name="settings_tutorial_replay">Iniciar práctica guiada</string>
+    <string name="settings_tutorial_replay">Práctica</string>
     <string name="tutorial_ready_tutorial_hint">Abre el Tutorial cuando quieras un repaso rápido de los controles y de los iconos especiales.</string>
     <string name="interactive_onboarding_step_counter">Guía %1$d / %2$d</string>
     <string name="interactive_onboarding_drag_title">Arrastra la pieza desde la bandeja</string>

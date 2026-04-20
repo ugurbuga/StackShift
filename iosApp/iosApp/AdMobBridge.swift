@@ -232,11 +232,27 @@ struct StackShiftBannerHost: UIViewRepresentable {
         let container = UIView()
         container.backgroundColor = .clear
 
+        let placeholderView = makePlaceholderView()
+        placeholderView.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(placeholderView)
+        NSLayoutConstraint.activate([
+            placeholderView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            placeholderView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            placeholderView.topAnchor.constraint(equalTo: container.topAnchor),
+            placeholderView.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+        ])
+
+        guard !StackShiftAdMobIDs.banner.isEmpty else {
+            context.coordinator.placeholderView = placeholderView
+            return container
+        }
+
         let bannerView = BannerView()
         bannerView.translatesAutoresizingMaskIntoConstraints = false
         bannerView.adUnitID = StackShiftAdMobIDs.banner
         bannerView.rootViewController = StackShiftAdBridge.topViewController()
         bannerView.delegate = context.coordinator
+        bannerView.isHidden = true
 
         container.addSubview(bannerView)
         NSLayoutConstraint.activate([
@@ -247,6 +263,7 @@ struct StackShiftBannerHost: UIViewRepresentable {
         ])
 
         context.coordinator.bannerView = bannerView
+        context.coordinator.placeholderView = placeholderView
         return container
     }
 
@@ -263,9 +280,69 @@ struct StackShiftBannerHost: UIViewRepresentable {
         bannerView.load(Request())
     }
 
+    private func makePlaceholderView() -> UIView {
+        let view = UIView()
+        view.backgroundColor = UIColor.secondarySystemBackground.withAlphaComponent(0.96)
+
+        let accentBar = UIView()
+        accentBar.translatesAutoresizingMaskIntoConstraints = false
+        accentBar.backgroundColor = UIColor.systemTeal.withAlphaComponent(0.88)
+        accentBar.layer.cornerRadius = 6
+
+        let titleLabel = UILabel()
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.text = "StackShift"
+        titleLabel.font = UIFont.systemFont(ofSize: 14, weight: .bold)
+        titleLabel.textColor = UIColor.label
+
+        let badgeLabel = UILabel()
+        badgeLabel.translatesAutoresizingMaskIntoConstraints = false
+        badgeLabel.text = "ad"
+        badgeLabel.font = UIFont.systemFont(ofSize: 11, weight: .semibold)
+        badgeLabel.textColor = UIColor.secondaryLabel
+        badgeLabel.backgroundColor = UIColor.white.withAlphaComponent(0.08)
+        badgeLabel.layer.cornerRadius = 8
+        badgeLabel.layer.masksToBounds = true
+        badgeLabel.textAlignment = .center
+
+        view.addSubview(accentBar)
+        view.addSubview(titleLabel)
+        view.addSubview(badgeLabel)
+
+        NSLayoutConstraint.activate([
+            accentBar.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
+            accentBar.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            accentBar.widthAnchor.constraint(equalToConstant: 18),
+            accentBar.heightAnchor.constraint(equalToConstant: 18),
+
+            titleLabel.leadingAnchor.constraint(equalTo: accentBar.trailingAnchor, constant: 10),
+            titleLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+
+            badgeLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),
+            badgeLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            badgeLabel.widthAnchor.constraint(equalToConstant: 30),
+            badgeLabel.heightAnchor.constraint(equalToConstant: 18),
+
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: badgeLabel.leadingAnchor, constant: -8)
+        ])
+
+        return view
+    }
+
     final class Coordinator: NSObject, BannerViewDelegate {
         var loadedWidth: CGFloat = 0
         weak var bannerView: BannerView?
+        weak var placeholderView: UIView?
+
+        func bannerViewDidReceiveAd(_ bannerView: BannerView) {
+            bannerView.isHidden = false
+            placeholderView?.isHidden = true
+        }
+
+        func bannerView(_ bannerView: BannerView, didFailToReceiveAdWithError error: any Error) {
+            bannerView.isHidden = true
+            placeholderView?.isHidden = false
+        }
     }
 }
 
