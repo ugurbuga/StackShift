@@ -36,7 +36,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
@@ -67,8 +66,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -162,10 +159,8 @@ import stackshift.composeapp.generated.resources.game_message_hold_updated
 import stackshift.composeapp.generated.resources.game_message_lines_cleared
 import stackshift.composeapp.generated.resources.game_message_no_opening
 import stackshift.composeapp.generated.resources.game_message_overflow
-import stackshift.composeapp.generated.resources.game_message_paused
 import stackshift.composeapp.generated.resources.game_message_perfect_drop
 import stackshift.composeapp.generated.resources.game_message_pressure_game_over
-import stackshift.composeapp.generated.resources.game_message_resumed
 import stackshift.composeapp.generated.resources.game_message_select_column
 import stackshift.composeapp.generated.resources.game_message_soft_lock
 import stackshift.composeapp.generated.resources.game_message_special_chain_board
@@ -186,12 +181,9 @@ import stackshift.composeapp.generated.resources.launch_chain_message
 import stackshift.composeapp.generated.resources.launch_drag_hint
 import stackshift.composeapp.generated.resources.launch_game_over
 import stackshift.composeapp.generated.resources.launch_label
-import stackshift.composeapp.generated.resources.launch_paused
 import stackshift.composeapp.generated.resources.launch_soft_lock_message
 import stackshift.composeapp.generated.resources.launch_special_chance
 import stackshift.composeapp.generated.resources.lines
-import stackshift.composeapp.generated.resources.pause
-import stackshift.composeapp.generated.resources.pause_title
 import stackshift.composeapp.generated.resources.piece_properties_none
 import stackshift.composeapp.generated.resources.play_again
 import stackshift.composeapp.generated.resources.queue_empty
@@ -201,7 +193,6 @@ import stackshift.composeapp.generated.resources.restart_cancel
 import stackshift.composeapp.generated.resources.restart_confirm
 import stackshift.composeapp.generated.resources.restart_confirm_body
 import stackshift.composeapp.generated.resources.restart_confirm_title
-import stackshift.composeapp.generated.resources.resume
 import stackshift.composeapp.generated.resources.return_home
 import stackshift.composeapp.generated.resources.score
 import stackshift.composeapp.generated.resources.special_column_clearer
@@ -499,10 +490,6 @@ fun StackShiftGameApp(
             telemetry.logUserAction(TelemetryActionNames.HoldPiece)
             viewModel.holdPiece()
         },
-        onPauseToggle = {
-            telemetry.logUserAction(TelemetryActionNames.TogglePause)
-            viewModel.togglePause()
-        },
         onRestart = {
             telemetry.logUserAction(TelemetryActionNames.RestartGame)
             viewModel.restart(uiState.gameState.config)
@@ -554,7 +541,6 @@ fun GameScreenWithLaunchOverlay(
     onResolvePreviewImpact: (PlacementPreview?) -> Set<GridPoint>,
     onPlacePiece: (Int) -> GameDispatchResult,
     onHoldPiece: () -> InteractionFeedback,
-    onPauseToggle: () -> InteractionFeedback,
     onRestart: () -> InteractionFeedback,
     onRewardedRevive: () -> InteractionFeedback,
     onBack: () -> Unit = {},
@@ -587,7 +573,6 @@ fun GameScreenWithLaunchOverlay(
             onResolvePreviewImpact = onResolvePreviewImpact,
             onPlacePiece = onPlacePiece,
             onHoldPiece = onHoldPiece,
-            onPauseToggle = onPauseToggle,
             onRestart = onRestart,
             onRewardedRevive = onRewardedRevive,
             onBack = onBack,
@@ -663,7 +648,6 @@ fun GameScreen(
     onResolvePreviewImpact: (PlacementPreview?) -> Set<GridPoint>,
     onPlacePiece: (Int) -> GameDispatchResult,
     onHoldPiece: () -> InteractionFeedback,
-    onPauseToggle: () -> InteractionFeedback,
     onRestart: () -> InteractionFeedback,
     onRewardedRevive: () -> InteractionFeedback,
     onBack: () -> Unit = {},
@@ -687,11 +671,15 @@ fun GameScreen(
     val coroutineScope = rememberCoroutineScope()
     val uiColors = StackShiftThemeTokens.uiColors
     val colorScheme = MaterialTheme.colorScheme
+    val settings = LocalAppSettings.current
+    val resolvedPreviewStyle = resolveBoardBlockStyle(
+        selectedStyle = settings.blockVisualStyle,
+        mode = settings.boardBlockStyleMode,
+    )
     val updatedPreviewProvider by rememberUpdatedState(onRequestPreview)
     val updatedPreviewImpactProvider by rememberUpdatedState(onResolvePreviewImpact)
     val updatedPlacePiece by rememberUpdatedState(onPlacePiece)
     val updatedHoldPiece by rememberUpdatedState(onHoldPiece)
-    val updatedPauseToggle by rememberUpdatedState(onPauseToggle)
     val updatedRestart by rememberUpdatedState(onRestart)
     val updatedRewardedRevive by rememberUpdatedState(onRewardedRevive)
     var showRestartDialog by remember { mutableStateOf(value = false) }
@@ -1109,9 +1097,14 @@ fun GameScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
+                            val boardShape = RoundedCornerShape(boardFrameCornerRadiusDp(resolvedPreviewStyle))
                             Box(
                                 modifier = Modifier
-                                    .size(width = layoutSpec.boardWidth, height = layoutSpec.boardHeight),
+                                    .size(width = layoutSpec.boardWidth, height = layoutSpec.boardHeight)
+                                    .stackShiftSurfaceShadow(
+                                        shape = boardShape,
+                                        elevation = 10.dp,
+                                    ),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 BoardGrid(
@@ -1139,7 +1132,8 @@ fun GameScreen(
                                     GameOverBoardClearOverlay(
                                         revealProgress = gameOverBoardClearProgress.value,
                                         rowCount = gameState.config.rows,
-                                        modifier = Modifier.matchParentSize(),
+                                        modifier = Modifier.matchParentSize()
+                                            .clip(boardShape),
                                     )
                                 }
                             }
@@ -1207,7 +1201,7 @@ fun GameScreen(
                         isDragging = isDragging,
                         isLaunching = isLaunching,
                         isSoftLockActive = gameState.isSoftLockActive,
-                        isPaused = gameState.status == GameStatus.Paused,
+                        isPaused = false,
                         shouldPulseTrayPiece = shouldPulseTrayPiece,
                         pointerModifier = Modifier.pointerInput(
                             activePiece.id,
@@ -1319,12 +1313,6 @@ fun GameScreen(
                                 }
                             }
                         },
-                    )
-                } else if (gameState.status == GameStatus.Paused) {
-                    PauseOverlay(
-                        onPrimaryAction = {
-                            dispatchFeedback(updatedPauseToggle(), soundPlayer, haptics)
-                        }
                     )
                 }
 
@@ -1450,18 +1438,18 @@ private fun launchGuideSegments(
         return emptyList()
     }
 
-    val topmostPieceRowsByColumn = activePiece.cells
-        .groupBy(GridPoint::column)
-        .mapValues { (_, points) -> points.minOf(GridPoint::row) }
-    val bottommostPreviewRowsByColumn = preview.occupiedCells
+    val bottommostPieceRowsByColumn = activePiece.cells
         .groupBy(GridPoint::column)
         .mapValues { (_, points) -> points.maxOf(GridPoint::row) }
+    val topmostPreviewRowsByColumn = preview.occupiedCells
+        .groupBy(GridPoint::column)
+        .mapValues { (_, points) -> points.minOf(GridPoint::row) }
 
-    return topmostPieceRowsByColumn.entries.sortedBy { it.key }.mapNotNull { (localColumn, topmostPieceRow) ->
+    return bottommostPieceRowsByColumn.entries.sortedBy { it.key }.mapNotNull { (localColumn, bottommostPieceRow) ->
         val boardColumn = preview.selectedColumn + localColumn
-        val bottommostPreviewRow = bottommostPreviewRowsByColumn[boardColumn] ?: return@mapNotNull null
-        val guideTop = boardRect.top + ((bottommostPreviewRow + 1) * cellSizePx)
-        val guideBottom = pieceTopLeft.y + (topmostPieceRow * cellSizePx)
+        val topmostPreviewRow = topmostPreviewRowsByColumn[boardColumn] ?: return@mapNotNull null
+        val guideTop = boardRect.top + (topmostPreviewRow * cellSizePx)
+        val guideBottom = pieceTopLeft.y + ((bottommostPieceRow + 1) * cellSizePx)
         val guideHeight = guideBottom - guideTop
         if (guideHeight <= 0f) return@mapNotNull null
 
@@ -1482,7 +1470,7 @@ private fun ActivePieceOverlay(
     isDragging: Boolean,
     isLaunching: Boolean,
     isSoftLockActive: Boolean,
-    isPaused: Boolean,
+    isPaused: Boolean = false,
     shouldPulseTrayPiece: Boolean,
     pointerModifier: Modifier,
     stylePulse: Float = 0f,
@@ -1573,8 +1561,6 @@ private fun ActivePieceOverlay(
             }
             .then(pointerModifier),
         alpha = when {
-            isPaused -> 0.42f
-            isLaunching -> LaunchPreviewAlpha
             else -> 1f
         },
         pulse = stylePulse,
@@ -1606,6 +1592,11 @@ private fun MinimalTopBar(
         shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
         colors = CardDefaults.cardColors(containerColor = uiColors.gameSurface.copy(alpha = TopBarPanelAlpha)),
         border = BorderStroke(1.dp, panelStrokeColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = Modifier.stackShiftSurfaceShadow(
+            shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
+            elevation = 10.dp,
+        ),
     ) {
         Column(
             modifier = Modifier
@@ -1748,9 +1739,13 @@ private fun MinimalBottomDock(
     val resolvedHighlightColor = highlightColor ?: uiColors.actionButton
     val dockPulseAlpha = if (highlightDock) 0.10f + (0.08f * stylePulse) else 0f
     Card(
-        modifier = modifier,
+        modifier = modifier.stackShiftSurfaceShadow(
+            shape = RoundedCornerShape(GameUiShapeTokens.dockCorner),
+            elevation = 10.dp,
+        ),
         shape = RoundedCornerShape(GameUiShapeTokens.dockCorner),
         colors = CardDefaults.cardColors(containerColor = uiColors.panel.copy(alpha = DockPanelAlpha)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = BorderStroke(
             width = if (highlightDock) 2.dp else 1.dp,
             color = if (highlightDock) {
@@ -1813,13 +1808,19 @@ private fun CompactMetricChip(
     val isHighlighted = highlightStrength > MetricHighlightThreshold
 
     Card(
-        modifier = modifier.graphicsLayer {
-            val scale = scaleProvider()
-            scaleX = scale
-            scaleY = scale
-        },
+        modifier = modifier
+            .stackShiftSurfaceShadow(
+                shape = RoundedCornerShape(GameUiShapeTokens.chipCorner),
+                elevation = 5.dp,
+            )
+            .graphicsLayer {
+                val scale = scaleProvider()
+                scaleX = scale
+                scaleY = scale
+            },
         shape = RoundedCornerShape(GameUiShapeTokens.chipCorner),
         colors = CardDefaults.cardColors(containerColor = uiColors.metricCard.copy(alpha = 0.92f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = BorderStroke(
             width = if (isHighlighted) 1.6.dp else 1.dp,
             color = if (isHighlighted) {
@@ -1895,68 +1896,6 @@ private fun CompactMetricChip(
     }
 }
 
-@Preview
-@Composable
-fun GameScreenRunningRecordIconsPreview() {
-    val uiColors = StackShiftThemeTokens.uiColors
-    Surface(color = Color.Black) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(uiColors.panel),
-            contentAlignment = Alignment.Center,
-        ) {
-            Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp)
-            ) {
-                CompactMetricChip(
-                    title = "NEW RECORD",
-                    value = "142,000",
-                    highlightStrengthProvider = { 1f },
-                    scaleProvider = { 1.03f },
-                    modifier = Modifier.width(160.dp).height(54.dp)
-                )
-
-                CompactMetricChip(
-                    title = "SCORE",
-                    value = "128,450",
-                    highlightStrengthProvider = { 0f },
-                    scaleProvider = { 1f },
-                    modifier = Modifier.width(160.dp).height(54.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun PauseOverlay(
-    onPrimaryAction: () -> Unit,
-) {
-    val uiColors = StackShiftThemeTokens.uiColors
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(uiColors.overlay),
-        contentAlignment = Alignment.Center,
-    ) {
-        GameEventDialogCard(
-            modifier = Modifier.widthIn(max = GameOverDialogWidth),
-            icon = Icons.Filled.Pause,
-            iconColors = listOf(
-                uiColors.warning.copy(alpha = 0.92f),
-                uiColors.launchGlow.copy(alpha = 0.84f),
-                uiColors.gameSurface.copy(alpha = 0.12f),
-            ),
-            title = resolveGameText(gameText(GameTextKey.PauseTitle)),
-            message = resolveGameText(gameText(GameTextKey.GameMessagePaused)),
-            buttonLabel = resolveGameText(gameText(GameTextKey.Continue)),
-            primaryButtonIcon = Icons.Filled.PlayArrow,
-            onAction = onPrimaryAction,
-        )
-    }
-}
 
 @Composable
 internal fun rememberBlockStylePulse(
@@ -2015,7 +1954,7 @@ internal fun TopBarActionBlockButton(
             .graphicsLayer { alpha = if (enabled) 1f else 0.72f }
             .stackShiftSurfaceShadow(
                 shape = RoundedCornerShape(launchCellCornerRadius),
-                elevation = 6.dp,
+                elevation = 5.dp,
             )
             .clip(RoundedCornerShape(launchCellCornerRadius))
             .clickable(enabled = enabled) { onClick.invoke() },
@@ -2116,7 +2055,7 @@ private fun GameEventDialogCard(
         ),
         shape = dialogShape,
         colors = CardDefaults.cardColors(containerColor = dialogContainerColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = BorderStroke(1.dp, uiColors.panelStroke),
     ) {
         Column(
@@ -2269,87 +2208,62 @@ internal fun BlockStyleActionButton(
     height: androidx.compose.ui.unit.Dp = 52.dp,
     pulse: Float = 0f,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
     val settings = LocalAppSettings.current
-    val contentColor = textColor ?: MaterialTheme.colorScheme.onSurface
-    val borderColor = when {
-        !enabled -> uiColors.panelStroke.copy(alpha = 0.32f)
-        emphasized -> Color.White.copy(alpha = 0.28f)
-        else -> uiColors.panelStroke.copy(alpha = 0.72f)
-    }
-    val resolvedTone = if (enabled) tone else CellTone.Gold
-    val buttonShape = RoundedCornerShape(GameUiShapeTokens.buttonCorner)
     val resolvedStyle = settings.blockVisualStyle
     val effectivePulse = rememberBlockStylePulse(
         style = resolvedStyle,
         pulse = pulse,
     )
-    val iconColor = icon?.let {
-        blockStyleIconTint(
-            style = resolvedStyle,
-            enabled = enabled,
-        )
-    }
+    val resolvedTone = if (enabled) tone else CellTone.Gold
+    val contentColor = textColor ?: blockStyleIconTint(style = resolvedStyle, enabled = enabled)
+    val buttonShape = RoundedCornerShape(GameUiShapeTokens.buttonCorner)
 
-    Card(
+    Box(
         modifier = modifier
+            .height(height)
+            .graphicsLayer { alpha = if (enabled) 1f else 0.72f }
             .stackShiftSurfaceShadow(
                 shape = buttonShape,
                 elevation = if (emphasized) 10.dp else 5.dp,
             )
-            .height(height)
-            .graphicsLayer { alpha = if (enabled) 1f else 0.72f }
             .clip(buttonShape)
             .clickable(enabled = enabled, onClick = onClick),
-        shape = buttonShape,
-        colors = CardDefaults.cardColors(
-            containerColor = if (emphasized) {
-                uiColors.gameSurface.copy(alpha = 0.985f)
-            } else {
-                uiColors.gameSurface.copy(alpha = 0.90f)
-            },
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (emphasized) 6.dp else 3.dp),
-        border = BorderStroke(1.dp, if (emphasized) Color.White.copy(alpha = 0.34f) else borderColor),
+        contentAlignment = Alignment.Center,
     ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val cornerRadiusPx = boardCellCornerRadiusPx(size.minDimension, resolvedStyle)
+            drawCellBody(
+                tone = resolvedTone,
+                palette = settings.blockColorPalette,
+                style = resolvedStyle,
+                topLeft = Offset.Zero,
+                size = this.size,
+                cornerRadius = CornerRadius(cornerRadiusPx, cornerRadiusPx),
+                alpha = if (enabled) 1f else 0.58f,
+                pulse = effectivePulse,
+            )
+        }
+
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .clip(buttonShape)
-                .background(
-                    Brush.horizontalGradient(
-                        colors = listOf(
-                            uiColors.panelHighlight.copy(alpha = if (emphasized) 0.26f else 0.10f),
-                            if (emphasized) uiColors.launchGlow.copy(alpha = 0.10f) else Color.Transparent,
-                            Color.Transparent,
-                        ),
-                    ),
-                )
-                .padding(horizontal = 14.dp, vertical = 10.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.Center,
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                BlockCellPreview(
-                    tone = resolvedTone,
-                    palette = settings.blockColorPalette,
-                    style = resolvedStyle,
-                    size = 30.dp,
-                    alpha = if (enabled) 1f else 0.58f,
-                    pulse = effectivePulse,
+            if (icon != null) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = contentColor,
+                    modifier = Modifier.size(20.dp),
                 )
-                icon?.let {
-                    Icon(
-                        imageVector = it,
-                        contentDescription = null,
-                        tint = iconColor ?: contentColor,
-                        modifier = Modifier.size(16.dp),
-                    )
-                }
+                Spacer(modifier = Modifier.width(12.dp))
             }
             Text(
                 text = text,
                 color = contentColor,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
                 maxLines = 1,
@@ -2646,10 +2560,14 @@ private fun GameOverDialogContent(
     }
 
     Card(
+        modifier = modifier.stackShiftSurfaceShadow(
+            shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
+            elevation = 12.dp,
+        ),
         shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
         colors = CardDefaults.cardColors(containerColor = dialogContainerColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = BorderStroke(1.dp, uiColors.panelStroke),
-        modifier = modifier,
     ) {
         Column(
             modifier = Modifier
@@ -2769,9 +2687,13 @@ private fun GameOverStatChip(
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
     Card(
-        modifier = modifier,
+        modifier = modifier.stackShiftSurfaceShadow(
+            shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
+            elevation = 5.dp,
+        ),
         shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
         colors = CardDefaults.cardColors(containerColor = uiColors.metricCard.copy(alpha = 0.88f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = BorderStroke(
             1.dp,
             accentColor?.copy(alpha = 0.52f) ?: uiColors.panelStroke.copy(alpha = 0.52f)
@@ -2847,8 +2769,6 @@ fun GameTextKey.stringResourceId(): StringResource {
     return when (this) {
         GameTextKey.AppTitle -> Res.string.app_title
         GameTextKey.Hold -> Res.string.hold
-        GameTextKey.Pause -> Res.string.pause
-        GameTextKey.Resume -> Res.string.resume
         GameTextKey.Restart -> Res.string.restart
         GameTextKey.RestartConfirmTitle -> Res.string.restart_confirm_title
         GameTextKey.RestartConfirmBody -> Res.string.restart_confirm_body
@@ -2866,13 +2786,11 @@ fun GameTextKey.stringResourceId(): StringResource {
         GameTextKey.LaunchSpecialChance -> Res.string.launch_special_chance
         GameTextKey.LaunchSoftLockMessage -> Res.string.launch_soft_lock_message
         GameTextKey.LaunchChainMessage -> Res.string.launch_chain_message
-        GameTextKey.LaunchPaused -> Res.string.launch_paused
         GameTextKey.LaunchGameOver -> Res.string.launch_game_over
         GameTextKey.LaunchDragHint -> Res.string.launch_drag_hint
         GameTextKey.QueueHold -> Res.string.hold
         GameTextKey.QueueNextShort -> Res.string.queue_next_short
         GameTextKey.QueueEmpty -> Res.string.queue_empty
-        GameTextKey.PauseTitle -> Res.string.pause_title
         GameTextKey.GameOverTitle -> Res.string.game_over_title
         GameTextKey.Continue -> Res.string.continue_label
         GameTextKey.GameOverExtraLife -> Res.string.game_over_extra_life
@@ -2894,8 +2812,6 @@ fun GameTextKey.stringResourceId(): StringResource {
         GameTextKey.GameMessageHoldUpdated -> Res.string.game_message_hold_updated
         GameTextKey.GameMessageTempoCritical -> Res.string.game_message_tempo_critical
         GameTextKey.GameMessageTempoUp -> Res.string.game_message_tempo_up
-        GameTextKey.GameMessagePaused -> Res.string.game_message_paused
-        GameTextKey.GameMessageResumed -> Res.string.game_message_resumed
         GameTextKey.GameMessageExtraLifeUsed -> Res.string.game_message_extra_life_used
         GameTextKey.FeedbackOverflow -> Res.string.feedback_overflow
         GameTextKey.FeedbackPerfectLane -> Res.string.feedback_perfect_lane
@@ -2996,15 +2912,28 @@ private fun Rect.toLocalRect(hostRect: Rect): Rect {
 
 @Preview
 @Composable
-private fun GameScreenRunningPreview() {
+private fun GameScreenDraggingPreview() {
     StackShiftTheme(settings = AppSettings()) {
         GameScreen(
-            gameState = previewGameState(),
+            gameState = previewGameState().copy(
+                activePiece = Piece(
+                    id = 1,
+                    kind = PieceKind.T,
+                    tone = CellTone.Gold,
+                    cells = listOf(
+                        GridPoint(0, 0),
+                        GridPoint(1, 0),
+                        GridPoint(2, 0),
+                        GridPoint(1, 1),
+                    ),
+                    width = 3,
+                    height = 2,
+                )
+            ),
             onRequestPreview = { previewPlacementPreview() },
             onResolvePreviewImpact = { previewImpactPointsPreview() },
             onPlacePiece = { GameDispatchResult() },
             onHoldPiece = { InteractionFeedback.None },
-            onPauseToggle = { InteractionFeedback.None },
             onRestart = { InteractionFeedback.None },
             onRewardedRevive = { InteractionFeedback.None },
             onOpenSettings = {},
@@ -3018,15 +2947,24 @@ private fun GameScreenRunningPreview() {
 
 @Preview
 @Composable
-private fun GameScreenPausedPreview() {
+private fun GameScreenRunningPreview() {
     StackShiftTheme(settings = AppSettings()) {
         GameScreen(
-            gameState = previewGameState(status = GameStatus.Paused),
+            gameState = previewGameState(
+                boardPoints = listOf(
+                    GridPoint(0, 5) to CellTone.Blue,
+                    GridPoint(1, 5) to CellTone.Blue,
+                    GridPoint(2, 6) to CellTone.Emerald,
+                    GridPoint(3, 6) to CellTone.Emerald,
+                    GridPoint(4, 7) to CellTone.Gold,
+                    GridPoint(8, 5) to CellTone.Coral,
+                    GridPoint(9, 5) to CellTone.Coral,
+                )
+            ),
             onRequestPreview = { previewPlacementPreview() },
-            onResolvePreviewImpact = { emptySet() },
+            onResolvePreviewImpact = { previewImpactPointsPreview() },
             onPlacePiece = { GameDispatchResult() },
             onHoldPiece = { InteractionFeedback.None },
-            onPauseToggle = { InteractionFeedback.None },
             onRestart = { InteractionFeedback.None },
             onRewardedRevive = { InteractionFeedback.None },
             onOpenSettings = {},
@@ -3038,55 +2976,20 @@ private fun GameScreenPausedPreview() {
     }
 }
 
-@Preview
-@Composable
-private fun GameScreenGameOverPreview() {
-    StackShiftTheme(settings = AppSettings()) {
-        GameScreen(
-            gameState = previewGameState(status = GameStatus.GameOver),
-            onRequestPreview = { previewPlacementPreview() },
-            onResolvePreviewImpact = { emptySet() },
-            onPlacePiece = { GameDispatchResult() },
-            onHoldPiece = { InteractionFeedback.None },
-            onPauseToggle = { InteractionFeedback.None },
-            onRestart = { InteractionFeedback.None },
-            onRewardedRevive = { InteractionFeedback.None },
-            onOpenSettings = {},
-            onOpenTutorial = {},
-            soundPlayer = NoOpSoundEffectPlayer,
-            haptics = NoOpGameHaptics,
-            highestScore = 142000,
-        )
-    }
-}
 
-@Preview
-@Composable
-private fun GameOverDialogPreview() {
-    StackShiftTheme(settings = AppSettings()) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
-        ) {
-            GameOverDialog(
-                gameState = previewGameState(status = GameStatus.GameOver),
-                highestScore = 142000,
-                showNewHighScoreMessage = false,
-                revealProgressProvider = { 1f },
-                canUseExtraLife = true,
-                isExtraLifeLoading = false,
-                showExtraLifeButton = true,
-                onPlayAgain = {},
-                onUseExtraLife = {},
-            )
-        }
-    }
-}
-
-private fun previewGameState(status: GameStatus = GameStatus.Running): GameState {
+private fun previewGameState(
+    status: GameStatus = GameStatus.Running,
+    boardPoints: List<Pair<GridPoint, CellTone>>? = null,
+): GameState {
     val config = GameConfig(columns = 10, rows = 16)
-    val board = BoardMatrix.empty(columns = 10, rows = 16)
-        .fill(
+    var board = BoardMatrix.empty(columns = 10, rows = 16)
+
+    if (boardPoints != null) {
+        boardPoints.forEach { (point, tone) ->
+            board = board.fill(listOf(point), tone)
+        }
+    } else {
+        board = board.fill(
             points = listOf(
                 GridPoint(0, 15),
                 GridPoint(0, 14),
@@ -3096,33 +2999,34 @@ private fun previewGameState(status: GameStatus = GameStatus.Running): GameState
             ),
             tone = CellTone.Blue,
         )
-        .fill(
-            points = listOf(
-                GridPoint(2, 12),
-                GridPoint(2, 11),
-                GridPoint(3, 12),
-                GridPoint(4, 12),
-                GridPoint(5, 11),
-                GridPoint(6, 10),
-            ),
-            tone = CellTone.Emerald,
-        )
-        .fill(
-            points = listOf(
-                GridPoint(2, 9),
-                GridPoint(6, 9),
-                GridPoint(7, 8),
-            ),
-            tone = CellTone.Gold,
-        )
-        .fill(
-            points = listOf(
-                GridPoint(8, 14),
-                GridPoint(8, 13),
-                GridPoint(9, 14),
-            ),
-            tone = CellTone.Coral,
-        )
+            .fill(
+                points = listOf(
+                    GridPoint(2, 12),
+                    GridPoint(2, 11),
+                    GridPoint(3, 12),
+                    GridPoint(4, 12),
+                    GridPoint(5, 11),
+                    GridPoint(6, 10),
+                ),
+                tone = CellTone.Emerald,
+            )
+            .fill(
+                points = listOf(
+                    GridPoint(2, 9),
+                    GridPoint(6, 9),
+                    GridPoint(7, 8),
+                ),
+                tone = CellTone.Gold,
+            )
+            .fill(
+                points = listOf(
+                    GridPoint(8, 14),
+                    GridPoint(8, 13),
+                    GridPoint(9, 14),
+                ),
+                tone = CellTone.Coral,
+            )
+    }
     return GameState(
         config = config,
         board = board,

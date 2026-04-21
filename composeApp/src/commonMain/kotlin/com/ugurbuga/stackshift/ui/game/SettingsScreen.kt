@@ -287,17 +287,18 @@ private fun HeaderCard(
     summary: String,
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
+    val panelShape = RoundedCornerShape(GameUiShapeTokens.panelCorner)
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .stackShiftSurfaceShadow(
-                shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
-                elevation = 9.dp,
+                shape = panelShape,
+                elevation = 10.dp,
             )
             .widthIn(max = ScreenContentMaxWidth),
-        shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
+        shape = panelShape,
         colors = CardDefaults.cardColors(containerColor = uiColors.panel),
-        elevation = CardDefaults.cardElevation(defaultElevation = 5.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
     ) {
         Row(
@@ -357,17 +358,18 @@ private fun SettingsSectionCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
+    val panelShape = RoundedCornerShape(GameUiShapeTokens.panelCorner)
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .stackShiftSurfaceShadow(
-                shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
-                elevation = 7.dp,
+                shape = panelShape,
+                elevation = 5.dp,
             )
             .widthIn(max = ScreenContentMaxWidth),
-        shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
+        shape = panelShape,
         colors = CardDefaults.cardColors(containerColor = uiColors.panel),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
     ) {
         Column(
@@ -394,6 +396,7 @@ private fun SectionHeader(
     trailingContent: (@Composable (() -> Unit))? = null,
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
+    val surfaceShape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner)
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -403,11 +406,12 @@ private fun SectionHeader(
             modifier = Modifier
                 .size(40.dp)
                 .stackShiftSurfaceShadow(
-                    shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
-                    elevation = 4.dp,
+                    shape = surfaceShape,
+                    elevation = 5.dp,
                 ),
-            shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
+            shape = surfaceShape,
             color = uiColors.panelHighlight,
+            shadowElevation = 0.dp,
             border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
         ) {
             Box(contentAlignment = Alignment.Center) {
@@ -462,11 +466,9 @@ private fun <T> SettingsGroup(
             options.forEach { option ->
                 val selected = option.value == selectedValue
                 FilterChip(
-                    modifier = Modifier.shadow(
-                        elevation = if (selected) 6.dp else 0.dp,
+                    modifier = Modifier.stackShiftSurfaceShadow(
+                        elevation = if (selected) 5.dp else 0.dp,
                         shape = RoundedCornerShape(GameUiShapeTokens.chipCorner),
-                        ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                        spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                     ),
                     selected = selected,
                     onClick = { onSelected(option.value) },

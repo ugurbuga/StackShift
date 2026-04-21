@@ -57,6 +57,7 @@
     <string name="score">स्कोर</string>
     <string name="high_score">सर्वश्रेष्ठ</string>
     <string name="high_score_new_record">नया रिकॉर्ड</string>
+    <string name="home_play_cta">खेलें</string>
     <string name="lines">लाइन</string>
     <string name="boost">बूस्ट</string>
     <string name="danger">खतरा</string>

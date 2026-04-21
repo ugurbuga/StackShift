@@ -281,7 +281,7 @@ internal fun InteractiveOnboardingInfoCard(
         ),
         shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
         colors = CardDefaults.cardColors(containerColor = uiColors.gameSurface.copy(alpha = 0.95f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.82f)),
     ) {
         Column(

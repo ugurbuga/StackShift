@@ -57,6 +57,7 @@
     <string name="score">Score</string>
     <string name="high_score">Record</string>
     <string name="high_score_new_record">Nouveau record</string>
+    <string name="home_play_cta">Jouer</string>
     <string name="lines">Lignes</string>
     <string name="boost">Élan</string>
     <string name="danger">Danger</string>

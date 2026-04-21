@@ -39,6 +39,7 @@ import com.ugurbuga.stackshift.telemetry.NoOpAppTelemetry
 import com.ugurbuga.stackshift.telemetry.TelemetryScreenNames
 import com.ugurbuga.stackshift.ui.theme.GameUiShapeTokens
 import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
+import com.ugurbuga.stackshift.ui.theme.stackShiftSurfaceShadow
 import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
 import stackshift.composeapp.generated.resources.block_properties_column_clearer_desc
@@ -76,9 +77,14 @@ fun BlockPropertiesScreen(
                 .padding(horizontal = 12.dp, vertical = 10.dp),
         ) {
             Card(
+                modifier = Modifier.stackShiftSurfaceShadow(
+                    shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
+                    elevation = 10.dp,
+                ),
                 shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
                 colors = CardDefaults.cardColors(containerColor = uiColors.panel),
                 border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             ) {
                 Row(
                     modifier = Modifier
@@ -123,10 +129,16 @@ fun BlockPropertiesScreen(
                 verticalAlignment = Alignment.Top,
             ) {
                 Card(
-                    modifier = Modifier.width(132.dp),
+                    modifier = Modifier
+                        .width(132.dp)
+                        .stackShiftSurfaceShadow(
+                            shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
+                            elevation = 5.dp,
+                        ),
                     shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
                     colors = CardDefaults.cardColors(containerColor = uiColors.panelMuted),
                     border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.72f)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                 ) {
                     Column(
                         modifier = Modifier
@@ -177,11 +189,16 @@ private fun BlockTypeRow(
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .stackShiftSurfaceShadow(
+                shape = rowShape,
+                elevation = 5.dp,
+            )
             .clip(rowShape)
             .clickable(onClick = onClick),
         shape = rowShape,
         colors = CardDefaults.cardColors(containerColor = background),
         border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = if (selected) 0.92f else 0.68f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Row(
             modifier = Modifier

@@ -57,6 +57,7 @@
     <string name="score">Skor</string>
     <string name="high_score">Terbaik</string>
     <string name="high_score_new_record">Rekor baru</string>
+    <string name="home_play_cta">Main</string>
     <string name="lines">Baris</string>
     <string name="boost">Dorongan</string>
     <string name="danger">Bahaya</string>

@@ -1091,7 +1091,7 @@ internal fun blockStyleIconTint(
     ).copy(alpha = if (enabled) 1f else 0.58f)
 }
 
-private fun DrawScope.drawWoodGrain(
+internal fun DrawScope.drawWoodGrain(
     topLeft: Offset,
     size: Size,
     alpha: Float,
@@ -1235,7 +1235,7 @@ fun PieceBlocks(
 }
 
 
-private fun DrawScope.drawCellBody(
+internal fun DrawScope.drawCellBody(
     tone: CellTone,
     palette: BlockColorPalette,
     style: BlockVisualStyle,

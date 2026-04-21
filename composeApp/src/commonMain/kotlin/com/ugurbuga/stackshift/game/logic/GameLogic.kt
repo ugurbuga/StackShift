@@ -19,11 +19,11 @@ import com.ugurbuga.stackshift.game.model.SoftLockState
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
 import com.ugurbuga.stackshift.game.model.gameText
 import com.ugurbuga.stackshift.settings.GameSessionCodec
-import kotlin.math.min
 import kotlin.random.Random
 
 class GameLogic(
     private val random: Random = Random.Default,
+    private val scoreCalculator: ScoreCalculator = ScoreCalculator(),
 ) {
     private var nextPieceId: Long = 1L
 
@@ -261,14 +261,32 @@ class GameLogic(
             GameStatus.GameOver
         }
 
-        val nextScore = state.score + scoreFor(
-            clearedRows = resolution.totalLinesCleared,
-            level = nextLevel,
-            comboChain = nextComboChain,
-            chainDepth = resolution.chainDepth,
-            perfectDropStreak = nextPerfectStreak,
-            specialTriggered = resolution.specialTriggered,
-            launchBoostActive = nextLaunchBar.boostTurnsRemaining > 0,
+        val boardSize = state.config.columns * state.config.rows
+        val fillRatio = maxOf(
+            state.board.occupiedCount.toFloat() / boardSize.toFloat(),
+            specialResult.board.occupiedCount.toFloat() / boardSize.toFloat(),
+        )
+
+        // "Hard placement" (köşe veya kenar yerleşimi) kontrolü
+        val isHardPlacement = preview.landingAnchor.column == 0 || 
+                             preview.landingAnchor.column == state.config.columns - piece.width ||
+                             preview.landingAnchor.row == 0 ||
+                             preview.landingAnchor.row == state.config.rows - piece.height
+
+        val nextScore = state.score + scoreCalculator.calculateScore(
+            ScoreCalculator.ScoreParams(
+                tilesPlaced = piece.cells.size,
+                linesCleared = resolution.totalLinesCleared,
+                currentStreak = nextComboChain,
+                specialBlocksTriggered = specialResult.initialTriggeredSpecials.map { it.special },
+                areaTilesCleared = resolution.triggeredSpecialCells,
+                isBoardCleared = resolution.board.isEmpty(),
+                isPerfectPlacement = perfectDrop,
+                isHardPlacement = isHardPlacement,
+                moveDurationMillis = null,
+                boardFillRatio = fillRatio,
+                chainReactionCount = (resolution.chainDepth - 1).coerceAtLeast(0),
+            )
         )
         val lastMoveScore = nextScore - state.score
         val nextToken = state.feedbackToken + 1L
@@ -451,16 +469,6 @@ class GameLogic(
                 gameText(GameTextKey.GameMessageTempoUp)
             },
         )
-    }
-
-    fun pause(state: GameState): GameState {
-        if (state.status != GameStatus.Running) return state
-        return state.copy(status = GameStatus.Paused, message = gameText(GameTextKey.GameMessagePaused))
-    }
-
-    fun resume(state: GameState): GameState {
-        if (state.status != GameStatus.Paused) return state
-        return state.copy(status = GameStatus.Running, message = gameText(GameTextKey.GameMessageResumed))
     }
 
     fun hasAnyValidPlacement(
@@ -1103,31 +1111,6 @@ class GameLogic(
         config: GameConfig,
     ): Int = 1 + difficultyStage + (clearedLines / config.linesPerLevel)
 
-    private fun scoreFor(
-        clearedRows: Int,
-        level: Int,
-        comboChain: Int,
-        chainDepth: Int,
-        perfectDropStreak: Int,
-        specialTriggered: Boolean,
-        launchBoostActive: Boolean,
-    ): Int {
-        val placementScore = 18 * level
-        val clearBonus = when (min(clearedRows, 4)) {
-            0 -> 0
-            1 -> 140
-            2 -> 340
-            3 -> 820
-            else -> 1500
-        } * level
-        val comboBonus = if (comboChain > 1) (comboChain - 1) * 120 * level else 0
-        val chainBonus = if (chainDepth > 1) (chainDepth - 1) * 150 * level else 0
-        val perfectBonus = if (perfectDropStreak > 0) (90 + (perfectDropStreak - 1) * 45) * level else 0
-        val specialBonus = if (specialTriggered) 130 * level else 0
-        val launchBonus = if (launchBoostActive) 70 * level else 0
-        return placementScore + clearBonus + comboBonus + chainBonus + perfectBonus + specialBonus + launchBonus
-    }
-
     private fun buildFloatingFeedback(
         state: GameState,
         lastMoveScore: Int,
@@ -1186,8 +1169,6 @@ enum class GameEvent {
     PressureCritical,
     GameOver,
     Revived,
-    Paused,
-    Resumed,
     Restarted,
 }
 

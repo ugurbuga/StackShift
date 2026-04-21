@@ -16,15 +16,18 @@ fun Modifier.stackShiftSurfaceShadow(
     elevation: Dp = 9.dp,
 ): Modifier {
     val settings = LocalAppSettings.current
-    val ambientColor = if (isStackShiftDarkTheme(settings)) {
-        Color.Black.copy(alpha = 0.54f)
+    val isDark = isStackShiftDarkTheme(settings)
+    val colorScheme = MaterialTheme.colorScheme
+    
+    val ambientColor = if (isDark) {
+        Color(0xFF030305).copy(alpha = 0.62f)
     } else {
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
+        colorScheme.primary.copy(alpha = 0.28f)
     }
-    val spotColor = if (isStackShiftDarkTheme(settings)) {
-        Color.Black.copy(alpha = 0.44f)
+    val spotColor = if (isDark) {
+        colorScheme.primary.copy(alpha = 0.18f)
     } else {
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.30f)
+        colorScheme.primary.copy(alpha = 0.34f)
     }
     return shadow(
         elevation = elevation,

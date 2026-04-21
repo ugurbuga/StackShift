@@ -135,7 +135,6 @@ data class GameConfig(
 
 enum class GameStatus {
     Running,
-    Paused,
     GameOver,
 }
 
@@ -163,8 +162,6 @@ enum class FeedbackEmphasis {
 enum class GameTextKey {
     AppTitle,
     Hold,
-    Pause,
-    Resume,
     Restart,
     RestartConfirmTitle,
     RestartConfirmBody,
@@ -182,13 +179,11 @@ enum class GameTextKey {
     LaunchSpecialChance,
     LaunchSoftLockMessage,
     LaunchChainMessage,
-    LaunchPaused,
     LaunchGameOver,
     LaunchDragHint,
     QueueHold,
     QueueNextShort,
     QueueEmpty,
-    PauseTitle,
     GameOverTitle,
     Continue,
     GameOverExtraLife,
@@ -210,8 +205,6 @@ enum class GameTextKey {
     GameMessageHoldUpdated,
     GameMessageTempoCritical,
     GameMessageTempoUp,
-    GameMessagePaused,
-    GameMessageResumed,
     GameMessageExtraLifeUsed,
     FeedbackOverflow,
     FeedbackPerfectLane,
@@ -492,6 +485,16 @@ class BoardMatrix private constructor(
 
     fun isColumnEmpty(column: Int): Boolean = topOccupiedRow(column) == null
 
+    val occupiedCount: Int by lazy {
+        var count = 0
+        for (i in cells.indices) {
+            if (cells[i] != EMPTY_CELL) count++
+        }
+        count
+    }
+
+    fun isEmpty(): Boolean = occupiedCount == 0
+
     fun clearColumns(columnsToClear: Set<Int>): BoardMatrix {
         if (columnsToClear.isEmpty()) return this
         val next = cells.copyOf()
@@ -666,6 +669,7 @@ data class GameState(
     val floatingFeedback: FloatingFeedback? = null,
     val feedbackToken: Long = 0L,
     val rewardedReviveUsed: Boolean = false,
+    val lastActionTime: Long = 0L,
     val message: GameText = GameText(GameTextKey.GameMessageSelectColumn),
 ) {
     val nextPiece: Piece?

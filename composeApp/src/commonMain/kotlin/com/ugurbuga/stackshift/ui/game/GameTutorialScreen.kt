@@ -360,11 +360,12 @@ fun GameTutorialScreen(
                         .weight(1f)
                         .stackShiftSurfaceShadow(
                             shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
-                            elevation = 8.dp,
+                            elevation = 10.dp,
                         )
                         .padding(horizontal = 12.dp, vertical = 10.dp),
                     shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
                     colors = CardDefaults.cardColors(containerColor = uiColors.panel.copy(alpha = 0.94f)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                     border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.84f)),
                 ) {
                     Column(
@@ -480,9 +481,14 @@ fun GameTutorialScreen(
 private fun TutorialStepChip(currentStep: Int, totalSteps: Int) {
     val uiColors = StackShiftThemeTokens.uiColors
     Card(
+        modifier = Modifier.stackShiftSurfaceShadow(
+            shape = RoundedCornerShape(GameUiShapeTokens.chipCorner),
+            elevation = 5.dp,
+        ),
         shape = RoundedCornerShape(GameUiShapeTokens.chipCorner),
         colors = CardDefaults.cardColors(containerColor = uiColors.panelMuted.copy(alpha = 0.92f)),
         border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.68f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Text(
             text = stringResource(Res.string.tutorial_step_counter, currentStep, totalSteps),
@@ -570,10 +576,11 @@ private fun TutorialMiniBoardShell(
     Card(
         modifier = modifier.stackShiftSurfaceShadow(
             shape = RoundedCornerShape(boardFrameCornerRadiusDp(boardStyle)),
-            elevation = 6.dp,
+            elevation = 10.dp,
         ),
         shape = RoundedCornerShape(boardFrameCornerRadiusDp(boardStyle)),
         colors = CardDefaults.cardColors(containerColor = uiColors.gameSurface.copy(alpha = 0.88f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = BorderStroke(1.dp, uiColors.boardOutline.copy(alpha = 0.84f)),
     ) {
         Box(
@@ -1116,10 +1123,11 @@ private fun TutorialMiniBottomDock(
     Card(
         modifier = modifier.stackShiftSurfaceShadow(
             shape = RoundedCornerShape(GameUiShapeTokens.dockCorner),
-            elevation = 5.dp,
+            elevation = 10.dp,
         ),
         shape = RoundedCornerShape(GameUiShapeTokens.dockCorner),
         colors = CardDefaults.cardColors(containerColor = uiColors.gameSurface.copy(alpha = 0.90f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = BorderStroke(1.dp, uiColors.boardEmptyCellBorder.copy(alpha = 0.68f)),
     ) {
         Box(
@@ -1199,6 +1207,7 @@ private fun TutorialSection(
         ),
         shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
         colors = CardDefaults.cardColors(containerColor = uiColors.gameSurface.copy(alpha = 0.84f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.72f)),
     ) {
         Column(
@@ -1234,10 +1243,11 @@ private fun TutorialPieceCard(
     Card(
         modifier = modifier.stackShiftSurfaceShadow(
             shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
-            elevation = 4.dp,
+            elevation = 5.dp,
         ),
         shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
         colors = CardDefaults.cardColors(containerColor = uiColors.panelMuted.copy(alpha = 0.76f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.68f)),
     ) {
         Column(
@@ -1278,10 +1288,11 @@ private fun TutorialActionTile(
     Card(
         modifier = modifier.stackShiftSurfaceShadow(
             shape = RoundedCornerShape(GameUiShapeTokens.buttonCorner),
-            elevation = 3.dp,
+            elevation = 5.dp,
         ),
         shape = RoundedCornerShape(GameUiShapeTokens.buttonCorner),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -1326,10 +1337,11 @@ private fun TutorialSpecialCard(
     Card(
         modifier = Modifier.stackShiftSurfaceShadow(
             shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
-            elevation = 4.dp,
+            elevation = 5.dp,
         ),
         shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
         colors = CardDefaults.cardColors(containerColor = uiColors.panelMuted.copy(alpha = 0.78f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.70f)),
     ) {
         Row(
@@ -1370,10 +1382,11 @@ private fun TutorialHintCard(text: String) {
     Card(
         modifier = Modifier.stackShiftSurfaceShadow(
             shape = RoundedCornerShape(GameUiShapeTokens.hintCorner),
-            elevation = 3.dp,
+            elevation = 5.dp,
         ),
         shape = RoundedCornerShape(GameUiShapeTokens.hintCorner),
         colors = CardDefaults.cardColors(containerColor = uiColors.metricCard.copy(alpha = 0.84f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.62f)),
     ) {
         Text(

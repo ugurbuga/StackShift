@@ -57,6 +57,7 @@
     <string name="score">Pontuação</string>
     <string name="high_score">Melhor</string>
     <string name="high_score_new_record">Novo recorde</string>
+    <string name="home_play_cta">Jogar</string>
     <string name="lines">Linha</string>
     <string name="boost">Impulso</string>
     <string name="danger">Perigo</string>

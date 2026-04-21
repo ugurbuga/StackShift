@@ -57,6 +57,7 @@
     <string name="score">分数</string>
     <string name="high_score">最高分</string>
     <string name="high_score_new_record">新纪录</string>
+    <string name="home_play_cta">开始</string>
     <string name="lines">行</string>
     <string name="boost">加速</string>
     <string name="danger">危险</string>

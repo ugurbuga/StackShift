@@ -108,7 +108,7 @@ class GameReducerCommonTest {
     @Test
     fun feedbackMapper_mapsPauseResumeAndGameOverSignals() {
         val feedback = GameFeedbackMapper().map(
-            setOf(GameEvent.Paused, GameEvent.Resumed, GameEvent.GameOver),
+            setOf(GameEvent.SoftLockStarted, GameEvent.Restarted, GameEvent.GameOver),
         )
 
         assertTrue(feedback.sounds.isNotEmpty())

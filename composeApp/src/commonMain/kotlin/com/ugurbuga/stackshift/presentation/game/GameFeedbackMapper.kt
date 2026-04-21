@@ -31,14 +31,6 @@ class GameFeedbackMapper {
             sounds += GameSound.Combo
             haptics += GameHaptic.Success
         }
-        if (GameEvent.Paused in events) {
-            sounds += GameSound.Pause
-            haptics += GameHaptic.Light
-        }
-        if (GameEvent.Resumed in events) {
-            sounds += GameSound.Resume
-            haptics += GameHaptic.Light
-        }
         if (GameEvent.HoldUsed in events) {
             sounds += GameSound.Grab
             haptics += GameHaptic.Light

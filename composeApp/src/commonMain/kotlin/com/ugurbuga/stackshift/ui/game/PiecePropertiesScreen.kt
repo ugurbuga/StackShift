@@ -29,6 +29,7 @@ import com.ugurbuga.stackshift.telemetry.NoOpAppTelemetry
 import com.ugurbuga.stackshift.telemetry.TelemetryScreenNames
 import com.ugurbuga.stackshift.ui.theme.GameUiShapeTokens
 import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
+import com.ugurbuga.stackshift.ui.theme.stackShiftSurfaceShadow
 import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
 import stackshift.composeapp.generated.resources.piece_properties_active
@@ -66,9 +67,14 @@ fun PiecePropertiesScreen(
                 .padding(horizontal = 12.dp, vertical = 10.dp),
         ) {
             Card(
+                modifier = Modifier.stackShiftSurfaceShadow(
+                    shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
+                    elevation = 10.dp,
+                ),
                 shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
                 colors = CardDefaults.cardColors(containerColor = uiColors.panel),
                 border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             ) {
                 Column(
                     modifier = Modifier
@@ -100,10 +106,16 @@ fun PiecePropertiesScreen(
             Spacer(modifier = Modifier.height(10.dp))
 
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .stackShiftSurfaceShadow(
+                        shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
+                        elevation = 5.dp,
+                    ),
                 shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
                 colors = CardDefaults.cardColors(containerColor = uiColors.panelMuted),
                 border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.72f)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             ) {
                 Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
                     if (activePiece == null) {

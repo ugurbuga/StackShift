@@ -57,6 +57,7 @@
     <string name="score">النتيجة</string>
     <string name="high_score">الأفضل</string>
     <string name="high_score_new_record">رقم قياسي جديد</string>
+    <string name="home_play_cta">ابدأ</string>
     <string name="lines">خط</string>
     <string name="boost">تعزيز</string>
     <string name="danger">خطر</string>

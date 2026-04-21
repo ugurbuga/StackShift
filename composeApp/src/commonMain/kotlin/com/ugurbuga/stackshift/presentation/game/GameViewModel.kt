@@ -53,10 +53,6 @@ class GameViewModel(
 
     fun reviveFromReward(): InteractionFeedback = dispatch(GameIntent.ReviveFromReward)
 
-    fun togglePause(): InteractionFeedback {
-        return dispatch(GameIntent.TogglePause)
-    }
-
     fun restart(config: GameConfig = uiState.value.gameState.config): InteractionFeedback {
         return dispatch(GameIntent.Restart(config))
     }
