@@ -44,6 +44,12 @@
     <string name="block_style_pixel_art">Piksel Art</string>
     <string name="block_style_crystal">Cevher / Kristal</string>
     <string name="block_style_dynamic_liquid">Dinamik Sıvı</string>
+    <string name="block_style_matte_soft">Mat Soft</string>
+    <string name="block_style_neon_glow">Neon Glow</string>
+    <string name="block_style_metallic">Metalik</string>
+    <string name="block_style_stone_texture">Taş Doku</string>
+    <string name="block_style_honeycomb_texture">Petek Doku</string>
+    <string name="block_style_light_burst">Işık Hüzmesi</string>
     <string name="board_block_style_always_flat">Her zaman düz</string>
     <string name="board_block_style_match_selected">Seçili blok stiliyle eşleşsin</string>
     <string name="hold">Beklet</string>
@@ -102,6 +108,9 @@
     <string name="game_message_paused">Oyun duraklatıldı.</string>
     <string name="game_message_resumed">Devam. Kolonu seç ve fırlat.</string>
     <string name="game_message_extra_life_used">Ekstra can aktif! %1$s satır temizlendi.</string>
+    <string name="notification_reminders_channel_name">Hatırlatıcılar</string>
+    <string name="notification_miss_you_title">StackShift</string>
+    <string name="notification_miss_you_body">Seni özledik! Hadi gel biraz daha oyna.</string>
     <string name="feedback_overflow">Taşma</string>
     <string name="feedback_perfect_lane">Mükemmel hat x%1$s</string>
     <string name="feedback_micro_adjust">Mikro ayar</string>

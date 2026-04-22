@@ -27,9 +27,12 @@ import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
+import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd
+import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAdLoadCallback
 import kotlinx.coroutines.delay
 
 private const val BannerRefreshIntervalMillis = 60_000L
+private val AndroidAdMobAdUnitIdRegex = Regex("^ca-app-pub-\\d+/\\d+$")
 
 @Composable
 actual fun rememberPlatformGameAdController(): GameAdController {
@@ -61,7 +64,8 @@ private class AndroidGameAdController(
 
     private var mobileAdsInitialized = false
     private var interstitialAd: InterstitialAd? = null
-    private var rewardedAd: RewardedAd? = null
+    private var rewardedReviveAd: RewardedAd? = null
+    private var rewardedSpecialAd: RewardedInterstitialAd? = null
 
     fun preloadAds() {
         try {
@@ -78,11 +82,18 @@ private class AndroidGameAdController(
             Log.e("GameAds", "Failed to load interstitial ad", e)
         }
         try {
-            if (rewardedAd == null) {
-                loadRewarded()
+            if (rewardedReviveAd == null) {
+                loadRewardedRevive()
             }
         } catch (e: Exception) {
-            Log.e("GameAds", "Failed to load rewarded ad", e)
+            Log.e("GameAds", "Failed to load rewarded revive ad", e)
+        }
+        try {
+            if (rewardedSpecialAd == null) {
+                loadRewardedSpecial()
+            }
+        } catch (e: Exception) {
+            Log.e("GameAds", "Failed to load rewarded special ad", e)
         }
     }
 
@@ -124,22 +135,22 @@ private class AndroidGameAdController(
         try {
             preloadAds()
             val activity = activityProvider()
-            val ad = rewardedAd
+            val ad = rewardedReviveAd
             if (activity == null || ad == null) {
                 onResult(false)
-                loadRewarded()
+                loadRewardedRevive()
                 return
             }
-            rewardedAd = null
+            rewardedReviveAd = null
             var rewardEarned = false
             ad.fullScreenContentCallback = object : FullScreenContentCallback() {
                 override fun onAdDismissedFullScreenContent() {
                     onResult(rewardEarned)
-                    loadRewarded()
+                    loadRewardedRevive()
                 }
                 override fun onAdFailedToShowFullScreenContent(adError: com.google.android.gms.ads.AdError) {
                     onResult(false)
-                    loadRewarded()
+                    loadRewardedRevive()
                 }
             }
             try {
@@ -147,12 +158,49 @@ private class AndroidGameAdController(
                     rewardEarned = true
                 }
             } catch (e: Exception) {
-                Log.e("GameAds", "Failed to show rewarded ad", e)
+                Log.e("GameAds", "Failed to show rewarded revive ad", e)
                 onResult(false)
-                loadRewarded()
+                loadRewardedRevive()
             }
         } catch (e: Exception) {
             Log.e("GameAds", "Exception in showRewardedRevive", e)
+            onResult(false)
+        }
+    }
+
+    override fun showRewardedAd(onResult: (Boolean) -> Unit) {
+        try {
+            preloadAds()
+            val activity = activityProvider()
+            val ad = rewardedSpecialAd
+            if (activity == null || ad == null) {
+                onResult(false)
+                loadRewardedSpecial()
+                return
+            }
+            rewardedSpecialAd = null
+            var rewardEarned = false
+            ad.fullScreenContentCallback = object : FullScreenContentCallback() {
+                override fun onAdDismissedFullScreenContent() {
+                    onResult(rewardEarned)
+                    loadRewardedSpecial()
+                }
+                override fun onAdFailedToShowFullScreenContent(adError: com.google.android.gms.ads.AdError) {
+                    onResult(false)
+                    loadRewardedSpecial()
+                }
+            }
+            try {
+                ad.show(activity) {
+                    rewardEarned = true
+                }
+            } catch (e: Exception) {
+                Log.e("GameAds", "Failed to show rewarded special ad", e)
+                onResult(false)
+                loadRewardedSpecial()
+            }
+        } catch (e: Exception) {
+            Log.e("GameAds", "Exception in showRewardedAd", e)
             onResult(false)
         }
     }
@@ -165,7 +213,10 @@ private class AndroidGameAdController(
             currentOnLoadStateChanged(false)
         }
         if (inspectionMode) return
-        if (AndroidAdMobIds.BannerAdUnitId.isBlank()) return
+        val bannerAdUnitId = validatedAdUnitId(
+            propertyName = "AndroidAdMobIds.BannerAdUnitId",
+            rawValue = AndroidAdMobIds.BannerAdUnitId,
+        ) ?: return
 
         var bannerAdView by remember { mutableStateOf<AdView?>(null) }
 
@@ -174,7 +225,7 @@ private class AndroidGameAdController(
             factory = { viewContext ->
                 AdView(viewContext).apply {
                     setAdSize(AdSize.BANNER)
-                    adUnitId = AndroidAdMobIds.BannerAdUnitId
+                    adUnitId = bannerAdUnitId
                     adListener = object : AdListener() {
                         override fun onAdLoaded() {
                             currentOnLoadStateChanged(true)
@@ -234,10 +285,17 @@ private class AndroidGameAdController(
     }
 
     private fun loadInterstitial() {
+        val adUnitId = validatedAdUnitId(
+            propertyName = "AndroidAdMobIds.InterstitialAdUnitId",
+            rawValue = AndroidAdMobIds.InterstitialAdUnitId,
+        ) ?: run {
+            interstitialAd = null
+            return
+        }
         try {
             InterstitialAd.load(
                 context,
-                AndroidAdMobIds.InterstitialAdUnitId,
+                adUnitId,
                 AdRequest.Builder().build(),
                 object : InterstitialAdLoadCallback() {
                     override fun onAdLoaded(ad: InterstitialAd) {
@@ -254,24 +312,59 @@ private class AndroidGameAdController(
         }
     }
 
-    private fun loadRewarded() {
+    private fun loadRewardedRevive() {
+        val adUnitId = validatedAdUnitId(
+            propertyName = "AndroidAdMobIds.RewardedReviveAdUnitId",
+            rawValue = AndroidAdMobIds.RewardedReviveAdUnitId,
+        ) ?: run {
+            rewardedReviveAd = null
+            return
+        }
         try {
             RewardedAd.load(
                 context,
-                AndroidAdMobIds.RewardedAdUnitId,
+                adUnitId,
                 AdRequest.Builder().build(),
                 object : RewardedAdLoadCallback() {
                     override fun onAdLoaded(ad: RewardedAd) {
-                        rewardedAd = ad
+                        rewardedReviveAd = ad
                     }
                     override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-                        rewardedAd = null
-                        Log.e("GameAds", "Rewarded ad failed to load: $loadAdError")
+                        rewardedReviveAd = null
+                        Log.e("GameAds", "Rewarded revive ad failed to load: $loadAdError")
                     }
                 },
             )
         } catch (e: Exception) {
-            Log.e("GameAds", "Exception in loadRewarded", e)
+            Log.e("GameAds", "Exception in loadRewardedRevive", e)
+        }
+    }
+
+    private fun loadRewardedSpecial() {
+        val adUnitId = validatedAdUnitId(
+            propertyName = "AndroidAdMobIds.RewardedSpecialAdUnitId",
+            rawValue = AndroidAdMobIds.RewardedSpecialAdUnitId,
+        ) ?: run {
+            rewardedSpecialAd = null
+            return
+        }
+        try {
+            RewardedInterstitialAd.load(
+                context,
+                adUnitId,
+                AdRequest.Builder().build(),
+                object : RewardedInterstitialAdLoadCallback() {
+                    override fun onAdLoaded(ad: RewardedInterstitialAd) {
+                        rewardedSpecialAd = ad
+                    }
+                    override fun onAdFailedToLoad(loadAdError: LoadAdError) {
+                        rewardedSpecialAd = null
+                        Log.e("GameAds", "Rewarded special ad failed to load: $loadAdError")
+                    }
+                },
+            )
+        } catch (e: Exception) {
+            Log.e("GameAds", "Exception in loadRewardedSpecial", e)
         }
     }
 
@@ -282,17 +375,47 @@ private class AndroidGameAdController(
             Log.e("GameAds", "Exception in refreshBannerAd", e)
         }
     }
+
+    private fun validatedAdUnitId(propertyName: String, rawValue: String): String? {
+        val normalized = rawValue.normalizeAdMobIdentifier()
+        if (normalized.isBlank()) {
+            Log.w("GameAds", "$propertyName is blank; skipping ad load.")
+            return null
+        }
+        if (!normalized.matches(AndroidAdMobAdUnitIdRegex)) {
+            Log.e(
+                "GameAds",
+                "$propertyName is not a valid Android AdMob ad unit ID. " +
+                    "Expected format ca-app-pub-XXXXXXXXXXXXXXXX/NNNNNNNNNN but was ${normalized.redactedAdMobIdentifier()}. " +
+                    "Check ads.properties and remove surrounding quotes or app-id (~) values.",
+            )
+            return null
+        }
+        return normalized
+    }
 }
 
 object AndroidAdMobIds {
     var BannerAdUnitId: String = ""
     var InterstitialAdUnitId: String = ""
-    var RewardedAdUnitId: String = ""
+    var RewardedReviveAdUnitId: String = ""
+    var RewardedSpecialAdUnitId: String = ""
 }
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
     is ContextWrapper -> baseContext.findActivity()
     else -> null
+}
+
+private fun String.normalizeAdMobIdentifier(): String =
+    trim()
+        .removeSurrounding("\"")
+        .removeSurrounding("'")
+
+private fun String.redactedAdMobIdentifier(): String {
+    if (isBlank()) return "<blank>"
+    if (length <= 12) return "<redacted>"
+    return take(12) + "..." + takeLast(4)
 }
 

@@ -41,6 +41,12 @@
     <string name="block_style_pixel_art">像素风</string>
     <string name="block_style_crystal">水晶</string>
     <string name="block_style_dynamic_liquid">动态液体</string>
+    <string name="block_style_matte_soft">Matte Soft</string>
+    <string name="block_style_neon_glow">Neon Glow</string>
+    <string name="block_style_metallic">Metallic</string>
+    <string name="block_style_stone_texture">Stone Texture</string>
+    <string name="block_style_honeycomb_texture">Honeycomb Texture</string>
+    <string name="block_style_light_burst">Light Burst</string>
     <string name="board_block_style_always_flat">始终平面</string>
     <string name="board_block_style_match_selected">与所选样式一致</string>
     <string name="hold">暂存</string>
@@ -99,6 +105,9 @@
     <string name="game_message_paused">游戏已暂停。</string>
     <string name="game_message_resumed">继续。选择列并发射。</string>
     <string name="game_message_extra_life_used">已激活额外生命！已清除 %1$s 行。</string>
+    <string name="notification_reminders_channel_name">提醒</string>
+    <string name="notification_miss_you_title">StackShift</string>
+    <string name="notification_miss_you_body">我们想你了！回来再玩一会儿吧。</string>
     <string name="feedback_overflow">溢出</string>
     <string name="feedback_perfect_lane">完美路线 x%1$s</string>
     <string name="feedback_micro_adjust">微调</string>

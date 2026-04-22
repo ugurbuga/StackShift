@@ -30,7 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.PlayLesson
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -60,6 +61,8 @@ import com.ugurbuga.stackshift.game.model.AppThemeMode
 import com.ugurbuga.stackshift.game.model.BlockColorPalette
 import com.ugurbuga.stackshift.game.model.BlockVisualStyle
 import com.ugurbuga.stackshift.game.model.CellTone
+import com.ugurbuga.stackshift.platform.NotificationManager
+import com.ugurbuga.stackshift.platform.rememberNotificationManager
 import com.ugurbuga.stackshift.settings.AppSettings
 import com.ugurbuga.stackshift.telemetry.AppTelemetry
 import com.ugurbuga.stackshift.telemetry.LogScreen
@@ -93,6 +96,7 @@ fun HomeScreen(
     onOpenTutorial: () -> Unit,
     onOpenTheme: () -> Unit,
     onOpenLanguage: () -> Unit,
+    notificationManager: NotificationManager,
     modifier: Modifier = Modifier,
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
@@ -108,6 +112,8 @@ fun HomeScreen(
     )
 
     LogScreen(telemetry, TelemetryScreenNames.Home)
+
+    notificationManager.RequestPermission()
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -154,7 +160,7 @@ fun HomeScreen(
                 pulse = stylePulse,
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .size(100.dp),
+                    .size(120.dp),
                 onClick = onPlay,
             )
 
@@ -177,7 +183,7 @@ fun HomeScreen(
                 ) {
                     HomeQuickActionButton(
                         text = stringResource(Res.string.settings_tutorial_replay),
-                        icon = Icons.Filled.Refresh,
+                        icon = Icons.Filled.PlayLesson,
                         tone = CellTone.Emerald,
                         settings = settings,
                         pulse = stylePulse,
@@ -328,6 +334,7 @@ private fun HomeTitleBanner(
                                 if (column == 5) {
                                     HomeTitleEmptyCell(
                                         settings = settings,
+                                        pulse = pulse,
                                         modifier = Modifier.weight(1f).fillMaxHeight(),
                                     )
                                 } else {
@@ -352,6 +359,7 @@ private fun HomeTitleBanner(
                                 if (column == 0) {
                                     HomeTitleEmptyCell(
                                         settings = settings,
+                                        pulse = pulse,
                                         modifier = Modifier.weight(1f).fillMaxHeight(),
                                     )
                                 } else {
@@ -614,6 +622,7 @@ private fun HomeTitleAnimatedCell(
 @Composable
 private fun HomeTitleEmptyCell(
     settings: AppSettings,
+    pulse: Float = 0f,
     modifier: Modifier = Modifier,
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
@@ -625,11 +634,16 @@ private fun HomeTitleEmptyCell(
         val corner =
             RoundedCornerShape(boardCellCornerRadiusDp(cellSize, settings.blockVisualStyle))
         val inset = boardCellInsetDp(cellSize) * 0.72f
+        val pulseAlpha = if (settings.blockVisualStyle == BlockVisualStyle.DynamicLiquid) {
+            0.10f + (0.15f * pulse)
+        } else {
+            0.20f
+        }
         Box(
             modifier = Modifier
                 .size(cellSize)
                 .clip(corner)
-                .background(uiColors.boardEmptyCellBorder.copy(alpha = 0.20f))
+                .background(uiColors.boardEmptyCellBorder.copy(alpha = pulseAlpha))
                 .padding(inset),
         ) {
             Box(
@@ -795,61 +809,76 @@ private fun HomePrimaryPlayButton(
     modifier: Modifier = Modifier,
 ) {
     val resolvedStyle = settings.blockVisualStyle
-    val buttonShape = RoundedCornerShape(GameUiShapeTokens.buttonCorner)
-    val effectivePulse = rememberBlockStylePulse(
-        style = resolvedStyle,
-        pulse = pulse,
-    )
-    val contentColor = blockStyleIconTint(style = resolvedStyle)
+    val density = LocalDensity.current
+    BoxWithConstraints(modifier = modifier.aspectRatio(1f)) {
+        val cellSize = maxWidth
+        val cellInset = boardCellInsetDp(cellSize)
+        val buttonShape = RoundedCornerShape(boardCellCornerRadiusDp(cellSize, resolvedStyle))
+        val effectivePulse = rememberBlockStylePulse(
+            style = resolvedStyle,
+            pulse = pulse,
+        )
+        val contentColor = blockStyleIconTint(style = resolvedStyle)
 
-    Box(
-        modifier = modifier
-            .aspectRatio(1f)
-            .stackShiftSurfaceShadow(
-                shape = buttonShape,
-                elevation = 12.dp,
-            )
-            .graphicsLayer {
-                val scale = 1f + (pulse * 0.05f)
-                scaleX = scale
-                scaleY = scale
-            }
-            .clip(buttonShape)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val minDim = minOf(size.width, size.height)
-            val cornerRadiusPx = boardCellCornerRadiusPx(minDim, resolvedStyle)
-            drawCellBody(
-                tone = CellTone.Cyan,
-                palette = settings.blockColorPalette,
-                style = resolvedStyle,
-                topLeft = Offset.Zero,
-                size = this.size,
-                cornerRadius = CornerRadius(cornerRadiusPx, cornerRadiusPx),
-                pulse = effectivePulse,
-            )
-        }
-
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    val scale = 1f + (pulse * 0.05f)
+                    scaleX = scale
+                    scaleY = scale
+                }
+                .padding(cellInset),
+            contentAlignment = Alignment.Center,
         ) {
-            Icon(
-                imageVector = Icons.Filled.PlayArrow,
-                contentDescription = null,
-                tint = contentColor,
-                modifier = Modifier.size(42.dp),
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = text,
-                style = MaterialTheme.typography.headlineSmall,
-                color = contentColor,
-                fontWeight = FontWeight.ExtraBold,
-                textAlign = TextAlign.Center,
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .stackShiftSurfaceShadow(
+                        shape = buttonShape,
+                        elevation = 0.dp,
+                    )
+                    .clip(buttonShape)
+                    .clickable(onClick = onClick),
+                contentAlignment = Alignment.Center,
+            ) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val cornerRadiusPx = boardCellCornerRadiusPx(
+                        with(density) { cellSize.toPx() },
+                        resolvedStyle
+                    )
+                    drawCellBody(
+                        tone = CellTone.Cyan,
+                        palette = settings.blockColorPalette,
+                        style = resolvedStyle,
+                        topLeft = Offset.Zero,
+                        size = this.size,
+                        cornerRadius = CornerRadius(cornerRadiusPx, cornerRadiusPx),
+                        pulse = effectivePulse,
+                    )
+                }
+
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.PlayArrow,
+                        contentDescription = null,
+                        tint = contentColor,
+                        modifier = Modifier.size(42.dp),
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = text,
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = contentColor,
+                        fontWeight = FontWeight.ExtraBold,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
         }
     }
 }
@@ -865,60 +894,74 @@ private fun HomeQuickActionButton(
     modifier: Modifier = Modifier,
 ) {
     val resolvedStyle = settings.blockVisualStyle
-    val buttonShape = RoundedCornerShape(GameUiShapeTokens.buttonCorner)
-    val effectivePulse = rememberBlockStylePulse(
-        style = resolvedStyle,
-        pulse = pulse,
-    )
-    val contentColor = blockStyleIconTint(style = resolvedStyle)
+    val density = LocalDensity.current
+    BoxWithConstraints(modifier = modifier.aspectRatio(1f)) {
+        val cellSize = maxWidth
+        val cellInset = boardCellInsetDp(cellSize)
+        val buttonShape = RoundedCornerShape(boardCellCornerRadiusDp(cellSize, resolvedStyle))
+        val effectivePulse = rememberBlockStylePulse(
+            style = resolvedStyle,
+            pulse = pulse,
+        )
+        val contentColor = blockStyleIconTint(style = resolvedStyle)
 
-    Box(
-        modifier = modifier
-            .aspectRatio(1f)
-            .stackShiftSurfaceShadow(
-                shape = buttonShape,
-                elevation = 5.dp,
-            )
-            .clip(buttonShape)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val minDim = minOf(size.width, size.height)
-            val cornerRadiusPx = boardCellCornerRadiusPx(minDim, resolvedStyle)
-            drawCellBody(
-                tone = tone,
-                palette = settings.blockColorPalette,
-                style = resolvedStyle,
-                topLeft = Offset.Zero,
-                size = this.size,
-                cornerRadius = CornerRadius(cornerRadiusPx, cornerRadiusPx),
-                pulse = effectivePulse,
-            )
-        }
-
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 8.dp, vertical = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
+                .padding(cellInset),
+            contentAlignment = Alignment.Center,
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = contentColor,
-                modifier = Modifier.size(24.dp),
-            )
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelMedium,
-                color = contentColor,
-                fontWeight = FontWeight.ExtraBold,
-                textAlign = TextAlign.Center,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .stackShiftSurfaceShadow(
+                        shape = buttonShape,
+                        elevation = 0.dp,
+                    )
+                    .clip(buttonShape)
+                    .clickable(onClick = onClick),
+                contentAlignment = Alignment.Center,
+            ) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val cornerRadiusPx = boardCellCornerRadiusPx(
+                        with(density) { cellSize.toPx() },
+                        resolvedStyle
+                    )
+                    drawCellBody(
+                        tone = tone,
+                        palette = settings.blockColorPalette,
+                        style = resolvedStyle,
+                        topLeft = Offset.Zero,
+                        size = this.size,
+                        cornerRadius = CornerRadius(cornerRadiusPx, cornerRadiusPx),
+                        pulse = effectivePulse,
+                    )
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = contentColor,
+                        modifier = Modifier.size(24.dp),
+                    )
+                    Text(
+                        text = text,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = contentColor,
+                        fontWeight = FontWeight.ExtraBold,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
         }
     }
 }
@@ -942,6 +985,7 @@ fun HomeScreenLightPreview() {
             onOpenTutorial = {},
             onOpenTheme = {},
             onOpenLanguage = {},
+            notificationManager = rememberNotificationManager(),
         )
     }
 }
@@ -964,6 +1008,7 @@ fun HomeScreenDarkPreview() {
             onOpenTutorial = {},
             onOpenTheme = {},
             onOpenLanguage = {},
+            notificationManager = rememberNotificationManager(),
         )
     }
 }

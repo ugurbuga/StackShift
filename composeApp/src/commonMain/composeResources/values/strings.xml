@@ -44,6 +44,12 @@
     <string name="block_style_pixel_art">Pixel Art</string>
     <string name="block_style_crystal">Crystal</string>
     <string name="block_style_dynamic_liquid">Dynamic Liquid</string>
+    <string name="block_style_matte_soft">Matte Soft</string>
+    <string name="block_style_neon_glow">Neon Glow</string>
+    <string name="block_style_metallic">Metallic</string>
+    <string name="block_style_stone_texture">Stone Texture</string>
+    <string name="block_style_honeycomb_texture">Honeycomb Texture</string>
+    <string name="block_style_light_burst">Light Burst</string>
     <string name="board_block_style_always_flat">Always flat</string>
     <string name="board_block_style_match_selected">Match selected block style</string>
     <string name="hold">Hold</string>
@@ -102,6 +108,9 @@
     <string name="game_message_paused">The game is paused.</string>
     <string name="game_message_resumed">Resume. Choose the column and launch.</string>
     <string name="game_message_extra_life_used">Extra life activated! %1$s rows cleared.</string>
+    <string name="notification_reminders_channel_name">Reminders</string>
+    <string name="notification_miss_you_title">StackShift</string>
+    <string name="notification_miss_you_body">We missed you! Come back and play some more.</string>
     <string name="feedback_overflow">Overflow</string>
     <string name="feedback_perfect_lane">Perfect lane x%1$s</string>
     <string name="feedback_micro_adjust">Micro adjust</string>

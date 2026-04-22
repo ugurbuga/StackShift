@@ -168,6 +168,7 @@ android {
         buildConfigField("String", "ADS_BANNER_UNIT_ID", "\"${adsProperty("ads.android.bannerUnitId")}\"")
         buildConfigField("String", "ADS_INTERSTITIAL_UNIT_ID", "\"${adsProperty("ads.android.interstitialUnitId")}\"")
         buildConfigField("String", "ADS_REWARDED_UNIT_ID", "\"${adsProperty("ads.android.rewardedUnitId")}\"")
+        buildConfigField("String", "ADS_REWARDED_SPECIAL_UNIT_ID", "\"${adsProperty("ads.android.rewardedSpecialUnitId")}\"")
     }
     packaging {
         resources {

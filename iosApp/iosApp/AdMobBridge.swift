@@ -6,7 +6,8 @@ import UIKit
 private enum StackShiftAdNotification {
     static let showInterstitial = Notification.Name("StackShiftAdShowInterstitial")
     static let interstitialCompleted = Notification.Name("StackShiftAdInterstitialCompleted")
-    static let showRewarded = Notification.Name("StackShiftAdShowRewardedRevive")
+    static let showRewardedRevive = Notification.Name("StackShiftAdShowRewardedRevive")
+    static let showRewardedSpecial = Notification.Name("StackShiftAdShowRewardedSpecial")
     static let rewardedCompleted = Notification.Name("StackShiftAdRewardedCompleted")
 }
 
@@ -16,7 +17,8 @@ private struct StackShiftAdsProperties {
     let iosApplicationId: String
     let banner: String
     let interstitial: String
-    let rewarded: String
+    let rewardedRevive: String
+    let rewardedSpecial: String
 
     private static func load() -> StackShiftAdsProperties {
         guard let url = Bundle.main.url(forResource: "ads", withExtension: "properties"),
@@ -25,7 +27,8 @@ private struct StackShiftAdsProperties {
                 iosApplicationId: "",
                 banner: "",
                 interstitial: "",
-                rewarded: ""
+                rewardedRevive: "",
+                rewardedSpecial: ""
             )
         }
 
@@ -34,7 +37,8 @@ private struct StackShiftAdsProperties {
             iosApplicationId: values["ads.ios.applicationId"] ?? "",
             banner: values["ads.ios.bannerUnitId"] ?? "",
             interstitial: values["ads.ios.interstitialUnitId"] ?? "",
-            rewarded: values["ads.ios.rewardedUnitId"] ?? ""
+            rewardedRevive: values["ads.ios.rewardedUnitId"] ?? "",
+            rewardedSpecial: values["ads.ios.rewardedSpecialUnitId"] ?? ""
         )
     }
 
@@ -59,7 +63,8 @@ private struct StackShiftAdsProperties {
 private enum StackShiftAdMobIDs {
     static let banner = StackShiftAdsProperties.shared.banner
     static let interstitial = StackShiftAdsProperties.shared.interstitial
-    static let rewarded = StackShiftAdsProperties.shared.rewarded
+    static let rewardedRevive = StackShiftAdsProperties.shared.rewardedRevive
+    static let rewardedSpecial = StackShiftAdsProperties.shared.rewardedSpecial
 }
 
 final class StackShiftAdBridge: NSObject, FullScreenContentDelegate {
@@ -68,7 +73,8 @@ final class StackShiftAdBridge: NSObject, FullScreenContentDelegate {
     private var started = false
     private var observerTokens: [NSObjectProtocol] = []
     private var interstitialAd: InterstitialAd?
-    private var rewardedAd: RewardedAd?
+    private var rewardedReviveAd: RewardedAd?
+    private var rewardedSpecialAd: RewardedAd?
     private var pendingInterstitialRequestId: String?
     private var pendingRewardedRequestId: String?
     private var didEarnReward = false
@@ -84,7 +90,8 @@ final class StackShiftAdBridge: NSObject, FullScreenContentDelegate {
         MobileAds.shared.start(completionHandler: nil)
         registerObservers()
         loadInterstitial()
-        loadRewarded()
+        loadRewardedRevive()
+        loadRewardedSpecial()
     }
 
     deinit {
@@ -106,11 +113,21 @@ final class StackShiftAdBridge: NSObject, FullScreenContentDelegate {
 
         observerTokens.append(
             center.addObserver(
-                forName: StackShiftAdNotification.showRewarded,
+                forName: StackShiftAdNotification.showRewardedRevive,
                 object: nil,
                 queue: .main
             ) { [weak self] notification in
-                self?.handleRewardedRequest(notification)
+                self?.handleRewardedReviveRequest(notification)
+            }
+        )
+
+        observerTokens.append(
+            center.addObserver(
+                forName: StackShiftAdNotification.showRewardedSpecial,
+                object: nil,
+                queue: .main
+            ) { [weak self] notification in
+                self?.handleRewardedSpecialRequest(notification)
             }
         )
     }
@@ -129,15 +146,32 @@ final class StackShiftAdBridge: NSObject, FullScreenContentDelegate {
         ad.present(from: rootViewController)
     }
 
-    private func handleRewardedRequest(_ notification: Notification) {
+    private func handleRewardedReviveRequest(_ notification: Notification) {
         guard let requestId = notification.object as? String, !requestId.isEmpty else { return }
-        guard let ad = rewardedAd, let rootViewController = Self.topViewController() else {
+        guard let ad = rewardedReviveAd, let rootViewController = Self.topViewController() else {
             postRewardedCompleted(requestId: requestId, rewarded: false)
-            loadRewarded()
+            loadRewardedRevive()
             return
         }
 
-        rewardedAd = nil
+        rewardedReviveAd = nil
+        pendingRewardedRequestId = requestId
+        didEarnReward = false
+        ad.fullScreenContentDelegate = self
+        ad.present(from: rootViewController) { [weak self] in
+            self?.didEarnReward = true
+        }
+    }
+
+    private func handleRewardedSpecialRequest(_ notification: Notification) {
+        guard let requestId = notification.object as? String, !requestId.isEmpty else { return }
+        guard let ad = rewardedSpecialAd, let rootViewController = Self.topViewController() else {
+            postRewardedCompleted(requestId: requestId, rewarded: false)
+            loadRewardedSpecial()
+            return
+        }
+
+        rewardedSpecialAd = nil
         pendingRewardedRequestId = requestId
         didEarnReward = false
         ad.fullScreenContentDelegate = self
@@ -155,12 +189,23 @@ final class StackShiftAdBridge: NSObject, FullScreenContentDelegate {
         }
     }
 
-    private func loadRewarded() {
+    private func loadRewardedRevive() {
+        guard !StackShiftAdMobIDs.rewardedRevive.isEmpty else { return }
         RewardedAd.load(
-            with: StackShiftAdMobIDs.rewarded,
+            with: StackShiftAdMobIDs.rewardedRevive,
             request: Request()
         ) { [weak self] ad, _ in
-            self?.rewardedAd = ad
+            self?.rewardedReviveAd = ad
+        }
+    }
+
+    private func loadRewardedSpecial() {
+        guard !StackShiftAdMobIDs.rewardedSpecial.isEmpty else { return }
+        RewardedAd.load(
+            with: StackShiftAdMobIDs.rewardedSpecial,
+            request: Request()
+        ) { [weak self] ad, _ in
+            self?.rewardedSpecialAd = ad
         }
     }
 
@@ -176,7 +221,8 @@ final class StackShiftAdBridge: NSObject, FullScreenContentDelegate {
         pendingRewardedRequestId = nil
         didEarnReward = false
         postRewardedCompleted(requestId: requestId, rewarded: rewarded)
-        loadRewarded()
+        loadRewardedRevive()
+        loadRewardedSpecial()
     }
 
     private func postInterstitialCompleted(requestId: String) {

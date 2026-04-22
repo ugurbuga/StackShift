@@ -38,6 +38,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -209,7 +212,7 @@ import kotlin.time.Duration.Companion.milliseconds
 private const val LaunchAnimationMillis = 140L
 private const val EntryAnimationMillis = 70L
 private const val LaunchOverlayDisplayDelayMillis = 250L
-private const val NextPieceScale = 0.5f
+private const val NextPieceScale = 0.45f
 private const val LaunchPreviewAlpha = 1f
 private const val QueuePreviewAlpha = 0.58f
 
@@ -280,7 +283,10 @@ private fun rememberGameLayoutSpec(
     val dockChromeExtra = 4.dp
     val contentSpacing = 8.dp
     val widthLimitedCell = maxWidth / columns.coerceAtLeast(1)
-    val heightLimitedCell = ((maxHeight - dockChromeExtra - contentSpacing).coerceAtLeast(0.dp)) / (rows + 4).coerceAtLeast(1)
+    val heightLimitedCell =
+        ((maxHeight - dockChromeExtra - contentSpacing).coerceAtLeast(0.dp)) / (rows + 4).coerceAtLeast(
+            1
+        )
     val cellSize = minOf(widthLimitedCell, heightLimitedCell).coerceAtLeast(8.dp)
     return GameLayoutSpec(
         cellSize = cellSize,
@@ -490,6 +496,10 @@ fun StackShiftGameApp(
             telemetry.logUserAction(TelemetryActionNames.HoldPiece)
             viewModel.holdPiece()
         },
+        onReplaceActivePiece = { specialType ->
+            telemetry.logUserAction("replace_active_piece_${specialType.name.lowercase()}")
+            viewModel.replaceActivePiece(specialType)
+        },
         onRestart = {
             telemetry.logUserAction(TelemetryActionNames.RestartGame)
             viewModel.restart(uiState.gameState.config)
@@ -541,6 +551,7 @@ fun GameScreenWithLaunchOverlay(
     onResolvePreviewImpact: (PlacementPreview?) -> Set<GridPoint>,
     onPlacePiece: (Int) -> GameDispatchResult,
     onHoldPiece: () -> InteractionFeedback,
+    onReplaceActivePiece: (SpecialBlockType) -> InteractionFeedback,
     onRestart: () -> InteractionFeedback,
     onRewardedRevive: () -> InteractionFeedback,
     onBack: () -> Unit = {},
@@ -573,6 +584,7 @@ fun GameScreenWithLaunchOverlay(
             onResolvePreviewImpact = onResolvePreviewImpact,
             onPlacePiece = onPlacePiece,
             onHoldPiece = onHoldPiece,
+            onReplaceActivePiece = onReplaceActivePiece,
             onRestart = onRestart,
             onRewardedRevive = onRewardedRevive,
             onBack = onBack,
@@ -648,6 +660,7 @@ fun GameScreen(
     onResolvePreviewImpact: (PlacementPreview?) -> Set<GridPoint>,
     onPlacePiece: (Int) -> GameDispatchResult,
     onHoldPiece: () -> InteractionFeedback,
+    onReplaceActivePiece: (SpecialBlockType) -> InteractionFeedback,
     onRestart: () -> InteractionFeedback,
     onRewardedRevive: () -> InteractionFeedback,
     onBack: () -> Unit = {},
@@ -680,6 +693,7 @@ fun GameScreen(
     val updatedPreviewImpactProvider by rememberUpdatedState(onResolvePreviewImpact)
     val updatedPlacePiece by rememberUpdatedState(onPlacePiece)
     val updatedHoldPiece by rememberUpdatedState(onHoldPiece)
+    val updatedReplaceActivePiece by rememberUpdatedState(onReplaceActivePiece)
     val updatedRestart by rememberUpdatedState(onRestart)
     val updatedRewardedRevive by rememberUpdatedState(onRewardedRevive)
     var showRestartDialog by remember { mutableStateOf(value = false) }
@@ -1090,17 +1104,22 @@ fun GameScreen(
                             columns = gameState.config.columns,
                             rows = gameState.config.rows,
                         )
-                        val resolvedCellSizePx = with(LocalDensity.current) { layoutSpec.cellSize.toPx() }
+                        val resolvedCellSizePx =
+                            with(LocalDensity.current) { layoutSpec.cellSize.toPx() }
 
                         Column(
                             modifier = Modifier.fillMaxSize(),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
-                            val boardShape = RoundedCornerShape(boardFrameCornerRadiusDp(resolvedPreviewStyle))
+                            val boardShape =
+                                RoundedCornerShape(boardFrameCornerRadiusDp(resolvedPreviewStyle))
                             Box(
                                 modifier = Modifier
-                                    .size(width = layoutSpec.boardWidth, height = layoutSpec.boardHeight)
+                                    .size(
+                                        width = layoutSpec.boardWidth,
+                                        height = layoutSpec.boardHeight
+                                    )
                                     .stackShiftSurfaceShadow(
                                         shape = boardShape,
                                         elevation = 10.dp,
@@ -1157,6 +1176,14 @@ fun GameScreen(
                                 highlightDock = resolvedInteractiveOnboardingUi?.let {
                                     it.scene.stage == FirstRunOnboardingStage.DragAndLaunch && it.hasDraggedAwayFromSpawn
                                 } == true,
+                                adController = adController,
+                                onReplaceActivePiece = { type ->
+                                    dispatchFeedback(
+                                        updatedReplaceActivePiece(type),
+                                        soundPlayer,
+                                        haptics
+                                    )
+                                },
                                 stylePulse = stylePulse,
                             )
                         }
@@ -1332,7 +1359,9 @@ fun GameScreen(
                         dismissLabel = stringResource(Res.string.restart_cancel),
                         onConfirm = {
                             showRestartDialog = false
-                            dispatchFeedback(updatedRestart(), soundPlayer, haptics)
+                            adController.showRestartInterstitial {
+                                dispatchFeedback(updatedRestart(), soundPlayer, haptics)
+                            }
                         },
                     )
                 }
@@ -1415,7 +1444,8 @@ internal fun BoxScope.LaunchGuideLineOverlay(
             style = resolvedPreviewStyle,
         )
         guideSegments.forEach { guideRect ->
-            val clampedCornerRadius = minOf(blockCornerRadius, guideRect.width / 2f, guideRect.height / 2f)
+            val clampedCornerRadius =
+                minOf(blockCornerRadius, guideRect.width / 2f, guideRect.height / 2f)
             val cornerRadius = CornerRadius(clampedCornerRadius, clampedCornerRadius)
             drawRoundRect(
                 color = baseColor.copy(alpha = guideAlpha),
@@ -1445,21 +1475,23 @@ private fun launchGuideSegments(
         .groupBy(GridPoint::column)
         .mapValues { (_, points) -> points.minOf(GridPoint::row) }
 
-    return bottommostPieceRowsByColumn.entries.sortedBy { it.key }.mapNotNull { (localColumn, bottommostPieceRow) ->
-        val boardColumn = preview.selectedColumn + localColumn
-        val topmostPreviewRow = topmostPreviewRowsByColumn[boardColumn] ?: return@mapNotNull null
-        val guideTop = boardRect.top + (topmostPreviewRow * cellSizePx)
-        val guideBottom = pieceTopLeft.y + ((bottommostPieceRow + 1) * cellSizePx)
-        val guideHeight = guideBottom - guideTop
-        if (guideHeight <= 0f) return@mapNotNull null
+    return bottommostPieceRowsByColumn.entries.sortedBy { it.key }
+        .mapNotNull { (localColumn, bottommostPieceRow) ->
+            val boardColumn = preview.selectedColumn + localColumn
+            val topmostPreviewRow =
+                topmostPreviewRowsByColumn[boardColumn] ?: return@mapNotNull null
+            val guideTop = boardRect.top + (topmostPreviewRow * cellSizePx)
+            val guideBottom = pieceTopLeft.y + ((bottommostPieceRow + 1) * cellSizePx)
+            val guideHeight = guideBottom - guideTop
+            if (guideHeight <= 0f) return@mapNotNull null
 
-        Rect(
-            left = pieceTopLeft.x + (localColumn * cellSizePx),
-            top = guideTop,
-            right = pieceTopLeft.x + ((localColumn + 1) * cellSizePx),
-            bottom = guideBottom,
-        )
-    }
+            Rect(
+                left = pieceTopLeft.x + (localColumn * cellSizePx),
+                top = guideTop,
+                right = pieceTopLeft.x + ((localColumn + 1) * cellSizePx),
+                bottom = guideBottom,
+            )
+        }
 }
 
 @Composable
@@ -1730,6 +1762,8 @@ private fun MinimalBottomDock(
     gameState: GameState,
     cellSizePx: Float,
     showNextPiece: Boolean,
+    adController: GameAdController,
+    onReplaceActivePiece: (SpecialBlockType) -> Unit,
     highlightColor: Color? = null,
     highlightDock: Boolean = false,
     stylePulse: Float = 0f,
@@ -1770,25 +1804,54 @@ private fun MinimalBottomDock(
                         ),
                     ),
                 )
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .padding(horizontal = 14.dp, vertical = 8.dp),
         ) {
-            Row(
+            Box(
                 modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.Top,
+                contentAlignment = Alignment.TopStart
             ) {
-                Box(
-                    modifier = Modifier.weight(1f).fillMaxHeight(),
-                    contentAlignment = Alignment.TopStart,
+                LaunchBarView(
+                    gameState = gameState,
+                    stylePulse = stylePulse,
+                    modifier = Modifier.fillMaxWidth(0.6f).fillMaxHeight(0.8f)
+                )
+            }
+
+            if (showNextPiece) {
+                Column(
+                    modifier = Modifier.fillMaxHeight().align(Alignment.TopEnd),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    LaunchBarView(gameState = gameState, stylePulse = stylePulse)
-                }
-                if (showNextPiece) {
                     HoldAndQueueStrip(
                         queue = gameState.nextQueue,
                         cellSize = (cellSizePx * NextPieceScale),
                         stylePulse = stylePulse,
                     )
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        SpecialActionAdButton(
+                            specialType = SpecialBlockType.RowClearer,
+                            tone = CellTone.Cyan,
+                            icon = Icons.Filled.SwapHoriz,
+                            adController = adController,
+                            onActivated = { onReplaceActivePiece(SpecialBlockType.RowClearer) },
+                            stylePulse = stylePulse,
+                        )
+                        SpecialActionAdButton(
+                            specialType = SpecialBlockType.ColumnClearer,
+                            tone = CellTone.Emerald,
+                            icon = Icons.Filled.SwapVert,
+                            adController = adController,
+                            onActivated = { onReplaceActivePiece(SpecialBlockType.ColumnClearer) },
+                            stylePulse = stylePulse,
+                        )
+                    }
                 }
             }
         }
@@ -1928,6 +1991,9 @@ internal fun TopBarActionBlockButton(
     enabled: Boolean = true,
     pulse: Float = 0f,
     size: androidx.compose.ui.unit.Dp = TopBarActionBlockSize,
+    showAdIcon: Boolean = false,
+    adIcon: ImageVector = Icons.Filled.Videocam,
+    extraAlpha: Float = 1f,
 ) {
     val settings = LocalAppSettings.current
     val resolvedBlockStyle = resolveBoardBlockStyle(
@@ -1951,7 +2017,7 @@ internal fun TopBarActionBlockButton(
     Box(
         modifier = Modifier
             .size(size)
-            .graphicsLayer { alpha = if (enabled) 1f else 0.72f }
+            .graphicsLayer { alpha = if (enabled) 1f * extraAlpha else 0.72f * extraAlpha }
             .stackShiftSurfaceShadow(
                 shape = RoundedCornerShape(launchCellCornerRadius),
                 elevation = 5.dp,
@@ -1975,7 +2041,57 @@ internal fun TopBarActionBlockButton(
             tint = iconColor,
             modifier = Modifier.size(TopBarActionIconSize),
         )
+
+        if (showAdIcon) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(2.dp),
+                contentAlignment = Alignment.TopEnd
+            ) {
+                Icon(
+                    imageVector = adIcon,
+                    contentDescription = null,
+                    tint = iconColor,
+                    modifier = Modifier.size(10.dp)
+                )
+            }
+        }
     }
+}
+
+@Composable
+private fun SpecialActionAdButton(
+    specialType: SpecialBlockType,
+    tone: CellTone,
+    icon: ImageVector,
+    adController: GameAdController,
+    onActivated: () -> Unit,
+    stylePulse: Float = 0f,
+) {
+    var loading by remember { mutableStateOf(false) }
+
+    TopBarActionBlockButton(
+        tone = tone,
+        icon = icon,
+        contentDescription = specialType.name,
+        onClick = {
+            if (loading) return@TopBarActionBlockButton
+            loading = true
+            adController.showRewardedAd { success ->
+                loading = false
+                if (success) {
+                    onActivated()
+                }
+            }
+        },
+        enabled = !loading,
+        pulse = stylePulse,
+        size = 40.dp,
+        showAdIcon = true,
+        adIcon = Icons.Filled.Videocam,
+        extraAlpha = 0.5f,
+    )
 }
 
 @Composable
@@ -2116,7 +2232,8 @@ private fun GameEventDialogCard(
                         modifier = Modifier.fillMaxWidth(),
                         emphasized = false,
                         icon = secondaryButtonIcon,
-                        textColor = secondaryButtonColor ?: MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f),
+                        textColor = secondaryButtonColor
+                            ?: MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f),
                     )
                 }
             }
@@ -2216,7 +2333,7 @@ internal fun BlockStyleActionButton(
     )
     val resolvedTone = if (enabled) tone else CellTone.Gold
     val contentColor = textColor ?: blockStyleIconTint(style = resolvedStyle, enabled = enabled)
-    val buttonShape = RoundedCornerShape(GameUiShapeTokens.buttonCorner)
+    val buttonShape = RoundedCornerShape(boardCellCornerRadiusDp(height, resolvedStyle))
 
     Box(
         modifier = modifier
@@ -2276,6 +2393,7 @@ internal fun BlockStyleActionButton(
 private fun LaunchBarView(
     gameState: GameState,
     stylePulse: Float = 0f,
+    modifier: Modifier = Modifier,
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
     val progressPercent = (gameState.launchBar.progress * 100).toInt()
@@ -2294,7 +2412,10 @@ private fun LaunchBarView(
         ),
         label = "launchBarGlow",
     )
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -2332,7 +2453,9 @@ private fun LaunchBarView(
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
                 )
+                Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     text = if (isBoostActive) "x${gameState.launchBar.boostTurnsRemaining}" else "%$progressPercent",
                     style = MaterialTheme.typography.labelMedium,
@@ -2365,7 +2488,6 @@ private fun HoldAndQueueStrip(
     stylePulse: Float = 0f,
 ) {
     Row(
-        modifier = Modifier.fillMaxHeight(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.Top,
     ) {
@@ -2587,8 +2709,12 @@ private fun GameOverDialogContent(
             DialogHeroIcon(
                 icon = Icons.Filled.EmojiEvents,
                 iconColors = listOf(
-                    if (showNewHighScoreMessage) uiColors.success.copy(alpha = 0.94f) else uiColors.warning.copy(alpha = 0.94f),
-                    if (showNewHighScoreMessage) uiColors.success.copy(alpha = 0.70f) else uiColors.danger.copy(alpha = 0.72f),
+                    if (showNewHighScoreMessage) uiColors.success.copy(alpha = 0.94f) else uiColors.warning.copy(
+                        alpha = 0.94f
+                    ),
+                    if (showNewHighScoreMessage) uiColors.success.copy(alpha = 0.70f) else uiColors.danger.copy(
+                        alpha = 0.72f
+                    ),
                     uiColors.panel.copy(alpha = 0.12f),
                 ),
                 modifier = Modifier.graphicsLayer {
@@ -2912,6 +3038,32 @@ private fun Rect.toLocalRect(hostRect: Rect): Rect {
 
 @Preview
 @Composable
+private fun MinimalBottomDockNarrowPreview() {
+    StackShiftTheme(settings = AppSettings()) {
+        Box(
+            modifier = Modifier
+                .width(320.dp)
+                .height(100.dp)
+                .background(Color.Black)
+                .padding(8.dp),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            MinimalBottomDock(
+                gameState = previewGameState(),
+                cellSizePx = 40f,
+                showNextPiece = true,
+                adController = NoOpGameAdController,
+                onReplaceActivePiece = {},
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
 private fun GameScreenDraggingPreview() {
     StackShiftTheme(settings = AppSettings()) {
         GameScreen(
@@ -2934,6 +3086,7 @@ private fun GameScreenDraggingPreview() {
             onResolvePreviewImpact = { previewImpactPointsPreview() },
             onPlacePiece = { GameDispatchResult() },
             onHoldPiece = { InteractionFeedback.None },
+            onReplaceActivePiece = { InteractionFeedback.None },
             onRestart = { InteractionFeedback.None },
             onRewardedRevive = { InteractionFeedback.None },
             onOpenSettings = {},
@@ -2965,6 +3118,7 @@ private fun GameScreenRunningPreview() {
             onResolvePreviewImpact = { previewImpactPointsPreview() },
             onPlacePiece = { GameDispatchResult() },
             onHoldPiece = { InteractionFeedback.None },
+            onReplaceActivePiece = { InteractionFeedback.None },
             onRestart = { InteractionFeedback.None },
             onRewardedRevive = { InteractionFeedback.None },
             onOpenSettings = {},

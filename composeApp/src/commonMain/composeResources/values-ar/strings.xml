@@ -41,6 +41,12 @@
     <string name="block_style_pixel_art">فن البكسل</string>
     <string name="block_style_crystal">كريستال</string>
     <string name="block_style_dynamic_liquid">سائل ديناميكي</string>
+    <string name="block_style_matte_soft">Matte Soft</string>
+    <string name="block_style_neon_glow">Neon Glow</string>
+    <string name="block_style_metallic">Metallic</string>
+    <string name="block_style_stone_texture">Stone Texture</string>
+    <string name="block_style_honeycomb_texture">Honeycomb Texture</string>
+    <string name="block_style_light_burst">Light Burst</string>
     <string name="board_block_style_always_flat">مسطح دائمًا</string>
     <string name="board_block_style_match_selected">مطابق للنمط المحدد</string>
     <string name="hold">احتفاظ</string>
@@ -99,6 +105,9 @@
     <string name="game_message_paused">اللعبة متوقفة مؤقتًا.</string>
     <string name="game_message_resumed">تابع. اختر العمود وأطلق.</string>
     <string name="game_message_extra_life_used">تم تفعيل حياة إضافية! تم مسح %1$s من الصفوف.</string>
+    <string name="notification_reminders_channel_name">تذكيرات</string>
+    <string name="notification_miss_you_title">StackShift</string>
+    <string name="notification_miss_you_body">افتقدناك! عد والعب أكثر.</string>
     <string name="feedback_overflow">فيضان</string>
     <string name="feedback_perfect_lane">مسار مثالي x%1$s</string>
     <string name="feedback_micro_adjust">ضبط دقيق</string>

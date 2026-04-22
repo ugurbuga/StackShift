@@ -6,6 +6,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ugurbuga.stackshift.game.model.BlockVisualStyle
+import com.ugurbuga.stackshift.game.model.normalizeBlockVisualStyle
 import com.ugurbuga.stackshift.localization.LocalAppSettings
 
 @Immutable
@@ -45,8 +46,9 @@ object GameUiShapeTokens {
 @Composable
 fun rememberGameUiShapeSpec(): GameUiShapeSpec {
     val settings = LocalAppSettings.current
-    return remember(settings.blockVisualStyle) {
-        gameUiShapeSpec(settings.blockVisualStyle)
+    val resolvedStyle = normalizeBlockVisualStyle(settings.blockVisualStyle)
+    return remember(resolvedStyle) {
+        gameUiShapeSpec(resolvedStyle)
     }
 }
 
@@ -71,8 +73,19 @@ private fun styleFrameCorner(style: BlockVisualStyle): Dp = when (style) {
     BlockVisualStyle.Outline -> 14.dp
     BlockVisualStyle.Sharp3D -> 6.dp
     BlockVisualStyle.Wood -> 12.dp
-    BlockVisualStyle.PixelArt -> 0.dp
+    BlockVisualStyle.PixelArt -> 4.dp
     BlockVisualStyle.Crystal -> 0.dp
     BlockVisualStyle.DynamicLiquid -> 18.dp
+    BlockVisualStyle.MatteSoft -> 18.dp
+    BlockVisualStyle.NeonGlow -> 22.dp
+    BlockVisualStyle.Metallic -> 18.dp
+    BlockVisualStyle.StoneTexture -> 12.dp
+    BlockVisualStyle.HoneycombTexture -> 12.dp
+    BlockVisualStyle.LightBurst -> 20.dp
+    BlockVisualStyle.LiquidMarble -> 18.dp
+    BlockVisualStyle.Lava -> 10.dp
+    BlockVisualStyle.SpiderWeb -> 6.dp
+    BlockVisualStyle.Cosmic -> 10.dp
+    BlockVisualStyle.Bamboo -> 8.dp
 }
 

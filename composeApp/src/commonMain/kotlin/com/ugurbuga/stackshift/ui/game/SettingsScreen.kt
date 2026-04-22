@@ -42,7 +42,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -58,6 +57,7 @@ import com.ugurbuga.stackshift.game.model.BlockColorPalette
 import com.ugurbuga.stackshift.game.model.BlockVisualStyle
 import com.ugurbuga.stackshift.game.model.CellTone
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
+import com.ugurbuga.stackshift.game.model.normalizeBlockVisualStyle
 import com.ugurbuga.stackshift.settings.AppSettings
 import com.ugurbuga.stackshift.telemetry.AppTelemetry
 import com.ugurbuga.stackshift.telemetry.LogScreen
@@ -85,8 +85,6 @@ import stackshift.composeapp.generated.resources.block_style_crystal
 import stackshift.composeapp.generated.resources.block_style_dynamic_liquid
 import stackshift.composeapp.generated.resources.block_style_flat
 import stackshift.composeapp.generated.resources.block_style_outline
-import stackshift.composeapp.generated.resources.block_style_pixel_art
-import stackshift.composeapp.generated.resources.block_style_sharp_3d
 import stackshift.composeapp.generated.resources.block_style_wood
 import stackshift.composeapp.generated.resources.settings_block_palette
 import stackshift.composeapp.generated.resources.settings_block_style
@@ -113,6 +111,7 @@ fun AppSettingsScreen(
     val scrollState = rememberScrollState()
     val uiColors = StackShiftThemeTokens.uiColors
     val darkTheme = isStackShiftDarkTheme(settings)
+    val normalizedBlockStyle = normalizeBlockVisualStyle(settings.blockVisualStyle)
     val transition = rememberInfiniteTransition(label = "settingsStylePulse")
     val stylePulse by transition.animateFloat(
         initialValue = 0f,
@@ -194,14 +193,14 @@ fun AppSettingsScreen(
                             title = stringResource(Res.string.settings_block_palette),
                             selectedValue = settings.blockColorPalette,
                             options = blockPaletteOptions(
-                                style = settings.blockVisualStyle,
+                                style = normalizedBlockStyle,
                                 pulse = stylePulse
                             ),
                             onSelected = { onSettingsChange(settings.copy(blockColorPalette = it)) },
                         )
                         SettingsGroup(
                             title = stringResource(Res.string.settings_block_style),
-                            selectedValue = settings.blockVisualStyle,
+                            selectedValue = normalizedBlockStyle,
                             options = blockStyleOptions(
                                 settings.blockColorPalette,
                                 pulse = stylePulse
@@ -583,21 +582,52 @@ private fun blockPaletteOptions(
 private fun blockStyleOptions(
     palette: BlockColorPalette,
     pulse: Float
-): List<SettingsOption<BlockVisualStyle>> = BlockVisualStyle.entries.map { style ->
+): List<SettingsOption<BlockVisualStyle>> {
+    val settings = com.ugurbuga.stackshift.localization.LocalAppSettings.current
+    val visibleStyles = listOf(
+        BlockVisualStyle.Flat,
+        BlockVisualStyle.Bubble,
+        BlockVisualStyle.Outline,
+        BlockVisualStyle.Sharp3D,
+        BlockVisualStyle.Wood,
+        BlockVisualStyle.PixelArt,
+        BlockVisualStyle.Crystal,
+        BlockVisualStyle.DynamicLiquid,
+        BlockVisualStyle.Metallic,
+        BlockVisualStyle.HoneycombTexture,
+        BlockVisualStyle.Lava,
+        BlockVisualStyle.SpiderWeb,
+        BlockVisualStyle.Cosmic,
+        BlockVisualStyle.Bamboo,
+    )
+
+    return visibleStyles.map { style ->
     SettingsOption(
         value = style,
         label = when (style) {
             BlockVisualStyle.Flat -> stringResource(Res.string.block_style_flat)
             BlockVisualStyle.Bubble -> stringResource(Res.string.block_style_bubble)
             BlockVisualStyle.Outline -> stringResource(Res.string.block_style_outline)
-            BlockVisualStyle.Sharp3D -> stringResource(Res.string.block_style_sharp_3d)
+            BlockVisualStyle.Sharp3D -> if (settings.language == AppLanguage.Turkish) "Keskin Modern" else "Sharp Modern"
             BlockVisualStyle.Wood -> stringResource(Res.string.block_style_wood)
-            BlockVisualStyle.PixelArt -> stringResource(Res.string.block_style_pixel_art)
+            BlockVisualStyle.PixelArt -> if (settings.language == AppLanguage.Turkish) "Rubik Küp" else "Rubik Cube"
             BlockVisualStyle.Crystal -> stringResource(Res.string.block_style_crystal)
             BlockVisualStyle.DynamicLiquid -> stringResource(Res.string.block_style_dynamic_liquid)
+            BlockVisualStyle.MatteSoft -> if (settings.language == AppLanguage.Turkish) "Mat Soft" else "Matte Soft"
+            BlockVisualStyle.NeonGlow -> "Neon Glow"
+            BlockVisualStyle.Metallic -> if (settings.language == AppLanguage.Turkish) "Rüzgar İzi" else "Wind Trail"
+            BlockVisualStyle.StoneTexture -> if (settings.language == AppLanguage.Turkish) "Taş Doku" else "Stone Texture"
+            BlockVisualStyle.HoneycombTexture -> if (settings.language == AppLanguage.Turkish) "Petek Doku" else "Honeycomb Texture"
+            BlockVisualStyle.LightBurst -> if (settings.language == AppLanguage.Turkish) "Işık Hüzmesi" else "Light Burst"
+            BlockVisualStyle.LiquidMarble -> if (settings.language == AppLanguage.Turkish) "Sıvı Mermer" else "Liquid Marble"
+            BlockVisualStyle.Lava -> if (settings.language == AppLanguage.Turkish) "Vitray" else "Stained Glass"
+            BlockVisualStyle.SpiderWeb -> if (settings.language == AppLanguage.Turkish) "Örümcek Ağı" else "Spider Web"
+            BlockVisualStyle.Cosmic -> if (settings.language == AppLanguage.Turkish) "Kozmik" else "Cosmic"
+            BlockVisualStyle.Bamboo -> if (settings.language == AppLanguage.Turkish) "Tuğla" else "Brick"
         },
         preview = { BlockStylePreview(style = style, palette = palette, pulse = pulse) },
     )
+}
 }
 
 @Composable
@@ -700,7 +730,7 @@ private fun PreviewBlockRow(
 @Composable
 internal fun LiveBoardMiniPreview(settings: AppSettings, pulse: Float) {
     val uiColors = StackShiftThemeTokens.uiColors
-    val boardStyle = settings.blockVisualStyle
+    val boardStyle = normalizeBlockVisualStyle(settings.blockVisualStyle)
     val transition = rememberInfiniteTransition(label = "liveBoardPreview")
     val progress by transition.animateFloat(
         initialValue = 0f,

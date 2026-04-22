@@ -6,6 +6,7 @@ import com.ugurbuga.stackshift.game.model.GameConfig
 import com.ugurbuga.stackshift.game.model.GameState
 import com.ugurbuga.stackshift.game.model.GridPoint
 import com.ugurbuga.stackshift.game.model.PlacementPreview
+import com.ugurbuga.stackshift.game.model.SpecialBlockType
 import com.ugurbuga.stackshift.platform.feedback.GameHaptic
 import com.ugurbuga.stackshift.platform.feedback.GameSound
 import kotlinx.coroutines.CoroutineScope
@@ -52,6 +53,9 @@ class GameViewModel(
     fun holdPiece(): InteractionFeedback = dispatch(GameIntent.HoldPiece)
 
     fun reviveFromReward(): InteractionFeedback = dispatch(GameIntent.ReviveFromReward)
+
+    fun replaceActivePiece(specialType: SpecialBlockType): InteractionFeedback =
+        dispatch(GameIntent.ReplaceActivePiece(specialType))
 
     fun restart(config: GameConfig = uiState.value.gameState.config): InteractionFeedback {
         return dispatch(GameIntent.Restart(config))

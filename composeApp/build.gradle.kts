@@ -1,3 +1,4 @@
+import org.gradle.internal.Actions.add
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -78,6 +79,7 @@ kotlin {
             implementation(libs.firebase.analytics)
             implementation(libs.firebase.crashlytics)
             implementation(libs.google.play.services.ads)
+            implementation(libs.androidx.work.runtime)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)

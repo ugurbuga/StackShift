@@ -77,7 +77,16 @@ private class IosGameAdController : GameAdController {
     override fun showRewardedRevive(onResult: (Boolean) -> Unit) {
         val requestId = nextRequestId().also { rewardedCallbacks[it] = onResult }
         NSNotificationCenter.defaultCenter.postNotificationName(
-            aName = RewardedRequestNotification,
+            aName = RewardedReviveRequestNotification,
+            `object` = requestId,
+            userInfo = null,
+        )
+    }
+
+    override fun showRewardedAd(onResult: (Boolean) -> Unit) {
+        val requestId = nextRequestId().also { rewardedCallbacks[it] = onResult }
+        NSNotificationCenter.defaultCenter.postNotificationName(
+            aName = RewardedSpecialRequestNotification,
             `object` = requestId,
             userInfo = null,
         )
@@ -93,6 +102,7 @@ private fun NSNotification.extractObjectString(): String? = `object`?.toString()
 
 private const val InterstitialRequestNotification = "StackShiftAdShowInterstitial"
 private const val InterstitialCompletedNotification = "StackShiftAdInterstitialCompleted"
-private const val RewardedRequestNotification = "StackShiftAdShowRewardedRevive"
+private const val RewardedReviveRequestNotification = "StackShiftAdShowRewardedRevive"
+private const val RewardedSpecialRequestNotification = "StackShiftAdShowRewardedSpecial"
 private const val RewardedCompletedNotification = "StackShiftAdRewardedCompleted"
 

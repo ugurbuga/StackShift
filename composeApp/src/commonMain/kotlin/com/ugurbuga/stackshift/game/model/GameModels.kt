@@ -109,6 +109,17 @@ enum class BlockVisualStyle {
     PixelArt,
     Crystal,
     DynamicLiquid,
+    MatteSoft,
+    NeonGlow,
+    Metallic,
+    StoneTexture,
+    HoneycombTexture,
+    LightBurst,
+    LiquidMarble,
+    Lava,
+    SpiderWeb,
+    Cosmic,
+    Bamboo,
 }
 
 enum class BoardBlockStyleMode {
@@ -765,7 +776,16 @@ fun resolveBoardBlockStyle(
     mode: BoardBlockStyleMode,
 ): BlockVisualStyle = when (mode) {
     BoardBlockStyleMode.AlwaysFlat -> BlockVisualStyle.Flat
-    BoardBlockStyleMode.MatchSelectedBlockStyle -> selectedStyle
+    BoardBlockStyleMode.MatchSelectedBlockStyle -> normalizeBlockVisualStyle(selectedStyle)
+}
+
+fun normalizeBlockVisualStyle(style: BlockVisualStyle): BlockVisualStyle = when (style) {
+    BlockVisualStyle.MatteSoft -> BlockVisualStyle.Flat
+    BlockVisualStyle.NeonGlow -> BlockVisualStyle.Bubble
+    BlockVisualStyle.StoneTexture -> BlockVisualStyle.Wood
+    BlockVisualStyle.LightBurst -> BlockVisualStyle.Outline
+    BlockVisualStyle.LiquidMarble -> BlockVisualStyle.Crystal
+    else -> style
 }
 
 fun boardSpecialIcon(type: SpecialBlockType): ImageVector = when (type) {

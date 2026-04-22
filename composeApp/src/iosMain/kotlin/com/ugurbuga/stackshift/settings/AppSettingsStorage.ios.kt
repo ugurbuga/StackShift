@@ -6,6 +6,7 @@ import com.ugurbuga.stackshift.game.model.AppThemeMode
 import com.ugurbuga.stackshift.game.model.BlockColorPalette
 import com.ugurbuga.stackshift.game.model.BlockVisualStyle
 import com.ugurbuga.stackshift.game.model.BoardBlockStyleMode
+import com.ugurbuga.stackshift.game.model.normalizeBlockVisualStyle
 import platform.Foundation.NSUserDefaults
 
 actual object AppSettingsStorage {
@@ -19,7 +20,9 @@ actual object AppSettingsStorage {
             themeMode = AppThemeMode.entries.getOrElse(defaults.integerForKey(KeyThemeMode).toInt()) { defaultSettings.themeMode },
             themeColorPalette = AppColorPalette.entries.getOrElse(defaults.integerForKey(KeyThemeColorPalette).toInt()) { defaultSettings.themeColorPalette },
             blockColorPalette = BlockColorPalette.entries.getOrElse(defaults.integerForKey(KeyBlockColorPalette).toInt()) { defaultSettings.blockColorPalette },
-            blockVisualStyle = BlockVisualStyle.entries.getOrElse(defaults.integerForKey(KeyBlockVisualStyle).toInt()) { defaultSettings.blockVisualStyle },
+            blockVisualStyle = normalizeBlockVisualStyle(
+                BlockVisualStyle.entries.getOrElse(defaults.integerForKey(KeyBlockVisualStyle).toInt()) { defaultSettings.blockVisualStyle }
+            ),
             boardBlockStyleMode = BoardBlockStyleMode.entries.getOrElse(defaults.integerForKey(KeyBoardBlockStyleMode).toInt()) { defaultSettings.boardBlockStyleMode },
             hasSeenTutorial = defaults.boolForKey(KeyHasSeenTutorial),
             hasShownInteractiveOnboarding = defaults.boolForKey(KeyHasShownInteractiveOnboarding),
@@ -32,7 +35,7 @@ actual object AppSettingsStorage {
         defaults.setInteger(settings.themeMode.ordinal.toLong(), forKey = KeyThemeMode)
         defaults.setInteger(settings.themeColorPalette.ordinal.toLong(), forKey = KeyThemeColorPalette)
         defaults.setInteger(settings.blockColorPalette.ordinal.toLong(), forKey = KeyBlockColorPalette)
-        defaults.setInteger(settings.blockVisualStyle.ordinal.toLong(), forKey = KeyBlockVisualStyle)
+        defaults.setInteger(normalizeBlockVisualStyle(settings.blockVisualStyle).ordinal.toLong(), forKey = KeyBlockVisualStyle)
         defaults.setInteger(settings.boardBlockStyleMode.ordinal.toLong(), forKey = KeyBoardBlockStyleMode)
         defaults.setBool(settings.hasSeenTutorial, forKey = KeyHasSeenTutorial)
         defaults.setBool(settings.hasShownInteractiveOnboarding, forKey = KeyHasShownInteractiveOnboarding)

@@ -12,6 +12,8 @@ interface GameAdController {
 
     fun showRewardedRevive(onResult: (Boolean) -> Unit)
 
+    fun showRewardedAd(onResult: (Boolean) -> Unit)
+
     @Composable
     fun Banner(
         modifier: Modifier = Modifier,
@@ -30,6 +32,8 @@ object NoOpGameAdController : GameAdController {
     override fun showRestartInterstitial(onFinished: () -> Unit) = onFinished()
 
     override fun showRewardedRevive(onResult: (Boolean) -> Unit) = onResult(false)
+
+    override fun showRewardedAd(onResult: (Boolean) -> Unit) = onResult(false)
 
     @Composable
     override fun Banner(modifier: Modifier, onLoadStateChanged: (Boolean) -> Unit) = Unit

@@ -41,6 +41,12 @@
     <string name="block_style_pixel_art">Pixelgrafik</string>
     <string name="block_style_crystal">Kristall</string>
     <string name="block_style_dynamic_liquid">Dynamische Flüssigkeit</string>
+    <string name="block_style_matte_soft">Matte Soft</string>
+    <string name="block_style_neon_glow">Neon Glow</string>
+    <string name="block_style_metallic">Metallic</string>
+    <string name="block_style_stone_texture">Stone Texture</string>
+    <string name="block_style_honeycomb_texture">Honeycomb Texture</string>
+    <string name="block_style_light_burst">Light Burst</string>
     <string name="board_block_style_always_flat">Immer flach</string>
     <string name="board_block_style_match_selected">Auswahlstil</string>
     <string name="hold">Ablage</string>
@@ -99,6 +105,9 @@
     <string name="game_message_paused">Das Spiel ist pausiert.</string>
     <string name="game_message_resumed">Weiter. Wähle die Spalte und starte.</string>
     <string name="game_message_extra_life_used">Extra-Leben aktiviert! %1$s Reihen entfernt.</string>
+    <string name="notification_reminders_channel_name">Erinnerungen</string>
+    <string name="notification_miss_you_title">StackShift</string>
+    <string name="notification_miss_you_body">Wir haben dich vermisst! Komm zurück und spiele noch etwas.</string>
     <string name="feedback_overflow">Überlauf</string>
     <string name="feedback_perfect_lane">Perfekte Spur x%1$s</string>
     <string name="feedback_micro_adjust">Mikroanpassung</string>

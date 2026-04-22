@@ -19,7 +19,8 @@ class MainActivity : ComponentActivity() {
         AppContextHolder.context = applicationContext
         AndroidAdMobIds.BannerAdUnitId = BuildConfig.ADS_BANNER_UNIT_ID
         AndroidAdMobIds.InterstitialAdUnitId = BuildConfig.ADS_INTERSTITIAL_UNIT_ID
-        AndroidAdMobIds.RewardedAdUnitId = BuildConfig.ADS_REWARDED_UNIT_ID
+        AndroidAdMobIds.RewardedReviveAdUnitId = BuildConfig.ADS_REWARDED_UNIT_ID
+        AndroidAdMobIds.RewardedSpecialAdUnitId = BuildConfig.ADS_REWARDED_SPECIAL_UNIT_ID
 
         val initialSettings = AppSettingsStorage.load()
         val initialDarkTheme = initialSettings.themeMode.isDark ?: isSystemDarkTheme()

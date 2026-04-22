@@ -41,6 +41,12 @@
     <string name="block_style_pixel_art">Seni piksel</string>
     <string name="block_style_crystal">Kristal</string>
     <string name="block_style_dynamic_liquid">Cairan dinamis</string>
+    <string name="block_style_matte_soft">Matte Soft</string>
+    <string name="block_style_neon_glow">Neon Glow</string>
+    <string name="block_style_metallic">Metallic</string>
+    <string name="block_style_stone_texture">Stone Texture</string>
+    <string name="block_style_honeycomb_texture">Honeycomb Texture</string>
+    <string name="block_style_light_burst">Light Burst</string>
     <string name="board_block_style_always_flat">Selalu datar</string>
     <string name="board_block_style_match_selected">Sesuai gaya yang dipilih</string>
     <string name="hold">Simpan</string>
@@ -99,6 +105,9 @@
     <string name="game_message_paused">Permainan dijeda.</string>
     <string name="game_message_resumed">Lanjut. Pilih kolom dan luncurkan.</string>
     <string name="game_message_extra_life_used">Nyawa ekstra aktif! %1$s baris dihapus.</string>
+    <string name="notification_reminders_channel_name">Pengingat</string>
+    <string name="notification_miss_you_title">StackShift</string>
+    <string name="notification_miss_you_body">Kami merindukanmu! Datanglah kembali dan bermain lebih banyak lagi.</string>
     <string name="feedback_overflow">Meluap</string>
     <string name="feedback_perfect_lane">Lintasan sempurna x%1$s</string>
     <string name="feedback_micro_adjust">Penyesuaian mikro</string>

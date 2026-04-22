@@ -8,6 +8,7 @@ import com.ugurbuga.stackshift.game.model.AppThemeMode
 import com.ugurbuga.stackshift.game.model.BlockColorPalette
 import com.ugurbuga.stackshift.game.model.BlockVisualStyle
 import com.ugurbuga.stackshift.game.model.BoardBlockStyleMode
+import com.ugurbuga.stackshift.game.model.normalizeBlockVisualStyle
 
 actual object AppSettingsStorage {
     private const val Namespace = "com.ugurbuga.stackshift.settings"
@@ -26,7 +27,9 @@ actual object AppSettingsStorage {
             themeMode = AppThemeMode.entries.getOrElse(prefs.getInt(KeyThemeMode, defaultSettings.themeMode.ordinal)) { defaultSettings.themeMode },
             themeColorPalette = AppColorPalette.entries.getOrElse(prefs.getInt(KeyThemeColorPalette, defaultSettings.themeColorPalette.ordinal)) { defaultSettings.themeColorPalette },
             blockColorPalette = BlockColorPalette.entries.getOrElse(prefs.getInt(KeyBlockColorPalette, defaultSettings.blockColorPalette.ordinal)) { defaultSettings.blockColorPalette },
-            blockVisualStyle = BlockVisualStyle.entries.getOrElse(prefs.getInt(KeyBlockVisualStyle, defaultSettings.blockVisualStyle.ordinal)) { defaultSettings.blockVisualStyle },
+            blockVisualStyle = normalizeBlockVisualStyle(
+                BlockVisualStyle.entries.getOrElse(prefs.getInt(KeyBlockVisualStyle, defaultSettings.blockVisualStyle.ordinal)) { defaultSettings.blockVisualStyle }
+            ),
             boardBlockStyleMode = BoardBlockStyleMode.entries.getOrElse(prefs.getInt(KeyBoardBlockStyleMode, defaultSettings.boardBlockStyleMode.ordinal)) { defaultSettings.boardBlockStyleMode },
             hasSeenTutorial = prefs.getBoolean(KeyHasSeenTutorial, defaultSettings.hasSeenTutorial),
             hasShownInteractiveOnboarding = prefs.getBoolean(KeyHasShownInteractiveOnboarding, defaultSettings.hasShownInteractiveOnboarding),
@@ -40,7 +43,7 @@ actual object AppSettingsStorage {
             .putInt(KeyThemeMode, settings.themeMode.ordinal)
             .putInt(KeyThemeColorPalette, settings.themeColorPalette.ordinal)
             .putInt(KeyBlockColorPalette, settings.blockColorPalette.ordinal)
-            .putInt(KeyBlockVisualStyle, settings.blockVisualStyle.ordinal)
+            .putInt(KeyBlockVisualStyle, normalizeBlockVisualStyle(settings.blockVisualStyle).ordinal)
             .putInt(KeyBoardBlockStyleMode, settings.boardBlockStyleMode.ordinal)
             .putBoolean(KeyHasSeenTutorial, settings.hasSeenTutorial)
             .putBoolean(KeyHasShownInteractiveOnboarding, settings.hasShownInteractiveOnboarding)

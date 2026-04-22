@@ -386,6 +386,24 @@ class GameLogic(
         return GameMoveResult(state = nextState, events = setOf(GameEvent.HoldUsed))
     }
 
+    fun replaceActivePiece(state: GameState, specialType: SpecialBlockType): GameMoveResult {
+        val activePiece = state.activePiece ?: return invalidMove(state)
+        if (state.status != GameStatus.Running) return invalidMove(state)
+
+        val nextToken = state.feedbackToken + 1L
+        val nextState = state.copy(
+            activePiece = activePiece.copy(special = specialType),
+            softLock = null,
+            floatingFeedback = FloatingFeedback(
+                text = gameText(GameTextKey.FeedbackSpecial, "0"),
+                emphasis = FeedbackEmphasis.Bonus,
+                token = nextToken,
+            ),
+            feedbackToken = nextToken,
+        )
+        return GameMoveResult(state = nextState, events = setOf(GameEvent.SpecialTriggered))
+    }
+
     fun reviveFromReward(state: GameState): GameMoveResult {
         if (state.status != GameStatus.GameOver || state.rewardedReviveUsed) {
             return invalidMove(state)

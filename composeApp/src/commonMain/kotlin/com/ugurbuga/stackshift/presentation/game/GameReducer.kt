@@ -5,6 +5,7 @@ import com.ugurbuga.stackshift.game.logic.GameLogic
 import com.ugurbuga.stackshift.game.model.GameConfig
 import com.ugurbuga.stackshift.game.model.GameState
 import com.ugurbuga.stackshift.game.model.GameStatus
+import com.ugurbuga.stackshift.game.model.SpecialBlockType
 
 internal class GameReducer(
     private val gameLogic: GameLogic,
@@ -53,6 +54,15 @@ internal class GameReducer(
             )
         }
 
+        is GameAction.ReplaceActivePiece -> {
+            val result = gameLogic.replaceActivePiece(state, action.specialType)
+            ReduceResult(
+                state = result.state,
+                events = result.events,
+                effects = listOf(GameEffect.CancelSoftLockTimer),
+            )
+        }
+
         is GameAction.Restart -> ReduceResult(
             state = gameLogic.newGame(action.config),
             events = setOf(GameEvent.Restarted),
@@ -73,6 +83,7 @@ sealed interface GameIntent {
     data object HoldPiece : GameIntent
     data object ReviveFromReward : GameIntent
     data class Restart(val config: GameConfig) : GameIntent
+    data class ReplaceActivePiece(val specialType: SpecialBlockType) : GameIntent
 }
 
 internal sealed interface GameAction {
@@ -82,6 +93,7 @@ internal sealed interface GameAction {
     data object ReviveFromReward : GameAction
     data class Restart(val config: GameConfig) : GameAction
     data object Tick : GameAction
+    data class ReplaceActivePiece(val specialType: SpecialBlockType) : GameAction
 }
 
 internal sealed interface GameEffect {
@@ -105,6 +117,7 @@ internal fun GameIntent.toAction(): GameAction = when (this) {
     GameIntent.HoldPiece -> GameAction.HoldPiece
     GameIntent.ReviveFromReward -> GameAction.ReviveFromReward
     is GameIntent.Restart -> GameAction.Restart(config)
+    is GameIntent.ReplaceActivePiece -> GameAction.ReplaceActivePiece(specialType)
 }
 
 

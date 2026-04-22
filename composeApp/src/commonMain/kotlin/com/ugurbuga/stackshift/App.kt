@@ -22,6 +22,7 @@ import com.ugurbuga.stackshift.ads.rememberPlatformGameAdController
 import com.ugurbuga.stackshift.game.model.GameState
 import com.ugurbuga.stackshift.localization.AppEnvironment
 import com.ugurbuga.stackshift.localization.currentDeviceLocaleTag
+import com.ugurbuga.stackshift.platform.rememberNotificationManager
 import com.ugurbuga.stackshift.presentation.game.GameViewModel
 import com.ugurbuga.stackshift.settings.AppSettings
 import com.ugurbuga.stackshift.settings.AppSettingsStorage
@@ -105,8 +106,13 @@ fun StackShiftRoot(
     onConfirmLeaveSessionDialog: () -> Unit = {},
 ) {
     val adController = rememberPlatformGameAdController()
+    val notificationManager = rememberNotificationManager()
 
     AppEnvironment(settings = settings) {
+        LaunchedEffect(Unit) {
+            notificationManager.scheduleMissYouNotification()
+        }
+        notificationManager.RequestPermission()
         StackShiftTheme(settings = settings) {
             Box(modifier = Modifier.fillMaxSize()) {
                 Column(modifier = Modifier.fillMaxSize()) {
@@ -136,6 +142,7 @@ fun StackShiftRoot(
                                         telemetry.logUserAction(TelemetryActionNames.OpenLanguage)
                                         onNavigateToLanguage()
                                     },
+                                    notificationManager = notificationManager,
                                 )
                             }
 

@@ -41,6 +41,12 @@
     <string name="block_style_pixel_art">पिक्सेल आर्ट</string>
     <string name="block_style_crystal">क्रिस्टल</string>
     <string name="block_style_dynamic_liquid">गतिशील द्रव</string>
+    <string name="block_style_matte_soft">Matte Soft</string>
+    <string name="block_style_neon_glow">Neon Glow</string>
+    <string name="block_style_metallic">Metallic</string>
+    <string name="block_style_stone_texture">Stone Texture</string>
+    <string name="block_style_honeycomb_texture">Honeycomb Texture</string>
+    <string name="block_style_light_burst">Light Burst</string>
     <string name="board_block_style_always_flat">हमेशा सादा</string>
     <string name="board_block_style_match_selected">चयनित शैली से मिलाएँ</string>
     <string name="hold">संग्रह</string>
@@ -99,6 +105,9 @@
     <string name="game_message_paused">खेल रोक दिया गया है।</string>
     <string name="game_message_resumed">जारी रखें। कॉलम चुनें और लॉन्च करें।</string>
     <string name="game_message_extra_life_used">अतिरिक्त जीवन सक्रिय! %1$s पंक्तियाँ साफ़ की गईं।</string>
+    <string name="notification_reminders_channel_name">अनुस्मारक</string>
+    <string name="notification_miss_you_title">StackShift</string>
+    <string name="notification_miss_you_body">हमें आपकी याद आई! वापस आएं और कुछ और खेलें।</string>
     <string name="feedback_overflow">ओवरफ़्लो</string>
     <string name="feedback_perfect_lane">परफेक्ट लेन x%1$s</string>
     <string name="feedback_micro_adjust">सूक्ष्म समायोजन</string>
