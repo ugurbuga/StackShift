@@ -28,9 +28,9 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.PlayLesson
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -58,7 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ugurbuga.stackshift.StackShiftTheme
 import com.ugurbuga.stackshift.game.model.AppThemeMode
-import com.ugurbuga.stackshift.game.model.BlockColorPalette
+import com.ugurbuga.stackshift.game.model.AppColorPalette
 import com.ugurbuga.stackshift.game.model.BlockVisualStyle
 import com.ugurbuga.stackshift.game.model.CellTone
 import com.ugurbuga.stackshift.platform.NotificationManager
@@ -77,10 +77,10 @@ import stackshift.composeapp.generated.resources.Res
 import stackshift.composeapp.generated.resources.app_title
 import stackshift.composeapp.generated.resources.high_score
 import stackshift.composeapp.generated.resources.home_play_cta
+import stackshift.composeapp.generated.resources.settings_challenges
 import stackshift.composeapp.generated.resources.settings_language
 import stackshift.composeapp.generated.resources.settings_theme
 import stackshift.composeapp.generated.resources.settings_tutorial
-import stackshift.composeapp.generated.resources.settings_tutorial_replay
 import kotlin.math.abs
 
 private const val HomeTitleBannerColumns = 6
@@ -96,6 +96,7 @@ fun HomeScreen(
     onOpenTutorial: () -> Unit,
     onOpenTheme: () -> Unit,
     onOpenLanguage: () -> Unit,
+    onOpenChallenges: () -> Unit,
     notificationManager: NotificationManager,
     modifier: Modifier = Modifier,
 ) {
@@ -182,13 +183,13 @@ fun HomeScreen(
                     verticalAlignment = Alignment.Bottom,
                 ) {
                     HomeQuickActionButton(
-                        text = stringResource(Res.string.settings_tutorial_replay),
-                        icon = Icons.Filled.PlayLesson,
+                        text = stringResource(Res.string.settings_challenges),
+                        icon = Icons.Default.EmojiEvents,
                         tone = CellTone.Emerald,
                         settings = settings,
                         pulse = stylePulse,
                         modifier = Modifier.weight(1f),
-                        onClick = onOpenInteractiveGuide,
+                        onClick = onOpenChallenges,
                     )
                     HomeQuickActionButton(
                         text = stringResource(Res.string.settings_tutorial),
@@ -241,23 +242,31 @@ private fun HomeTitleBanner(
         label = "homeTitleBannerSequenceClock",
     )
     val sequencePhase = normalizedPhase(sequenceClock)
-    
+
     // Lower piece cycle
     val lowerDrift = segmentProgress(sequencePhase, 0.00f, 0.10f)
     val lowerAlign = segmentProgress(sequencePhase, 0.10f, 0.15f)
     val lowerLaunch = segmentProgress(sequencePhase, 0.15f, 0.20f)
-    val lowerExplode = segmentProgress(sequencePhase, 0.25f, 0.32f) // Landed at 0.20, wait until 0.25, then explode
-    
+    val lowerExplode = segmentProgress(
+        sequencePhase,
+        0.25f,
+        0.32f
+    ) // Landed at 0.20, wait until 0.25, then explode
+
     // Upper piece cycle
     val upperDrift = segmentProgress(sequencePhase, 0.34f, 0.44f)
     val upperAlign = segmentProgress(sequencePhase, 0.44f, 0.49f)
     val upperLaunch = segmentProgress(sequencePhase, 0.49f, 0.54f)
-    val upperExplode = segmentProgress(sequencePhase, 0.59f, 0.66f) // Landed at 0.54, wait until 0.59, then explode
+    val upperExplode = segmentProgress(
+        sequencePhase,
+        0.59f,
+        0.66f
+    ) // Landed at 0.54, wait until 0.59, then explode
 
     // STACK launch
     val stackAlign = segmentProgress(sequencePhase, 0.68f, 0.74f)
     val stackLaunch = segmentProgress(sequencePhase, 0.74f, 0.82f)
-    
+
     // SHIFT launch
     val shiftAlign = segmentProgress(sequencePhase, 0.82f, 0.88f)
     val shiftLaunch = segmentProgress(sequencePhase, 0.88f, 0.96f)
@@ -412,7 +421,11 @@ private fun HomeTitleBanner(
                     cellSize = dockCellSize,
                     modifier = Modifier.offset(
                         x = lerpDp(dockSingleStartX, dockSingleLeftX, lowerDrift).let { x ->
-                            if (sequencePhase > 0.10f) lerpDp(x, bottomGapTargetX, lowerAlign) else x
+                            if (sequencePhase > 0.10f) lerpDp(
+                                x,
+                                bottomGapTargetX,
+                                lowerAlign
+                            ) else x
                         },
                         y = dockPieceY,
                     ),
@@ -957,7 +970,8 @@ private fun HomeQuickActionButton(
                         color = contentColor,
                         fontWeight = FontWeight.ExtraBold,
                         textAlign = TextAlign.Center,
-                        maxLines = 1,
+                        maxLines = 2,
+                        minLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
@@ -973,7 +987,7 @@ fun HomeScreenLightPreview() {
     val settings = AppSettings(
         themeMode = AppThemeMode.Light,
         blockVisualStyle = BlockVisualStyle.DynamicLiquid,
-        blockColorPalette = BlockColorPalette.Neon
+        themeColorPalette = AppColorPalette.ModernNeon
     )
     StackShiftTheme(settings = settings) {
         HomeScreen(
@@ -985,6 +999,7 @@ fun HomeScreenLightPreview() {
             onOpenTutorial = {},
             onOpenTheme = {},
             onOpenLanguage = {},
+            onOpenChallenges = {},
             notificationManager = rememberNotificationManager(),
         )
     }
@@ -996,7 +1011,7 @@ fun HomeScreenDarkPreview() {
     val settings = AppSettings(
         themeMode = AppThemeMode.Dark,
         blockVisualStyle = BlockVisualStyle.Flat,
-        blockColorPalette = BlockColorPalette.Classic
+        themeColorPalette = AppColorPalette.Classic
     )
     StackShiftTheme(settings = settings) {
         HomeScreen(
@@ -1008,6 +1023,7 @@ fun HomeScreenDarkPreview() {
             onOpenTutorial = {},
             onOpenTheme = {},
             onOpenLanguage = {},
+            onOpenChallenges = {},
             notificationManager = rememberNotificationManager(),
         )
     }

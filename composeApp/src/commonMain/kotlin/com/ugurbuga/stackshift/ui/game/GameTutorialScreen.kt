@@ -84,6 +84,7 @@ import com.ugurbuga.stackshift.game.model.GridPoint
 import com.ugurbuga.stackshift.game.model.Piece
 import com.ugurbuga.stackshift.game.model.PieceKind
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
+import com.ugurbuga.stackshift.game.model.resolveBoardBlockStyle
 import com.ugurbuga.stackshift.game.model.gameText
 import com.ugurbuga.stackshift.localization.LocalAppSettings
 import com.ugurbuga.stackshift.settings.AppSettings
@@ -332,6 +333,7 @@ fun GameTutorialScreen(
     modifier: Modifier = Modifier,
     telemetry: AppTelemetry = NoOpAppTelemetry,
     adController: GameAdController = NoOpGameAdController,
+    onBack: () -> Unit,
     onFinish: () -> Unit,
 ) {
     LogScreen(telemetry, TelemetryScreenNames.Tutorial)
@@ -341,6 +343,9 @@ fun GameTutorialScreen(
     val coroutineScope = rememberCoroutineScope()
     val currentStep = pagerState.currentPage
     val isLastStep = (currentStep == (totalSteps - 1))
+    val settings = LocalAppSettings.current
+    val blockStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
+    val stylePulse = rememberBlockStylePulse(style = blockStyle)
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -387,12 +392,21 @@ fun GameTutorialScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
+                            TopBarActionBlockButton(
+                                tone = CellTone.Cyan,
+                                icon = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(Res.string.tutorial_back),
+                                onClick = onBack,
+                                size = 44.dp,
+                                pulse = stylePulse,
+                            )
                             Text(
                                 text = stringResource(Res.string.app_title),
                                 style = MaterialTheme.typography.headlineSmall,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.weight(1f),
+                                textAlign = TextAlign.Center
                             )
                             TutorialStepChip(
                                 currentStep = currentStep + 1,

@@ -16,6 +16,7 @@ class GameStore(
     private val scope: CoroutineScope,
     initialState: GameState? = null,
     private val onStateChanged: (GameState) -> Unit = {},
+    private val onEvents: (Set<GameEvent>) -> Unit = {},
 ) {
     private val reducer = GameReducer(gameLogic)
     private val _uiState = MutableStateFlow(
@@ -57,6 +58,7 @@ class GameStore(
             action = intent.toAction(),
         )
         updateState(result.state)
+        onEvents(result.events)
         result.effects.forEach(effectHandler::handle)
         return result.events
     }
@@ -67,6 +69,7 @@ class GameStore(
             action = GameAction.Tick,
         )
         updateState(result.state)
+        onEvents(result.events)
         result.effects.forEach(effectHandler::handle)
     }
 

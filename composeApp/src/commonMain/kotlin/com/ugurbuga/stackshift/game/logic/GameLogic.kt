@@ -17,6 +17,8 @@ import com.ugurbuga.stackshift.game.model.PlacementPreview
 import com.ugurbuga.stackshift.game.model.PressureLevel
 import com.ugurbuga.stackshift.game.model.SoftLockState
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
+import com.ugurbuga.stackshift.game.model.DailyChallenge
+import com.ugurbuga.stackshift.game.model.ChallengeTaskType
 import com.ugurbuga.stackshift.game.model.gameText
 import com.ugurbuga.stackshift.settings.GameSessionCodec
 import kotlin.random.Random
@@ -32,7 +34,7 @@ class GameLogic(
         return state
     }
 
-    fun newGame(config: GameConfig = GameConfig()): GameState {
+    fun newGame(config: GameConfig = GameConfig(), challenge: DailyChallenge? = null): GameState {
         val level = 1
         val board = BoardMatrix.empty(columns = config.columns, rows = config.rows)
         val openingBag = List(QueueSize + 1) { createPiece(level = level, launchBar = LaunchBarState()) }
@@ -66,6 +68,9 @@ class GameLogic(
             floatingFeedback = null,
             feedbackToken = 0L,
             message = gameText(GameTextKey.GameMessageSelectColumn),
+            activeChallenge = challenge?.let { c ->
+                c.copy(tasks = c.tasks.map { it.copy(current = 0) })
+            },
         )
 
         return if (hasAnyValidPlacement(state.board, activePiece, state.config)) {
@@ -214,6 +219,7 @@ class GameLogic(
             initialTriggeredSpecials = specialResult.initialTriggeredSpecials,
             initiallyClearedRows = specialResult.clearedRows,
             initiallyClearedColumns = specialResult.clearedColumns,
+            initiallyBlocksCleared = specialResult.blocksCleared,
         )
         val perfectDrop = preview.isPerfectDrop
         val nextPerfectStreak = if (perfectDrop) state.perfectDropStreak + 1 else 0
@@ -279,7 +285,7 @@ class GameLogic(
                 linesCleared = resolution.totalLinesCleared,
                 currentStreak = nextComboChain,
                 specialBlocksTriggered = specialResult.initialTriggeredSpecials.map { it.special },
-                areaTilesCleared = resolution.triggeredSpecialCells,
+                areaTilesCleared = resolution.specialBlocksCleared,
                 isBoardCleared = resolution.board.isEmpty(),
                 isPerfectPlacement = perfectDrop,
                 isHardPlacement = isHardPlacement,
@@ -304,13 +310,24 @@ class GameLogic(
             nextStatus == GameStatus.GameOver -> gameText(GameTextKey.GameMessagePressureGameOver)
             resolution.specialTriggered && resolution.totalLinesCleared > 0 ->
                 gameText(GameTextKey.GameMessageSpecialLines, resolution.totalLinesCleared)
-            resolution.specialTriggered -> gameText(GameTextKey.GameMessageSpecialTriggered)
+            resolution.specialTriggered -> gameText(GameTextKey.GameMessageSpecialTriggered, resolution.totalBlocksCleared)
             perfectDrop && nextPerfectStreak > 1 -> gameText(GameTextKey.GameMessagePerfectDrop, nextPerfectStreak)
             resolution.totalLinesCleared > 0 && resolution.chainDepth > 1 ->
                 gameText(GameTextKey.GameMessageChainLines, resolution.chainDepth, resolution.totalLinesCleared)
             resolution.totalLinesCleared > 0 -> gameText(GameTextKey.GameMessageLinesCleared, resolution.totalLinesCleared)
             else -> gameText(GameTextKey.GameMessageGoodShot)
         }
+
+        val updatedChallenge = updateChallengeProgress(
+            challenge = state.activeChallenge,
+            resolution = resolution,
+            scoreGain = lastMoveScore,
+            perfectDrop = perfectDrop,
+        )
+
+        val challengeWin = updatedChallenge?.isCompleted == true
+        val finalStatus = if (challengeWin) GameStatus.GameOver else nextStatus
+        if (challengeWin) events += GameEvent.ChallengeCompleted
 
         return GameMoveResult(
             state = state.copy(
@@ -328,7 +345,7 @@ class GameLogic(
                 launchBar = nextLaunchBar,
                 columnPressure = nextPressure,
                 softLock = null,
-                status = nextStatus,
+                status = finalStatus,
                 recentlyClearedRows = resolution.firstClearedRows,
                 recentlyClearedColumns = resolution.firstClearedColumns,
                 lastResolvedLines = resolution.totalLinesCleared,
@@ -339,7 +356,7 @@ class GameLogic(
                 } else {
                     state.clearAnimationToken + 1L
                 },
-                screenShakeToken = if (nextStatus == GameStatus.GameOver || resolution.totalLinesCleared > 0 || resolution.triggeredSpecialCells > 0 || resolution.firstClearedRows.isNotEmpty() || resolution.firstClearedColumns.isNotEmpty()) {
+                screenShakeToken = if (finalStatus == GameStatus.GameOver || resolution.totalLinesCleared > 0 || resolution.triggeredSpecialCells > 0 || resolution.firstClearedRows.isNotEmpty() || resolution.firstClearedColumns.isNotEmpty()) {
                     state.screenShakeToken + 1L
                 } else {
                     state.screenShakeToken
@@ -349,10 +366,33 @@ class GameLogic(
                 floatingFeedback = floatingFeedback,
                 feedbackToken = nextToken,
                 message = message,
+                activeChallenge = updatedChallenge,
             ),
             preview = preview,
             events = events,
         )
+    }
+
+    private fun updateChallengeProgress(
+        challenge: DailyChallenge?,
+        resolution: ResolutionResult,
+        scoreGain: Int,
+        perfectDrop: Boolean,
+    ): DailyChallenge? {
+        if (challenge == null) return null
+
+        val updatedTasks = challenge.tasks.map { task ->
+            val progressGain = when (task.type) {
+                ChallengeTaskType.ClearBlocks -> resolution.totalBlocksCleared
+                ChallengeTaskType.ReachScore -> scoreGain
+                ChallengeTaskType.TriggerSpecial -> resolution.triggeredSpecialCells
+                ChallengeTaskType.PerfectPlacement -> if (perfectDrop) 1 else 0
+                ChallengeTaskType.ChainReaction -> (resolution.chainDepth - 1).coerceAtLeast(0)
+            }
+            task.copy(current = task.current + progressGain)
+        }
+
+        return challenge.copy(tasks = updatedTasks)
     }
 
     fun holdPiece(state: GameState): GameMoveResult {
@@ -566,6 +606,7 @@ class GameLogic(
             initialTriggeredSpecials = specialResult.initialTriggeredSpecials,
             initiallyClearedRows = specialResult.clearedRows,
             initiallyClearedColumns = specialResult.clearedColumns,
+            initiallyBlocksCleared = specialResult.blocksCleared,
         )
 
         return basePreview.copy(
@@ -580,11 +621,14 @@ class GameLogic(
         initialTriggeredSpecials: List<TriggeredSpecial>,
         initiallyClearedRows: Set<Int> = emptySet(),
         initiallyClearedColumns: Set<Int> = emptySet(),
+        initiallyBlocksCleared: Int = 0,
     ): ResolutionResult {
         var resolvedBoard = board
         var firstWaveRows = initiallyClearedRows
         var firstWaveColumns = initiallyClearedColumns
         var totalLinesCleared = 0
+        var totalBlocksCleared = initiallyBlocksCleared
+        var specialBlocksCleared = initiallyBlocksCleared
         var chainDepth = 0
         var triggeredSpecialCells = 0
         var pendingTriggers = initialTriggeredSpecials
@@ -598,6 +642,8 @@ class GameLogic(
                 )
                 resolvedBoard = burstResult.board
                 triggeredSpecialCells += burstResult.triggeredCount
+                specialBlocksCleared += burstResult.blocksCleared
+                totalBlocksCleared += burstResult.blocksCleared
                 didTriggerSpecial = didTriggerSpecial || burstResult.triggeredCount > 0
 
                 if (firstWaveRows.isEmpty() && firstWaveColumns.isEmpty()) {
@@ -624,6 +670,7 @@ class GameLogic(
                 rows = fullRows.toSet(),
             )
             totalLinesCleared += fullRows.size
+            totalBlocksCleared += fullRows.size * resolvedBoard.columns
             chainDepth += 1
             resolvedBoard = resolvedBoard.clearRows(fullRows.toSet())
         }
@@ -633,6 +680,8 @@ class GameLogic(
             firstClearedRows = firstWaveRows,
             firstClearedColumns = firstWaveColumns,
             totalLinesCleared = totalLinesCleared,
+            totalBlocksCleared = totalBlocksCleared,
+            specialBlocksCleared = specialBlocksCleared,
             chainDepth = chainDepth,
             triggeredSpecialCells = triggeredSpecialCells,
             specialTriggered = didTriggerSpecial,
@@ -667,6 +716,7 @@ class GameLogic(
         } else {
             emptySet()
         }
+        val blocksClearedBefore = placedBoard.occupiedCount
         val resolvedBoard = when (piece.special) {
             SpecialBlockType.None,
             SpecialBlockType.Ghost,
@@ -678,12 +728,15 @@ class GameLogic(
                 protectedPoints = preview.occupiedCells.toSet(),
             )
         }
+        val directBlocksCleared = blocksClearedBefore - resolvedBoard.occupiedCount
+
         return SpecialResolution(
             board = resolvedBoard,
             specialTriggered = piece.special != SpecialBlockType.None,
             initialTriggeredSpecials = initialTriggeredSpecials,
             clearedRows = clearedRows,
             clearedColumns = clearedColumns,
+            blocksCleared = directBlocksCleared,
         )
     }
 
@@ -710,6 +763,7 @@ class GameLogic(
     ): TriggerBurstResult {
         var resolvedBoard = board
         var triggeredCount = 0
+        var blocksCleared = 0
         val visited = mutableSetOf<GridPoint>()
         val queue = ArrayDeque(pendingTriggers)
 
@@ -722,7 +776,9 @@ class GameLogic(
                 board = resolvedBoard,
                 effect = effect,
             )
+            val countBefore = resolvedBoard.occupiedCount
             resolvedBoard = applyTriggeredEffect(resolvedBoard, effect)
+            blocksCleared += (countBefore - resolvedBoard.occupiedCount)
             triggeredCount += 1
             nextTriggers.filterNot { it.point in visited }.forEach(queue::addLast)
         }
@@ -730,6 +786,7 @@ class GameLogic(
         return TriggerBurstResult(
             board = resolvedBoard,
             triggeredCount = triggeredCount,
+            blocksCleared = blocksCleared,
         )
     }
 
@@ -1138,8 +1195,8 @@ class GameLogic(
         token: Long,
     ): FloatingFeedback? {
         val text = when {
-            resolution.specialTriggered && resolution.totalLinesCleared > 0 -> gameText(GameTextKey.FeedbackSpecialChain, lastMoveScore)
-            resolution.specialTriggered -> gameText(GameTextKey.FeedbackSpecial, lastMoveScore)
+            resolution.specialTriggered && resolution.totalLinesCleared > 0 -> gameText(GameTextKey.FeedbackSpecialChain, lastMoveScore, resolution.totalBlocksCleared)
+            resolution.specialTriggered -> gameText(GameTextKey.FeedbackSpecial, lastMoveScore, resolution.totalBlocksCleared)
             perfectDrop -> gameText(GameTextKey.FeedbackPerfect, nextPerfectStreak, lastMoveScore)
             resolution.chainDepth > 1 -> gameText(GameTextKey.FeedbackChain, resolution.chainDepth, lastMoveScore)
             resolution.totalLinesCleared > 0 -> gameText(GameTextKey.FeedbackClear, lastMoveScore)
@@ -1186,6 +1243,7 @@ enum class GameEvent {
     LaunchBoostCharged,
     PressureCritical,
     GameOver,
+    ChallengeCompleted,
     Revived,
     Restarted,
 }
@@ -1195,6 +1253,8 @@ private data class ResolutionResult(
     val firstClearedRows: Set<Int>,
     val firstClearedColumns: Set<Int>,
     val totalLinesCleared: Int,
+    val totalBlocksCleared: Int,
+    val specialBlocksCleared: Int,
     val chainDepth: Int,
     val triggeredSpecialCells: Int,
     val specialTriggered: Boolean,
@@ -1211,6 +1271,7 @@ private data class SpecialResolution(
     val initialTriggeredSpecials: List<TriggeredSpecial>,
     val clearedRows: Set<Int>,
     val clearedColumns: Set<Int>,
+    val blocksCleared: Int,
 )
 
 private data class TriggeredSpecial(
@@ -1228,6 +1289,7 @@ private data class TriggeredEffect(
 private data class TriggerBurstResult(
     val board: BoardMatrix,
     val triggeredCount: Int,
+    val blocksCleared: Int,
 )
 
 private data class PreviewImpactResult(

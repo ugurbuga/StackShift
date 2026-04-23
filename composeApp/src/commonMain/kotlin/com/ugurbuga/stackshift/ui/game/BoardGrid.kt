@@ -1344,10 +1344,32 @@ internal fun DrawScope.drawCellBody(
     alpha: Float = 1f,
     pulse: Float = 0f,
 ) {
+    drawCellBody(
+        baseColor = tone.paletteColor(palette),
+        palette = palette,
+        style = style,
+        topLeft = topLeft,
+        size = size,
+        cornerRadius = cornerRadius,
+        alpha = alpha,
+        pulse = pulse,
+    )
+}
+
+internal fun DrawScope.drawCellBody(
+    baseColor: Color,
+    palette: BlockColorPalette,
+    style: BlockVisualStyle,
+    topLeft: Offset,
+    size: Size,
+    cornerRadius: CornerRadius,
+    alpha: Float = 1f,
+    pulse: Float = 0f,
+) {
     val constrainedAlpha = alpha.coerceIn(0f, 1f)
     if (constrainedAlpha <= 0f) return
 
-    val rawBaseColor = tone.paletteColor(palette)
+    val rawBaseColor = baseColor
     val baseColor = rawBaseColor.copy(alpha = constrainedAlpha)
     val minDimension = minOf(size.width, size.height)
 
@@ -2985,6 +3007,42 @@ internal fun CellTone.paletteColor(palette: BlockColorPalette): Color = when (pa
         CellTone.Rose -> Color(0xFF6C7682)
         CellTone.Lime -> Color(0xFF59616E)
         CellTone.Amber -> Color(0xFF464D59)
+    }
+
+    BlockColorPalette.Aurora -> when (this) {
+        CellTone.Cyan -> Color(0xFF69DCF6)
+        CellTone.Gold -> Color(0xFF9FE7FF)
+        CellTone.Violet -> Color(0xFFAB9BFF)
+        CellTone.Emerald -> Color(0xFF63E1BE)
+        CellTone.Coral -> Color(0xFFFF88B4)
+        CellTone.Blue -> Color(0xFF61A8FF)
+        CellTone.Rose -> Color(0xFFD7A6FF)
+        CellTone.Lime -> Color(0xFF8BF0D0)
+        CellTone.Amber -> Color(0xFFFFD57D)
+    }
+
+    BlockColorPalette.Sunset -> when (this) {
+        CellTone.Cyan -> Color(0xFFFFA77B)
+        CellTone.Gold -> Color(0xFFFFC95C)
+        CellTone.Violet -> Color(0xFFC79BFF)
+        CellTone.Emerald -> Color(0xFFFF9B72)
+        CellTone.Coral -> Color(0xFFFF6E7C)
+        CellTone.Blue -> Color(0xFF8E7CFF)
+        CellTone.Rose -> Color(0xFFFF93B5)
+        CellTone.Lime -> Color(0xFFFFB85F)
+        CellTone.Amber -> Color(0xFFFF8C42)
+    }
+
+    BlockColorPalette.SoftPastel -> when (this) {
+        CellTone.Cyan -> Color(0xFF9EDFF2)
+        CellTone.Gold -> Color(0xFFF6D8A8)
+        CellTone.Violet -> Color(0xFFCABCF7)
+        CellTone.Emerald -> Color(0xFFB7E6D2)
+        CellTone.Coral -> Color(0xFFF2AFC0)
+        CellTone.Blue -> Color(0xFFAFC8F4)
+        CellTone.Rose -> Color(0xFFF7C6D9)
+        CellTone.Lime -> Color(0xFFD6EDB5)
+        CellTone.Amber -> Color(0xFFF3C9A6)
     }
 }
 

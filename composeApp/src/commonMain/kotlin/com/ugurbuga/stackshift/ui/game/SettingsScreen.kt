@@ -35,13 +35,17 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -56,7 +60,6 @@ import com.ugurbuga.stackshift.game.model.AppThemeMode
 import com.ugurbuga.stackshift.game.model.BlockColorPalette
 import com.ugurbuga.stackshift.game.model.BlockVisualStyle
 import com.ugurbuga.stackshift.game.model.CellTone
-import com.ugurbuga.stackshift.game.model.SpecialBlockType
 import com.ugurbuga.stackshift.game.model.normalizeBlockVisualStyle
 import com.ugurbuga.stackshift.settings.AppSettings
 import com.ugurbuga.stackshift.telemetry.AppTelemetry
@@ -75,9 +78,6 @@ import stackshift.composeapp.generated.resources.app_theme_dark
 import stackshift.composeapp.generated.resources.app_theme_light
 import stackshift.composeapp.generated.resources.app_theme_system
 import stackshift.composeapp.generated.resources.app_title
-import stackshift.composeapp.generated.resources.block_palette_candy
-import stackshift.composeapp.generated.resources.block_palette_classic
-import stackshift.composeapp.generated.resources.block_palette_earth
 import stackshift.composeapp.generated.resources.block_palette_monochrome
 import stackshift.composeapp.generated.resources.block_palette_neon
 import stackshift.composeapp.generated.resources.block_style_bubble
@@ -86,19 +86,21 @@ import stackshift.composeapp.generated.resources.block_style_dynamic_liquid
 import stackshift.composeapp.generated.resources.block_style_flat
 import stackshift.composeapp.generated.resources.block_style_outline
 import stackshift.composeapp.generated.resources.block_style_wood
-import stackshift.composeapp.generated.resources.settings_block_palette
 import stackshift.composeapp.generated.resources.settings_block_style
 import stackshift.composeapp.generated.resources.settings_language
 import stackshift.composeapp.generated.resources.settings_theme
-import stackshift.composeapp.generated.resources.settings_theme_palette
 import stackshift.composeapp.generated.resources.theme_palette_aurora
 import stackshift.composeapp.generated.resources.theme_palette_classic
-import stackshift.composeapp.generated.resources.theme_palette_minimal_monochrome
-import stackshift.composeapp.generated.resources.theme_palette_modern_neon
 import stackshift.composeapp.generated.resources.theme_palette_soft_pastel
 import stackshift.composeapp.generated.resources.theme_palette_sunset
 
 private val ScreenContentMaxWidth = 920.dp
+
+private enum class SettingsTab {
+    Theme,
+    BlockStyle,
+}
+
 @Composable
 fun AppSettingsScreen(
     telemetry: AppTelemetry = NoOpAppTelemetry,
@@ -112,6 +114,7 @@ fun AppSettingsScreen(
     val uiColors = StackShiftThemeTokens.uiColors
     val darkTheme = isStackShiftDarkTheme(settings)
     val normalizedBlockStyle = normalizeBlockVisualStyle(settings.blockVisualStyle)
+    var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
     val transition = rememberInfiniteTransition(label = "settingsStylePulse")
     val stylePulse by transition.animateFloat(
         initialValue = 0f,
@@ -147,13 +150,38 @@ fun AppSettingsScreen(
                         onBack = onBack,
                         title = stringResource(Res.string.settings_theme),
                         summary = buildString {
-                            append(stringResource(Res.string.settings_theme_palette))
-                            append(" • ")
-                            append(stringResource(Res.string.settings_block_palette))
+                            append(stringResource(Res.string.settings_theme))
                             append(" • ")
                             append(stringResource(Res.string.settings_block_style))
                         },
                     )
+                }
+
+                SecondaryTabRow(
+                    selectedTabIndex = selectedTabIndex,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .widthIn(max = ScreenContentMaxWidth),
+                    containerColor = uiColors.panel.copy(alpha = 0.90f),
+                    contentColor = MaterialTheme.colorScheme.primary,
+                ) {
+                    listOf(
+                        SettingsTab.Theme to stringResource(Res.string.settings_theme),
+                        SettingsTab.BlockStyle to stringResource(Res.string.settings_block_style),
+                    ).forEachIndexed { index, (_, title) ->
+                        Tab(
+                            selected = selectedTabIndex == index,
+                            onClick = { selectedTabIndex = index },
+                            text = {
+                                Text(
+                                    text = title,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = if (selectedTabIndex == index) FontWeight.SemiBold else FontWeight.Medium,
+                                )
+                            },
+                        )
+                    }
                 }
 
                 Column(
@@ -164,49 +192,46 @@ fun AppSettingsScreen(
                         .padding(horizontal = 16.dp, vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    SettingsSectionCard(
-                        title = stringResource(Res.string.settings_theme),
-                        icon = Icons.Filled.Palette,
-                    ) {
-                        SettingsGroup(
-                            title = stringResource(Res.string.settings_theme),
-                            selectedValue = settings.themeMode,
-                            options = themeModeOptions(),
-                            onSelected = { onSettingsChange(settings.copy(themeMode = it)) },
-                        )
-                        SettingsGroup(
-                            title = stringResource(Res.string.settings_theme_palette),
-                            selectedValue = settings.themeColorPalette,
-                            options = themePaletteOptions(darkTheme = darkTheme),
-                            onSelected = { onSettingsChange(settings.copy(themeColorPalette = it)) },
-                        )
-                    }
+                    when (selectedTabIndex) {
+                        0 -> {
+                            SettingsSectionCard(
+                                title = stringResource(Res.string.settings_theme),
+                                icon = Icons.Filled.Palette,
+                            ) {
+                                SettingsGroup(
+                                    title = stringResource(Res.string.settings_theme),
+                                    selectedValue = settings.themeMode,
+                                    options = themeModeOptions(),
+                                    onSelected = { onSettingsChange(settings.copy(themeMode = it)) },
+                                )
+                                SettingsGroup(
+                                    title = if (settings.language == AppLanguage.Turkish) "Renk Paleti" else "Color Palette",
+                                    selectedValue = settings.themeColorPalette,
+                                    options = themePaletteOptions(darkTheme = darkTheme),
+                                    onSelected = { onSettingsChange(settings.copy(themeColorPalette = it)) },
+                                )
+                            }
+                        }
 
-                    SettingsSectionCard(
-                        title = stringResource(Res.string.settings_block_style),
-                        icon = Icons.Filled.ViewModule,
-                        trailingContent = {
-                            LiveBoardMiniPreview(settings = settings, pulse = stylePulse)
-                        },
-                    ) {
-                        SettingsGroup(
-                            title = stringResource(Res.string.settings_block_palette),
-                            selectedValue = settings.blockColorPalette,
-                            options = blockPaletteOptions(
-                                style = normalizedBlockStyle,
-                                pulse = stylePulse
-                            ),
-                            onSelected = { onSettingsChange(settings.copy(blockColorPalette = it)) },
-                        )
-                        SettingsGroup(
-                            title = stringResource(Res.string.settings_block_style),
-                            selectedValue = normalizedBlockStyle,
-                            options = blockStyleOptions(
-                                settings.blockColorPalette,
-                                pulse = stylePulse
-                            ),
-                            onSelected = { onSettingsChange(settings.copy(blockVisualStyle = it)) },
-                        )
+                        else -> {
+                            SettingsSectionCard(
+                                title = stringResource(Res.string.settings_block_style),
+                                icon = Icons.Filled.ViewModule,
+                                trailingContent = {
+                                    StyleFourBlockPreview(settings = settings, pulse = stylePulse)
+                                },
+                            ) {
+                                SettingsGroup(
+                                    title = stringResource(Res.string.settings_block_style),
+                                    selectedValue = normalizedBlockStyle,
+                                    options = blockStyleOptions(
+                                        settings.blockColorPalette,
+                                        pulse = stylePulse
+                                    ),
+                                    onSelected = { onSettingsChange(settings.copy(blockVisualStyle = it)) },
+                                )
+                            }
+                        }
                     }
                 }
 
@@ -552,31 +577,13 @@ private fun themePaletteOptions(darkTheme: Boolean): List<SettingsOption<AppColo
                 AppColorPalette.Classic -> stringResource(Res.string.theme_palette_classic)
                 AppColorPalette.Aurora -> stringResource(Res.string.theme_palette_aurora)
                 AppColorPalette.Sunset -> stringResource(Res.string.theme_palette_sunset)
-                AppColorPalette.ModernNeon -> stringResource(Res.string.theme_palette_modern_neon)
+                AppColorPalette.ModernNeon -> stringResource(Res.string.block_palette_neon)
                 AppColorPalette.SoftPastel -> stringResource(Res.string.theme_palette_soft_pastel)
-                AppColorPalette.MinimalMonochrome -> stringResource(Res.string.theme_palette_minimal_monochrome)
+                AppColorPalette.MinimalMonochrome -> stringResource(Res.string.block_palette_monochrome)
             },
             preview = { ThemePalettePreview(palette = palette, darkTheme = darkTheme) },
         )
     }
-
-@Composable
-private fun blockPaletteOptions(
-    style: BlockVisualStyle,
-    pulse: Float
-): List<SettingsOption<BlockColorPalette>> = BlockColorPalette.entries.map { palette ->
-    SettingsOption(
-        value = palette,
-        label = when (palette) {
-            BlockColorPalette.Classic -> stringResource(Res.string.block_palette_classic)
-            BlockColorPalette.Candy -> stringResource(Res.string.block_palette_candy)
-            BlockColorPalette.Neon -> stringResource(Res.string.block_palette_neon)
-            BlockColorPalette.Earth -> stringResource(Res.string.block_palette_earth)
-            BlockColorPalette.Monochrome -> stringResource(Res.string.block_palette_monochrome)
-        },
-        preview = { BlockPalettePreview(palette = palette, style = style, pulse = pulse) },
-    )
-}
 
 @Composable
 private fun blockStyleOptions(
@@ -602,32 +609,32 @@ private fun blockStyleOptions(
     )
 
     return visibleStyles.map { style ->
-    SettingsOption(
-        value = style,
-        label = when (style) {
-            BlockVisualStyle.Flat -> stringResource(Res.string.block_style_flat)
-            BlockVisualStyle.Bubble -> stringResource(Res.string.block_style_bubble)
-            BlockVisualStyle.Outline -> stringResource(Res.string.block_style_outline)
-            BlockVisualStyle.Sharp3D -> if (settings.language == AppLanguage.Turkish) "Keskin Modern" else "Sharp Modern"
-            BlockVisualStyle.Wood -> stringResource(Res.string.block_style_wood)
-            BlockVisualStyle.PixelArt -> if (settings.language == AppLanguage.Turkish) "Rubik Küp" else "Rubik Cube"
-            BlockVisualStyle.Crystal -> stringResource(Res.string.block_style_crystal)
-            BlockVisualStyle.DynamicLiquid -> stringResource(Res.string.block_style_dynamic_liquid)
-            BlockVisualStyle.MatteSoft -> if (settings.language == AppLanguage.Turkish) "Mat Soft" else "Matte Soft"
-            BlockVisualStyle.NeonGlow -> "Neon Glow"
-            BlockVisualStyle.Metallic -> if (settings.language == AppLanguage.Turkish) "Rüzgar İzi" else "Wind Trail"
-            BlockVisualStyle.StoneTexture -> if (settings.language == AppLanguage.Turkish) "Taş Doku" else "Stone Texture"
-            BlockVisualStyle.HoneycombTexture -> if (settings.language == AppLanguage.Turkish) "Petek Doku" else "Honeycomb Texture"
-            BlockVisualStyle.LightBurst -> if (settings.language == AppLanguage.Turkish) "Işık Hüzmesi" else "Light Burst"
-            BlockVisualStyle.LiquidMarble -> if (settings.language == AppLanguage.Turkish) "Sıvı Mermer" else "Liquid Marble"
-            BlockVisualStyle.Lava -> if (settings.language == AppLanguage.Turkish) "Vitray" else "Stained Glass"
-            BlockVisualStyle.SpiderWeb -> if (settings.language == AppLanguage.Turkish) "Örümcek Ağı" else "Spider Web"
-            BlockVisualStyle.Cosmic -> if (settings.language == AppLanguage.Turkish) "Kozmik" else "Cosmic"
-            BlockVisualStyle.Bamboo -> if (settings.language == AppLanguage.Turkish) "Tuğla" else "Brick"
-        },
-        preview = { BlockStylePreview(style = style, palette = palette, pulse = pulse) },
-    )
-}
+        SettingsOption(
+            value = style,
+            label = when (style) {
+                BlockVisualStyle.Flat -> stringResource(Res.string.block_style_flat)
+                BlockVisualStyle.Bubble -> stringResource(Res.string.block_style_bubble)
+                BlockVisualStyle.Outline -> stringResource(Res.string.block_style_outline)
+                BlockVisualStyle.Sharp3D -> if (settings.language == AppLanguage.Turkish) "Keskin Modern" else "Sharp Modern"
+                BlockVisualStyle.Wood -> stringResource(Res.string.block_style_wood)
+                BlockVisualStyle.PixelArt -> if (settings.language == AppLanguage.Turkish) "Rubik Küp" else "Rubik Cube"
+                BlockVisualStyle.Crystal -> stringResource(Res.string.block_style_crystal)
+                BlockVisualStyle.DynamicLiquid -> stringResource(Res.string.block_style_dynamic_liquid)
+                BlockVisualStyle.MatteSoft -> if (settings.language == AppLanguage.Turkish) "Mat Soft" else "Matte Soft"
+                BlockVisualStyle.NeonGlow -> "Neon Glow"
+                BlockVisualStyle.Metallic -> if (settings.language == AppLanguage.Turkish) "Rüzgar İzi" else "Wind Trail"
+                BlockVisualStyle.StoneTexture -> if (settings.language == AppLanguage.Turkish) "Taş Doku" else "Stone Texture"
+                BlockVisualStyle.HoneycombTexture -> if (settings.language == AppLanguage.Turkish) "Petek Doku" else "Honeycomb Texture"
+                BlockVisualStyle.LightBurst -> if (settings.language == AppLanguage.Turkish) "Işık Hüzmesi" else "Light Burst"
+                BlockVisualStyle.LiquidMarble -> if (settings.language == AppLanguage.Turkish) "Sıvı Mermer" else "Liquid Marble"
+                BlockVisualStyle.Lava -> if (settings.language == AppLanguage.Turkish) "Vitray" else "Stained Glass"
+                BlockVisualStyle.SpiderWeb -> if (settings.language == AppLanguage.Turkish) "Örümcek Ağı" else "Spider Web"
+                BlockVisualStyle.Cosmic -> if (settings.language == AppLanguage.Turkish) "Kozmik" else "Cosmic"
+                BlockVisualStyle.Bamboo -> if (settings.language == AppLanguage.Turkish) "Tuğla" else "Brick"
+            },
+            preview = { BlockStylePreview(style = style, palette = palette, pulse = pulse) },
+        )
+    }
 }
 
 @Composable
@@ -655,14 +662,6 @@ private fun ThemePalettePreview(
     BoxPreview(colors = colors, size = 16.dp)
 }
 
-@Composable
-private fun BlockPalettePreview(
-    palette: BlockColorPalette,
-    style: BlockVisualStyle,
-    pulse: Float,
-) {
-    PreviewBlockRow(palette = palette, style = style, pulse = pulse)
-}
 
 @Composable
 private fun BlockStylePreview(
@@ -728,94 +727,20 @@ private fun PreviewBlockRow(
 }
 
 @Composable
-internal fun LiveBoardMiniPreview(settings: AppSettings, pulse: Float) {
-    val uiColors = StackShiftThemeTokens.uiColors
-    val boardStyle = normalizeBlockVisualStyle(settings.blockVisualStyle)
-    val transition = rememberInfiniteTransition(label = "liveBoardPreview")
-    val progress by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(animation = tween(durationMillis = 1800)),
-        label = "liveBoardPreviewProgress",
-    )
-    val previewColumn = when {
-        progress < 0.33f -> 0
-        progress < 0.66f -> 1
-        else -> 2
-    }
-    val previewAlpha = if (progress < 0.5f) 0.80f else 0.60f
-    Surface(
-        shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
-        color = uiColors.panelMuted.copy(alpha = 0.94f),
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            uiColors.panelStroke.copy(alpha = 0.92f)
-        ),
+private fun StyleFourBlockPreview(settings: AppSettings, pulse: Float) {
+    val tones = listOf(CellTone.Lime, CellTone.Violet, CellTone.Rose, CellTone.Amber)
+    Row(
+        modifier = Modifier.padding(2.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Column(
-            modifier = Modifier
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            uiColors.panelHighlight.copy(alpha = 0.18f),
-                            Color.Transparent,
-                        ),
-                    ),
-                )
-                .padding(8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            repeat(3) { row ->
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    repeat(4) { column ->
-                        val tone = when (row) {
-                            0 -> if (column in (1..2)) CellTone.Cyan else null
-                            1 -> if (column == 1) CellTone.Gold else null
-                            2 -> if (column == 2) CellTone.Violet else null
-                            else -> null
-                        }
-                        val isAnimatedPreviewCell = when (row) {
-                            0 -> (column == previewColumn) || (column == (previewColumn + 1))
-                            1 -> column == previewColumn + 1
-                            else -> false
-                        }
-                        if (tone == null) {
-                            if (isAnimatedPreviewCell) {
-                                BlockCellPreview(
-                                    tone = CellTone.Emerald,
-                                    palette = settings.blockColorPalette,
-                                    style = settings.blockVisualStyle,
-                                    size = 14.dp,
-                                    alpha = previewAlpha,
-                                    special = SpecialBlockType.ColumnClearer,
-                                    pulse = pulse,
-                                )
-                            } else {
-                                Box(
-                                    modifier = Modifier
-                                        .size(14.dp)
-                                        .clip(RoundedCornerShape(GameUiShapeTokens.previewSlotCorner))
-                                        .background(uiColors.boardEmptyCell.copy(alpha = 0.90f))
-                                        .border(
-                                            width = 1.dp,
-                                            color = uiColors.boardEmptyCellBorder.copy(alpha = 0.92f),
-                                            shape = RoundedCornerShape(GameUiShapeTokens.previewSlotCorner),
-                                        ),
-                                )
-                            }
-                        } else {
-                            BlockCellPreview(
-                                tone = tone,
-                                palette = settings.blockColorPalette,
-                                style = boardStyle,
-                                size = 14.dp,
-                                special = if (row == 2 && column == 2) SpecialBlockType.Ghost else SpecialBlockType.None,
-                                pulse = pulse,
-                            )
-                        }
-                    }
-                }
-            }
+        tones.take(4).forEach { tone ->
+            BlockCellPreview(
+                tone = tone,
+                palette = settings.blockColorPalette,
+                style = settings.blockVisualStyle,
+                size = 36.dp,
+                pulse = pulse,
+            )
         }
     }
 }

@@ -19,9 +19,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.ugurbuga.stackshift.ads.AppFooterAdSlot
 import com.ugurbuga.stackshift.ads.rememberPlatformGameAdController
+import com.ugurbuga.stackshift.game.model.ChallengeProgress
+import com.ugurbuga.stackshift.game.model.GameConfig
 import com.ugurbuga.stackshift.game.model.GameState
+import com.ugurbuga.stackshift.game.model.GameStatus
 import com.ugurbuga.stackshift.localization.AppEnvironment
 import com.ugurbuga.stackshift.localization.currentDeviceLocaleTag
+import com.ugurbuga.stackshift.platform.getCurrentDate
 import com.ugurbuga.stackshift.platform.rememberNotificationManager
 import com.ugurbuga.stackshift.presentation.game.GameViewModel
 import com.ugurbuga.stackshift.settings.AppSettings
@@ -37,6 +41,7 @@ import com.ugurbuga.stackshift.telemetry.TelemetryUserPropertyNames
 import com.ugurbuga.stackshift.telemetry.rememberAppTelemetry
 import com.ugurbuga.stackshift.ui.game.AppLanguageScreen
 import com.ugurbuga.stackshift.ui.game.AppSettingsScreen
+import com.ugurbuga.stackshift.ui.game.DailyChallengeScreen
 import com.ugurbuga.stackshift.ui.game.GameTutorialScreen
 import com.ugurbuga.stackshift.ui.game.HomeScreen
 import com.ugurbuga.stackshift.ui.game.StackShiftGameApp
@@ -61,6 +66,7 @@ enum class AppRoute {
     Settings,
     Language,
     Tutorial,
+    DailyChallenges,
 }
 
 @Composable
@@ -96,9 +102,10 @@ fun StackShiftRoot(
     onNavigateToTheme: () -> Unit,
     onNavigateToLanguage: () -> Unit,
     onNavigateToTutorial: () -> Unit,
+    onNavigateToChallenges: () -> Unit,
     onNavigateBack: () -> Unit,
     onSettingsChange: (AppSettings) -> Unit,
-    onTutorialFinished: () -> Unit,
+    onTutorialFinishRequested: () -> Unit,
     onInteractiveOnboardingFinished: (GameState) -> Unit,
     onInteractiveOnboardingReturnHome: (GameState) -> Unit,
     showLeaveSessionDialog: Boolean = false,
@@ -111,6 +118,7 @@ fun StackShiftRoot(
     AppEnvironment(settings = settings) {
         LaunchedEffect(Unit) {
             notificationManager.scheduleMissYouNotification()
+            notificationManager.scheduleDailyChallengeNotification()
         }
         notificationManager.RequestPermission()
         StackShiftTheme(settings = settings) {
@@ -142,7 +150,25 @@ fun StackShiftRoot(
                                         telemetry.logUserAction(TelemetryActionNames.OpenLanguage)
                                         onNavigateToLanguage()
                                     },
+                                    onOpenChallenges = {
+                                        onNavigateToChallenges()
+                                    },
                                     notificationManager = notificationManager,
+                                    )
+                            }
+
+                            AppRoute.DailyChallenges -> {
+                                val date = remember { getCurrentDate() }
+                                DailyChallengeScreen(
+                                    currentYear = date.year,
+                                    currentMonth = date.month,
+                                    currentDay = date.day,
+                                    progress = settings.challengeProgress,
+                                    onBack = onNavigateBack,
+                                    onPlayChallenge = { challenge ->
+                                        gameViewModel.restart(GameConfig(), challenge)
+                                        onPlayRequested()
+                                    }
                                 )
                             }
 
@@ -170,10 +196,8 @@ fun StackShiftRoot(
                                 GameTutorialScreen(
                                     modifier = Modifier.fillMaxSize(),
                                     telemetry = telemetry,
-                                    onFinish = {
-                                        onTutorialFinished()
-                                        onNavigateBack()
-                                    },
+                                    onBack = onNavigateBack,
+                                    onFinish = onTutorialFinishRequested,
                                     adController = adController,
                                 )
                             }
@@ -233,15 +257,36 @@ fun App() {
                 pendingSessionState = state
             }
         },
+        onChallengeCompleted = { completedChallenge ->
+            val key = "${completedChallenge.year}-${completedChallenge.month.toString().padStart(2, '0')}"
+            val currentDays = settings.challengeProgress.completedDays[key] ?: emptySet()
+            val updatedSettings = settings.copy(
+                challengeProgress = ChallengeProgress(
+                    completedDays = settings.challengeProgress.completedDays + (key to (currentDays + completedChallenge.day))
+                )
+            )
+            settings = updatedSettings
+            AppSettingsStorage.save(updatedSettings)
+        }
     )
     val gameViewModelState = remember {
         mutableStateOf(
             createGameViewModel(
                 GameSessionStorage.load(),
-            )
+            ).apply {
+                // Initialize with challenge complete handler
+            }
         )
     }
     var gameViewModel by gameViewModelState
+
+    // Update gameViewModel when settings.challengeProgress changes if needed,
+    // or just pass a callback that updates settings.
+
+    LaunchedEffect(gameViewModel) {
+        // We need a way to set the callback after creation if we can't do it in constructor easily with 'remember'
+    }
+
     val currentRoute = routeStack.lastOrNull() ?: AppRoute.Home
     fun navigateTo(route: AppRoute) {
         if (routeStack.lastOrNull() == route) return
@@ -270,7 +315,8 @@ fun App() {
         routeStack = listOf(AppRoute.Home)
     }
     fun requestBackNavigation() {
-        if (currentRoute == AppRoute.Game || currentRoute == AppRoute.InteractiveOnboarding) {
+        val isGameOver = gameViewModel.snapshotState().status == GameStatus.GameOver
+        if ((currentRoute == AppRoute.Game || currentRoute == AppRoute.InteractiveOnboarding) && !isGameOver) {
             showLeaveSessionDialog = true
         } else {
             navigateBack()
@@ -332,6 +378,7 @@ fun App() {
         onNavigateToTheme = { navigateTo(AppRoute.Settings) },
         onNavigateToLanguage = { navigateTo(AppRoute.Language) },
         onNavigateToTutorial = { navigateTo(AppRoute.Tutorial) },
+        onNavigateToChallenges = { navigateTo(AppRoute.DailyChallenges) },
         onNavigateBack = ::requestBackNavigation,
         onSettingsChange = { updated ->
             val shouldLogSettingsChange = updated.copy(
@@ -345,12 +392,15 @@ fun App() {
                 telemetry.logUserAction(TelemetryActionNames.SettingsChanged)
             }
         },
-        onTutorialFinished = {
+        onTutorialFinishRequested = {
             if (!settings.hasSeenTutorial) {
                 val updatedSettings = settings.copy(hasSeenTutorial = true)
                 settings = updatedSettings
                 AppSettingsStorage.save(updatedSettings)
             }
+            telemetry.logUserAction(TelemetryActionNames.OpenInteractiveOnboarding)
+            prepareInteractiveOnboarding()
+            replaceTop(AppRoute.InteractiveOnboarding)
         },
         onInteractiveOnboardingFinished = { finalState ->
             persistActiveSession.value = true

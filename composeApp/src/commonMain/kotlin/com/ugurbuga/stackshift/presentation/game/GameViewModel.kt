@@ -4,6 +4,7 @@ import com.ugurbuga.stackshift.game.logic.GameLogic
 import com.ugurbuga.stackshift.game.logic.GameEvent
 import com.ugurbuga.stackshift.game.model.GameConfig
 import com.ugurbuga.stackshift.game.model.GameState
+import com.ugurbuga.stackshift.game.model.DailyChallenge
 import com.ugurbuga.stackshift.game.model.GridPoint
 import com.ugurbuga.stackshift.game.model.PlacementPreview
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
@@ -22,6 +23,7 @@ class GameViewModel(
     private val gameLogic: GameLogic = GameLogic(),
     initialState: GameState? = null,
     private val onStateChanged: (GameState) -> Unit = {},
+    private val onChallengeCompleted: (DailyChallenge) -> Unit = {},
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
 ) {
     private val store = GameStore(
@@ -29,6 +31,11 @@ class GameViewModel(
         scope = scope,
         initialState = initialState,
         onStateChanged = onStateChanged,
+        onEvents = { events ->
+            if (GameEvent.ChallengeCompleted in events) {
+                uiState.value.gameState.activeChallenge?.let(onChallengeCompleted)
+            }
+        }
     )
     private val feedbackMapper = GameFeedbackMapper()
 
@@ -57,8 +64,11 @@ class GameViewModel(
     fun replaceActivePiece(specialType: SpecialBlockType): InteractionFeedback =
         dispatch(GameIntent.ReplaceActivePiece(specialType))
 
-    fun restart(config: GameConfig = uiState.value.gameState.config): InteractionFeedback {
-        return dispatch(GameIntent.Restart(config))
+    fun restart(
+        config: GameConfig = uiState.value.gameState.config,
+        challenge: DailyChallenge? = uiState.value.gameState.activeChallenge
+    ): InteractionFeedback {
+        return dispatch(GameIntent.Restart(config, challenge))
     }
 
     fun replaceState(state: GameState) {

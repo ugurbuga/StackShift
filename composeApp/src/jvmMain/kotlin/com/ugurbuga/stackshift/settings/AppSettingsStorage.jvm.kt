@@ -6,7 +6,9 @@ import com.ugurbuga.stackshift.game.model.AppThemeMode
 import com.ugurbuga.stackshift.game.model.BlockColorPalette
 import com.ugurbuga.stackshift.game.model.BlockVisualStyle
 import com.ugurbuga.stackshift.game.model.BoardBlockStyleMode
+import com.ugurbuga.stackshift.game.model.ChallengeProgress
 import com.ugurbuga.stackshift.game.model.normalizeBlockVisualStyle
+import com.ugurbuga.stackshift.game.model.resolveUnifiedThemePalette
 import java.util.prefs.Preferences
 
 actual object AppSettingsStorage {
@@ -15,11 +17,16 @@ actual object AppSettingsStorage {
     actual fun load(): AppSettings {
         val hasStoredLanguage = prefs.get(KeyLanguage, null) != null
         val defaultSettings = AppSettings()
+        val legacyThemePalette = prefs.get(KeyThemeColorPalette, null)?.let {
+            AppColorPalette.entries.getOrElse(prefs.getInt(KeyThemeColorPalette, defaultSettings.themeColorPalette.ordinal)) { defaultSettings.themeColorPalette }
+        }
+        val legacyBlockPalette = prefs.get(KeyBlockColorPalette, null)?.let {
+            BlockColorPalette.entries.getOrElse(prefs.getInt(KeyBlockColorPalette, defaultSettings.blockColorPalette.ordinal)) { defaultSettings.blockColorPalette }
+        }
         return AppSettings(
             language = AppLanguage.entries.getOrElse(prefs.getInt(KeyLanguage, defaultSettings.language.ordinal)) { defaultSettings.language },
             themeMode = AppThemeMode.entries.getOrElse(prefs.getInt(KeyThemeMode, defaultSettings.themeMode.ordinal)) { defaultSettings.themeMode },
-            themeColorPalette = AppColorPalette.entries.getOrElse(prefs.getInt(KeyThemeColorPalette, defaultSettings.themeColorPalette.ordinal)) { defaultSettings.themeColorPalette },
-            blockColorPalette = BlockColorPalette.entries.getOrElse(prefs.getInt(KeyBlockColorPalette, defaultSettings.blockColorPalette.ordinal)) { defaultSettings.blockColorPalette },
+            themeColorPalette = resolveUnifiedThemePalette(themePalette = legacyThemePalette, blockPalette = legacyBlockPalette),
             blockVisualStyle = normalizeBlockVisualStyle(
                 BlockVisualStyle.entries.getOrElse(prefs.getInt(KeyBlockVisualStyle, defaultSettings.blockVisualStyle.ordinal)) { defaultSettings.blockVisualStyle }
             ),
@@ -27,6 +34,17 @@ actual object AppSettingsStorage {
             hasSeenTutorial = prefs.getBoolean(KeyHasSeenTutorial, defaultSettings.hasSeenTutorial),
             hasShownInteractiveOnboarding = prefs.getBoolean(KeyHasShownInteractiveOnboarding, defaultSettings.hasShownInteractiveOnboarding),
             hasInitializedLanguage = prefs.getBoolean(KeyHasInitializedLanguage, defaultSettings.hasInitializedLanguage) || hasStoredLanguage,
+            challengeProgress = ChallengeProgress(
+                completedDays = prefs.get(KeyChallengeProgress, "")
+                    .split(",")
+                    .filter { it.isNotEmpty() }
+                    .mapNotNull { item ->
+                        val parts = item.split("|")
+                        if (parts.size == 2) parts[0] to parts[1].toInt() else null
+                    }
+                    .groupBy({ it.first }, { it.second })
+                    .mapValues { it.value.toSet() }
+            )
         )
     }
 
@@ -40,9 +58,16 @@ actual object AppSettingsStorage {
         prefs.putBoolean(KeyHasSeenTutorial, settings.hasSeenTutorial)
         prefs.putBoolean(KeyHasShownInteractiveOnboarding, settings.hasShownInteractiveOnboarding)
         prefs.putBoolean(KeyHasInitializedLanguage, settings.hasInitializedLanguage)
+        prefs.put(
+            KeyChallengeProgress,
+            settings.challengeProgress.completedDays.flatMap { entry ->
+                entry.value.map { "${entry.key}|$it" }
+            }.joinToString(",")
+        )
     }
 
     private const val Namespace = "com.ugurbuga.stackshift.settings"
+    private const val KeyChallengeProgress = "challengeProgress"
     private const val KeyLanguage = "language"
     private const val KeyThemeMode = "themeMode"
     private const val KeyThemeColorPalette = "themeColorPalette"

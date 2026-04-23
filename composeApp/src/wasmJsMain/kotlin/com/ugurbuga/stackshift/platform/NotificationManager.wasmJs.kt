@@ -6,6 +6,8 @@ import androidx.compose.runtime.remember
 class WasmNotificationManager : NotificationManager {
     override fun scheduleMissYouNotification() {}
     override fun cancelMissYouNotification() {}
+    override fun scheduleDailyChallengeNotification() {}
+    override fun cancelDailyChallengeNotification() {}
     @Composable override fun RequestPermission() {}
 }
 

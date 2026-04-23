@@ -11,11 +11,13 @@ import androidx.compose.runtime.setValue
 import com.ugurbuga.stackshift.AndroidSystemBarsEffect
 import com.ugurbuga.stackshift.AppRoute
 import com.ugurbuga.stackshift.StackShiftRoot
+import com.ugurbuga.stackshift.game.model.ChallengeProgress
 import com.ugurbuga.stackshift.game.model.GameState
+import com.ugurbuga.stackshift.game.model.GameStatus
 import com.ugurbuga.stackshift.localization.currentDeviceLocaleTag
-import com.ugurbuga.stackshift.settings.FirstRunGameOnboardingStateFactory
 import com.ugurbuga.stackshift.presentation.game.GameViewModel
 import com.ugurbuga.stackshift.settings.AppSettingsStorage
+import com.ugurbuga.stackshift.settings.FirstRunGameOnboardingStateFactory
 import com.ugurbuga.stackshift.settings.GameSessionStorage
 import com.ugurbuga.stackshift.settings.HighScoreStorage
 import com.ugurbuga.stackshift.settings.initializeAppSettingsForFirstLaunch
@@ -49,6 +51,17 @@ fun AndroidApp() {
                 pendingSessionState = state
             }
         },
+        onChallengeCompleted = { completedChallenge ->
+            val key = "${completedChallenge.year}-${completedChallenge.month.toString().padStart(2, '0')}"
+            val currentDays = settings.challengeProgress.completedDays[key] ?: emptySet()
+            val updatedSettings = settings.copy(
+                challengeProgress = ChallengeProgress(
+                    completedDays = settings.challengeProgress.completedDays + (key to (currentDays + completedChallenge.day))
+                )
+            )
+            settings = updatedSettings
+            AppSettingsStorage.save(updatedSettings)
+        }
     )
     val gameViewModelState = remember {
         mutableStateOf(
@@ -85,8 +98,10 @@ fun AndroidApp() {
         showLeaveSessionDialog = false
         routeStack = listOf(AppRoute.Home)
     }
+    val gameViewModel = gameViewModelState.value
     fun requestBackNavigation() {
-        if (currentRoute == AppRoute.Game || currentRoute == AppRoute.InteractiveOnboarding) {
+        val isGameOver = gameViewModel.snapshotState().status == GameStatus.GameOver
+        if ((currentRoute == AppRoute.Game || currentRoute == AppRoute.InteractiveOnboarding) && !isGameOver) {
             showLeaveSessionDialog = true
         } else {
             navigateBack()
@@ -110,7 +125,6 @@ fun AndroidApp() {
         prepareInteractiveOnboarding()
         navigateTo(AppRoute.InteractiveOnboarding)
     }
-    val gameViewModel = gameViewModelState.value
 
     LaunchedEffect(initialBootstrapResult, telemetry) {
         logLanguageBootstrapDecision(
@@ -176,6 +190,7 @@ fun AndroidApp() {
         onNavigateToTheme = { navigateTo(AppRoute.Settings) },
         onNavigateToLanguage = { navigateTo(AppRoute.Language) },
         onNavigateToTutorial = { navigateTo(AppRoute.Tutorial) },
+        onNavigateToChallenges = { navigateTo(AppRoute.DailyChallenges) },
         onNavigateBack = ::requestBackNavigation,
         onSettingsChange = { updated ->
             val shouldLogSettingsChange = updated.copy(
@@ -189,12 +204,15 @@ fun AndroidApp() {
                 telemetry.logUserAction(TelemetryActionNames.SettingsChanged)
             }
         },
-        onTutorialFinished = {
+        onTutorialFinishRequested = {
             if (!settings.hasSeenTutorial) {
                 val updatedSettings = settings.copy(hasSeenTutorial = true)
                 settings = updatedSettings
                 AppSettingsStorage.save(updatedSettings)
             }
+            telemetry.logUserAction(TelemetryActionNames.OpenInteractiveOnboarding)
+            prepareInteractiveOnboarding()
+            replaceTop(AppRoute.InteractiveOnboarding)
         },
         onInteractiveOnboardingFinished = { finalState ->
             persistActiveSession.value = true

@@ -23,13 +23,34 @@ class AndroidNotificationManager(private val context: Context) : NotificationMan
 
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
             "miss_you_notification",
-            ExistingPeriodicWorkPolicy.REPLACE,
+            ExistingPeriodicWorkPolicy.KEEP,
             workRequest
         )
     }
 
     override fun cancelMissYouNotification() {
         WorkManager.getInstance(context).cancelUniqueWork("miss_you_notification")
+    }
+
+    override fun scheduleDailyChallengeNotification() {
+        val data = androidx.work.Data.Builder()
+            .putString(NotificationWorker.DATA_KEY_TYPE, NotificationWorker.TYPE_DAILY_CHALLENGE)
+            .build()
+
+        val workRequest = PeriodicWorkRequestBuilder<NotificationWorker>(24, TimeUnit.HOURS)
+            .setInitialDelay(24, TimeUnit.HOURS)
+            .setInputData(data)
+            .build()
+
+        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+            "daily_challenge_notification",
+            ExistingPeriodicWorkPolicy.KEEP,
+            workRequest
+        )
+    }
+
+    override fun cancelDailyChallengeNotification() {
+        WorkManager.getInstance(context).cancelUniqueWork("daily_challenge_notification")
     }
 
     @Composable

@@ -4,8 +4,8 @@ import com.ugurbuga.stackshift.game.logic.GameEvent
 import com.ugurbuga.stackshift.game.logic.GameLogic
 import com.ugurbuga.stackshift.game.model.GameConfig
 import com.ugurbuga.stackshift.game.model.GameState
-import com.ugurbuga.stackshift.game.model.GameStatus
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
+import com.ugurbuga.stackshift.game.model.DailyChallenge
 
 internal class GameReducer(
     private val gameLogic: GameLogic,
@@ -21,7 +21,12 @@ internal class GameReducer(
                 events = result.events,
                 effects = buildList {
                     result.state.softLock?.let { softLock ->
-                        add(GameEffect.StartSoftLockTimer(revision = softLock.revision, delayMillis = softLock.remainingMillis))
+                        add(
+                            GameEffect.StartSoftLockTimer(
+                                revision = softLock.revision,
+                                delayMillis = softLock.remainingMillis
+                            )
+                        )
                     }
                 },
             )
@@ -64,7 +69,7 @@ internal class GameReducer(
         }
 
         is GameAction.Restart -> ReduceResult(
-            state = gameLogic.newGame(action.config),
+            state = gameLogic.newGame(action.config, action.challenge),
             events = setOf(GameEvent.Restarted),
             effects = listOf(GameEffect.CancelSoftLockTimer),
         )
@@ -82,7 +87,7 @@ sealed interface GameIntent {
     data object CommitSoftLock : GameIntent
     data object HoldPiece : GameIntent
     data object ReviveFromReward : GameIntent
-    data class Restart(val config: GameConfig) : GameIntent
+    data class Restart(val config: GameConfig, val challenge: DailyChallenge? = null) : GameIntent
     data class ReplaceActivePiece(val specialType: SpecialBlockType) : GameIntent
 }
 
@@ -91,7 +96,7 @@ internal sealed interface GameAction {
     data object CommitSoftLock : GameAction
     data object HoldPiece : GameAction
     data object ReviveFromReward : GameAction
-    data class Restart(val config: GameConfig) : GameAction
+    data class Restart(val config: GameConfig, val challenge: DailyChallenge? = null) : GameAction
     data object Tick : GameAction
     data class ReplaceActivePiece(val specialType: SpecialBlockType) : GameAction
 }
@@ -116,7 +121,7 @@ internal fun GameIntent.toAction(): GameAction = when (this) {
     GameIntent.CommitSoftLock -> GameAction.CommitSoftLock
     GameIntent.HoldPiece -> GameAction.HoldPiece
     GameIntent.ReviveFromReward -> GameAction.ReviveFromReward
-    is GameIntent.Restart -> GameAction.Restart(config)
+    is GameIntent.Restart -> GameAction.Restart(config, challenge)
     is GameIntent.ReplaceActivePiece -> GameAction.ReplaceActivePiece(specialType)
 }
 
