@@ -19,10 +19,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
-import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.Hub
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.SwapVert
-import androidx.compose.material.icons.filled.ViewModule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -47,6 +47,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalDensity
@@ -65,7 +66,10 @@ import com.ugurbuga.stackshift.game.model.Piece
 import com.ugurbuga.stackshift.game.model.PlacementPreview
 import com.ugurbuga.stackshift.game.model.PressureLevel
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
+import com.ugurbuga.stackshift.game.model.boardSpecialIcon
 import com.ugurbuga.stackshift.game.model.normalizeBlockVisualStyle
+import com.ugurbuga.stackshift.game.model.paletteColor
+import com.ugurbuga.stackshift.game.model.resolveBoardBlockStyle
 import com.ugurbuga.stackshift.localization.LocalAppSettings
 import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
 import com.ugurbuga.stackshift.ui.theme.isStackShiftDarkTheme
@@ -192,7 +196,7 @@ fun BoardGrid(
         remember { mutableFloatStateOf(0f) }
     }
     val shouldAnimateStylePulse = stylePulse == 0f && (
-        boardBlockStyle == BlockVisualStyle.DynamicLiquid || boardBlockStyle == BlockVisualStyle.Metallic
+        boardBlockStyle == BlockVisualStyle.DynamicLiquid || boardBlockStyle == BlockVisualStyle.Tornado || boardBlockStyle == BlockVisualStyle.Prism
     )
     val stylePulseTransition = if (shouldAnimateStylePulse) {
         rememberInfiniteTransition(label = "stylePulse")
@@ -1154,13 +1158,15 @@ internal fun specialBlockIconTint(
 
     return when (style) {
         BlockVisualStyle.Outline,
-        BlockVisualStyle.PixelArt,
+        BlockVisualStyle.GridSplit,
         BlockVisualStyle.Crystal,
         BlockVisualStyle.DynamicLiquid,
         BlockVisualStyle.HoneycombTexture,
         BlockVisualStyle.LightBurst,
         BlockVisualStyle.LiquidMarble,
-        BlockVisualStyle.Bamboo -> {
+        BlockVisualStyle.Brick,
+        BlockVisualStyle.SoundWave,
+        BlockVisualStyle.Prism -> {
             if (isDarkTheme) Color.White else Color.Black
         }
 
@@ -1168,8 +1174,7 @@ internal fun specialBlockIconTint(
             Color.Black
         }
 
-        BlockVisualStyle.Metallic,
-        BlockVisualStyle.Lava,
+        BlockVisualStyle.Tornado,
         BlockVisualStyle.Cosmic -> Color.White
 
         else -> Color.White
@@ -1194,24 +1199,118 @@ internal fun DrawScope.drawWoodGrain(
     size: Size,
     alpha: Float,
 ) {
-    val lineWidth = size.height * 0.028f
-    drawLine(
-        color = Color.White.copy(alpha = alpha),
-        start = topLeft + Offset(size.width * 0.08f, size.height * 0.22f),
-        end = topLeft + Offset(size.width * 0.92f, size.height * 0.38f),
-        strokeWidth = lineWidth,
+    val minDim = minOf(size.width, size.height)
+    val colorAlpha = 0.35f * alpha // Increased visibility as requested
+    val lineCount = 8
+    val verticalStep = size.height / (lineCount + 1)
+
+    repeat(lineCount) { i ->
+        val yBase = topLeft.y + verticalStep * (i + 1)
+        val path = Path().apply {
+            moveTo(topLeft.x, yBase)
+            val segments = 4
+            val segmentWidth = size.width / segments
+            for (j in 1..segments) {
+                val x = topLeft.x + j * segmentWidth
+                val waveOffset = (if (j % 2 == 0) -1f else 1f) * minDim * 0.02f
+                val cpX = x - segmentWidth / 2f
+                quadraticTo(cpX, yBase + waveOffset, x, yBase)
+            }
+        }
+        
+        val strokeWidth = (minDim * 0.012f).coerceAtLeast(1.0f) // Thicker as requested
+        
+        // Shadow line
+        drawPath(
+            path = path,
+            color = Color.Black.copy(alpha = colorAlpha * 0.5f),
+            style = Stroke(width = strokeWidth),
+        )
+        
+        // Highlight line with slight offset
+        clipRect(topLeft.x, topLeft.y, topLeft.x + size.width, topLeft.y + size.height) {
+            withTransform({
+                translate(0f, -1.2f) // Slightly more offset for thicker lines
+            }) {
+                drawPath(
+                    path = path,
+                    color = Color.White.copy(alpha = colorAlpha * 0.8f),
+                    style = Stroke(width = strokeWidth)
+                )
+            }
+        }
+    }
+}
+
+private fun DrawScope.drawStonePattern(
+    topLeft: Offset,
+    size: Size,
+    toneColor: Color,
+    alpha: Float,
+    cornerRadius: CornerRadius,
+) {
+    val minDimension = minOf(size.width, size.height)
+    
+    // Base stone body with more rocky gradient
+    drawRoundRect(
+        brush = Brush.linearGradient(
+            colors = listOf(
+                tintColor(toneColor, 0.15f).copy(alpha = alpha),
+                toneColor.copy(alpha = alpha),
+                shadeColor(toneColor, 0.22f).copy(alpha = alpha),
+            ),
+            start = topLeft,
+            end = topLeft + Offset(size.width, size.height)
+        ),
+        topLeft = topLeft,
+        size = size,
+        cornerRadius = cornerRadius,
     )
-    drawLine(
-        color = Color.Black.copy(alpha = alpha * 0.72f),
-        start = topLeft + Offset(size.width * 0.08f, size.height * 0.42f),
-        end = topLeft + Offset(size.width * 0.92f, size.height * 0.58f),
-        strokeWidth = lineWidth,
+
+    // Irregular polygonal cracks matching the visual reference
+    val strokeColor = Color.Black.copy(alpha = 0.28f * alpha)
+    val highlightColor = Color.White.copy(alpha = 0.22f * alpha)
+    val strokeWidth = (minDimension * 0.038f).coerceAtLeast(1.2f)
+    
+    val crackPaths = listOf(
+        // Major structural cracks
+        listOf(Offset(0.25f, 0f), Offset(0.35f, 0.3f), Offset(0f, 0.45f)),
+        listOf(Offset(0.35f, 0.3f), Offset(0.65f, 0.35f), Offset(0.75f, 0f)),
+        listOf(Offset(0.65f, 0.35f), Offset(0.85f, 0.6f), Offset(1f, 0.5f)),
+        listOf(Offset(0f, 0.75f), Offset(0.3f, 0.7f), Offset(0.45f, 1f)),
+        listOf(Offset(0.3f, 0.7f), Offset(0.6f, 0.65f), Offset(0.85f, 0.6f)),
+        listOf(Offset(0.6f, 0.65f), Offset(0.75f, 1f)),
+        // Minor detail cracks
+        listOf(Offset(0.35f, 0.3f), Offset(0.3f, 0.7f)),
+        listOf(Offset(0.65f, 0.35f), Offset(0.6f, 0.65f))
     )
-    drawLine(
-        color = Color.White.copy(alpha = alpha * 0.70f),
-        start = topLeft + Offset(size.width * 0.08f, size.height * 0.62f),
-        end = topLeft + Offset(size.width * 0.92f, size.height * 0.78f),
-        strokeWidth = lineWidth,
+
+    crackPaths.forEach { points ->
+        val path = Path().apply {
+            moveTo(topLeft.x + size.width * points[0].x, topLeft.y + size.height * points[0].y)
+            for (i in 1 until points.size) {
+                lineTo(topLeft.x + size.width * points[i].x, topLeft.y + size.height * points[i].y)
+            }
+        }
+        drawPath(path = path, color = strokeColor, style = Stroke(width = strokeWidth))
+        
+        // Depth highlight on one side of the crack
+        val highlightPath = Path().apply {
+            moveTo(topLeft.x + size.width * points[0].x + 0.8f, topLeft.y + size.height * points[0].y + 0.8f)
+            for (i in 1 until points.size) {
+                lineTo(topLeft.x + size.width * points[i].x + 0.8f, topLeft.y + size.height * points[i].y + 0.8f)
+            }
+        }
+        drawPath(path = highlightPath, color = highlightColor, style = Stroke(width = strokeWidth * 0.4f))
+    }
+
+    // Outer rock bevel/border
+    drawRoundRect(
+        color = Color.Black.copy(alpha = 0.15f * alpha),
+        topLeft = topLeft,
+        size = size,
+        cornerRadius = cornerRadius,
+        style = Stroke(width = strokeWidth * 1.2f)
     )
 }
 
@@ -1528,33 +1627,41 @@ internal fun DrawScope.drawCellBody(
             )
         }
 
-        BlockVisualStyle.Wood,
-        BlockVisualStyle.StoneTexture
-            -> drawRoundRect(
-            brush = Brush.verticalGradient(
-                colors = listOf(
-                    baseColor.copy(alpha = 0.98f),
-                    baseColor.copy(alpha = 0.90f),
-                    baseColor.copy(alpha = 0.74f),
+        BlockVisualStyle.Wood -> {
+            drawRoundRect(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        tintColor(rawBaseColor, 0.12f).copy(alpha = constrainedAlpha),
+                        baseColor,
+                        shadeColor(rawBaseColor, 0.10f).copy(alpha = constrainedAlpha),
+                    ),
+                    startY = topLeft.y,
+                    endY = topLeft.y + size.height
                 ),
-                startY = topLeft.y,
-                endY = topLeft.y + size.height
-            ),
-            topLeft = topLeft,
-            size = size,
-            cornerRadius = CornerRadius(cornerRadius.x * 0.86f, cornerRadius.y * 0.80f),
-        ).also {
-            drawWoodGrain(topLeft = topLeft, size = size, alpha = 0.16f)
+                topLeft = topLeft,
+                size = size,
+                cornerRadius = CornerRadius(cornerRadius.x * 0.86f, cornerRadius.y * 0.80f),
+            )
+            drawWoodGrain(topLeft = topLeft, size = size, alpha = constrainedAlpha)
         }
 
-        BlockVisualStyle.PixelArt -> {
-            drawRubikCubeFace(
+        BlockVisualStyle.StoneTexture -> {
+            drawStonePattern(
+                topLeft = topLeft,
+                size = size,
+                toneColor = rawBaseColor,
+                alpha = constrainedAlpha,
+                cornerRadius = cornerRadius
+            )
+        }
+
+        BlockVisualStyle.GridSplit -> {
+            drawGridSplitPattern(
                 topLeft = topLeft,
                 size = size,
                 toneColor = rawBaseColor,
                 alpha = constrainedAlpha,
                 cornerRadius = cornerRadius,
-                palette = palette,
             )
         }
 
@@ -1685,35 +1792,13 @@ internal fun DrawScope.drawCellBody(
             )
         }
 
-        BlockVisualStyle.Metallic -> {
-            drawRoundRect(
-                brush = Brush.linearGradient(
-                    colors = listOf(
-                        shadeColor(rawBaseColor, 0.20f).copy(alpha = constrainedAlpha),
-                        tintColor(rawBaseColor, 0.18f).copy(alpha = constrainedAlpha),
-                        tintColor(rawBaseColor, 0.28f).copy(alpha = constrainedAlpha),
-                        shadeColor(rawBaseColor, 0.30f).copy(alpha = constrainedAlpha),
-                    ),
-                    start = topLeft + Offset(size.width * 0.06f, 0f),
-                    end = topLeft + Offset(size.width * 0.94f, size.height),
-                ),
-                topLeft = topLeft,
-                size = size,
-                cornerRadius = CornerRadius(cornerRadius.x * 1.08f, cornerRadius.y * 1.08f),
-            )
-            drawWindTrailPattern(
+        BlockVisualStyle.Tornado -> {
+            drawTornadoPattern(
                 topLeft = topLeft,
                 size = size,
                 toneColor = rawBaseColor,
                 alpha = constrainedAlpha,
-                rotationProgress = pulse.coerceIn(0f, 1f),
-            )
-            drawRoundRect(
-                color = Color.White.copy(alpha = 0.16f * constrainedAlpha),
-                topLeft = topLeft,
-                size = size,
-                cornerRadius = CornerRadius(cornerRadius.x * 1.08f, cornerRadius.y * 1.08f),
-                style = Stroke(width = (minDimension * 0.03f).coerceAtLeast(1f)),
+                pulse = pulse,
             )
         }
 
@@ -1815,16 +1900,6 @@ internal fun DrawScope.drawCellBody(
             )
         }
 
-        BlockVisualStyle.Lava -> {
-            drawVitrayGlass(
-                topLeft = topLeft,
-                size = size,
-                toneColor = rawBaseColor,
-                alpha = constrainedAlpha,
-                cornerRadius = cornerRadius,
-            )
-        }
-
         BlockVisualStyle.SpiderWeb -> {
             drawRoundRect(
                 brush = Brush.verticalGradient(
@@ -1871,7 +1946,7 @@ internal fun DrawScope.drawCellBody(
             )
         }
 
-        BlockVisualStyle.Bamboo -> {
+        BlockVisualStyle.Brick -> {
             drawRoundRect(
                 brush = Brush.verticalGradient(
                     colors = listOf(
@@ -1892,6 +1967,27 @@ internal fun DrawScope.drawCellBody(
                 baseTone = rawBaseColor,
                 alpha = constrainedAlpha,
                 cornerRadius = cornerRadius,
+            )
+        }
+
+        BlockVisualStyle.SoundWave -> {
+            drawSoundWavePattern(
+                topLeft = topLeft,
+                size = size,
+                toneColor = rawBaseColor,
+                alpha = constrainedAlpha,
+                pulse = pulse,
+            )
+        }
+
+        BlockVisualStyle.Prism -> {
+            drawPrismRefraction(
+                topLeft = topLeft,
+                size = size,
+                toneColor = rawBaseColor,
+                alpha = constrainedAlpha,
+                cornerRadius = cornerRadius,
+                pulse = pulse,
             )
         }
     }
@@ -1976,153 +2072,6 @@ private fun DrawScope.drawBurstRays(
     }
 }
 
-private fun DrawScope.drawStoneTexture(
-    topLeft: Offset,
-    size: Size,
-    color: Color,
-    alpha: Float,
-) {
-    val strokeColor = color.copy(alpha = 0.18f * alpha)
-    val crackWidth = (minOf(size.width, size.height) * 0.024f).coerceAtLeast(0.9f)
-    val crackPoints = listOf(
-        Pair(Offset(0.16f, 0.18f), Offset(0.46f, 0.34f)),
-        Pair(Offset(0.46f, 0.34f), Offset(0.38f, 0.62f)),
-        Pair(Offset(0.64f, 0.18f), Offset(0.78f, 0.42f)),
-        Pair(Offset(0.22f, 0.74f), Offset(0.54f, 0.86f)),
-        Pair(Offset(0.58f, 0.56f), Offset(0.86f, 0.78f)),
-    )
-    crackPoints.forEach { (startFraction, endFraction) ->
-        drawLine(
-            color = strokeColor,
-            start = topLeft + Offset(size.width * startFraction.x, size.height * startFraction.y),
-            end = topLeft + Offset(size.width * endFraction.x, size.height * endFraction.y),
-            strokeWidth = crackWidth,
-        )
-    }
-    listOf(
-        Offset(0.28f, 0.26f),
-        Offset(0.70f, 0.30f),
-        Offset(0.40f, 0.70f),
-        Offset(0.74f, 0.68f),
-    ).forEach { fraction ->
-        drawCircle(
-            color = color.copy(alpha = 0.08f * alpha),
-            center = topLeft + Offset(size.width * fraction.x, size.height * fraction.y),
-            radius = minOf(size.width, size.height) * 0.05f,
-        )
-    }
-}
-
-private fun DrawScope.drawLavaCracks(
-    topLeft: Offset,
-    size: Size,
-    glowColor: Color,
-    alpha: Float,
-) {
-    val crackPaths = listOf(
-        marbleVeinPath(
-            topLeft = topLeft,
-            size = size,
-            points = listOf(
-                Offset(0.14f, 0.00f),
-                Offset(0.26f, 0.18f),
-                Offset(0.20f, 0.44f),
-                Offset(0.34f, 0.70f),
-                Offset(0.22f, 1.00f),
-            ),
-        ),
-        marbleVeinPath(
-            topLeft = topLeft,
-            size = size,
-            points = listOf(
-                Offset(0.00f, 0.34f),
-                Offset(0.18f, 0.40f),
-                Offset(0.42f, 0.34f),
-                Offset(0.72f, 0.26f),
-                Offset(1.00f, 0.18f),
-            ),
-        ),
-        marbleVeinPath(
-            topLeft = topLeft,
-            size = size,
-            points = listOf(
-                Offset(0.70f, 0.00f),
-                Offset(0.54f, 0.24f),
-                Offset(0.68f, 0.48f),
-                Offset(0.84f, 0.76f),
-                Offset(0.76f, 1.00f),
-            ),
-        ),
-        marbleVeinPath(
-            topLeft = topLeft,
-            size = size,
-            points = listOf(
-                Offset(0.22f, 0.12f),
-                Offset(0.40f, 0.22f),
-                Offset(0.54f, 0.48f),
-                Offset(0.68f, 0.66f),
-                Offset(0.84f, 0.86f),
-            ),
-        ),
-    )
-
-    crackPaths.forEach { path ->
-        drawPath(
-            path = path,
-            color = Color.Black.copy(alpha = 0.26f * alpha),
-            style = Stroke(width = (minOf(size.width, size.height) * 0.15f).coerceAtLeast(4f)),
-        )
-        drawPath(
-            path = path,
-            color = glowColor.copy(alpha = 0.34f * alpha),
-            style = Stroke(width = (minOf(size.width, size.height) * 0.08f).coerceAtLeast(2.2f)),
-        )
-        drawPath(
-            path = path,
-            color = tintColor(glowColor, 0.18f).copy(alpha = 0.94f * alpha),
-            style = Stroke(width = (minOf(size.width, size.height) * 0.032f).coerceAtLeast(1.2f)),
-        )
-    }
-
-    listOf(
-        Triple(Offset(0.28f, 0.40f), 0.16f, 0.72f),
-        Triple(Offset(0.62f, 0.28f), 0.12f, 0.64f),
-        Triple(Offset(0.74f, 0.74f), 0.18f, 0.76f),
-        Triple(Offset(0.46f, 0.60f), 0.10f, 0.52f),
-    ).forEach { (fraction, radiusFactor, glowAlpha) ->
-        val center = topLeft + Offset(size.width * fraction.x, size.height * fraction.y)
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(
-                    tintColor(glowColor, 0.22f).copy(alpha = glowAlpha * alpha),
-                    Color(0xFFFF6A1C).copy(alpha = 0.32f * alpha),
-                    Color.Transparent,
-                ),
-                center = center,
-                radius = minOf(size.width, size.height) * radiusFactor,
-            ),
-            center = center,
-            radius = minOf(size.width, size.height) * radiusFactor,
-        )
-    }
-
-    listOf(
-        Offset(0.16f, 0.14f),
-        Offset(0.38f, 0.18f),
-        Offset(0.82f, 0.22f),
-        Offset(0.18f, 0.72f),
-        Offset(0.54f, 0.84f),
-        Offset(0.88f, 0.68f),
-    ).forEachIndexed { index, fraction ->
-        val center = topLeft + Offset(size.width * fraction.x, size.height * fraction.y)
-        val radius = minOf(size.width, size.height) * if (index % 2 == 0) 0.022f else 0.016f
-        drawCircle(
-            color = Color(0xFFFFB25B).copy(alpha = (0.34f + (index % 3) * 0.08f) * alpha),
-            center = center,
-            radius = radius,
-        )
-    }
-}
 
 private fun DrawScope.drawHoneycombPattern(
     topLeft: Offset,
@@ -2424,22 +2373,22 @@ private fun DrawScope.drawRubikCubeFace(
     }
 }
 
-private fun DrawScope.drawWindTrailPattern(
+private fun DrawScope.drawTornadoPattern(
     topLeft: Offset,
     size: Size,
     toneColor: Color,
     alpha: Float,
-    rotationProgress: Float,
+    pulse: Float,
 ) {
     val minDimension = minOf(size.width, size.height)
     val center = topLeft + Offset(size.width / 2f, size.height / 2f)
-    val rotationDegrees = rotationProgress * 360f
-    val swirlColor = tintColor(toneColor, 0.42f)
+    val rotationOffset = pulse * 2f * PI.toFloat()
 
+    // Background less faded as requested
     drawCircle(
         brush = Brush.radialGradient(
             colors = listOf(
-                swirlColor.copy(alpha = 0.28f * alpha),
+                toneColor.copy(alpha = 0.68f * alpha),
                 Color.Transparent,
             ),
             center = center,
@@ -2449,170 +2398,48 @@ private fun DrawScope.drawWindTrailPattern(
         radius = minDimension * 0.54f,
     )
 
-    repeat(4) { index ->
-        drawArc(
-            color = swirlColor.copy(alpha = (0.30f - (index * 0.045f)).coerceAtLeast(0.10f) * alpha),
-            startAngle = rotationDegrees + (index * 54f),
-            sweepAngle = 136f + (index * 16f),
-            useCenter = false,
-            topLeft = topLeft + Offset(size.width * (0.04f + index * 0.07f), size.height * (0.08f + index * 0.07f)),
-            size = Size(size.width * (0.88f - index * 0.12f), size.height * (0.78f - index * 0.12f)),
-            style = Stroke(
-                width = (minDimension * (0.070f - index * 0.012f)).coerceAtLeast(1.2f),
-                cap = StrokeCap.Round,
-            ),
-        )
+    // Swirling tornado effect
+    val tornadoPath = Path()
+    val segments = 40
+    val rotations = 3f
+    for (i in 0..segments) {
+        val t = i.toFloat() / segments
+        val radius = (0.05f + t * 0.35f) * minDimension
+        val angle = t * rotations * 2f * PI.toFloat() + rotationOffset
+        val x = center.x + cos(angle) * radius
+        val y = (center.y + (minDimension * 0.35f)) - (t * minDimension * 0.7f)
+        if (i == 0) tornadoPath.moveTo(x, y) else tornadoPath.lineTo(x, y)
     }
 
-    repeat(4) { index ->
-        val sway = sin(((rotationProgress + (index * 0.16f)) * 2f * PI)).toFloat()
-        val path = Path().apply {
-            moveTo(topLeft.x + size.width * (0.08f + index * 0.06f), topLeft.y + size.height * (0.72f - index * 0.10f))
-            cubicTo(
-                topLeft.x + size.width * (0.22f + index * 0.10f),
-                topLeft.y + size.height * (0.12f + sway * 0.08f),
-                topLeft.x + size.width * (0.80f + sway * 0.08f),
-                topLeft.y + size.height * (0.36f - index * 0.06f),
-                topLeft.x + size.width * (0.54f - index * 0.06f),
-                topLeft.y + size.height * (0.52f + sway * 0.10f),
-            )
-        }
-        drawPath(
-            path = path,
-            color = Color.White.copy(alpha = (0.16f - index * 0.025f).coerceAtLeast(0.06f) * alpha),
-            style = Stroke(
-                width = (minDimension * (0.032f - index * 0.005f)).coerceAtLeast(0.9f),
-                cap = StrokeCap.Round,
-            ),
-        )
-    }
+    drawPath(
+        path = tornadoPath,
+        color = toneColor.copy(alpha = alpha),
+        style = Stroke(
+            width = (minDimension * 0.06f).coerceAtLeast(1.8f),
+            cap = StrokeCap.Round,
+        ),
+    )
 
     repeat(3) { index ->
+        val arcRotation = (rotationOffset * (1.2f + index * 0.4f)) % (2f * PI.toFloat())
         drawArc(
-            color = Color.White.copy(alpha = (0.12f - index * 0.02f).coerceAtLeast(0.05f) * alpha),
-            startAngle = rotationDegrees + 180f + (index * 34f),
-            sweepAngle = 150f - (index * 18f),
+            color = toneColor.copy(alpha = (0.25f - index * 0.05f).coerceAtLeast(0.05f) * alpha),
+            startAngle = arcRotation * (180f / PI.toFloat()),
+            sweepAngle = 120f,
             useCenter = false,
-            topLeft = topLeft + Offset(size.width * (0.18f + index * 0.06f), size.height * (0.18f + index * 0.06f)),
-            size = Size(size.width * (0.42f - index * 0.06f), size.height * (0.42f - index * 0.06f)),
-            style = Stroke(width = (minDimension * (0.020f - index * 0.003f)).coerceAtLeast(0.8f), cap = StrokeCap.Round),
+            topLeft = topLeft + Offset(size.width * (0.1f + index * 0.08f), size.height * (0.1f + index * 0.08f)),
+            size = Size(size.width * (0.8f - index * 0.16f), size.height * (0.8f - index * 0.16f)),
+            style = Stroke(width = (minDimension * 0.02f).coerceAtLeast(1f), cap = StrokeCap.Round),
         )
     }
 
-    drawArc(
-        color = Color.White.copy(alpha = 0.16f * alpha),
-        startAngle = rotationDegrees + 180f,
-        sweepAngle = 118f,
-        useCenter = false,
-        topLeft = topLeft + Offset(size.width * 0.24f, size.height * 0.24f),
-        size = Size(size.width * 0.34f, size.height * 0.34f),
-        style = Stroke(width = (minDimension * 0.024f).coerceAtLeast(0.9f), cap = StrokeCap.Round),
-    )
-    drawCircle(
-        color = shadeColor(toneColor, 0.24f).copy(alpha = 0.16f * alpha),
-        center = center,
-        radius = minDimension * 0.10f,
-    )
-}
-
-private fun DrawScope.drawVitrayGlass(
-    topLeft: Offset,
-    size: Size,
-    toneColor: Color,
-    alpha: Float,
-    cornerRadius: CornerRadius,
-) {
-    val minDimension = minOf(size.width, size.height)
-    val seed = cellPatternSeed(topLeft = topLeft, size = size, colorSeed = toneColor.hashCode())
-    val shardPoints = stableShardPoints(seed = seed)
-    val core = Offset(0.50f, 0.50f)
-
+    // Border in main color as requested
     drawRoundRect(
-        brush = Brush.linearGradient(
-            colors = listOf(
-                tintColor(toneColor, 0.22f).copy(alpha = alpha),
-                toneColor.copy(alpha = alpha),
-                shadeColor(toneColor, 0.22f).copy(alpha = alpha),
-            ),
-            start = topLeft,
-            end = topLeft + Offset(size.width, size.height),
-        ),
+        color = toneColor.copy(alpha = 0.8f * alpha),
         topLeft = topLeft,
         size = size,
-        cornerRadius = CornerRadius(cornerRadius.x * 0.78f, cornerRadius.y * 0.78f),
-    )
-
-    val polygons = listOf(
-        listOf(Offset(0.00f, 0.00f), shardPoints[0], shardPoints[4], shardPoints[7]),
-        listOf(shardPoints[0], Offset(0.52f, 0.00f), shardPoints[1], shardPoints[4]),
-        listOf(Offset(0.52f, 0.00f), Offset(1.00f, 0.00f), shardPoints[2], shardPoints[1]),
-        listOf(shardPoints[2], Offset(1.00f, 0.00f), Offset(1.00f, 0.46f), shardPoints[5]),
-        listOf(shardPoints[1], shardPoints[2], shardPoints[5], shardPoints[4]),
-        listOf(shardPoints[7], shardPoints[4], core, shardPoints[6]),
-        listOf(shardPoints[4], shardPoints[5], core),
-        listOf(core, shardPoints[5], shardPoints[8]),
-        listOf(shardPoints[6], core, shardPoints[8], Offset(0.48f, 1.00f)),
-        listOf(shardPoints[5], Offset(1.00f, 0.46f), Offset(1.00f, 1.00f), shardPoints[8]),
-        listOf(Offset(0.00f, 0.52f), shardPoints[7], shardPoints[6], Offset(0.00f, 1.00f)),
-        listOf(Offset(0.00f, 1.00f), shardPoints[6], Offset(0.48f, 1.00f)),
-    )
-
-    polygons.forEachIndexed { index, polygon ->
-        val resolved = polygon.map { point ->
-            Offset(topLeft.x + size.width * point.x, topLeft.y + size.height * point.y)
-        }
-        val polygonPath = Path().apply {
-            moveTo(resolved.first().x, resolved.first().y)
-            resolved.drop(1).forEach { lineTo(it.x, it.y) }
-            close()
-        }
-        val alphaFactor = 0.54f + (stableUnit(seed = seed + (index * 37)) * 0.32f)
-        val tintFactor = 0.06f + (stableUnit(seed = seed + (index * 19) + 7) * 0.26f)
-        val shadeFactor = 0.04f + (stableUnit(seed = seed + (index * 29) + 13) * 0.20f)
-        val pieceColor = if (index % 2 == 0) {
-            tintColor(toneColor, tintFactor).copy(alpha = alphaFactor * alpha)
-        } else {
-            shadeColor(toneColor, shadeFactor).copy(alpha = alphaFactor * alpha)
-        }
-        drawPath(path = polygonPath, color = pieceColor)
-        drawPath(
-            path = polygonPath,
-            color = Color.White.copy(alpha = 0.08f * alphaFactor * alpha),
-            style = Stroke(width = (minDimension * 0.010f).coerceAtLeast(0.55f)),
-        )
-    }
-
-    val leadColor = Color(0xFF241B18).copy(alpha = 0.76f * alpha)
-    val leadWidth = (minDimension * 0.042f).coerceAtLeast(1.2f)
-    vitrayConnections(shardPoints).forEach { (start, end) ->
-        drawLine(
-            color = leadColor,
-            start = topLeft + Offset(size.width * start.x, size.height * start.y),
-            end = topLeft + Offset(size.width * end.x, size.height * end.y),
-            strokeWidth = leadWidth,
-            cap = StrokeCap.Round,
-        )
-        drawLine(
-            color = Color.White.copy(alpha = 0.08f * alpha),
-            start = topLeft + Offset(size.width * start.x, size.height * start.y),
-            end = topLeft + Offset(size.width * end.x, size.height * end.y),
-            strokeWidth = leadWidth * 0.18f,
-            cap = StrokeCap.Round,
-        )
-    }
-
-    drawRoundRect(
-        color = Color.White.copy(alpha = 0.10f * alpha),
-        topLeft = topLeft + Offset(size.width * 0.08f, size.height * 0.08f),
-        size = Size(size.width * 0.48f, size.height * 0.18f),
-        cornerRadius = CornerRadius(cornerRadius.x * 0.42f, cornerRadius.y * 0.42f),
-    )
-    drawRoundRect(
-        color = leadColor.copy(alpha = 0.54f * alpha),
-        topLeft = topLeft,
-        size = size,
-        cornerRadius = CornerRadius(cornerRadius.x * 0.78f, cornerRadius.y * 0.78f),
-        style = Stroke(width = (minDimension * 0.028f).coerceAtLeast(1f)),
+        cornerRadius = CornerRadius(minDimension * 0.16f, minDimension * 0.16f),
+        style = Stroke(width = (minDimension * 0.05f).coerceAtLeast(1.5f))
     )
 }
 
@@ -2636,53 +2463,6 @@ private fun angularPanelPath(
         close()
     }
 }
-
-private fun cellPatternSeed(topLeft: Offset, size: Size, colorSeed: Int): Int {
-    val columnBucket = if (size.width > 0f) (topLeft.x / size.width).toInt() else 0
-    val rowBucket = if (size.height > 0f) (topLeft.y / size.height).toInt() else 0
-    return (columnBucket * 97) xor (rowBucket * 53) xor size.width.toBits() xor (size.height.toBits() * 7) xor colorSeed
-}
-
-private fun stableUnit(seed: Int): Float {
-    val next = ((seed.toLong() * 1_103_515_245L) + 12_345L) and 0x7FFF_FFFFL
-    return (next.toFloat() / 0x7FFF_FFFF.toFloat()).coerceIn(0f, 1f)
-}
-
-private fun stableShardPoints(seed: Int): List<Offset> = listOf(
-    Offset(0.18f + stableUnit(seed + 11) * 0.12f, 0.10f + stableUnit(seed + 17) * 0.10f),
-    Offset(0.52f + stableUnit(seed + 23) * 0.10f, 0.12f + stableUnit(seed + 29) * 0.08f),
-    Offset(0.74f + stableUnit(seed + 31) * 0.12f, 0.18f + stableUnit(seed + 37) * 0.12f),
-    Offset(0.90f, 0.46f),
-    Offset(0.42f + stableUnit(seed + 41) * 0.10f, 0.34f + stableUnit(seed + 43) * 0.12f),
-    Offset(0.68f + stableUnit(seed + 47) * 0.10f, 0.46f + stableUnit(seed + 53) * 0.12f),
-    Offset(0.30f + stableUnit(seed + 59) * 0.12f, 0.72f + stableUnit(seed + 61) * 0.12f),
-    Offset(0.14f + stableUnit(seed + 67) * 0.10f, 0.42f + stableUnit(seed + 71) * 0.12f),
-    Offset(0.70f + stableUnit(seed + 73) * 0.12f, 0.76f + stableUnit(seed + 79) * 0.10f),
-)
-
-private fun vitrayConnections(points: List<Offset>): List<Pair<Offset, Offset>> = listOf(
-    Offset(0.00f, 0.00f) to points[0],
-    points[0] to points[4],
-    points[4] to points[7],
-    points[7] to Offset(0.00f, 0.52f),
-    points[7] to Offset(0.00f, 1.00f),
-    points[4] to points[1],
-    points[1] to Offset(0.52f, 0.00f),
-    points[1] to points[2],
-    points[2] to Offset(1.00f, 0.00f),
-    points[2] to points[5],
-    points[5] to Offset(1.00f, 0.46f),
-    points[5] to points[8],
-    points[8] to Offset(1.00f, 1.00f),
-    points[8] to Offset(0.48f, 1.00f),
-    points[6] to Offset(0.48f, 1.00f),
-    points[6] to Offset(0.00f, 1.00f),
-    points[6] to points[7],
-    points[4] to Offset(0.50f, 0.50f),
-    points[5] to Offset(0.50f, 0.50f),
-    points[6] to Offset(0.50f, 0.50f),
-    points[8] to Offset(0.50f, 0.50f),
-)
 
 private fun DrawScope.drawBrickPattern(
     topLeft: Offset,
@@ -2759,6 +2539,226 @@ private fun DrawScope.drawBrickPattern(
         cornerRadius = CornerRadius(cornerRadius.x * 0.52f, cornerRadius.y * 0.52f),
         style = Stroke(width = (minOf(size.width, size.height) * 0.028f).coerceAtLeast(1f)),
     )
+}
+
+private fun DrawScope.drawSoundWavePattern(
+    topLeft: Offset,
+    size: Size,
+    toneColor: Color,
+    alpha: Float,
+    pulse: Float,
+) {
+    val minDim = minOf(size.width, size.height)
+    val center = topLeft + Offset(size.width / 2f, size.height / 2f)
+    val strokeWidth = (minDim * 0.072f).coerceIn(2.4f, 6.0f)
+
+    // Base container: faded version of the tone color
+    drawRoundRect(
+        color = toneColor.copy(alpha = 0.25f * alpha),
+        topLeft = topLeft,
+        size = size,
+        cornerRadius = CornerRadius(minDim * 0.22f, minDim * 0.22f),
+    )
+
+    // Horizontal baseline (also faded tone color)
+    drawLine(
+        color = toneColor.copy(alpha = 0.40f * alpha),
+        start = Offset(topLeft.x + size.width * 0.12f, center.y),
+        end = Offset(topLeft.x + size.width * 0.88f, center.y),
+        strokeWidth = strokeWidth * 0.30f,
+    )
+
+    // spikes
+    val spikeCount = 9
+    val spikeGap = (size.width * 0.72f) / (spikeCount - 1)
+    val startX = topLeft.x + size.width * 0.14f
+    
+    val seed = (topLeft.x.toInt() * 37 + topLeft.y.toInt())
+
+    for (i in 0 until spikeCount) {
+        val x = startX + i * spikeGap
+        val distFromCenter = kotlin.math.abs(i - (spikeCount - 1) / 2f) / ((spikeCount - 1) / 2f)
+        val centerWeight = 1.0f - (distFromCenter * 0.6f)
+        
+        val spikeSeed = seed + i * 997
+        val uniqueFactor = 0.4f + (spikeSeed % 60) / 100f
+        
+        val baseHeight = minDim * 0.75f * centerWeight * uniqueFactor
+        val pulseEffect = 0.12f * minDim * sin(pulse * 6.8f + i * 0.8f + seed * 0.15f)
+        val finalHeight = (baseHeight + pulseEffect).coerceIn(minDim * 0.10f, minDim * 0.90f)
+
+        // Main spike (Solid tone color)
+        drawLine(
+            color = toneColor.copy(alpha = alpha),
+            start = Offset(x, center.y - finalHeight / 2f),
+            end = Offset(x, center.y + finalHeight / 2f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round,
+        )
+    }
+}
+
+private fun DrawScope.drawPrismRefraction(
+    topLeft: Offset,
+    size: Size,
+    toneColor: Color,
+    alpha: Float,
+    cornerRadius: CornerRadius,
+    pulse: Float,
+) {
+    // Base background layer
+    val prismBg = lerp(Color.White, toneColor, 0.20f).copy(alpha = alpha)
+    drawRoundRect(
+        color = prismBg,
+        topLeft = topLeft,
+        size = size,
+        cornerRadius = cornerRadius,
+    )
+
+    // CORE PEAK POINT ANIMATED
+    val peakMotionRadius = size.width * 0.12f // Slightly smaller radius
+    val peakMotionAngle = pulse * PI.toFloat() // Half speed rotation (0 to 180 deg and back)
+    val peakOffsetX = cos(peakMotionAngle) * peakMotionRadius
+    val peakOffsetY = sin(peakMotionAngle) * peakMotionRadius
+
+    val peak = topLeft + Offset(
+        size.width * 0.5f + peakOffsetX,
+        size.height * 0.5f + peakOffsetY
+    )
+
+    // Facet drawing with tiling logic to cover whole area
+    fun drawSolidFacet(points: List<Offset>, facetAlpha: Float, isHighlight: Boolean) {
+        val path = Path().apply {
+            if (points.isNotEmpty()) {
+                moveTo(points[0].x, points[0].y)
+                for (i in 1 until points.size) {
+                    lineTo(points[i].x, points[i].y)
+                }
+                close()
+            }
+        }
+        
+        val displayColor = if (isHighlight) {
+            tintColor(toneColor, facetAlpha * 0.7f)
+        } else {
+            shadeColor(toneColor, facetAlpha * 0.7f)
+        }.copy(alpha = alpha * 0.95f)
+
+        drawPath(path = path, color = displayColor)
+        
+        drawPath(
+            path = path,
+            color = Color.White.copy(alpha = 0.22f * alpha),
+            style = Stroke(width = 0.9f)
+        )
+    }
+
+    val corners = listOf(
+        topLeft,
+        topLeft + Offset(size.width, 0f),
+        topLeft + Offset(size.width, size.height),
+        topLeft + Offset(0f, size.height)
+    )
+
+    // Midpoints on each edge to create 8 non-overlapping segments
+    val tMid = topLeft + Offset(size.width * 0.5f, 0f)
+    val rMid = topLeft + Offset(size.width, size.height * 0.5f)
+    val bMid = topLeft + Offset(size.width * 0.5f, size.height)
+    val lMid = topLeft + Offset(0f, size.height * 0.5f)
+
+    // Draw 8 non-overlapping facets (triangles) that meet at the peak
+    drawSolidFacet(listOf(corners[0], tMid, peak), 0.08f, true)
+    drawSolidFacet(listOf(tMid, corners[1], peak), 0.25f, false)
+    drawSolidFacet(listOf(corners[1], rMid, peak), 0.05f, true)
+    drawSolidFacet(listOf(rMid, corners[2], peak), 0.42f, false)
+    drawSolidFacet(listOf(corners[2], bMid, peak), 0.12f, true)
+    drawSolidFacet(listOf(bMid, corners[3], peak), 0.38f, false)
+    drawSolidFacet(listOf(corners[3], lMid, peak), 0.15f, true)
+    drawSolidFacet(listOf(lMid, corners[0], peak), 0.52f, false)
+
+    // Sharp light streaks
+    drawLine(
+        color = Color.White.copy(alpha = 0.35f * alpha),
+        start = corners[0],
+        end = peak,
+        strokeWidth = 1.2f,
+        cap = StrokeCap.Round
+    )
+    drawLine(
+        color = Color.White.copy(alpha = 0.25f * alpha),
+        start = corners[2],
+        end = peak,
+        strokeWidth = 1.2f,
+        cap = StrokeCap.Round
+    )
+
+    // Shimmer at center
+    drawCircle(
+        brush = Brush.radialGradient(
+            colors = listOf(Color.White.copy(alpha = 0.25f * alpha), Color.Transparent),
+            center = peak,
+            radius = size.width * 0.20f
+        ),
+        center = peak,
+        radius = size.width * 0.20f
+    )
+
+    // Outer frame
+    drawRoundRect(
+        color = Color.White.copy(alpha = 0.25f * alpha),
+        topLeft = topLeft,
+        size = size,
+        cornerRadius = cornerRadius,
+        style = Stroke(width = 1.8f)
+    )
+}
+
+private fun DrawScope.drawGridSplitPattern(
+    topLeft: Offset,
+    size: Size,
+    toneColor: Color,
+    alpha: Float,
+    cornerRadius: CornerRadius,
+) {
+    val minDim = minOf(size.width, size.height)
+    val gridCount = 3
+    val gapPx = (minDim * 0.05f).coerceIn(1.5f, 4f)
+    val cellSize = (minDim - (gapPx * (gridCount - 1))) / gridCount
+    
+    val innerCornerRadius = CornerRadius(cornerRadius.x * 0.4f, cornerRadius.y * 0.4f)
+
+    for (row in 0 until gridCount) {
+        for (col in 0 until gridCount) {
+            val cellTopLeft = topLeft + Offset(
+                col * (cellSize + gapPx),
+                row * (cellSize + gapPx)
+            )
+            
+            // Base cell body
+            drawRoundRect(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        tintColor(toneColor, 0.10f).copy(alpha = alpha),
+                        shadeColor(toneColor, 0.15f).copy(alpha = alpha),
+                    ),
+                    startY = cellTopLeft.y,
+                    endY = cellTopLeft.y + cellSize
+                ),
+                topLeft = cellTopLeft,
+                size = Size(cellSize, cellSize),
+                cornerRadius = innerCornerRadius,
+            )
+            
+            // Cell highlight
+            drawRoundRect(
+                color = Color.White.copy(alpha = 0.12f * alpha),
+                topLeft = cellTopLeft,
+                size = Size(cellSize, cellSize),
+                cornerRadius = innerCornerRadius,
+                style = Stroke(width = 1.0f)
+            )
+        }
+    }
 }
 
 private data class StableStar(
@@ -2860,20 +2860,21 @@ private fun boardCellVisual(
             BlockVisualStyle.Outline -> 0.70f
             BlockVisualStyle.Sharp3D -> 0.22f
             BlockVisualStyle.Wood -> 0.66f
-            BlockVisualStyle.PixelArt -> 0.28f
+            BlockVisualStyle.GridSplit -> 0.28f
             BlockVisualStyle.Crystal -> 0f
             BlockVisualStyle.DynamicLiquid -> 0.70f
             BlockVisualStyle.MatteSoft -> 0.78f
             BlockVisualStyle.NeonGlow -> 0.92f
-            BlockVisualStyle.Metallic -> 0.88f
+            BlockVisualStyle.Tornado -> 0.88f
             BlockVisualStyle.StoneTexture -> 0.66f
             BlockVisualStyle.HoneycombTexture -> 0.72f
             BlockVisualStyle.LightBurst -> 0.96f
             BlockVisualStyle.LiquidMarble -> 0.78f
-            BlockVisualStyle.Lava -> 0.62f
             BlockVisualStyle.SpiderWeb -> 0.44f
             BlockVisualStyle.Cosmic -> 0.56f
-            BlockVisualStyle.Bamboo -> 0.46f
+            BlockVisualStyle.Brick -> 0.46f
+            BlockVisualStyle.SoundWave -> 0.82f
+            BlockVisualStyle.Prism -> 0.68f
         },
     )
 }
@@ -2908,20 +2909,21 @@ internal fun boardFrameCornerRadiusDp(style: BlockVisualStyle): Dp = when (style
     BlockVisualStyle.Outline -> 14.dp
     BlockVisualStyle.Sharp3D -> 6.dp
     BlockVisualStyle.Wood -> 12.dp
-    BlockVisualStyle.PixelArt -> 4.dp
+    BlockVisualStyle.GridSplit -> 10.dp
     BlockVisualStyle.Crystal -> 0.dp
     BlockVisualStyle.DynamicLiquid -> 18.dp
     BlockVisualStyle.MatteSoft -> 18.dp
     BlockVisualStyle.NeonGlow -> 22.dp
-    BlockVisualStyle.Metallic -> 18.dp
+    BlockVisualStyle.Tornado -> 18.dp
     BlockVisualStyle.StoneTexture -> 12.dp
     BlockVisualStyle.HoneycombTexture -> 12.dp
     BlockVisualStyle.LightBurst -> 20.dp
     BlockVisualStyle.LiquidMarble -> 18.dp
-    BlockVisualStyle.Lava -> 10.dp
     BlockVisualStyle.SpiderWeb -> 6.dp
     BlockVisualStyle.Cosmic -> 10.dp
-    BlockVisualStyle.Bamboo -> 8.dp
+    BlockVisualStyle.Brick -> 8.dp
+    BlockVisualStyle.SoundWave -> 16.dp
+    BlockVisualStyle.Prism -> 12.dp
 }
 
 private fun blockStyleCornerScale(style: BlockVisualStyle): Float = when (style) {
@@ -2930,20 +2932,21 @@ private fun blockStyleCornerScale(style: BlockVisualStyle): Float = when (style)
     BlockVisualStyle.Outline -> 0.82f
     BlockVisualStyle.Sharp3D -> 0.30f
     BlockVisualStyle.Wood -> 0.76f
-    BlockVisualStyle.PixelArt -> 0.28f
+    BlockVisualStyle.GridSplit -> 0.54f
     BlockVisualStyle.Crystal -> 0f
     BlockVisualStyle.DynamicLiquid -> 0.85f
     BlockVisualStyle.MatteSoft -> 1.0f
     BlockVisualStyle.NeonGlow -> 1.20f
-    BlockVisualStyle.Metallic -> 1.00f
+    BlockVisualStyle.Tornado -> 1.00f
     BlockVisualStyle.StoneTexture -> 0.76f
     BlockVisualStyle.HoneycombTexture -> 0.78f
     BlockVisualStyle.LightBurst -> 1.04f
     BlockVisualStyle.LiquidMarble -> 0.98f
-    BlockVisualStyle.Lava -> 0.72f
     BlockVisualStyle.SpiderWeb -> 0.34f
     BlockVisualStyle.Cosmic -> 0.54f
-    BlockVisualStyle.Bamboo -> 0.46f
+    BlockVisualStyle.Brick -> 0.46f
+    BlockVisualStyle.SoundWave -> 0.88f
+    BlockVisualStyle.Prism -> 0.72f
 }
 
 internal fun CellTone.color(): Color = paletteColor(BlockColorPalette.Classic)
@@ -3057,7 +3060,7 @@ internal fun resolveBoardBlockStyle(
 private fun boardSpecialIcon(type: SpecialBlockType) = when (type) {
     SpecialBlockType.ColumnClearer -> Icons.Filled.SwapVert
     SpecialBlockType.RowClearer -> Icons.Filled.SwapHoriz
-    SpecialBlockType.Ghost -> Icons.Filled.ViewModule
-    SpecialBlockType.Heavy -> Icons.Filled.FitnessCenter
+    SpecialBlockType.Ghost -> Icons.Filled.Layers
+    SpecialBlockType.Heavy -> Icons.Filled.Hub
     SpecialBlockType.None -> Icons.AutoMirrored.Filled.HelpOutline
 }

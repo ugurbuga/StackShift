@@ -10,6 +10,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import java.util.concurrent.TimeUnit
@@ -51,6 +52,11 @@ class AndroidNotificationManager(private val context: Context) : NotificationMan
 
     override fun cancelDailyChallengeNotification() {
         WorkManager.getInstance(context).cancelUniqueWork("daily_challenge_notification")
+    }
+
+    override fun sendTestNotification() {
+        val workRequest = OneTimeWorkRequestBuilder<NotificationWorker>().build()
+        WorkManager.getInstance(context).enqueue(workRequest)
     }
 
     @Composable

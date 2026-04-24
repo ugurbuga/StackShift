@@ -12,7 +12,7 @@
 
     <style name="Theme.StackShift.Splash" parent="@android:style/Theme.Material.NoActionBar">
         <item name="android:windowBackground">@drawable/splash_screen</item>
-        <item name="android:colorBackground">#FF070E18</item>
+        <item name="android:colorBackground">#FF070D14</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>

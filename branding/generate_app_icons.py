@@ -196,14 +196,14 @@ def write_ico(path: Path, images: list[tuple[int, bytes]]) -> None:
 
 
 def full_icon_svg() -> str:
-    return board_icon_svg(include_background=True)
+    return board_icon_svg(include_background=True, board_scale=0.82)
 
 
 def foreground_icon_svg() -> str:
     return board_icon_svg(
         include_background=False,
         clip_shape="rounded_rect",
-        board_scale=0.84,
+        board_scale=0.78,
         clip_inset=96,
         clip_radius=188,
         surface_inset=138,
@@ -263,7 +263,9 @@ def board_icon_svg(
     surface_y = resolved_surface_inset
     surface_size = 1024 - (resolved_surface_inset * 2)
     surface_corner = surface_radius if surface_radius is not None else max(40, round(144 * board_scale))
-    board_surface = "" if include_background else f"""
+
+    # macOS için arkaplanı geri ekliyoruz
+    board_surface = "" if include_background and clip_shape != "rounded_rect" else f"""
   <rect x=\"{surface_x}\" y=\"{surface_y}\" width=\"{surface_size}\" height=\"{surface_size}\" rx=\"{surface_corner}\" fill=\"url(#boardBg)\"/>
   <rect x=\"{surface_x}\" y=\"{surface_y}\" width=\"{surface_size}\" height=\"{surface_size}\" rx=\"{surface_corner}\" fill=\"url(#boardGlowA)\"/>
   <rect x=\"{surface_x}\" y=\"{surface_y}\" width=\"{surface_size}\" height=\"{surface_size}\" rx=\"{surface_corner}\" fill=\"url(#boardGlowB)\"/>
@@ -362,29 +364,43 @@ def board_slots(geometry: dict[str, int], board_scale: float) -> str:
         for column in range(geometry["grid_size"]):
             x = geometry["board_x"] + column * (geometry["cell_size"] + geometry["gap"])
             y = geometry["board_y"] + row * (geometry["cell_size"] + geometry["gap"])
+            # Glass effect for slots
             lines.append(
-                f'  <rect x="{x}" y="{y}" width="{geometry["cell_size"]}" height="{geometry["cell_size"]}" rx="{slot_corner}" fill="#EAF7FF" fill-opacity="0.048"/>'
+                f'  <rect x="{x}" y="{y}" width="{geometry["cell_size"]}" height="{geometry["cell_size"]}" rx="{slot_corner}" fill="#FFFFFF" fill-opacity="0.08"/>'
             )
             lines.append(
-                f'  <rect x="{x}" y="{y}" width="{geometry["cell_size"]}" height="{geometry["cell_size"]}" rx="{slot_corner}" stroke="#EAF7FF" stroke-opacity="0.06" stroke-width="{slot_stroke_width}"/>'
+                f'  <rect x="{x}" y="{y}" width="{geometry["cell_size"]}" height="{geometry["cell_size"]}" rx="{slot_corner}" stroke="#FFFFFF" stroke-opacity="0.15" stroke-width="{slot_stroke_width}"/>'
             )
     return "\n".join(lines)
 
 
 def placed_blocks(geometry: dict[str, int]) -> str:
+    # 4x4 Grid
+    # Colors
+    c_cyan = "#00BBF9"
+    c_gold = "#FFBE0B"
+    c_violet = "#9B5DE5"
+    c_emerald = "#00F5D4"
+    c_coral = "#FF5C8A"
+
     placements = [
-        ((0, 0), "#00BBF9", None),
-        ((0, 1), "#00BBF9", "column"),
-        ((0, 3), "#FFE66D", None),
-        ((1, 1), "#00F5D4", None),
-        ((1, 2), "#9B5DE5", "ghost"),
-        ((2, 0), "#00F5D4", None),
-        ((2, 2), "#9B5DE5", None),
-        ((2, 3), "#FFBE0B", "row"),
-        ((3, 0), "#FF5C8A", "heavy"),
-        ((3, 1), "#FF5C8A", None),
-        ((3, 3), "#FFBE0B", None),
+        ((0, 0), c_cyan, None),
+        ((0, 1), c_cyan, "row"),
+        ((1, 1), c_cyan, None),
+
+        ((0, 3), c_gold, "heavy"),
+        ((1, 3), c_gold, None),
+
+        ((2, 0), c_violet, "ghost"),
+        ((3, 0), c_violet, None),
+        ((3, 1), c_violet, None),
+
+        ((2, 2), c_emerald, "column"),
+        ((3, 2), c_emerald, None),
+
+        ((2, 3), c_coral, None),
     ]
+
     return "\n".join(
         tile_block(
             x=geometry["board_x"] + column * (geometry["cell_size"] + geometry["gap"]),
@@ -403,55 +419,34 @@ def tile_block(x: int, y: int, color: str, size: int = 150, special: str | None 
     return f"""
   <g>
     <rect x=\"{x}\" y=\"{y}\" width=\"{size}\" height=\"{size}\" rx=\"{corner}\" fill=\"{color}\"/>
-    <rect x=\"{x + round(size * 0.08)}\" y=\"{y + round(size * 0.08)}\" width=\"{round(size * 0.84)}\" height=\"{round(size * 0.30)}\" rx=\"{round(size * 0.12)}\" fill=\"#FFFFFF\" fill-opacity=\"0.12\"/>
+    <rect x=\"{x + round(size * 0.08)}\" y=\"{y + round(size * 0.08)}\" width=\"{round(size * 0.84)}\" height=\"{round(size * 0.30)}\" rx=\"{round(size * 0.12)}\" fill=\"#FFFFFF\" fill-opacity=\"0.20\"/>
 {overlay}
   </g>"""
 
 
 def special_overlay(x: int, y: int, size: int, kind: str) -> str:
-    center_x = x + (size / 2)
-    center_y = y + (size / 2)
-    stroke = max(5, round(size * 0.060))
-    if kind == "column":
-        shaft_top = round(y + size * 0.25)
-        shaft_bottom = round(y + size * 0.75)
-        arrow_width = round(size * 0.18)
-        return f'''    <line x1="{round(center_x)}" y1="{shaft_top}" x2="{round(center_x)}" y2="{shaft_bottom}" stroke="#FFFFFF" stroke-opacity="0.94" stroke-width="{stroke}" stroke-linecap="round"/>
-    <path d="M {round(center_x)} {round(y + size * 0.18)} L {round(center_x - arrow_width)} {round(y + size * 0.34)} H {round(center_x - round(arrow_width * 0.42))} V {round(y + size * 0.46)} H {round(center_x + round(arrow_width * 0.42))} V {round(y + size * 0.34)} H {round(center_x + arrow_width)} Z" fill="#FFFFFF" fill-opacity="0.94"/>
-    <path d="M {round(center_x)} {round(y + size * 0.82)} L {round(center_x - arrow_width)} {round(y + size * 0.66)} H {round(center_x - round(arrow_width * 0.42))} V {round(y + size * 0.54)} H {round(center_x + round(arrow_width * 0.42))} V {round(y + size * 0.66)} H {round(center_x + arrow_width)} Z" fill="#FFFFFF" fill-opacity="0.94"/>'''
-    if kind == "row":
-        shaft_left = round(x + size * 0.25)
-        shaft_right = round(x + size * 0.75)
-        arrow_height = round(size * 0.18)
-        return f'''    <line x1="{shaft_left}" y1="{round(center_y)}" x2="{shaft_right}" y2="{round(center_y)}" stroke="#FFFFFF" stroke-opacity="0.94" stroke-width="{stroke}" stroke-linecap="round"/>
-    <path d="M {round(x + size * 0.18)} {round(center_y)} L {round(x + size * 0.34)} {round(center_y - arrow_height)} V {round(center_y - round(arrow_height * 0.42))} H {round(x + size * 0.46)} V {round(center_y + round(arrow_height * 0.42))} H {round(x + size * 0.34)} V {round(center_y + arrow_height)} Z" fill="#FFFFFF" fill-opacity="0.94"/>
-    <path d="M {round(x + size * 0.82)} {round(center_y)} L {round(x + size * 0.66)} {round(center_y - arrow_height)} V {round(center_y - round(arrow_height * 0.42))} H {round(x + size * 0.54)} V {round(center_y + round(arrow_height * 0.42))} H {round(x + size * 0.66)} V {round(center_y + arrow_height)} Z" fill="#FFFFFF" fill-opacity="0.94"/>'''
-    if kind == "ghost":
-        module = round(size * 0.16)
-        gap = round(size * 0.06)
-        start_x = round(center_x - module - (gap / 2))
-        start_y = round(center_y - module - (gap / 2))
-        radius = round(size * 0.05)
-        return "\n".join(
-            f'    <rect x="{start_x + (column * (module + gap))}" y="{start_y + (row * (module + gap))}" width="{module}" height="{module}" rx="{radius}" fill="#FFFFFF" fill-opacity="0.94"/>'
-            for row in range(2)
-            for column in range(2)
-        )
-    plate_width = round(size * 0.10)
-    plate_height = round(size * 0.32)
-    gap = round(size * 0.05)
-    bar_half = round(size * 0.12)
-    left_outer = round(center_x - bar_half - gap - (plate_width * 2))
-    left_inner = round(center_x - bar_half - gap - plate_width)
-    right_inner = round(center_x + bar_half + gap)
-    right_outer = round(center_x + bar_half + gap + plate_width)
-    plate_top = round(center_y - (plate_height / 2))
-    plate_radius = round(size * 0.04)
-    return f'''    <rect x="{left_outer}" y="{plate_top}" width="{plate_width}" height="{plate_height}" rx="{plate_radius}" fill="#FFFFFF" fill-opacity="0.94"/>
-    <rect x="{left_inner}" y="{plate_top}" width="{plate_width}" height="{plate_height}" rx="{plate_radius}" fill="#FFFFFF" fill-opacity="0.94"/>
-    <rect x="{round(center_x - bar_half)}" y="{round(center_y - stroke / 2)}" width="{bar_half * 2}" height="{stroke}" rx="{round(stroke / 2)}" fill="#FFFFFF" fill-opacity="0.94"/>
-    <rect x="{right_inner}" y="{plate_top}" width="{plate_width}" height="{plate_height}" rx="{plate_radius}" fill="#FFFFFF" fill-opacity="0.94"/>
-    <rect x="{right_outer}" y="{plate_top}" width="{plate_width}" height="{plate_height}" rx="{plate_radius}" fill="#FFFFFF" fill-opacity="0.94"/>'''
+    # All provided icons have a 24x24 viewport
+    # We want to scale them to fit nicely inside the block
+    icon_padding = size * 0.20
+    icon_display_size = size - (icon_padding * 2)
+    scale = icon_display_size / 24.0
+
+    # Calculate offset to center the 24x24 icon in the size x size block
+    offset_x = x + (size - (24.0 * scale)) / 2.0
+    offset_y = y + (size - (24.0 * scale)) / 2.0
+
+    paths = {
+        "column": "M16,17.01L16,10h-2v7.01h-3L15,21l4,-3.99h-3zM9,3L5,6.99h3L8,14h2L10,6.99h3L9,3zM16,17.01L16,10h-2v7.01h-3L15,21l4,-3.99h-3zM9,3L5,6.99h3L8,14h2L10,6.99h3L9,3z",
+        "row": "M6.99,11L3,15l3.99,4v-3H14v-2H6.99v-3zM21,9l-3.99,-4v3H10v2h7.01v3L21,9z",
+        "ghost": "M11.99,18.54l-7.37,-5.73L3,14.07l9,7 9,-7 -1.63,-1.27zM12,16l7.36,-5.73L21,9l-9,-7 -9,7 1.63,1.27L12,16zM12,4.53L17.74,9 12,13.47 6.26,9 12,4.53z",
+        "heavy": "M21,6.5c-1.66,0 -3,1.34 -3,3c0,0.07 0,0.14 0.01,0.21l-2.03,0.68c-0.64,-1.21 -1.82,-2.09 -3.22,-2.32V5.91C14.04,5.57 15,4.4 15,3c0,-1.66 -1.34,-3 -3,-3S9,1.34 9,3c0,1.4 0.96,2.57 2.25,2.91v2.16c-1.4,0.23 -2.58,1.11 -3.22,2.32L5.99,9.71C6,9.64 6,9.57 6,9.5c0,-1.66 -1.34,-3 -3,-3s-3,1.34 -3,3s1.34,3 3,3c1.06,0 1.98,-0.55 2.52,-1.37l2.03,0.68c-0.2,1.29 0.17,2.66 1.09,3.69l-1.41,1.77C6.85,17.09 6.44,17 6,17c-1.66,0 -3,1.34 -3,3s1.34,3 3,3s3,-1.34 3,-3c0,-0.68 -0.22,-1.3 -0.6,-1.8l1.41,-1.77c1.36,0.76 3.02,0.75 4.37,0l1.41,1.77C15.22,18.7 15,19.32 15,20c0,1.66 1.34,3 3,3s3,-1.34 3,-3s-1.34,-3 -3,-3c-0.44,0 -0.85,0.09 -1.23,0.26l-1.41,-1.77c0.93,-1.04 1.29,-2.4 1.09,-3.69l2.03,-0.68c0.53,0.82 1.46,1.37 2.52,1.37c1.66,0 3,-1.34 3,-3S22.66,6.5 21,6.5zM3,10.5c-0.55,0 -1,-0.45 -1,-1c0,-0.55 0.45,-1 1,-1s1,0.45 1,1C4,10.05 3.55,10.5 3,10.5zM6,21c-0.55,0 -1,-0.45 -1,-1c0,-0.55 0.45,-1 1,-1s1,0.45 1,1C7,20.55 6.55,21 6,21zM11,3c0,-0.55 0.45,-1 1,-1s1,0.45 1,1c0,0.55 -0.45,1 -1,1S11,3.55 11,3zM12,15c-1.38,0 -2.5,-1.12 -2.5,-2.5c0,-1.38 1.12,-2.5 2.5,-2.5s2.5,1.12 2.5,2.5C14.5,13.88 13.38,15 12,15zM18,19c0.55,0 1,0.45 1,1c0,0.55 -0.45,1 -1,1s-1,-0.45 -1,-1C17,19.45 17.45,19 18,19zM21,10.5c-0.55,0 -1,-0.45 -1,-1c0,-0.55 0.45,-1 1,-1s1,0.45 1,1C22,10.05 21.55,10.5 21,10.5z"
+    }
+
+    path_data = paths.get(kind, "")
+    if not path_data:
+        return ""
+
+    return f'<path d="{path_data}" fill="#FFFFFF" fill-opacity="0.94" transform="translate({offset_x}, {offset_y}) scale({scale})"/>'
 
 
 if __name__ == "__main__":

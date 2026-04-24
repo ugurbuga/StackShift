@@ -34,6 +34,7 @@ actual object AppSettingsStorage {
             hasSeenTutorial = defaults.boolForKey(KeyHasSeenTutorial),
             hasShownInteractiveOnboarding = defaults.boolForKey(KeyHasShownInteractiveOnboarding),
             hasInitializedLanguage = defaults.boolForKey(KeyHasInitializedLanguage) || hasStoredLanguage,
+            soundEnabled = defaults.boolForKey(KeySoundEnabled),
             challengeProgress = ChallengeProgress(
                 completedDays = (defaults.stringArrayForKey(KeyChallengeProgress) as? List<String>)
                     ?.mapNotNull { item ->
@@ -56,6 +57,7 @@ actual object AppSettingsStorage {
         defaults.setBool(settings.hasSeenTutorial, forKey = KeyHasSeenTutorial)
         defaults.setBool(settings.hasShownInteractiveOnboarding, forKey = KeyHasShownInteractiveOnboarding)
         defaults.setBool(settings.hasInitializedLanguage, forKey = KeyHasInitializedLanguage)
+        defaults.setBool(settings.soundEnabled, forKey = KeySoundEnabled)
         defaults.setObject(
             settings.challengeProgress.completedDays.flatMap { entry ->
                 entry.value.map { "${entry.key}|$it" }
@@ -75,5 +77,6 @@ actual object AppSettingsStorage {
     private const val KeyHasSeenTutorial = "hasSeenTutorial"
     private const val KeyHasShownInteractiveOnboarding = "hasShownInteractiveOnboarding"
     private const val KeyHasInitializedLanguage = "hasInitializedLanguage"
+    private const val KeySoundEnabled = "soundEnabled"
 }
 

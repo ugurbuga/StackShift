@@ -74,6 +74,7 @@ actual object AppSettingsStorage {
                 KeyHasInitializedLanguage,
                 defaultSettings.hasInitializedLanguage
             ) || hasStoredLanguage,
+            soundEnabled = prefs.getBoolean(KeySoundEnabled, defaultSettings.soundEnabled),
             challengeProgress = ChallengeProgress(
                 completedDays = prefs.getStringSet(KeyChallengeProgress, emptySet())
                     ?.mapNotNull { item ->
@@ -100,6 +101,7 @@ actual object AppSettingsStorage {
             .putBoolean(KeyHasSeenTutorial, settings.hasSeenTutorial)
             .putBoolean(KeyHasShownInteractiveOnboarding, settings.hasShownInteractiveOnboarding)
             .putBoolean(KeyHasInitializedLanguage, settings.hasInitializedLanguage)
+            .putBoolean(KeySoundEnabled, settings.soundEnabled)
             .putStringSet(
                 KeyChallengeProgress,
                 settings.challengeProgress.completedDays.flatMap { entry ->
@@ -118,4 +120,5 @@ actual object AppSettingsStorage {
     private const val KeyHasSeenTutorial = "hasSeenTutorial"
     private const val KeyHasShownInteractiveOnboarding = "hasShownInteractiveOnboarding"
     private const val KeyHasInitializedLanguage = "hasInitializedLanguage"
+    private const val KeySoundEnabled = "soundEnabled"
 }

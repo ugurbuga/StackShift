@@ -31,6 +31,7 @@ actual object AppSettingsStorage {
             hasSeenTutorial = (parts[6].toIntOrNull() ?: 0) == 1,
             hasInitializedLanguage = (parts.getOrNull(7)?.toIntOrNull() ?: 0) == 1 || parts.isNotEmpty(),
             hasShownInteractiveOnboarding = (parts.getOrNull(8)?.toIntOrNull() ?: 0) == 1,
+            soundEnabled = (parts.getOrNull(10)?.toIntOrNull() ?: 0) == 1,
             challengeProgress = ChallengeProgress(
                 completedDays = parts.getOrNull(9)
                     ?.split(";")
@@ -58,6 +59,7 @@ actual object AppSettingsStorage {
                 if (settings.hasSeenTutorial) 1 else 0,
                 if (settings.hasInitializedLanguage) 1 else 0,
                 if (settings.hasShownInteractiveOnboarding) 1 else 0,
+                if (settings.soundEnabled) 1 else 0,
                 settings.challengeProgress.completedDays.flatMap { entry ->
                     entry.value.map { "${entry.key}|$it" }
                 }.joinToString(separator = ";")
@@ -67,6 +69,6 @@ actual object AppSettingsStorage {
 
     private const val StorageKey = "stackshift.settings"
     private const val Separator = ','
-    private val SupportedFieldCounts = 7..10
+    private val SupportedFieldCounts = 7..11
 }
 

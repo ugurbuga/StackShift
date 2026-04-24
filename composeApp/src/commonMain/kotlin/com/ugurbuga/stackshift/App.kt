@@ -25,6 +25,8 @@ import com.ugurbuga.stackshift.game.model.GameState
 import com.ugurbuga.stackshift.game.model.GameStatus
 import com.ugurbuga.stackshift.localization.AppEnvironment
 import com.ugurbuga.stackshift.localization.currentDeviceLocaleTag
+import com.ugurbuga.stackshift.platform.feedback.GameSound
+import com.ugurbuga.stackshift.platform.feedback.rememberSoundEffectPlayer
 import com.ugurbuga.stackshift.platform.getCurrentDate
 import com.ugurbuga.stackshift.platform.rememberNotificationManager
 import com.ugurbuga.stackshift.presentation.game.GameViewModel
@@ -114,6 +116,15 @@ fun StackShiftRoot(
 ) {
     val adController = rememberPlatformGameAdController()
     val notificationManager = rememberNotificationManager()
+    val soundPlayer = rememberSoundEffectPlayer(settings.soundEnabled)
+
+    LaunchedEffect(currentRoute, settings.soundEnabled) {
+        if (!settings.soundEnabled || currentRoute == AppRoute.Game || currentRoute == AppRoute.InteractiveOnboarding) {
+            soundPlayer.stop(GameSound.Bgm)
+        } else {
+            soundPlayer.play(GameSound.Bgm)
+        }
+    }
 
     AppEnvironment(settings = settings) {
         LaunchedEffect(Unit) {
@@ -216,6 +227,7 @@ fun StackShiftRoot(
                                         onInteractiveOnboardingReturnHome = onInteractiveOnboardingReturnHome,
                                     onBack = onNavigateBack,
                                     adController = adController,
+                                    soundPlayer = soundPlayer,
                                 )
                             }
                         }

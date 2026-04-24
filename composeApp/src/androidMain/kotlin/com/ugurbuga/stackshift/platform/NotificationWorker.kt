@@ -6,8 +6,10 @@ import android.app.PendingIntent
 import android.content.Context
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import androidx.core.graphics.toColorInt
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.ugurbuga.stackshift.R
 import com.ugurbuga.stackshift.settings.AppSettingsStorage
 import org.jetbrains.compose.resources.getString
 import stackshift.composeapp.generated.resources.Res
@@ -100,7 +102,8 @@ class NotificationWorker(
         val notificationId = if (type == TYPE_DAILY_CHALLENGE) 1002 else 1001
 
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
-            .setSmallIcon(applicationContext.applicationInfo.icon)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setColor("#4FC3F7".toColorInt())
             .setContentTitle(title)
             .setContentText(message)
             .setAutoCancel(true)

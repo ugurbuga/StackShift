@@ -8,6 +8,8 @@ interface NotificationManager {
 
     fun scheduleDailyChallengeNotification()
     fun cancelDailyChallengeNotification()
+
+    fun sendTestNotification()
     
     @Composable
     fun RequestPermission()

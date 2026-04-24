@@ -435,7 +435,7 @@ class GameLogic(
             activePiece = activePiece.copy(special = specialType),
             softLock = null,
             floatingFeedback = FloatingFeedback(
-                text = gameText(GameTextKey.FeedbackSpecial, "0"),
+                text = gameText(GameTextKey.FeedbackSpecial, "0", 0),
                 emphasis = FeedbackEmphasis.Bonus,
                 token = nextToken,
             ),
@@ -1246,6 +1246,8 @@ enum class GameEvent {
     ChallengeCompleted,
     Revived,
     Restarted,
+    Paused,
+    Resumed,
 }
 
 private data class ResolutionResult(

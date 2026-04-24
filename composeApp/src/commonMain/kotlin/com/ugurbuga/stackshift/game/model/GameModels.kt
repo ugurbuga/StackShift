@@ -2,10 +2,10 @@ package com.ugurbuga.stackshift.game.model
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
-import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.Hub
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.SwapVert
-import androidx.compose.material.icons.filled.ViewModule
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -142,20 +142,21 @@ enum class BlockVisualStyle {
     Outline,
     Sharp3D,
     Wood,
-    PixelArt,
+    GridSplit,
     Crystal,
     DynamicLiquid,
     MatteSoft,
     NeonGlow,
-    Metallic,
+    Tornado,
     StoneTexture,
     HoneycombTexture,
     LightBurst,
     LiquidMarble,
-    Lava,
     SpiderWeb,
     Cosmic,
-    Bamboo,
+    Brick,
+    SoundWave,
+    Prism,
 }
 
 enum class BoardBlockStyleMode {
@@ -182,6 +183,7 @@ data class GameConfig(
 
 enum class GameStatus {
     Running,
+    Paused,
     GameOver,
 }
 
@@ -855,7 +857,6 @@ fun resolveBoardBlockStyle(
 fun normalizeBlockVisualStyle(style: BlockVisualStyle): BlockVisualStyle = when (style) {
     BlockVisualStyle.MatteSoft -> BlockVisualStyle.Flat
     BlockVisualStyle.NeonGlow -> BlockVisualStyle.Bubble
-    BlockVisualStyle.StoneTexture -> BlockVisualStyle.Wood
     BlockVisualStyle.LightBurst -> BlockVisualStyle.Outline
     BlockVisualStyle.LiquidMarble -> BlockVisualStyle.Crystal
     else -> style
@@ -864,7 +865,7 @@ fun normalizeBlockVisualStyle(style: BlockVisualStyle): BlockVisualStyle = when 
 fun boardSpecialIcon(type: SpecialBlockType): ImageVector = when (type) {
     SpecialBlockType.ColumnClearer -> Icons.Filled.SwapVert
     SpecialBlockType.RowClearer -> Icons.Filled.SwapHoriz
-    SpecialBlockType.Ghost -> Icons.Filled.ViewModule
-    SpecialBlockType.Heavy -> Icons.Filled.FitnessCenter
+    SpecialBlockType.Ghost -> Icons.Filled.Layers
+    SpecialBlockType.Heavy -> Icons.Filled.Hub
     SpecialBlockType.None -> Icons.AutoMirrored.Filled.HelpOutline
 }

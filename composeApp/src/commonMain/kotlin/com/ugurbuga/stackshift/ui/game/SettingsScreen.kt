@@ -26,9 +26,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Translate
-import androidx.compose.material.icons.filled.ViewModule
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
@@ -80,14 +80,31 @@ import stackshift.composeapp.generated.resources.app_theme_system
 import stackshift.composeapp.generated.resources.app_title
 import stackshift.composeapp.generated.resources.block_palette_monochrome
 import stackshift.composeapp.generated.resources.block_palette_neon
+import stackshift.composeapp.generated.resources.block_style_brick
 import stackshift.composeapp.generated.resources.block_style_bubble
+import stackshift.composeapp.generated.resources.block_style_cosmic
 import stackshift.composeapp.generated.resources.block_style_crystal
 import stackshift.composeapp.generated.resources.block_style_dynamic_liquid
 import stackshift.composeapp.generated.resources.block_style_flat
+import stackshift.composeapp.generated.resources.block_style_grid_split
+import stackshift.composeapp.generated.resources.block_style_honeycomb_texture
+import stackshift.composeapp.generated.resources.block_style_light_burst
+import stackshift.composeapp.generated.resources.block_style_liquid_marble
+import stackshift.composeapp.generated.resources.block_style_matte_soft
+import stackshift.composeapp.generated.resources.block_style_neon_glow
 import stackshift.composeapp.generated.resources.block_style_outline
+import stackshift.composeapp.generated.resources.block_style_prism
+import stackshift.composeapp.generated.resources.block_style_sharp_3d
+import stackshift.composeapp.generated.resources.block_style_sound_wave
+import stackshift.composeapp.generated.resources.block_style_spider_web
+import stackshift.composeapp.generated.resources.block_style_stone_texture
+import stackshift.composeapp.generated.resources.block_style_tornado
 import stackshift.composeapp.generated.resources.block_style_wood
 import stackshift.composeapp.generated.resources.settings_block_style
 import stackshift.composeapp.generated.resources.settings_language
+import stackshift.composeapp.generated.resources.settings_sound
+import stackshift.composeapp.generated.resources.settings_sound_off
+import stackshift.composeapp.generated.resources.settings_sound_on
 import stackshift.composeapp.generated.resources.settings_theme
 import stackshift.composeapp.generated.resources.theme_palette_aurora
 import stackshift.composeapp.generated.resources.theme_palette_classic
@@ -120,7 +137,7 @@ fun AppSettingsScreen(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 2400, easing = FastOutSlowInEasing),
+            animation = tween(durationMillis = 3200, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "stylePulse",
@@ -210,13 +227,22 @@ fun AppSettingsScreen(
                                     options = themePaletteOptions(darkTheme = darkTheme),
                                     onSelected = { onSettingsChange(settings.copy(themeColorPalette = it)) },
                                 )
+                                SettingsGroup(
+                                    title = stringResource(Res.string.settings_sound),
+                                    selectedValue = settings.soundEnabled,
+                                    options = listOf(
+                                        SettingsOption(true, stringResource(Res.string.settings_sound_on)),
+                                        SettingsOption(false, stringResource(Res.string.settings_sound_off))
+                                    ),
+                                    onSelected = { onSettingsChange(settings.copy(soundEnabled = it)) },
+                                )
                             }
                         }
 
                         else -> {
                             SettingsSectionCard(
                                 title = stringResource(Res.string.settings_block_style),
-                                icon = Icons.Filled.ViewModule,
+                                icon = Icons.Filled.Layers,
                                 trailingContent = {
                                     StyleFourBlockPreview(settings = settings, pulse = stylePulse)
                                 },
@@ -597,15 +623,16 @@ private fun blockStyleOptions(
         BlockVisualStyle.Outline,
         BlockVisualStyle.Sharp3D,
         BlockVisualStyle.Wood,
-        BlockVisualStyle.PixelArt,
+        BlockVisualStyle.GridSplit,
         BlockVisualStyle.Crystal,
         BlockVisualStyle.DynamicLiquid,
-        BlockVisualStyle.Metallic,
+        BlockVisualStyle.Tornado,
         BlockVisualStyle.HoneycombTexture,
-        BlockVisualStyle.Lava,
         BlockVisualStyle.SpiderWeb,
         BlockVisualStyle.Cosmic,
-        BlockVisualStyle.Bamboo,
+        BlockVisualStyle.Brick,
+        BlockVisualStyle.SoundWave,
+        BlockVisualStyle.Prism,
     )
 
     return visibleStyles.map { style ->
@@ -615,22 +642,23 @@ private fun blockStyleOptions(
                 BlockVisualStyle.Flat -> stringResource(Res.string.block_style_flat)
                 BlockVisualStyle.Bubble -> stringResource(Res.string.block_style_bubble)
                 BlockVisualStyle.Outline -> stringResource(Res.string.block_style_outline)
-                BlockVisualStyle.Sharp3D -> if (settings.language == AppLanguage.Turkish) "Keskin Modern" else "Sharp Modern"
+                BlockVisualStyle.Sharp3D -> stringResource(Res.string.block_style_sharp_3d)
                 BlockVisualStyle.Wood -> stringResource(Res.string.block_style_wood)
-                BlockVisualStyle.PixelArt -> if (settings.language == AppLanguage.Turkish) "Rubik Küp" else "Rubik Cube"
+                BlockVisualStyle.GridSplit -> stringResource(Res.string.block_style_grid_split)
                 BlockVisualStyle.Crystal -> stringResource(Res.string.block_style_crystal)
                 BlockVisualStyle.DynamicLiquid -> stringResource(Res.string.block_style_dynamic_liquid)
-                BlockVisualStyle.MatteSoft -> if (settings.language == AppLanguage.Turkish) "Mat Soft" else "Matte Soft"
-                BlockVisualStyle.NeonGlow -> "Neon Glow"
-                BlockVisualStyle.Metallic -> if (settings.language == AppLanguage.Turkish) "Rüzgar İzi" else "Wind Trail"
-                BlockVisualStyle.StoneTexture -> if (settings.language == AppLanguage.Turkish) "Taş Doku" else "Stone Texture"
-                BlockVisualStyle.HoneycombTexture -> if (settings.language == AppLanguage.Turkish) "Petek Doku" else "Honeycomb Texture"
-                BlockVisualStyle.LightBurst -> if (settings.language == AppLanguage.Turkish) "Işık Hüzmesi" else "Light Burst"
-                BlockVisualStyle.LiquidMarble -> if (settings.language == AppLanguage.Turkish) "Sıvı Mermer" else "Liquid Marble"
-                BlockVisualStyle.Lava -> if (settings.language == AppLanguage.Turkish) "Vitray" else "Stained Glass"
-                BlockVisualStyle.SpiderWeb -> if (settings.language == AppLanguage.Turkish) "Örümcek Ağı" else "Spider Web"
-                BlockVisualStyle.Cosmic -> if (settings.language == AppLanguage.Turkish) "Kozmik" else "Cosmic"
-                BlockVisualStyle.Bamboo -> if (settings.language == AppLanguage.Turkish) "Tuğla" else "Brick"
+                BlockVisualStyle.MatteSoft -> stringResource(Res.string.block_style_matte_soft)
+                BlockVisualStyle.NeonGlow -> stringResource(Res.string.block_style_neon_glow)
+                BlockVisualStyle.Tornado -> stringResource(Res.string.block_style_tornado)
+                BlockVisualStyle.StoneTexture -> stringResource(Res.string.block_style_stone_texture)
+                BlockVisualStyle.HoneycombTexture -> stringResource(Res.string.block_style_honeycomb_texture)
+                BlockVisualStyle.LightBurst -> stringResource(Res.string.block_style_light_burst)
+                BlockVisualStyle.LiquidMarble -> stringResource(Res.string.block_style_liquid_marble)
+                BlockVisualStyle.SpiderWeb -> stringResource(Res.string.block_style_spider_web)
+                BlockVisualStyle.Cosmic -> stringResource(Res.string.block_style_cosmic)
+                BlockVisualStyle.Brick -> stringResource(Res.string.block_style_brick)
+                BlockVisualStyle.SoundWave -> stringResource(Res.string.block_style_sound_wave)
+                BlockVisualStyle.Prism -> stringResource(Res.string.block_style_prism)
             },
             preview = { BlockStylePreview(style = style, palette = palette, pulse = pulse) },
         )

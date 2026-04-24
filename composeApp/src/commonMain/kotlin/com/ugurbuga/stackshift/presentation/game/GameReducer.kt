@@ -4,6 +4,7 @@ import com.ugurbuga.stackshift.game.logic.GameEvent
 import com.ugurbuga.stackshift.game.logic.GameLogic
 import com.ugurbuga.stackshift.game.model.GameConfig
 import com.ugurbuga.stackshift.game.model.GameState
+import com.ugurbuga.stackshift.game.model.GameStatus
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
 import com.ugurbuga.stackshift.game.model.DailyChallenge
 
@@ -74,6 +75,15 @@ internal class GameReducer(
             effects = listOf(GameEffect.CancelSoftLockTimer),
         )
 
+        GameAction.TogglePause -> {
+            val nextStatus = if (state.status == GameStatus.Paused) GameStatus.Running else GameStatus.Paused
+            ReduceResult(
+                state = state.copy(status = nextStatus),
+                events = setOf(if (nextStatus == GameStatus.Paused) GameEvent.Paused else GameEvent.Resumed),
+                effects = emptyList(),
+            )
+        }
+
         GameAction.Tick -> ReduceResult(
             state = gameLogic.tick(state),
             events = emptySet(),
@@ -89,6 +99,7 @@ sealed interface GameIntent {
     data object ReviveFromReward : GameIntent
     data class Restart(val config: GameConfig, val challenge: DailyChallenge? = null) : GameIntent
     data class ReplaceActivePiece(val specialType: SpecialBlockType) : GameIntent
+    data object TogglePause : GameIntent
 }
 
 internal sealed interface GameAction {
@@ -99,6 +110,7 @@ internal sealed interface GameAction {
     data class Restart(val config: GameConfig, val challenge: DailyChallenge? = null) : GameAction
     data object Tick : GameAction
     data class ReplaceActivePiece(val specialType: SpecialBlockType) : GameAction
+    data object TogglePause : GameAction
 }
 
 internal sealed interface GameEffect {
@@ -123,6 +135,7 @@ internal fun GameIntent.toAction(): GameAction = when (this) {
     GameIntent.ReviveFromReward -> GameAction.ReviveFromReward
     is GameIntent.Restart -> GameAction.Restart(config, challenge)
     is GameIntent.ReplaceActivePiece -> GameAction.ReplaceActivePiece(specialType)
+    GameIntent.TogglePause -> GameAction.TogglePause
 }
 
 

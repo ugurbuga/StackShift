@@ -18,6 +18,7 @@ data class AppSettings(
     val hasSeenTutorial: Boolean = false,
     val hasShownInteractiveOnboarding: Boolean = false,
     val hasInitializedLanguage: Boolean = false,
+    val soundEnabled: Boolean = false,
 ) {
     val blockColorPalette: BlockColorPalette
         get() = when (themeColorPalette) {

@@ -73,19 +73,20 @@ private fun styleFrameCorner(style: BlockVisualStyle): Dp = when (style) {
     BlockVisualStyle.Outline -> 14.dp
     BlockVisualStyle.Sharp3D -> 6.dp
     BlockVisualStyle.Wood -> 12.dp
-    BlockVisualStyle.PixelArt -> 4.dp
+    BlockVisualStyle.GridSplit -> 4.dp
     BlockVisualStyle.Crystal -> 0.dp
     BlockVisualStyle.DynamicLiquid -> 18.dp
     BlockVisualStyle.MatteSoft -> 18.dp
     BlockVisualStyle.NeonGlow -> 22.dp
-    BlockVisualStyle.Metallic -> 18.dp
+    BlockVisualStyle.Tornado -> 18.dp
     BlockVisualStyle.StoneTexture -> 12.dp
     BlockVisualStyle.HoneycombTexture -> 12.dp
     BlockVisualStyle.LightBurst -> 20.dp
     BlockVisualStyle.LiquidMarble -> 18.dp
-    BlockVisualStyle.Lava -> 10.dp
     BlockVisualStyle.SpiderWeb -> 6.dp
     BlockVisualStyle.Cosmic -> 10.dp
-    BlockVisualStyle.Bamboo -> 8.dp
+    BlockVisualStyle.Brick -> 8.dp
+    BlockVisualStyle.SoundWave -> 16.dp
+    BlockVisualStyle.Prism -> 12.dp
 }
 

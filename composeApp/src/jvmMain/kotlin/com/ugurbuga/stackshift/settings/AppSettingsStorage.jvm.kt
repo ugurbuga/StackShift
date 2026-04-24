@@ -34,6 +34,7 @@ actual object AppSettingsStorage {
             hasSeenTutorial = prefs.getBoolean(KeyHasSeenTutorial, defaultSettings.hasSeenTutorial),
             hasShownInteractiveOnboarding = prefs.getBoolean(KeyHasShownInteractiveOnboarding, defaultSettings.hasShownInteractiveOnboarding),
             hasInitializedLanguage = prefs.getBoolean(KeyHasInitializedLanguage, defaultSettings.hasInitializedLanguage) || hasStoredLanguage,
+            soundEnabled = prefs.getBoolean(KeySoundEnabled, defaultSettings.soundEnabled),
             challengeProgress = ChallengeProgress(
                 completedDays = prefs.get(KeyChallengeProgress, "")
                     .split(",")
@@ -58,6 +59,7 @@ actual object AppSettingsStorage {
         prefs.putBoolean(KeyHasSeenTutorial, settings.hasSeenTutorial)
         prefs.putBoolean(KeyHasShownInteractiveOnboarding, settings.hasShownInteractiveOnboarding)
         prefs.putBoolean(KeyHasInitializedLanguage, settings.hasInitializedLanguage)
+        prefs.putBoolean(KeySoundEnabled, settings.soundEnabled)
         prefs.put(
             KeyChallengeProgress,
             settings.challengeProgress.completedDays.flatMap { entry ->
@@ -77,4 +79,5 @@ actual object AppSettingsStorage {
     private const val KeyHasSeenTutorial = "hasSeenTutorial"
     private const val KeyHasShownInteractiveOnboarding = "hasShownInteractiveOnboarding"
     private const val KeyHasInitializedLanguage = "hasInitializedLanguage"
+    private const val KeySoundEnabled = "soundEnabled"
 }

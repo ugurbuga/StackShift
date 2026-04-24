@@ -57,8 +57,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ugurbuga.stackshift.StackShiftTheme
-import com.ugurbuga.stackshift.game.model.AppThemeMode
 import com.ugurbuga.stackshift.game.model.AppColorPalette
+import com.ugurbuga.stackshift.game.model.AppThemeMode
 import com.ugurbuga.stackshift.game.model.BlockVisualStyle
 import com.ugurbuga.stackshift.game.model.CellTone
 import com.ugurbuga.stackshift.platform.NotificationManager
@@ -175,6 +175,7 @@ fun HomeScreen(
             ) {
                 HomeHighScoreCard(
                     highestScore = highestScore,
+                    onClick = { notificationManager.sendTestNotification() }
                 )
 
                 Row(
@@ -780,13 +781,17 @@ private fun HomeTitleRowClearOverlay(
 private fun HomeHighScoreCard(
     highestScore: Int,
     modifier: Modifier = Modifier,
+    onClick: () -> Unit = {},
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
     Surface(
-        modifier = modifier.stackShiftSurfaceShadow(
-            shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
-            elevation = 5.dp,
-        ),
+        modifier = modifier
+            .stackShiftSurfaceShadow(
+                shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
+                elevation = 5.dp,
+            )
+            .clip(RoundedCornerShape(GameUiShapeTokens.surfaceCorner))
+            .clickable { onClick() },
         shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
         color = uiColors.panelMuted.copy(alpha = 0.96f),
         shadowElevation = 0.dp,
@@ -986,7 +991,7 @@ private fun HomeQuickActionButton(
 fun HomeScreenLightPreview() {
     val settings = AppSettings(
         themeMode = AppThemeMode.Light,
-        blockVisualStyle = BlockVisualStyle.DynamicLiquid,
+        blockVisualStyle = BlockVisualStyle.Prism,
         themeColorPalette = AppColorPalette.ModernNeon
     )
     StackShiftTheme(settings = settings) {

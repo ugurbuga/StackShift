@@ -27,16 +27,24 @@ class GameFeedbackMapper {
             sounds += GameSound.LineClear
             haptics += GameHaptic.Success
         }
-        if (GameEvent.ChainReaction in events || GameEvent.Combo in events || GameEvent.PerfectDrop in events) {
+        if (GameEvent.ChainReaction in events || GameEvent.Combo in events) {
             sounds += GameSound.Combo
+            haptics += GameHaptic.Success
+        }
+        if (GameEvent.PerfectDrop in events) {
+            sounds += GameSound.PerfectDrop
             haptics += GameHaptic.Success
         }
         if (GameEvent.HoldUsed in events) {
             sounds += GameSound.Grab
             haptics += GameHaptic.Light
         }
-        if (GameEvent.LaunchBoostCharged in events || GameEvent.SpecialTriggered in events) {
-            sounds += GameSound.Combo
+        if (GameEvent.LaunchBoostCharged in events) {
+            sounds += GameSound.PerfectDrop
+            haptics += GameHaptic.Success
+        }
+        if (GameEvent.SpecialTriggered in events) {
+            sounds += GameSound.LineClear
             haptics += GameHaptic.Success
         }
         if (GameEvent.PressureCritical in events) {

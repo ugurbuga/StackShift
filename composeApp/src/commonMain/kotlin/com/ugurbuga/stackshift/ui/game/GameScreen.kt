@@ -102,6 +102,7 @@ import com.ugurbuga.stackshift.game.model.Piece
 import com.ugurbuga.stackshift.game.model.PieceKind
 import com.ugurbuga.stackshift.game.model.PlacementPreview
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
+import com.ugurbuga.stackshift.game.model.BlockVisualStyle
 import com.ugurbuga.stackshift.game.model.gameText
 import com.ugurbuga.stackshift.game.model.paletteColor
 import com.ugurbuga.stackshift.game.model.toTopLeft
@@ -647,7 +648,7 @@ fun GameScreen(
             initialValue = 0f,
             targetValue = 1f,
             animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = 2400, easing = FastOutSlowInEasing),
+                animation = tween(durationMillis = 3200, easing = FastOutSlowInEasing),
                 repeatMode = RepeatMode.Reverse
             ),
             label = "stylePulse",
@@ -1902,22 +1903,27 @@ private fun CompactMetricChip(
 
 @Composable
 internal fun rememberBlockStylePulse(
-    style: com.ugurbuga.stackshift.game.model.BlockVisualStyle,
+    style: BlockVisualStyle,
     pulse: Float = 0f,
 ): Float {
-    if (pulse != 0f || style != com.ugurbuga.stackshift.game.model.BlockVisualStyle.DynamicLiquid) {
+    val needsPulse = style == BlockVisualStyle.DynamicLiquid ||
+            style == BlockVisualStyle.Tornado ||
+            style == BlockVisualStyle.Prism ||
+            style == BlockVisualStyle.SoundWave
+
+    if (pulse != 0f || !needsPulse) {
         return pulse
     }
 
-    val transition = rememberInfiniteTransition(label = "dynamicLiquidButtonPulse")
+    val transition = rememberInfiniteTransition(label = "blockStyleButtonPulse")
     val animatedPulse by transition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 2200, easing = FastOutSlowInEasing),
+            animation = tween(durationMillis = 3000, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse,
         ),
-        label = "dynamicLiquidButtonPulseValue",
+        label = "blockStyleButtonPulseValue",
     )
     return animatedPulse
 }
