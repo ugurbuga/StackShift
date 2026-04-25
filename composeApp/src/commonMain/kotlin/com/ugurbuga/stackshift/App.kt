@@ -19,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.ugurbuga.stackshift.ads.AppFooterAdSlot
 import com.ugurbuga.stackshift.ads.rememberPlatformGameAdController
-import com.ugurbuga.stackshift.game.model.ChallengeProgress
 import com.ugurbuga.stackshift.game.model.GameConfig
 import com.ugurbuga.stackshift.game.model.GameState
 import com.ugurbuga.stackshift.game.model.GameStatus
@@ -35,8 +34,13 @@ import com.ugurbuga.stackshift.settings.AppSettingsStorage
 import com.ugurbuga.stackshift.settings.FirstRunGameOnboardingStateFactory
 import com.ugurbuga.stackshift.settings.GameSessionStorage
 import com.ugurbuga.stackshift.settings.HighScoreStorage
+import com.ugurbuga.stackshift.settings.RewardedTokenAdReward
+import com.ugurbuga.stackshift.settings.awardBonusTokens
+import com.ugurbuga.stackshift.settings.awardCompletedChallenge
+import com.ugurbuga.stackshift.settings.awardScoreTokens
 import com.ugurbuga.stackshift.settings.initializeAppSettingsForFirstLaunch
 import com.ugurbuga.stackshift.settings.logLanguageBootstrapDecision
+import com.ugurbuga.stackshift.settings.sanitized
 import com.ugurbuga.stackshift.telemetry.AppTelemetry
 import com.ugurbuga.stackshift.telemetry.TelemetryActionNames
 import com.ugurbuga.stackshift.telemetry.TelemetryUserPropertyNames
@@ -107,6 +111,7 @@ fun StackShiftRoot(
     onNavigateToChallenges: () -> Unit,
     onNavigateBack: () -> Unit,
     onSettingsChange: (AppSettings) -> Unit,
+    onRewardedTokensEarned: () -> Unit,
     onTutorialFinishRequested: () -> Unit,
     onInteractiveOnboardingFinished: (GameState) -> Unit,
     onInteractiveOnboardingReturnHome: (GameState) -> Unit,
@@ -225,6 +230,7 @@ fun StackShiftRoot(
                                         onInteractiveOnboardingFinished(finalState)
                                     },
                                         onInteractiveOnboardingReturnHome = onInteractiveOnboardingReturnHome,
+                                    onRewardedTokensRequested = onRewardedTokensEarned,
                                     onBack = onNavigateBack,
                                     adController = adController,
                                     soundPlayer = soundPlayer,
@@ -257,11 +263,16 @@ fun App() {
             deviceLocaleTag = currentDeviceLocaleTag(),
         )
     }
-    var settings by remember(initialBootstrapResult) { mutableStateOf(initialBootstrapResult.settings) }
+    var settings by remember(initialBootstrapResult) { mutableStateOf(initialBootstrapResult.settings.sanitized()) }
     var routeStack by remember { mutableStateOf(listOf(AppRoute.Home)) }
     var showLeaveSessionDialog by remember { mutableStateOf(false) }
     val persistActiveSession = remember { mutableStateOf(true) }
     var pendingSessionState by remember { mutableStateOf<GameState?>(null) }
+    fun persistSettings(updated: AppSettings) {
+        val sanitizedSettings = updated.sanitized()
+        settings = sanitizedSettings
+        AppSettingsStorage.save(sanitizedSettings)
+    }
     fun createGameViewModel(initialState: GameState?) = GameViewModel(
         initialState = initialState,
         onStateChanged = { state ->
@@ -270,16 +281,11 @@ fun App() {
             }
         },
         onChallengeCompleted = { completedChallenge ->
-            val key = "${completedChallenge.year}-${completedChallenge.month.toString().padStart(2, '0')}"
-            val currentDays = settings.challengeProgress.completedDays[key] ?: emptySet()
-            val updatedSettings = settings.copy(
-                challengeProgress = ChallengeProgress(
-                    completedDays = settings.challengeProgress.completedDays + (key to (currentDays + completedChallenge.day))
-                )
-            )
-            settings = updatedSettings
-            AppSettingsStorage.save(updatedSettings)
-        }
+            persistSettings(settings.awardCompletedChallenge(completedChallenge))
+        },
+        onGameOver = { finalState ->
+            persistSettings(settings.awardScoreTokens(finalState.score))
+        },
     )
     val gameViewModelState = remember {
         mutableStateOf(
@@ -398,17 +404,17 @@ fun App() {
                 hasShownInteractiveOnboarding = settings.hasShownInteractiveOnboarding,
                 hasInitializedLanguage = settings.hasInitializedLanguage,
             ) != settings
-            settings = updated
-            AppSettingsStorage.save(updated)
+            persistSettings(updated)
             if (shouldLogSettingsChange) {
                 telemetry.logUserAction(TelemetryActionNames.SettingsChanged)
             }
         },
+        onRewardedTokensEarned = {
+            persistSettings(settings.awardBonusTokens(RewardedTokenAdReward))
+        },
         onTutorialFinishRequested = {
             if (!settings.hasSeenTutorial) {
-                val updatedSettings = settings.copy(hasSeenTutorial = true)
-                settings = updatedSettings
-                AppSettingsStorage.save(updatedSettings)
+                persistSettings(settings.copy(hasSeenTutorial = true))
             }
             telemetry.logUserAction(TelemetryActionNames.OpenInteractiveOnboarding)
             prepareInteractiveOnboarding()
@@ -419,9 +425,7 @@ fun App() {
             pendingSessionState = finalState
             GameSessionStorage.save(finalState)
             if (!settings.hasShownInteractiveOnboarding) {
-                val updatedSettings = settings.copy(hasShownInteractiveOnboarding = true)
-                settings = updatedSettings
-                AppSettingsStorage.save(updatedSettings)
+                persistSettings(settings.copy(hasShownInteractiveOnboarding = true))
             }
             replaceTop(AppRoute.Game)
         },
@@ -430,9 +434,7 @@ fun App() {
             pendingSessionState = finalState
             GameSessionStorage.save(finalState)
             if (!settings.hasShownInteractiveOnboarding) {
-                val updatedSettings = settings.copy(hasShownInteractiveOnboarding = true)
-                settings = updatedSettings
-                AppSettingsStorage.save(updatedSettings)
+                persistSettings(settings.copy(hasShownInteractiveOnboarding = true))
             }
             navigateHome()
         },

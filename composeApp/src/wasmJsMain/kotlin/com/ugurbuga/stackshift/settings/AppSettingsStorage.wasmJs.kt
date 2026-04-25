@@ -6,7 +6,6 @@ import com.ugurbuga.stackshift.game.model.AppThemeMode
 import com.ugurbuga.stackshift.game.model.BlockColorPalette
 import com.ugurbuga.stackshift.game.model.BlockVisualStyle
 import com.ugurbuga.stackshift.game.model.BoardBlockStyleMode
-import com.ugurbuga.stackshift.game.model.ChallengeProgress
 import com.ugurbuga.stackshift.game.model.normalizeBlockVisualStyle
 import com.ugurbuga.stackshift.game.model.resolveUnifiedThemePalette
 
@@ -31,44 +30,41 @@ actual object AppSettingsStorage {
             hasSeenTutorial = (parts[6].toIntOrNull() ?: 0) == 1,
             hasInitializedLanguage = (parts.getOrNull(7)?.toIntOrNull() ?: 0) == 1 || parts.isNotEmpty(),
             hasShownInteractiveOnboarding = (parts.getOrNull(8)?.toIntOrNull() ?: 0) == 1,
-            soundEnabled = (parts.getOrNull(10)?.toIntOrNull() ?: 0) == 1,
-            challengeProgress = ChallengeProgress(
-                completedDays = parts.getOrNull(9)
-                    ?.split(";")
-                    ?.filter { it.isNotEmpty() }
-                    ?.mapNotNull { item ->
-                        val subParts = item.split("|")
-                        if (subParts.size == 2) subParts[0] to subParts[1].toInt() else null
-                    }
-                    ?.groupBy({ it.first }, { it.second })
-                    ?.mapValues { it.value.toSet() } ?: emptyMap()
-            )
-        )
+            soundEnabled = false,
+            challengeProgress = decodeChallengeProgress(parts.getOrNull(10) ?: parts.getOrNull(9)),
+            tokenBalance = parts.getOrNull(11)?.toIntOrNull() ?: defaultSettings.tokenBalance,
+            unlockedThemeModes = decodeEnumSet(parts.getOrNull(12), AppThemeMode.entries),
+            unlockedThemePalettes = decodeEnumSet(parts.getOrNull(13), AppColorPalette.entries),
+            unlockedBlockStyles = decodeEnumSet(parts.getOrNull(14), BlockVisualStyle.entries),
+        ).sanitized()
     }
 
     actual fun save(settings: AppSettings) {
+        val sanitized = settings.sanitized()
         BrowserStorage.set(
             StorageKey,
             listOf(
-                settings.language.ordinal,
-                settings.themeMode.ordinal,
-                settings.themeColorPalette.ordinal,
-                settings.blockColorPalette.ordinal,
-                normalizeBlockVisualStyle(settings.blockVisualStyle).ordinal,
-                settings.boardBlockStyleMode.ordinal,
-                if (settings.hasSeenTutorial) 1 else 0,
-                if (settings.hasInitializedLanguage) 1 else 0,
-                if (settings.hasShownInteractiveOnboarding) 1 else 0,
-                if (settings.soundEnabled) 1 else 0,
-                settings.challengeProgress.completedDays.flatMap { entry ->
-                    entry.value.map { "${entry.key}|$it" }
-                }.joinToString(separator = ";")
+                sanitized.language.ordinal,
+                sanitized.themeMode.ordinal,
+                sanitized.themeColorPalette.ordinal,
+                sanitized.blockColorPalette.ordinal,
+                normalizeBlockVisualStyle(sanitized.blockVisualStyle).ordinal,
+                sanitized.boardBlockStyleMode.ordinal,
+                if (sanitized.hasSeenTutorial) 1 else 0,
+                if (sanitized.hasInitializedLanguage) 1 else 0,
+                if (sanitized.hasShownInteractiveOnboarding) 1 else 0,
+                0,
+                encodeChallengeProgress(sanitized.challengeProgress),
+                sanitized.tokenBalance,
+                encodeEnumSet(sanitized.unlockedThemeModes),
+                encodeEnumSet(sanitized.unlockedThemePalettes),
+                encodeEnumSet(sanitized.unlockedBlockStyles),
             ).joinToString(separator = Separator.toString()),
         )
     }
 
     private const val StorageKey = "stackshift.settings"
     private const val Separator = ','
-    private val SupportedFieldCounts = 7..11
+    private val SupportedFieldCounts = 7..15
 }
 

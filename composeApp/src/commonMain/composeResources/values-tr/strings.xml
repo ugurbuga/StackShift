@@ -10,6 +10,11 @@
     <string name="settings_theme_palette">Tema Renkleri</string>
     <string name="settings_block_palette">Blok Renkleri</string>
     <string name="settings_block_style">Blok Şekilleri</string>
+    <string name="settings_tokens_title">Tokenlar</string>
+    <string name="settings_tokens_balance">Bakiye: %1$d</string>
+    <string name="settings_tokens_earn_challenge">Günlük görev ödülü: +%1$d token</string>
+    <string name="settings_tokens_earn_score">Oyun ödülü: Her %1$d skor için +1 token</string>
+    <string name="rewarded_tokens_button">Reklam izle ve %1$d token kazan</string>
     <string name="settings_board_block_style">Tahta Blok Stili</string>
     <string name="settings_challenges">Meydan Okumalar</string>
     <string name="settings_tutorial">Rehber</string>
@@ -124,6 +129,12 @@
     <string name="notification_daily_challenge_title">Günlük Meydan Okuma</string>
     <string name="notification_daily_challenge_body">Bugünkü günlük meydan okuma görevlerini henüz tamamladın mı?</string>
     <string name="challenge_tasks_title">Görevler</string>
+    <string name="challenge_info_title">Görevler Hakkında</string>
+    <string name="challenge_info_clear_blocks">Blokları, satırları tamamlayarak veya özel blokları kullanarak temizleyebilirsiniz.</string>
+    <string name="challenge_info_reach_score">Parçaları yerleştirerek ve satırları temizleyerek puanınızı artırabilirsiniz.</string>
+    <string name="challenge_info_trigger_special">Sütun Temizleyici, Satır Temizleyici, Hayalet veya Ağır gibi özel blokları kullanarak bu görevi tamamlayabilirsiniz.</string>
+    <string name="challenge_info_perfect_placement">Parçaları tamamen boş olan sütunlara fırlatarak mükemmel bırakış yapabilirsiniz.</string>
+    <string name="challenge_info_chain_reaction">Tek bir hamleyle, genellikle özel blokların etkisiyle birden fazla satırı aynı anda temizleyerek zincirleme reaksiyon oluşturabilirsiniz.</string>
     <string name="challenge_completed">Tebrikler! Meydan Okuma Tamamlandı.</string>
     <string name="challenge_task_clear_blocks">%1$d blok patlat</string>
     <string name="challenge_task_reach_score">%1$d skora ulaş</string>
@@ -193,6 +204,12 @@
     <string name="tutorial_step_counter">Adım %1$d / %2$d</string>
     <string name="tutorial_back">Geri</string>
     <string name="cancel">İptal</string>
+    <string name="unlock_dialog_title">%1$s açılsın mı?</string>
+    <string name="unlock_dialog_insufficient_title">%1$s kilitli</string>
+    <string name="unlock_dialog_message">%1$s için %2$d token gerekiyor. Mevcut bakiye: %3$d.</string>
+    <string name="unlock_dialog_not_enough">Bu öğenin kilidini açmak için %1$d token gerekiyor. Mevcut bakiyen %2$d.</string>
+    <string name="unlock_dialog_confirm">Kilidi aç</string>
+    <string name="unlock_dialog_locked_suffix">Kilitli</string>
     <string name="tutorial_next">Sonraki</string>
     <string name="tutorial_finish">Oyunu başlat</string>
     <string name="return_home">Ana sayfaya dön</string>

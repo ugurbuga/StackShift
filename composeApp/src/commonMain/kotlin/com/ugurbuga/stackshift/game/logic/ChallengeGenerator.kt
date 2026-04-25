@@ -19,7 +19,7 @@ object ChallengeGenerator {
                 ChallengeTaskType.ClearBlocks -> (random.nextInt(10, 25) * 10) // 100-250 blocks
                 ChallengeTaskType.ReachScore -> (random.nextInt(5, 20) * 1000) // 5k-20k score
                 ChallengeTaskType.TriggerSpecial -> random.nextInt(2, 6)
-                ChallengeTaskType.PerfectPlacement -> random.nextInt(2, 5)
+                ChallengeTaskType.PerfectPlacement -> random.nextInt(10, 20)
                 ChallengeTaskType.ChainReaction -> random.nextInt(1, 3)
             }
             tasks.add(ChallengeTask(type, target))

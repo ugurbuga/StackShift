@@ -1,10 +1,10 @@
 package com.ugurbuga.stackshift.presentation.game
 
-import com.ugurbuga.stackshift.game.logic.GameLogic
 import com.ugurbuga.stackshift.game.logic.GameEvent
+import com.ugurbuga.stackshift.game.logic.GameLogic
+import com.ugurbuga.stackshift.game.model.DailyChallenge
 import com.ugurbuga.stackshift.game.model.GameConfig
 import com.ugurbuga.stackshift.game.model.GameState
-import com.ugurbuga.stackshift.game.model.DailyChallenge
 import com.ugurbuga.stackshift.game.model.GridPoint
 import com.ugurbuga.stackshift.game.model.PlacementPreview
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
@@ -24,6 +24,7 @@ class GameViewModel(
     initialState: GameState? = null,
     private val onStateChanged: (GameState) -> Unit = {},
     private val onChallengeCompleted: (DailyChallenge) -> Unit = {},
+    private val onGameOver: (GameState) -> Unit = {},
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
 ) {
     private val store = GameStore(
@@ -32,6 +33,9 @@ class GameViewModel(
         initialState = initialState,
         onStateChanged = onStateChanged,
         onEvents = { events ->
+            if (GameEvent.GameOver in events) {
+                onGameOver(uiState.value.gameState)
+            }
             if (GameEvent.ChallengeCompleted in events) {
                 uiState.value.gameState.activeChallenge?.let(onChallengeCompleted)
             }

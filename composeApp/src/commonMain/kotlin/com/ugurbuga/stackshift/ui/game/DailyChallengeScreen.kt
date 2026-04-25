@@ -29,6 +29,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -76,12 +77,19 @@ import com.ugurbuga.stackshift.ui.theme.stackShiftSurfaceShadow
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
+import stackshift.composeapp.generated.resources.challenge_info_chain_reaction
+import stackshift.composeapp.generated.resources.challenge_info_clear_blocks
+import stackshift.composeapp.generated.resources.challenge_info_perfect_placement
+import stackshift.composeapp.generated.resources.challenge_info_reach_score
+import stackshift.composeapp.generated.resources.challenge_info_title
+import stackshift.composeapp.generated.resources.challenge_info_trigger_special
 import stackshift.composeapp.generated.resources.challenge_task_chain_reaction
 import stackshift.composeapp.generated.resources.challenge_task_clear_blocks
 import stackshift.composeapp.generated.resources.challenge_task_perfect_placement
 import stackshift.composeapp.generated.resources.challenge_task_reach_score
 import stackshift.composeapp.generated.resources.challenge_task_trigger_special
 import stackshift.composeapp.generated.resources.challenge_tasks_title
+import stackshift.composeapp.generated.resources.continue_label
 import stackshift.composeapp.generated.resources.day_friday_short
 import stackshift.composeapp.generated.resources.day_monday_short
 import stackshift.composeapp.generated.resources.day_saturday_short
@@ -89,6 +97,8 @@ import stackshift.composeapp.generated.resources.day_sunday_short
 import stackshift.composeapp.generated.resources.day_thursday_short
 import stackshift.composeapp.generated.resources.day_tuesday_short
 import stackshift.composeapp.generated.resources.day_wednesday_short
+import stackshift.composeapp.generated.resources.feedback_chain
+import stackshift.composeapp.generated.resources.game_message_perfect_drop
 import stackshift.composeapp.generated.resources.home_play_cta
 import stackshift.composeapp.generated.resources.month_april
 import stackshift.composeapp.generated.resources.month_august
@@ -102,6 +112,8 @@ import stackshift.composeapp.generated.resources.month_may
 import stackshift.composeapp.generated.resources.month_november
 import stackshift.composeapp.generated.resources.month_october
 import stackshift.composeapp.generated.resources.month_september
+import stackshift.composeapp.generated.resources.piece_properties_special
+import stackshift.composeapp.generated.resources.score
 import stackshift.composeapp.generated.resources.settings_challenges
 import stackshift.composeapp.generated.resources.tutorial_back
 
@@ -123,6 +135,7 @@ fun DailyChallengeScreen(
     val coroutineScope = rememberCoroutineScope()
     
     var selectedDay by remember(currentDay) { mutableStateOf(currentDay) }
+    var showInfoDialog by remember { mutableStateOf(false) }
     val currentMonthYear = months[pagerState.currentPage]
     
     val selectedChallenge = remember(currentMonthYear, selectedDay, progress) {
@@ -260,9 +273,16 @@ fun DailyChallengeScreen(
             ChallengeTasksCard(
                 challenge = selectedChallenge,
                 onPlay = { onPlayChallenge(selectedChallenge) },
+                onShowInfo = { showInfoDialog = true },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
+            )
+        }
+
+        if (showInfoDialog) {
+            ChallengeInfoDialog(
+                onDismiss = { showInfoDialog = false }
             )
         }
     }
@@ -464,6 +484,7 @@ fun DayCell(
 fun ChallengeTasksCard(
     challenge: DailyChallenge,
     onPlay: () -> Unit,
+    onShowInfo: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
@@ -480,11 +501,29 @@ fun ChallengeTasksCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = stringResource(Res.string.challenge_tasks_title),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    text = stringResource(Res.string.challenge_tasks_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                
+                IconButton(
+                    onClick = onShowInfo,
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
             
             challenge.tasks.forEach { task ->
                 ChallengeTaskItem(task = task)
@@ -580,6 +619,86 @@ fun taskDescription(task: ChallengeTask): String {
         ChallengeTaskType.ChainReaction -> Res.string.challenge_task_chain_reaction
     }
     return stringResource(res, task.target)
+}
+
+@Composable
+fun ChallengeInfoDialog(
+    onDismiss: () -> Unit
+) {
+    val uiColors = StackShiftThemeTokens.uiColors
+    
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = uiColors.gameSurface),
+            border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = stringResource(Res.string.challenge_info_title),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    ChallengeInfoItem(
+                        title = stringResource(Res.string.challenge_tasks_title),
+                        description = stringResource(Res.string.challenge_info_clear_blocks)
+                    )
+                    ChallengeInfoItem(
+                        title = stringResource(Res.string.score),
+                        description = stringResource(Res.string.challenge_info_reach_score)
+                    )
+                    ChallengeInfoItem(
+                        title = stringResource(Res.string.piece_properties_special),
+                        description = stringResource(Res.string.challenge_info_trigger_special)
+                    )
+                    ChallengeInfoItem(
+                        title = stringResource(Res.string.game_message_perfect_drop, "").trim(),
+                        description = stringResource(Res.string.challenge_info_perfect_placement)
+                    )
+                    ChallengeInfoItem(
+                        title = stringResource(Res.string.feedback_chain, "", "").trim(),
+                        description = stringResource(Res.string.challenge_info_chain_reaction)
+                    )
+                }
+
+                BlockStyleActionButton(
+                    text = stringResource(Res.string.continue_label),
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    tone = CellTone.Cyan
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChallengeInfoItem(
+    title: String,
+    description: String
+) {
+    Column {
+        Text(
+            text = title.trim(),
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Text(
+            text = description,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+        )
+    }
 }
 
 @Composable

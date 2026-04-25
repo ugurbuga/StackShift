@@ -8,7 +8,6 @@ import com.ugurbuga.stackshift.game.model.AppThemeMode
 import com.ugurbuga.stackshift.game.model.BlockColorPalette
 import com.ugurbuga.stackshift.game.model.BlockVisualStyle
 import com.ugurbuga.stackshift.game.model.BoardBlockStyleMode
-import com.ugurbuga.stackshift.game.model.ChallengeProgress
 import com.ugurbuga.stackshift.game.model.normalizeBlockVisualStyle
 import com.ugurbuga.stackshift.game.model.resolveUnifiedThemePalette
 
@@ -74,44 +73,63 @@ actual object AppSettingsStorage {
                 KeyHasInitializedLanguage,
                 defaultSettings.hasInitializedLanguage
             ) || hasStoredLanguage,
-            soundEnabled = prefs.getBoolean(KeySoundEnabled, defaultSettings.soundEnabled),
-            challengeProgress = ChallengeProgress(
-                completedDays = prefs.getStringSet(KeyChallengeProgress, emptySet())
-                    ?.mapNotNull { item ->
-                        val parts = item.split("|")
-                        if (parts.size == 2) parts[0] to parts[1].toInt() else null
-                    }
-                    ?.groupBy({ it.first }, { it.second })
-                    ?.mapValues { it.value.toSet() } ?: emptyMap()
-            )
-        )
+            soundEnabled = false,
+            tokenBalance = prefs.getInt(KeyTokenBalance, defaultSettings.tokenBalance),
+            unlockedThemeModes = decodeEnumSet(
+                prefs.getSafeString(KeyUnlockedThemeModes, null),
+                AppThemeMode.entries,
+            ),
+            unlockedThemePalettes = decodeEnumSet(
+                prefs.getSafeString(KeyUnlockedThemePalettes, null),
+                AppColorPalette.entries,
+            ),
+            unlockedBlockStyles = decodeEnumSet(
+                prefs.getSafeString(KeyUnlockedBlockStyles, null),
+                BlockVisualStyle.entries,
+            ),
+            challengeProgress = decodeChallengeProgress(
+                prefs.getSafeString(KeyChallengeProgress, null)
+            ),
+        ).sanitized()
+    }
+
+    private fun SharedPreferences.getSafeString(key: String, defaultValue: String?): String? {
+        return try {
+            getString(key, defaultValue)
+        } catch (_: ClassCastException) {
+            getStringSet(key, null)?.joinToString(";") ?: defaultValue
+        }
     }
 
     actual fun save(settings: AppSettings) {
+        val sanitized = settings.sanitized()
         prefs.edit()
-            .putInt(KeyLanguage, settings.language.ordinal)
-            .putInt(KeyThemeMode, settings.themeMode.ordinal)
-            .putInt(KeyThemeColorPalette, settings.themeColorPalette.ordinal)
-            .putInt(KeyBlockColorPalette, settings.blockColorPalette.ordinal)
+            .putInt(KeyLanguage, sanitized.language.ordinal)
+            .putInt(KeyThemeMode, sanitized.themeMode.ordinal)
+            .putInt(KeyThemeColorPalette, sanitized.themeColorPalette.ordinal)
+            .putInt(KeyBlockColorPalette, sanitized.blockColorPalette.ordinal)
             .putInt(
                 KeyBlockVisualStyle,
-                normalizeBlockVisualStyle(settings.blockVisualStyle).ordinal
+                normalizeBlockVisualStyle(sanitized.blockVisualStyle).ordinal
             )
-            .putInt(KeyBoardBlockStyleMode, settings.boardBlockStyleMode.ordinal)
-            .putBoolean(KeyHasSeenTutorial, settings.hasSeenTutorial)
-            .putBoolean(KeyHasShownInteractiveOnboarding, settings.hasShownInteractiveOnboarding)
-            .putBoolean(KeyHasInitializedLanguage, settings.hasInitializedLanguage)
-            .putBoolean(KeySoundEnabled, settings.soundEnabled)
-            .putStringSet(
-                KeyChallengeProgress,
-                settings.challengeProgress.completedDays.flatMap { entry ->
-                    entry.value.map { "${entry.key}|$it" }
-                }.toSet()
-            )
+            .putInt(KeyBoardBlockStyleMode, sanitized.boardBlockStyleMode.ordinal)
+            .putBoolean(KeyHasSeenTutorial, sanitized.hasSeenTutorial)
+            .putBoolean(KeyHasShownInteractiveOnboarding, sanitized.hasShownInteractiveOnboarding)
+            .putBoolean(KeyHasInitializedLanguage, sanitized.hasInitializedLanguage)
+            .putBoolean(KeySoundEnabled, false)
+            .putInt(KeyTokenBalance, sanitized.tokenBalance)
+            .putString(KeyUnlockedThemeModes, encodeEnumSet(sanitized.unlockedThemeModes))
+            .putString(KeyUnlockedThemePalettes, encodeEnumSet(sanitized.unlockedThemePalettes))
+            .putString(KeyUnlockedBlockStyles, encodeEnumSet(sanitized.unlockedBlockStyles))
+            .putString(KeyChallengeProgress, encodeChallengeProgress(sanitized.challengeProgress))
             .apply()
     }
 
     private const val KeyChallengeProgress = "challengeProgress"
+    private const val KeyTokenBalance = "tokenBalance"
+    private const val KeyUnlockedThemeModes = "unlockedThemeModes"
+    private const val KeyUnlockedThemePalettes = "unlockedThemePalettes"
+    private const val KeyUnlockedBlockStyles = "unlockedBlockStyles"
 
     private const val KeyThemeColorPalette = "themeColorPalette"
     private const val KeyBlockColorPalette = "blockColorPalette"

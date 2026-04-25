@@ -3,6 +3,9 @@
     <string name="app_title">StackShift</string>
     <string name="settings_title">Настройки</string>
     <string name="settings_language">Язык</string>
+    <string name="settings_sound">Звук</string>
+    <string name="settings_sound_on">Вкл.</string>
+    <string name="settings_sound_off">Выкл.</string>
     <string name="settings_theme">Тема</string>
     <string name="settings_theme_palette">Цвет темы</string>
     <string name="settings_block_palette">Цвет блоков</string>
@@ -53,6 +56,7 @@
     <string name="block_style_stone_texture">Stone Texture</string>
     <string name="block_style_honeycomb_texture">Honeycomb Texture</string>
     <string name="block_style_light_burst">Light Burst</string>
+    <string name="block_style_liquid_marble">Жидкий мрамор</string>
     <string name="board_block_style_always_flat">Всегда плоский</string>
     <string name="board_block_style_match_selected">Как выбранный</string>
     <string name="hold">Удержание</string>
@@ -114,7 +118,15 @@
     <string name="notification_reminders_channel_name">Напоминания</string>
     <string name="notification_miss_you_title">StackShift</string>
     <string name="notification_miss_you_body">Мы скучали! Возвращайся и поиграй еще.</string>
+    <string name="notification_daily_challenge_title">Ежедневное испытание</string>
+    <string name="notification_daily_challenge_body">Вы уже выполнили задания сегодняшнего ежедневного испытания?</string>
     <string name="challenge_tasks_title">Задания</string>
+    <string name="challenge_info_title">О заданиях</string>
+    <string name="challenge_info_clear_blocks">Очищайте блоки, завершая ряды или используя специальные блоки.</string>
+    <string name="challenge_info_reach_score">Набирайте очки, размещая фигуры и очищая линии.</string>
+    <string name="challenge_info_trigger_special">Используйте спецблоки, такие как Очистка колонки, Очистка строки, Призрак или Тяжёлый.</string>
+    <string name="challenge_info_perfect_placement">Запускайте фигуры в полностью пустые колонки, чтобы выполнить идеальный бросок.</string>
+    <string name="challenge_info_chain_reaction">Очищайте несколько рядов одним ходом, часто за счёт вторичных эффектов специальных блоков.</string>
     <string name="challenge_completed">Испытание завершено!</string>
     <string name="challenge_task_clear_blocks">Взорвать %1$d блоков</string>
     <string name="challenge_task_reach_score">Набрать %1$d очков</string>
@@ -184,6 +196,12 @@
     <string name="tutorial_step_counter">Шаг %1$d / %2$d</string>
     <string name="tutorial_back">Назад</string>
     <string name="cancel">Отмена</string>
+    <string name="unlock_dialog_title">Открыть %1$s?</string>
+    <string name="unlock_dialog_insufficient_title">%1$s заблокировано</string>
+    <string name="unlock_dialog_message">%1$s стоит %2$d токенов. Текущий баланс: %3$d.</string>
+    <string name="unlock_dialog_not_enough">Чтобы открыть этот элемент, нужно %1$d токенов. Ваш текущий баланс — %2$d.</string>
+    <string name="unlock_dialog_confirm">Открыть</string>
+    <string name="unlock_dialog_locked_suffix">Заблокировано</string>
     <string name="tutorial_next">Далее</string>
     <string name="tutorial_finish">Начать игру</string>
     <string name="return_home">Вернуться на главный экран</string>
@@ -219,5 +237,9 @@
     <string name="interactive_onboarding_ghost_body">Блоки Призрак могут проходить сквозь уже занятые клетки. Сбросьте его в отмеченную колонку и увидите, как он попадает туда, куда обычные фигуры не могут добраться.</string>
     <string name="interactive_onboarding_heavy_title">Тяжёлый агрессивно меняет поле</string>
     <string name="interactive_onboarding_heavy_body">Тяжёлые блоки заметно перестраивают область после приземления. Выполните направленный сброс и затем продолжайте игру как обычно.</string>
+    <string name="settings_tokens_title">Токены</string>
+    <string name="settings_tokens_balance">Баланс: %1$d</string>
+    <string name="settings_tokens_earn_challenge">Награда за ежедневное испытание: +%1$d токенов</string>
+    <string name="settings_tokens_earn_score">Награда за игру: +1 токен за каждые %1$d очков</string>
+    <string name="rewarded_tokens_button">Посмотри рекламу и получи %1$d токенов</string>
 </resources>
-

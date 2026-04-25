@@ -27,6 +27,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.Card
@@ -42,6 +43,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -62,6 +65,18 @@ import com.ugurbuga.stackshift.game.model.BlockVisualStyle
 import com.ugurbuga.stackshift.game.model.CellTone
 import com.ugurbuga.stackshift.game.model.normalizeBlockVisualStyle
 import com.ugurbuga.stackshift.settings.AppSettings
+import com.ugurbuga.stackshift.settings.DailyChallengeTokenReward
+import com.ugurbuga.stackshift.settings.ScorePointsPerToken
+import com.ugurbuga.stackshift.settings.isBlockStyleUnlocked
+import com.ugurbuga.stackshift.settings.isThemeModeUnlocked
+import com.ugurbuga.stackshift.settings.isThemePaletteUnlocked
+import com.ugurbuga.stackshift.settings.selectBlockStyle
+import com.ugurbuga.stackshift.settings.selectThemeMode
+import com.ugurbuga.stackshift.settings.selectThemePalette
+import com.ugurbuga.stackshift.settings.tokenCost
+import com.ugurbuga.stackshift.settings.unlockBlockStyle
+import com.ugurbuga.stackshift.settings.unlockThemeMode
+import com.ugurbuga.stackshift.settings.unlockThemePalette
 import com.ugurbuga.stackshift.telemetry.AppTelemetry
 import com.ugurbuga.stackshift.telemetry.LogScreen
 import com.ugurbuga.stackshift.telemetry.NoOpAppTelemetry
@@ -100,16 +115,24 @@ import stackshift.composeapp.generated.resources.block_style_spider_web
 import stackshift.composeapp.generated.resources.block_style_stone_texture
 import stackshift.composeapp.generated.resources.block_style_tornado
 import stackshift.composeapp.generated.resources.block_style_wood
+import stackshift.composeapp.generated.resources.cancel
+import stackshift.composeapp.generated.resources.continue_label
 import stackshift.composeapp.generated.resources.settings_block_style
 import stackshift.composeapp.generated.resources.settings_language
-import stackshift.composeapp.generated.resources.settings_sound
-import stackshift.composeapp.generated.resources.settings_sound_off
-import stackshift.composeapp.generated.resources.settings_sound_on
 import stackshift.composeapp.generated.resources.settings_theme
+import stackshift.composeapp.generated.resources.settings_tokens_balance
+import stackshift.composeapp.generated.resources.settings_tokens_earn_challenge
+import stackshift.composeapp.generated.resources.settings_tokens_earn_score
+import stackshift.composeapp.generated.resources.settings_tokens_title
 import stackshift.composeapp.generated.resources.theme_palette_aurora
 import stackshift.composeapp.generated.resources.theme_palette_classic
 import stackshift.composeapp.generated.resources.theme_palette_soft_pastel
 import stackshift.composeapp.generated.resources.theme_palette_sunset
+import stackshift.composeapp.generated.resources.unlock_dialog_confirm
+import stackshift.composeapp.generated.resources.unlock_dialog_insufficient_title
+import stackshift.composeapp.generated.resources.unlock_dialog_message
+import stackshift.composeapp.generated.resources.unlock_dialog_not_enough
+import stackshift.composeapp.generated.resources.unlock_dialog_title
 
 private val ScreenContentMaxWidth = 920.dp
 
@@ -132,6 +155,7 @@ fun AppSettingsScreen(
     val darkTheme = isStackShiftDarkTheme(settings)
     val normalizedBlockStyle = normalizeBlockVisualStyle(settings.blockVisualStyle)
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
+    var pendingUnlockRequest by remember { mutableStateOf<UnlockRequest?>(null) }
     val transition = rememberInfiniteTransition(label = "settingsStylePulse")
     val stylePulse by transition.animateFloat(
         initialValue = 0f,
@@ -209,6 +233,7 @@ fun AppSettingsScreen(
                         .padding(horizontal = 16.dp, vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
+                    TokenBalanceCard(settings = settings)
                     when (selectedTabIndex) {
                         0 -> {
                             SettingsSectionCard(
@@ -218,23 +243,32 @@ fun AppSettingsScreen(
                                 SettingsGroup(
                                     title = stringResource(Res.string.settings_theme),
                                     selectedValue = settings.themeMode,
-                                    options = themeModeOptions(),
-                                    onSelected = { onSettingsChange(settings.copy(themeMode = it)) },
+                                    options = themeModeOptions(settings),
+                                    onSelected = { onSettingsChange(settings.selectThemeMode(it)) },
+                                    onLockedSelected = { option ->
+                                        pendingUnlockRequest = unlockRequest(
+                                            label = option.label,
+                                            priceTokens = option.priceTokens,
+                                            currentBalance = settings.tokenBalance,
+                                        ) { currentSettings ->
+                                            currentSettings.unlockThemeMode(option.value)
+                                        }
+                                    },
                                 )
                                 SettingsGroup(
                                     title = if (settings.language == AppLanguage.Turkish) "Renk Paleti" else "Color Palette",
                                     selectedValue = settings.themeColorPalette,
-                                    options = themePaletteOptions(darkTheme = darkTheme),
-                                    onSelected = { onSettingsChange(settings.copy(themeColorPalette = it)) },
-                                )
-                                SettingsGroup(
-                                    title = stringResource(Res.string.settings_sound),
-                                    selectedValue = settings.soundEnabled,
-                                    options = listOf(
-                                        SettingsOption(true, stringResource(Res.string.settings_sound_on)),
-                                        SettingsOption(false, stringResource(Res.string.settings_sound_off))
-                                    ),
-                                    onSelected = { onSettingsChange(settings.copy(soundEnabled = it)) },
+                                    options = themePaletteOptions(settings = settings, darkTheme = darkTheme),
+                                    onSelected = { onSettingsChange(settings.selectThemePalette(it)) },
+                                    onLockedSelected = { option ->
+                                        pendingUnlockRequest = unlockRequest(
+                                            label = option.label,
+                                            priceTokens = option.priceTokens,
+                                            currentBalance = settings.tokenBalance,
+                                        ) { currentSettings ->
+                                            currentSettings.unlockThemePalette(option.value)
+                                        }
+                                    },
                                 )
                             }
                         }
@@ -250,11 +284,17 @@ fun AppSettingsScreen(
                                 SettingsGroup(
                                     title = stringResource(Res.string.settings_block_style),
                                     selectedValue = normalizedBlockStyle,
-                                    options = blockStyleOptions(
-                                        settings.blockColorPalette,
-                                        pulse = stylePulse
-                                    ),
-                                    onSelected = { onSettingsChange(settings.copy(blockVisualStyle = it)) },
+                                    options = blockStyleOptions(settings = settings, pulse = stylePulse),
+                                    onSelected = { onSettingsChange(settings.selectBlockStyle(it)) },
+                                    onLockedSelected = { option ->
+                                        pendingUnlockRequest = unlockRequest(
+                                            label = option.label,
+                                            priceTokens = option.priceTokens,
+                                            currentBalance = settings.tokenBalance,
+                                        ) { currentSettings ->
+                                            currentSettings.unlockBlockStyle(option.value)
+                                        }
+                                    },
                                 )
                             }
                         }
@@ -262,6 +302,17 @@ fun AppSettingsScreen(
                 }
 
             }
+        }
+
+        pendingUnlockRequest?.let { request ->
+            UnlockOptionDialog(
+                request = request,
+                onDismissRequest = { pendingUnlockRequest = null },
+                onConfirm = {
+                    request.onUnlock(settings)?.let(onSettingsChange)
+                    pendingUnlockRequest = null
+                },
+            )
         }
     }
 }
@@ -496,6 +547,7 @@ private fun <T> SettingsGroup(
     selectedValue: T,
     options: List<SettingsOption<T>>,
     onSelected: (T) -> Unit,
+    onLockedSelected: (SettingsOption<T>) -> Unit = {},
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
     Column(
@@ -521,7 +573,13 @@ private fun <T> SettingsGroup(
                         shape = RoundedCornerShape(GameUiShapeTokens.chipCorner),
                     ),
                     selected = selected,
-                    onClick = { onSelected(option.value) },
+                    onClick = {
+                        if (option.locked) {
+                            onLockedSelected(option)
+                        } else {
+                            onSelected(option.value)
+                        }
+                    },
                     shape = RoundedCornerShape(GameUiShapeTokens.chipCorner),
                     label = {
                         Row(
@@ -536,6 +594,14 @@ private fun <T> SettingsGroup(
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
+                            if (option.locked) {
+                                Icon(
+                                    imageVector = Icons.Filled.Lock,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f),
+                                    modifier = Modifier.size(14.dp),
+                                )
+                            }
                         }
                     },
                     colors = FilterChipDefaults.filterChipColors(
@@ -568,7 +634,115 @@ private data class SettingsOption<T>(
     val value: T,
     val label: String,
     val preview: (@Composable () -> Unit)? = null,
+    val locked: Boolean = false,
+    val priceTokens: Int = 0,
 )
+
+private data class UnlockRequest(
+    val label: String,
+    val priceTokens: Int,
+    val currentBalance: Int,
+    val onUnlock: (AppSettings) -> AppSettings?,
+) {
+    val canAfford: Boolean get() = currentBalance >= priceTokens
+}
+
+private fun unlockRequest(
+    label: String,
+    priceTokens: Int,
+    currentBalance: Int,
+    onUnlock: (AppSettings) -> AppSettings?,
+): UnlockRequest = UnlockRequest(
+    label = label,
+    priceTokens = priceTokens,
+    currentBalance = currentBalance,
+    onUnlock = onUnlock,
+)
+
+@Composable
+private fun TokenBalanceCard(settings: AppSettings) {
+    val uiColors = StackShiftThemeTokens.uiColors
+    val surfaceShape = RoundedCornerShape(GameUiShapeTokens.panelCorner)
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .stackShiftSurfaceShadow(
+                shape = surfaceShape,
+                elevation = 4.dp,
+            )
+            .widthIn(max = ScreenContentMaxWidth),
+        shape = surfaceShape,
+        colors = CardDefaults.cardColors(containerColor = uiColors.panelHighlight.copy(alpha = 0.92f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = stringResource(Res.string.settings_tokens_title),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = stringResource(Res.string.settings_tokens_balance, settings.tokenBalance),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = stringResource(Res.string.settings_tokens_earn_challenge, DailyChallengeTokenReward),
+                style = MaterialTheme.typography.bodySmall,
+                color = uiColors.subtitle,
+            )
+            Text(
+                text = stringResource(Res.string.settings_tokens_earn_score, ScorePointsPerToken),
+                style = MaterialTheme.typography.bodySmall,
+                color = uiColors.subtitle,
+            )
+        }
+    }
+}
+
+@Composable
+private fun UnlockOptionDialog(
+    request: UnlockRequest,
+    onDismissRequest: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    if (request.canAfford) {
+        ThemedConfirmDialog(
+            onDismissRequest = onDismissRequest,
+            title = stringResource(Res.string.unlock_dialog_title, request.label),
+            message = stringResource(
+                Res.string.unlock_dialog_message,
+                request.label,
+                request.priceTokens,
+                request.currentBalance,
+            ),
+            confirmLabel = stringResource(Res.string.unlock_dialog_confirm),
+            dismissLabel = stringResource(Res.string.cancel),
+            onConfirm = onConfirm,
+            icon = Icons.Filled.Lock,
+        )
+    } else {
+        ThemedConfirmDialog(
+            onDismissRequest = onDismissRequest,
+            title = stringResource(Res.string.unlock_dialog_insufficient_title, request.label),
+            message = stringResource(
+                Res.string.unlock_dialog_not_enough,
+                request.priceTokens,
+                request.currentBalance,
+            ),
+            confirmLabel = stringResource(Res.string.continue_label),
+            dismissLabel = stringResource(Res.string.cancel),
+            onConfirm = onDismissRequest,
+            icon = Icons.Filled.Lock,
+        )
+    }
+}
 
 @Composable
 private fun languageOptions(selected: AppLanguage): List<SettingsOption<AppLanguage>> =
@@ -581,7 +755,7 @@ private fun languageOptions(selected: AppLanguage): List<SettingsOption<AppLangu
     }
 
 @Composable
-private fun themeModeOptions(): List<SettingsOption<AppThemeMode>> =
+private fun themeModeOptions(settings: AppSettings): List<SettingsOption<AppThemeMode>> =
     AppThemeMode.entries.map { mode ->
         SettingsOption(
             value = mode,
@@ -591,11 +765,16 @@ private fun themeModeOptions(): List<SettingsOption<AppThemeMode>> =
                 AppThemeMode.Dark -> stringResource(Res.string.app_theme_dark)
             },
             preview = { ThemeModePreview(mode) },
+            locked = !settings.isThemeModeUnlocked(mode),
+            priceTokens = mode.tokenCost(),
         )
     }
 
 @Composable
-private fun themePaletteOptions(darkTheme: Boolean): List<SettingsOption<AppColorPalette>> =
+private fun themePaletteOptions(
+    settings: AppSettings,
+    darkTheme: Boolean,
+): List<SettingsOption<AppColorPalette>> =
     AppColorPalette.entries.map { palette ->
         SettingsOption(
             value = palette,
@@ -608,15 +787,16 @@ private fun themePaletteOptions(darkTheme: Boolean): List<SettingsOption<AppColo
                 AppColorPalette.MinimalMonochrome -> stringResource(Res.string.block_palette_monochrome)
             },
             preview = { ThemePalettePreview(palette = palette, darkTheme = darkTheme) },
+            locked = !settings.isThemePaletteUnlocked(palette),
+            priceTokens = palette.tokenCost(),
         )
     }
 
 @Composable
 private fun blockStyleOptions(
-    palette: BlockColorPalette,
+    settings: AppSettings,
     pulse: Float
 ): List<SettingsOption<BlockVisualStyle>> {
-    val settings = com.ugurbuga.stackshift.localization.LocalAppSettings.current
     val visibleStyles = listOf(
         BlockVisualStyle.Flat,
         BlockVisualStyle.Bubble,
@@ -660,7 +840,9 @@ private fun blockStyleOptions(
                 BlockVisualStyle.SoundWave -> stringResource(Res.string.block_style_sound_wave)
                 BlockVisualStyle.Prism -> stringResource(Res.string.block_style_prism)
             },
-            preview = { BlockStylePreview(style = style, palette = palette, pulse = pulse) },
+            preview = { BlockStylePreview(style = style, palette = settings.blockColorPalette, pulse = pulse) },
+            locked = !settings.isBlockStyleUnlocked(style),
+            priceTokens = style.tokenCost(),
         )
     }
 }

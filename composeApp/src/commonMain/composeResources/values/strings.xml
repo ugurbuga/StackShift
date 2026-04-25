@@ -10,6 +10,11 @@
     <string name="settings_theme_palette">Theme Color Palette</string>
     <string name="settings_block_palette">Block Color Palette</string>
     <string name="settings_block_style">Block Style</string>
+    <string name="settings_tokens_title">Tokens</string>
+    <string name="settings_tokens_balance">Balance: %1$d</string>
+    <string name="settings_tokens_earn_challenge">Daily challenge reward: +%1$d tokens</string>
+    <string name="settings_tokens_earn_score">Game reward: +1 token for every %1$d score</string>
+    <string name="rewarded_tokens_button">Watch an ad and earn %1$d tokens</string>
     <string name="settings_board_block_style">Board Block Style</string>
     <string name="settings_challenges">Challenges</string>
     <string name="settings_tutorial">Tutorial</string>
@@ -124,6 +129,12 @@
     <string name="notification_daily_challenge_title">Daily Challenge</string>
     <string name="notification_daily_challenge_body">Have you completed today\'s daily challenge tasks yet?</string>
     <string name="challenge_tasks_title">Tasks</string>
+    <string name="challenge_info_title">About Tasks</string>
+    <string name="challenge_info_clear_blocks">Clear blocks by completing rows or using special blocks.</string>
+    <string name="challenge_info_reach_score">Increase your score by placing pieces and clearing lines.</string>
+    <string name="challenge_info_trigger_special">Use special blocks like Column Clearer, Row Clearer, Ghost, or Heavy.</string>
+    <string name="challenge_info_perfect_placement">Launch pieces into completely empty columns to perform a perfect drop.</string>
+    <string name="challenge_info_chain_reaction">Clear multiple rows with a single move, often triggered by the secondary effects of special blocks.</string>
     <string name="challenge_completed">Challenge Completed!</string>
     <string name="challenge_task_clear_blocks">Explode %1$d blocks</string>
     <string name="challenge_task_reach_score">Reach %1$d score</string>
@@ -202,6 +213,12 @@
     <string name="tutorial_step_counter">Step %1$d / %2$d</string>
     <string name="tutorial_back">Back</string>
     <string name="cancel">Cancel</string>
+    <string name="unlock_dialog_title">Unlock %1$s?</string>
+    <string name="unlock_dialog_insufficient_title">%1$s is locked</string>
+    <string name="unlock_dialog_message">%1$s costs %2$d tokens. Current balance: %3$d.</string>
+    <string name="unlock_dialog_not_enough">You need %1$d tokens to unlock this item. Your current balance is %2$d.</string>
+    <string name="unlock_dialog_confirm">Unlock</string>
+    <string name="unlock_dialog_locked_suffix">Locked</string>
     <string name="tutorial_next">Next</string>
     <string name="tutorial_finish">Start the game</string>
     <string name="return_home">Return to Home</string>

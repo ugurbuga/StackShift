@@ -36,6 +36,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -123,6 +124,7 @@ import com.ugurbuga.stackshift.settings.FirstRunGameOnboardingStateFactory
 import com.ugurbuga.stackshift.settings.FirstRunOnboardingScene
 import com.ugurbuga.stackshift.settings.FirstRunOnboardingStage
 import com.ugurbuga.stackshift.settings.HighScoreStorage
+import com.ugurbuga.stackshift.settings.RewardedTokenAdReward
 import com.ugurbuga.stackshift.telemetry.AppTelemetry
 import com.ugurbuga.stackshift.telemetry.LogScreen
 import com.ugurbuga.stackshift.telemetry.NoOpAppTelemetry
@@ -275,6 +277,7 @@ fun StackShiftGameApp(
     interactiveOnboardingEnabled: Boolean = false,
     onInteractiveOnboardingFinished: (GameState) -> Unit = {},
     onInteractiveOnboardingReturnHome: (GameState) -> Unit = {},
+    onRewardedTokensRequested: () -> Unit = {},
     onBack: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
     onOpenTutorial: () -> Unit = {},
@@ -443,6 +446,10 @@ fun StackShiftGameApp(
             telemetry.logUserAction("rewarded_revive")
             viewModel.reviveFromReward()
         },
+        onRewardedTokensRequested = {
+            telemetry.logUserAction("rewarded_tokens")
+            onRewardedTokensRequested()
+        },
         onBack = onBack,
         telemetry = telemetry,
         adController = adController,
@@ -487,6 +494,7 @@ fun GameScreenWithLaunchOverlay(
     onReplaceActivePiece: (SpecialBlockType) -> InteractionFeedback,
     onRestart: () -> InteractionFeedback,
     onRewardedRevive: () -> InteractionFeedback,
+    onRewardedTokensRequested: () -> Unit,
     onBack: () -> Unit = {},
     onOpenSettings: () -> Unit,
     onOpenTutorial: () -> Unit,
@@ -520,6 +528,7 @@ fun GameScreenWithLaunchOverlay(
             onReplaceActivePiece = onReplaceActivePiece,
             onRestart = onRestart,
             onRewardedRevive = onRewardedRevive,
+            onRewardedTokensRequested = onRewardedTokensRequested,
             onBack = onBack,
             onOpenSettings = onOpenSettings,
             onOpenTutorial = onOpenTutorial,
@@ -596,6 +605,7 @@ fun GameScreen(
     onReplaceActivePiece: (SpecialBlockType) -> InteractionFeedback,
     onRestart: () -> InteractionFeedback,
     onRewardedRevive: () -> InteractionFeedback,
+    onRewardedTokensRequested: () -> Unit,
     onBack: () -> Unit = {},
     onOpenSettings: () -> Unit,
     onOpenTutorial: () -> Unit,
@@ -1117,6 +1127,7 @@ fun GameScreen(
                                         haptics
                                     )
                                 },
+                                onRewardedTokensRequested = onRewardedTokensRequested,
                                 stylePulse = stylePulse,
                             )
                         }
@@ -1701,6 +1712,7 @@ private fun MinimalBottomDock(
     showNextPiece: Boolean,
     adController: GameAdController,
     onReplaceActivePiece: (SpecialBlockType) -> Unit,
+    onRewardedTokensRequested: () -> Unit,
     highlightColor: Color? = null,
     highlightDock: Boolean = false,
     stylePulse: Float = 0f,
@@ -1775,6 +1787,11 @@ private fun MinimalBottomDock(
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            RewardedTokenAdButton(
+                                adController = adController,
+                                onRewarded = onRewardedTokensRequested,
+                                stylePulse = stylePulse,
+                            )
                             SpecialActionAdButton(
                                 specialType = SpecialBlockType.RowClearer,
                                 tone = CellTone.Cyan,
@@ -2069,6 +2086,37 @@ private fun SpecialActionAdButton(
                 loading = false
                 if (success) {
                     onActivated()
+                }
+            }
+        },
+        enabled = !loading,
+        pulse = stylePulse,
+        size = 40.dp,
+        showAdIcon = true,
+        adIcon = Icons.Filled.Videocam,
+        extraAlpha = 0.75f,
+    )
+}
+
+@Composable
+private fun RewardedTokenAdButton(
+    adController: GameAdController,
+    onRewarded: () -> Unit,
+    stylePulse: Float = 0f,
+) {
+    var loading by remember { mutableStateOf(false) }
+
+    TopBarActionBlockButton(
+        tone = CellTone.Gold,
+        icon = Icons.Filled.MonetizationOn,
+        contentDescription = stringResource(Res.string.rewarded_tokens_button, RewardedTokenAdReward),
+        onClick = {
+            if (loading) return@TopBarActionBlockButton
+            loading = true
+            adController.showRewardedAd { success ->
+                loading = false
+                if (success) {
+                    onRewarded()
                 }
             }
         },
@@ -3052,6 +3100,7 @@ private fun MinimalBottomDockNarrowPreview() {
                 showNextPiece = true,
                 adController = NoOpGameAdController,
                 onReplaceActivePiece = {},
+                onRewardedTokensRequested = {},
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(80.dp)
@@ -3087,6 +3136,7 @@ private fun GameScreenDraggingPreview() {
             onReplaceActivePiece = { InteractionFeedback.None },
             onRestart = { InteractionFeedback.None },
             onRewardedRevive = { InteractionFeedback.None },
+            onRewardedTokensRequested = {},
             onOpenSettings = {},
             onOpenTutorial = {},
             soundPlayer = NoOpSoundEffectPlayer,
@@ -3119,6 +3169,7 @@ private fun GameScreenRunningPreview() {
             onReplaceActivePiece = { InteractionFeedback.None },
             onRestart = { InteractionFeedback.None },
             onRewardedRevive = { InteractionFeedback.None },
+            onRewardedTokensRequested = {},
             onOpenSettings = {},
             onOpenTutorial = {},
             soundPlayer = NoOpSoundEffectPlayer,
