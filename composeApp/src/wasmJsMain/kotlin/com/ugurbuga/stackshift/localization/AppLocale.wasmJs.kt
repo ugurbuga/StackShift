@@ -13,7 +13,7 @@ actual object LocalAppLocale {
         @Composable get() = LocalLocale.current
 
     @Composable
-    actual infix fun provides(value: String?): ProvidedValue<*> {
+    actual infix fun provides(value: String?): Array<ProvidedValue<*>> {
         val resolved = value?.takeIf(String::isNotBlank) ?: browserDefaultLocale()
         if (lastAppliedLocaleTag != resolved) {
             println(
@@ -21,7 +21,7 @@ actual object LocalAppLocale {
             )
             lastAppliedLocaleTag = resolved
         }
-        return LocalLocale.provides(resolved)
+        return arrayOf(LocalLocale.provides(resolved))
     }
 
     private fun browserDefaultLocale(): String = runCatching {

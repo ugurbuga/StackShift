@@ -1,8 +1,8 @@
 package com.ugurbuga.stackshift.localization
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.ProvidedValue
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ProvidedValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.ugurbuga.stackshift.settings.AppSettings
@@ -14,7 +14,7 @@ expect object LocalAppLocale {
         @Composable get
 
     @Composable
-    infix fun provides(value: String?): ProvidedValue<*>
+    infix fun provides(value: String?): Array<ProvidedValue<*>>
 }
 
 expect fun currentDeviceLocaleTag(): String
@@ -26,7 +26,7 @@ fun AppEnvironment(
 ) {
     CompositionLocalProvider(
         LocalAppSettings provides settings,
-        LocalAppLocale provides settings.language.localeTag,
+        *(LocalAppLocale provides settings.language.localeTag),
     ) {
         key(settings.language.localeTag) {
             content()

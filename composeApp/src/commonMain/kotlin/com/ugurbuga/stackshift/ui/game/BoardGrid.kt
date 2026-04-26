@@ -1357,7 +1357,7 @@ internal fun BlockCellPreview(
                     style = style,
                     isDarkTheme = isDarkTheme,
                     palette = palette,
-                ),
+                ).copy(alpha = alpha),
                 modifier = Modifier
                     .size((size.value * 0.36f).dp),
             )
@@ -2848,7 +2848,7 @@ private fun boardCellVisual(
     val fillInset = (minSize * 0.085f).coerceIn(1.5f, 3.2f)
     val previewInset = (minSize * 0.06f).coerceIn(1.4f, 2.4f)
     val specialInset = (minSize * 0.14f).coerceIn(4f, 6f)
-    val outerRadius = minSize * 0.16f * blockStyleCornerScale(style)
+    val outerRadius = minSize * 0.16f * style.cornerScale()
     return BoardCellVisual(
         fillInsetPx = fillInset,
         previewInsetPx = previewInset,
@@ -2894,60 +2894,16 @@ internal fun boardCellCornerRadiusDp(
 ): Dp {
     val density = LocalDensity.current
     return with(density) {
-        (cellSize.toPx() * 0.16f * blockStyleCornerScale(style)).toDp()
+        (cellSize.toPx() * 0.16f * style.cornerScale()).toDp()
     }
 }
 
 internal fun boardCellCornerRadiusPx(
     cellSizePx: Float,
     style: BlockVisualStyle,
-): Float = (cellSizePx * 0.16f * blockStyleCornerScale(style)).coerceAtLeast(0f)
+): Float = (cellSizePx * 0.16f * style.cornerScale()).coerceAtLeast(0f)
 
-internal fun boardFrameCornerRadiusDp(style: BlockVisualStyle): Dp = when (style) {
-    BlockVisualStyle.Flat -> 18.dp
-    BlockVisualStyle.Bubble -> 22.dp
-    BlockVisualStyle.Outline -> 14.dp
-    BlockVisualStyle.Sharp3D -> 6.dp
-    BlockVisualStyle.Wood -> 12.dp
-    BlockVisualStyle.GridSplit -> 10.dp
-    BlockVisualStyle.Crystal -> 0.dp
-    BlockVisualStyle.DynamicLiquid -> 18.dp
-    BlockVisualStyle.MatteSoft -> 18.dp
-    BlockVisualStyle.NeonGlow -> 22.dp
-    BlockVisualStyle.Tornado -> 18.dp
-    BlockVisualStyle.StoneTexture -> 12.dp
-    BlockVisualStyle.HoneycombTexture -> 12.dp
-    BlockVisualStyle.LightBurst -> 20.dp
-    BlockVisualStyle.LiquidMarble -> 18.dp
-    BlockVisualStyle.SpiderWeb -> 6.dp
-    BlockVisualStyle.Cosmic -> 10.dp
-    BlockVisualStyle.Brick -> 8.dp
-    BlockVisualStyle.SoundWave -> 16.dp
-    BlockVisualStyle.Prism -> 12.dp
-}
-
-private fun blockStyleCornerScale(style: BlockVisualStyle): Float = when (style) {
-    BlockVisualStyle.Flat -> 1.0f
-    BlockVisualStyle.Bubble -> 1.20f
-    BlockVisualStyle.Outline -> 0.82f
-    BlockVisualStyle.Sharp3D -> 0.30f
-    BlockVisualStyle.Wood -> 0.76f
-    BlockVisualStyle.GridSplit -> 0.54f
-    BlockVisualStyle.Crystal -> 0f
-    BlockVisualStyle.DynamicLiquid -> 0.85f
-    BlockVisualStyle.MatteSoft -> 1.0f
-    BlockVisualStyle.NeonGlow -> 1.20f
-    BlockVisualStyle.Tornado -> 1.00f
-    BlockVisualStyle.StoneTexture -> 0.76f
-    BlockVisualStyle.HoneycombTexture -> 0.78f
-    BlockVisualStyle.LightBurst -> 1.04f
-    BlockVisualStyle.LiquidMarble -> 0.98f
-    BlockVisualStyle.SpiderWeb -> 0.34f
-    BlockVisualStyle.Cosmic -> 0.54f
-    BlockVisualStyle.Brick -> 0.46f
-    BlockVisualStyle.SoundWave -> 0.88f
-    BlockVisualStyle.Prism -> 0.72f
-}
+internal fun boardFrameCornerRadiusDp(style: BlockVisualStyle): Dp = style.frameCornerRadius()
 
 internal fun CellTone.color(): Color = paletteColor(BlockColorPalette.Classic)
 

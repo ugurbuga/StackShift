@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -24,9 +26,11 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -36,9 +40,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.TouchApp
+import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -84,8 +91,8 @@ import com.ugurbuga.stackshift.game.model.GridPoint
 import com.ugurbuga.stackshift.game.model.Piece
 import com.ugurbuga.stackshift.game.model.PieceKind
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
-import com.ugurbuga.stackshift.game.model.resolveBoardBlockStyle
 import com.ugurbuga.stackshift.game.model.gameText
+import com.ugurbuga.stackshift.game.model.resolveBoardBlockStyle
 import com.ugurbuga.stackshift.localization.LocalAppSettings
 import com.ugurbuga.stackshift.settings.AppSettings
 import com.ugurbuga.stackshift.telemetry.AppTelemetry
@@ -95,13 +102,13 @@ import com.ugurbuga.stackshift.telemetry.TelemetryScreenNames
 import com.ugurbuga.stackshift.ui.theme.GameUiShapeTokens
 import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
 import com.ugurbuga.stackshift.ui.theme.appBackgroundBrush
+import com.ugurbuga.stackshift.ui.theme.isStackShiftDarkTheme
 import com.ugurbuga.stackshift.ui.theme.stackShiftSurfaceShadow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
-import stackshift.composeapp.generated.resources.app_title
 import stackshift.composeapp.generated.resources.block_properties_column_clearer_desc
 import stackshift.composeapp.generated.resources.block_properties_column_clearer_title
 import stackshift.composeapp.generated.resources.block_properties_ghost_desc
@@ -114,7 +121,9 @@ import stackshift.composeapp.generated.resources.launch_drag_hint
 import stackshift.composeapp.generated.resources.piece_properties_active
 import stackshift.composeapp.generated.resources.queue_next_short
 import stackshift.composeapp.generated.resources.restart
-import stackshift.composeapp.generated.resources.settings_title
+import stackshift.composeapp.generated.resources.settings_challenges
+import stackshift.composeapp.generated.resources.settings_language
+import stackshift.composeapp.generated.resources.settings_theme
 import stackshift.composeapp.generated.resources.settings_tutorial
 import stackshift.composeapp.generated.resources.tutorial_back
 import stackshift.composeapp.generated.resources.tutorial_finish
@@ -128,7 +137,6 @@ import stackshift.composeapp.generated.resources.tutorial_ready_tutorial_hint
 import stackshift.composeapp.generated.resources.tutorial_specials_body
 import stackshift.composeapp.generated.resources.tutorial_specials_title
 import stackshift.composeapp.generated.resources.tutorial_step_counter
-import stackshift.composeapp.generated.resources.tutorial_subtitle
 import stackshift.composeapp.generated.resources.tutorial_systems_body
 import stackshift.composeapp.generated.resources.tutorial_systems_title
 
@@ -241,7 +249,10 @@ private fun tutorialSpecialScene(
     special: SpecialBlockType,
 ): TutorialDemoScene {
     val board = when (special) {
-        SpecialBlockType.ColumnClearer -> BoardMatrix.empty(columns = TutorialCompactColumns, rows = TutorialCompactRows)
+        SpecialBlockType.ColumnClearer -> BoardMatrix.empty(
+            columns = TutorialCompactColumns,
+            rows = TutorialCompactRows
+        )
             .fill(
                 points = listOf(
                     GridPoint(0, 3),
@@ -260,7 +271,10 @@ private fun tutorialSpecialScene(
                 tone = CellTone.Gold,
             )
 
-        SpecialBlockType.RowClearer -> BoardMatrix.empty(columns = TutorialCompactColumns, rows = TutorialCompactRows)
+        SpecialBlockType.RowClearer -> BoardMatrix.empty(
+            columns = TutorialCompactColumns,
+            rows = TutorialCompactRows
+        )
             .fill(
                 points = listOf(
                     GridPoint(0, 2),
@@ -274,7 +288,10 @@ private fun tutorialSpecialScene(
                 tone = CellTone.Emerald,
             )
 
-        SpecialBlockType.Ghost -> BoardMatrix.empty(columns = TutorialCompactColumns, rows = TutorialCompactRows)
+        SpecialBlockType.Ghost -> BoardMatrix.empty(
+            columns = TutorialCompactColumns,
+            rows = TutorialCompactRows
+        )
             .fill(
                 points = listOf(
                     GridPoint(0, 3),
@@ -291,7 +308,10 @@ private fun tutorialSpecialScene(
                 tone = CellTone.Gold,
             )
 
-        SpecialBlockType.Heavy -> BoardMatrix.empty(columns = TutorialCompactColumns, rows = TutorialCompactRows)
+        SpecialBlockType.Heavy -> BoardMatrix.empty(
+            columns = TutorialCompactColumns,
+            rows = TutorialCompactRows
+        )
             .fill(
                 points = listOf(
                     GridPoint(0, 3),
@@ -305,11 +325,18 @@ private fun tutorialSpecialScene(
                 tone = CellTone.Coral,
             )
 
-        SpecialBlockType.None -> BoardMatrix.empty(columns = TutorialCompactColumns, rows = TutorialCompactRows)
+        SpecialBlockType.None -> BoardMatrix.empty(
+            columns = TutorialCompactColumns,
+            rows = TutorialCompactRows
+        )
     }
     val activePiece = when (special) {
         SpecialBlockType.Ghost -> TutorialNextPiece.copy(id = -202L, tone = tone, special = special)
-        else -> TutorialSamplePiece.copy(id = -201L - special.ordinal, tone = tone, special = special)
+        else -> TutorialSamplePiece.copy(
+            id = -201L - special.ordinal,
+            tone = tone,
+            special = special
+        )
     }
     val spawnColumn = if (special == SpecialBlockType.Ghost) 1 else 1
     val autoColumns = when (special) {
@@ -333,19 +360,17 @@ fun GameTutorialScreen(
     modifier: Modifier = Modifier,
     telemetry: AppTelemetry = NoOpAppTelemetry,
     adController: GameAdController = NoOpGameAdController,
+    initialPage: Int = 0,
     onBack: () -> Unit,
     onFinish: () -> Unit,
 ) {
     LogScreen(telemetry, TelemetryScreenNames.Tutorial)
     val totalSteps = 4
     val uiColors = StackShiftThemeTokens.uiColors
-    val pagerState = rememberPagerState { totalSteps }
+    val pagerState = rememberPagerState(initialPage = initialPage) { totalSteps }
     val coroutineScope = rememberCoroutineScope()
     val currentStep = pagerState.currentPage
     val isLastStep = (currentStep == (totalSteps - 1))
-    val settings = LocalAppSettings.current
-    val blockStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
-    val stylePulse = rememberBlockStylePulse(style = blockStyle)
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -358,25 +383,43 @@ fun GameTutorialScreen(
                 .statusBarsPadding(),
         ) {
             Column(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
             ) {
-                Card(
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                            TopBarActionBlockButton(
+                                tone = CellTone.Cyan,
+                                icon = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(Res.string.tutorial_back),
+                                onClick = onBack,
+                                size = 44.dp,
+                            )
+
+                    Text(
+                        text = stringResource(Res.string.settings_tutorial),
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f),
+                    )
+
+                    TutorialStepChip(
+                        currentStep = currentStep + 1,
+                        totalSteps = totalSteps,
+                    )
+                }
+
+                Column(
                     modifier = Modifier
                         .weight(1f)
-                        .stackShiftSurfaceShadow(
-                            shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
-                            elevation = 10.dp,
-                        )
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
-                    shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
-                    colors = CardDefaults.cardColors(containerColor = uiColors.panel.copy(alpha = 0.94f)),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                    border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.84f)),
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(
+                        .background(
                             brush = Brush.verticalGradient(
                                 colors = listOf(
                                     uiColors.panelHighlight.copy(alpha = 0.14f),
@@ -384,108 +427,69 @@ fun GameTutorialScreen(
                                     Color.Transparent,
                                 ),
                             ),
-                        )
-                            .padding(horizontal = 18.dp, vertical = 16.dp),
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            TopBarActionBlockButton(
-                                tone = CellTone.Cyan,
-                                icon = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(Res.string.tutorial_back),
-                                onClick = onBack,
-                                size = 44.dp,
-                                pulse = stylePulse,
-                            )
-                            Text(
-                                text = stringResource(Res.string.app_title),
-                                style = MaterialTheme.typography.headlineSmall,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.weight(1f),
-                                textAlign = TextAlign.Center
-                            )
-                            TutorialStepChip(
-                                currentStep = currentStep + 1,
-                                totalSteps = totalSteps,
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = stringResource(Res.string.tutorial_subtitle),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = uiColors.subtitle,
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        HorizontalPager(
-                            state = pagerState,
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth(),
-                        ) {
-                            TutorialScrollablePage {
-                                when (it) {
-                                    0 -> TutorialIntroStep()
-                                    1 -> TutorialSystemsStep()
-                                    2 -> TutorialSpecialsStep()
-                                    else -> TutorialReadyStep()
-                                }
+                        ),
+                ) {
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.weight(1f),
+                        userScrollEnabled = true,
+                        verticalAlignment = Alignment.Top,
+                    ) { page ->
+                        TutorialScrollablePage {
+                            when (page) {
+                                0 -> TutorialIntroStep()
+                                1 -> TutorialSystemsStep()
+                                2 -> TutorialSpecialsStep()
+                                3 -> TutorialReadyStep()
                             }
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            if (currentStep > 0) {
-                                TopBarActionBlockButton(
-                                    tone = CellTone.Cyan,
-                                    icon = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = stringResource(Res.string.tutorial_back),
-                                    onClick = {
-                                        coroutineScope.launch {
-                                            pagerState.animateScrollToPage(currentStep - 1)
-                                        }
-                                    },
-                                    size = 40.dp,
-                                )
-                            } else {
-                                Spacer(modifier = Modifier.size(40.dp))
-                            }
-                            Spacer(modifier = Modifier.weight(1f))
-                            BlockStyleActionButton(
-                                text = if (isLastStep) {
-                                    stringResource(Res.string.tutorial_finish)
-                                } else {
-                                    stringResource(Res.string.tutorial_next)
-                                },
-                                icon = if (isLastStep) {
-                                    Icons.Filled.PlayArrow
-                                } else {
-                                    Icons.AutoMirrored.Filled.ArrowForward
-                                },
-                                onClick = {
-                                    if (isLastStep) {
-                                        onFinish()
-                                    } else {
-                                        coroutineScope.launch {
-                                            pagerState.animateScrollToPage(currentStep + 1)
-                                        }
-                                    }
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth(0.52f)
-                                    .height(48.dp),
-                                tone = CellTone.Emerald,
-                                height = 48.dp,
-                            )
                         }
                     }
                 }
 
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (currentStep > 0) {
+                        TopBarActionBlockButton(
+                            tone = CellTone.Cyan,
+                            icon = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(Res.string.tutorial_back),
+                            onClick = {
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(currentStep - 1)
+                                }
+                            },
+                            size = 40.dp,
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.size(40.dp))
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+                    BlockStyleActionButton(
+                        text = if (isLastStep) stringResource(Res.string.tutorial_finish) else stringResource(
+                            Res.string.tutorial_next
+                        ),
+                        icon = if (isLastStep) Icons.Filled.PlayArrow else Icons.AutoMirrored.Filled.ArrowForward,
+                        onClick = {
+                            if (isLastStep) {
+                                onFinish()
+                            } else {
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(currentStep + 1)
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .widthIn(max = 180.dp)
+                            .height(48.dp),
+                        emphasized = true,
+                        tone = if (isLastStep) CellTone.Emerald else CellTone.Cyan,
+                        iconOnRight = true,
+                    )
+                }
             }
         }
     }
@@ -608,7 +612,8 @@ private fun TutorialMiniBoardShell(
                         ),
                     ),
                 )
-                .padding(10.dp),
+                .padding(horizontal = 10.dp, vertical = 10.dp)
+                .padding(bottom = 12.dp),
             content = content,
         )
     }
@@ -642,50 +647,44 @@ private fun TutorialIntroStep(launchPreviewColumn: Int? = null) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TutorialSystemsStep() {
     TutorialSection(
         title = stringResource(Res.string.tutorial_systems_title),
         body = stringResource(Res.string.tutorial_systems_body),
     ) {
-        Row(
+        FlowRow(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             TutorialActionTile(
-                modifier = Modifier.weight(1f),
-                tone = CellTone.Cyan,
-                icon = Icons.AutoMirrored.Filled.ArrowBack,
-                title = stringResource(Res.string.tutorial_back),
+                tone = CellTone.Emerald,
+                icon = Icons.Filled.EmojiEvents,
+                title = stringResource(Res.string.settings_challenges),
             )
             TutorialActionTile(
-                modifier = Modifier.weight(1f),
                 tone = CellTone.Gold,
-                icon = Icons.Filled.Refresh,
-                title = stringResource(Res.string.restart),
-            )
-            TutorialActionTile(
-                modifier = Modifier.weight(1f),
-                tone = CellTone.Violet,
                 icon = Icons.AutoMirrored.Filled.MenuBook,
                 title = stringResource(Res.string.settings_tutorial),
             )
             TutorialActionTile(
-                modifier = Modifier.weight(1f),
-                tone = CellTone.Lime,
-                icon = Icons.Filled.Settings,
-                title = stringResource(Res.string.settings_title),
+                tone = CellTone.Violet,
+                icon = Icons.Filled.Palette,
+                title = stringResource(Res.string.settings_theme),
+            )
+            TutorialActionTile(
+                tone = CellTone.Coral,
+                icon = Icons.Filled.Translate,
+                title = stringResource(Res.string.settings_language),
+            )
+            TutorialActionTile(
+                tone = CellTone.Cyan,
+                icon = Icons.Filled.Refresh,
+                title = stringResource(Res.string.restart),
             )
         }
-        TutorialMiniBottomDock(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(TutorialMiniDockHeight),
-            activePiece = TutorialSamplePiece,
-            cellSizePx = 18f,
-            compact = false,
-            onTrayPositioned = {},
-        )
     }
 }
 
@@ -815,7 +814,6 @@ private fun TutorialMiniGameDemo(
     badgeTone: CellTone? = null,
     badgeSpecial: SpecialBlockType = SpecialBlockType.None,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
     val settings = LocalAppSettings.current
     val density = LocalDensity.current
     val boardStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
@@ -825,7 +823,10 @@ private fun TutorialMiniGameDemo(
     var hostRectInRoot by remember { mutableStateOf(Rect.Zero) }
     var boardRectInRoot by remember { mutableStateOf(Rect.Zero) }
     var trayRectInRoot by remember { mutableStateOf(Rect.Zero) }
-    var overlayTopLeft by remember(scene.gameState.activePiece?.id, lockedColumn) { mutableStateOf<Offset?>(null) }
+    var overlayTopLeft by remember(
+        scene.gameState.activePiece?.id,
+        lockedColumn
+    ) { mutableStateOf<Offset?>(null) }
     var isDragging by remember { mutableStateOf(value = false) }
 
     val boardRect = boardRectInRoot.toLocalRect(hostRectInRoot)
@@ -905,7 +906,14 @@ private fun TutorialMiniGameDemo(
         else -> 1f + (TutorialDemoTrayPulseScaleBoost * trayPulsePhase)
     }
 
-    LaunchedEffect(activePiece?.id, boardRect, trayRect, resolvedLockedColumn, spawnColumn, cellSizePx) {
+    LaunchedEffect(
+        activePiece?.id,
+        boardRect,
+        trayRect,
+        resolvedLockedColumn,
+        spawnColumn,
+        cellSizePx
+    ) {
         if (boardRect == Rect.Zero || trayRect == Rect.Zero || cellSizePx <= 0f) return@LaunchedEffect
         if (resolvedLockedColumn != null && gameState.clearAnimationToken != scene.gameState.clearAnimationToken) {
             return@LaunchedEffect
@@ -919,7 +927,14 @@ private fun TutorialMiniGameDemo(
         )
     }
 
-    LaunchedEffect(activePiece?.id, boardRect, trayRect, resolvedLockedColumn, isDragging, autoColumns) {
+    LaunchedEffect(
+        activePiece?.id,
+        boardRect,
+        trayRect,
+        resolvedLockedColumn,
+        isDragging,
+        autoColumns
+    ) {
         if (boardRect == Rect.Zero || trayRect == Rect.Zero || cellSizePx <= 0f) return@LaunchedEffect
         if (resolvedLockedColumn != null || isDragging || activePiece == null) return@LaunchedEffect
         delay(TutorialDemoAutoplayStartDelayMillis)
@@ -969,9 +984,15 @@ private fun TutorialMiniGameDemo(
                 continue
             }
 
-            overlayTopLeft = lockedPreview.entryAnchor.toLocalTopLeft(boardRect = boardRect, cellSizePx = cellSizePx)
+            overlayTopLeft = lockedPreview.entryAnchor.toLocalTopLeft(
+                boardRect = boardRect,
+                cellSizePx = cellSizePx
+            )
             delay((TutorialDemoTravelDurationMillis / 2).toLong())
-            overlayTopLeft = lockedPreview.landingAnchor.toLocalTopLeft(boardRect = boardRect, cellSizePx = cellSizePx)
+            overlayTopLeft = lockedPreview.landingAnchor.toLocalTopLeft(
+                boardRect = boardRect,
+                cellSizePx = cellSizePx
+            )
             delay((TutorialDemoTravelDurationMillis / 3).toLong())
 
             gameState = placed.state
@@ -997,14 +1018,6 @@ private fun TutorialMiniGameDemo(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                if (!compact) {
-                    Text(
-                        text = stringResource(Res.string.launch_drag_hint),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = uiColors.subtitle,
-                    )
-                }
-
                 Box(modifier = Modifier.fillMaxWidth()) {
                     BoardGrid(
                         modifier = Modifier
@@ -1058,9 +1071,6 @@ private fun TutorialMiniGameDemo(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(TutorialMiniDockHeight),
-                    activePiece = activePiece,
-                    cellSizePx = cellSizePx,
-                    compact = compact,
                     onTrayPositioned = { trayRectInRoot = it },
                 )
             }
@@ -1092,12 +1102,18 @@ private fun TutorialMiniGameDemo(
                                         onDragEnd = {
                                             isDragging = false
                                             overlayTopLeft = if (selectedColumn != null) {
-                                            overlayTopLeft?.let { current ->
-                                                Offset(columnToLeft(selectedColumn, boardRect, cellSizePx), current.y)
+                                                overlayTopLeft?.let { current ->
+                                                    Offset(
+                                                        columnToLeft(
+                                                            selectedColumn,
+                                                            boardRect,
+                                                            cellSizePx
+                                                        ), current.y
+                                                    )
+                                                }
+                                            } else {
+                                                spawnTopLeft
                                             }
-                                        } else {
-                                            spawnTopLeft
-                                        }
                                         },
                                         onDragCancel = {
                                             isDragging = false
@@ -1105,11 +1121,18 @@ private fun TutorialMiniGameDemo(
                                         },
                                         onDrag = { change, dragAmount ->
                                             change.consume()
-                                            val current = overlayTopLeft ?: spawnTopLeft ?: return@detectDragGestures
+                                            val current = overlayTopLeft ?: spawnTopLeft
+                                            ?: return@detectDragGestures
                                             val minLeft = boardRect.left
-                                            val maxLeft = (boardRect.right - (activePiece.width * cellSizePx)).coerceAtLeast(minLeft)
+                                            val maxLeft =
+                                                (boardRect.right - (activePiece.width * cellSizePx)).coerceAtLeast(
+                                                    minLeft
+                                                )
                                             overlayTopLeft = Offset(
-                                                (current.x + dragAmount.x).coerceIn(minLeft, maxLeft),
+                                                (current.x + dragAmount.x).coerceIn(
+                                                    minLeft,
+                                                    maxLeft
+                                                ),
                                                 current.y,
                                             )
                                         },
@@ -1120,16 +1143,66 @@ private fun TutorialMiniGameDemo(
                             },
                         ),
                 )
+
+                val handX = with(density) { animatedOverlayX.toDp() }
+                val handY = with(density) { animatedOverlayY.toDp() }
+
+                TutorialDemoHand(
+                    x = handX,
+                    y = handY,
+                    pieceWidth = activePiece.width,
+                    pieceHeight = activePiece.height,
+                    cellSize = pieceCellDp,
+                    alpha = if (isDragging || resolvedLockedColumn != null) 1f else 0.75f,
+                )
             }
         }
     }
 }
 
 @Composable
+private fun TutorialDemoHand(
+    x: androidx.compose.ui.unit.Dp,
+    y: androidx.compose.ui.unit.Dp,
+    pieceWidth: Int,
+    pieceHeight: Int,
+    cellSize: androidx.compose.ui.unit.Dp,
+    alpha: Float,
+) {
+    val isDark = isStackShiftDarkTheme(LocalAppSettings.current)
+    val handColor = if (isDark) Color.White else Color(0xFF101114)
+    val handSize = cellSize * 1.5f
+
+    Box(
+        modifier = Modifier
+            .offset(
+                x = x + (cellSize * pieceWidth / 2f) - (handSize * 0.38f),
+                y = y + (cellSize * pieceHeight) - (cellSize * 0.42f),
+            )
+            .graphicsLayer {
+                this.alpha = alpha
+                rotationZ = -12f
+            },
+    ) {
+        Icon(
+            imageVector = Icons.Default.TouchApp,
+            contentDescription = null,
+            tint = Color.Black.copy(alpha = if (isDark) 0.4f else 0.2f),
+            modifier = Modifier
+                .offset(1.dp, 1.dp)
+                .size(handSize),
+        )
+        Icon(
+            imageVector = Icons.Default.TouchApp,
+            contentDescription = null,
+            tint = handColor,
+            modifier = Modifier.size(handSize),
+        )
+    }
+}
+
+@Composable
 private fun TutorialMiniBottomDock(
-    activePiece: Piece?,
-    cellSizePx: Float,
-    compact: Boolean,
     onTrayPositioned: (Rect) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -1173,14 +1246,6 @@ private fun TutorialMiniBottomDock(
                     }
                     .padding(horizontal = 12.dp, vertical = 8.dp),
             ) {
-                Text(
-                    text = stringResource(Res.string.launch_drag_hint),
-                    style = if (compact) MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelMedium,
-                    color = uiColors.subtitle,
-                    maxLines = if (compact) 1 else 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.align(Alignment.TopStart),
-                )
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -1194,14 +1259,6 @@ private fun TutorialMiniBottomDock(
                             shape = RoundedCornerShape(GameUiShapeTokens.chipCorner),
                         ),
                 )
-                if (activePiece != null) {
-                    Text(
-                        text = "${activePiece.width}×${activePiece.height}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = uiColors.subtitle.copy(alpha = 0.72f),
-                        modifier = Modifier.align(Alignment.TopEnd),
-                    )
-                }
             }
         }
     }
@@ -1299,44 +1356,35 @@ private fun TutorialActionTile(
     val blockStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
     val stylePulse = rememberBlockStylePulse(style = blockStyle)
     val iconTint = blockStyleIconTint(style = blockStyle)
-    Card(
-        modifier = modifier.stackShiftSurfaceShadow(
-            shape = RoundedCornerShape(GameUiShapeTokens.buttonCorner),
-            elevation = 5.dp,
-        ),
-        shape = RoundedCornerShape(GameUiShapeTokens.buttonCorner),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+
+    Column(
+        modifier = modifier.widthIn(min = 64.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                BlockCellPreview(
-                    tone = tone,
-                    palette = settings.blockColorPalette,
-                    style = blockStyle,
-                    size = 34.dp,
-                    pulse = stylePulse,
-                )
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = iconTint,
-                    modifier = Modifier.size(18.dp),
-                )
-            }
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
+        Box(contentAlignment = Alignment.Center) {
+            BlockCellPreview(
+                tone = tone,
+                palette = settings.blockColorPalette,
+                style = blockStyle,
+                size = 40.dp,
+                pulse = stylePulse,
+            )
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = iconTint,
+                modifier = Modifier.size(20.dp),
             )
         }
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelSmall,
+            color = iconTint,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
@@ -1368,7 +1416,10 @@ private fun TutorialSpecialCard(
             BlockCellPreview(
                 tone = tone,
                 palette = LocalAppSettings.current.blockColorPalette,
-                style = resolveBoardBlockStyle(LocalAppSettings.current.blockVisualStyle, LocalAppSettings.current.boardBlockStyleMode),
+                style = resolveBoardBlockStyle(
+                    LocalAppSettings.current.blockVisualStyle,
+                    LocalAppSettings.current.boardBlockStyleMode
+                ),
                 size = 34.dp,
                 special = special,
             )
@@ -1431,108 +1482,38 @@ private fun GridPoint.toLocalTopLeft(
     y = boardRect.top + (row * cellSizePx),
 )
 
-@Composable
-private fun TutorialStepPreviewFrame(
-    currentStep: Int,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    StackShiftTheme(settings = AppSettings()) {
-        val uiColors = StackShiftThemeTokens.uiColors
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background,
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(appBackgroundBrush(uiColors))
-                    .padding(16.dp),
-            ) {
-                Card(
-                    modifier = Modifier.fillMaxSize(),
-                    shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
-                    colors = CardDefaults.cardColors(containerColor = uiColors.panel.copy(alpha = 0.94f)),
-                    border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.84f)),
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(
-                                brush = Brush.verticalGradient(
-                                    colors = listOf(
-                                        uiColors.panelHighlight.copy(alpha = 0.14f),
-                                        uiColors.launchGlow.copy(alpha = 0.10f),
-                                        Color.Transparent,
-                                    ),
-                                ),
-                            )
-                            .padding(horizontal = 18.dp, vertical = 16.dp),
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            Text(
-                                text = stringResource(Res.string.app_title),
-                                style = MaterialTheme.typography.headlineSmall,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.weight(1f),
-                            )
-                            TutorialStepChip(
-                                currentStep = currentStep,
-                                totalSteps = 4,
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = stringResource(Res.string.tutorial_subtitle),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = uiColors.subtitle,
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth(),
-                        ) {
-                            TutorialScrollablePage(content = content)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
 @Preview(name = "Tutorial - Intro", widthDp = 412, heightDp = 915)
 @Composable
 private fun TutorialIntroStepPreview() {
-    TutorialStepPreviewFrame(currentStep = 1) {
-        TutorialIntroStep(launchPreviewColumn = 1)
+    StackShiftTheme(settings = AppSettings()) {
+        GameTutorialScreen(
+            initialPage = 0,
+            onBack = {},
+            onFinish = {},
+        )
     }
 }
 
 @Preview(name = "Tutorial - Systems", widthDp = 412, heightDp = 915)
 @Composable
 private fun TutorialSystemsStepPreview() {
-    TutorialStepPreviewFrame(currentStep = 2) {
-        TutorialSystemsStep()
+    StackShiftTheme(settings = AppSettings()) {
+        GameTutorialScreen(
+            initialPage = 1,
+            onBack = {},
+            onFinish = {},
+        )
     }
 }
 
 @Preview(name = "Tutorial - Specials", widthDp = 412, heightDp = 915)
 @Composable
 private fun TutorialSpecialsStepPreview() {
-    TutorialStepPreviewFrame(currentStep = 3) {
-        TutorialSpecialsStep(
-            previewColumns = mapOf(
-                SpecialBlockType.ColumnClearer to 1,
-                SpecialBlockType.RowClearer to 1,
-                SpecialBlockType.Ghost to 1,
-                SpecialBlockType.Heavy to 1,
-            ),
+    StackShiftTheme(settings = AppSettings()) {
+        GameTutorialScreen(
+            initialPage = 2,
+            onBack = {},
+            onFinish = {},
         )
     }
 }
@@ -1540,8 +1521,34 @@ private fun TutorialSpecialsStepPreview() {
 @Preview(name = "Tutorial - Ready", widthDp = 412, heightDp = 915)
 @Composable
 private fun TutorialReadyStepPreview() {
-    TutorialStepPreviewFrame(currentStep = 4) {
-        TutorialReadyStep()
+    StackShiftTheme(settings = AppSettings()) {
+        GameTutorialScreen(
+            initialPage = 3,
+            onBack = {},
+            onFinish = {},
+        )
+    }
+}
+
+@Preview(name = "Tutorial - Full Screen", widthDp = 412, heightDp = 915)
+@Composable
+private fun GameTutorialScreenPreview() {
+    StackShiftTheme(settings = AppSettings()) {
+        GameTutorialScreen(
+            onBack = {},
+            onFinish = {},
+        )
+    }
+}
+
+@Preview(name = "Tutorial - Full Screen (Start)", widthDp = 412, heightDp = 915)
+@Composable
+private fun GameTutorialScreenStartPreview() {
+    StackShiftTheme(settings = AppSettings()) {
+        GameTutorialScreen(
+            onBack = {},
+            onFinish = {},
+        )
     }
 }
 

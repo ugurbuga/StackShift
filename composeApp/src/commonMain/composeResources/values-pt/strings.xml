@@ -15,6 +15,11 @@
     <string name="settings_tokens_earn_challenge">Recompensa do desafio diário: +%1$d tokens</string>
     <string name="settings_tokens_earn_score">Recompensa da partida: +1 token a cada %1$d pontos</string>
     <string name="rewarded_tokens_button">Assista a um anúncio e ganhe %1$d tokens</string>
+    <string name="reward_earned_message">Você ganhou %1$d tokens!</string>
+    <string name="reward_piece_row_message">Peça de limpeza de linha horizontal equipada!</string>
+    <string name="reward_piece_column_message">Peça de limpeza de coluna vertical equipada!</string>
+    <string name="unlock_dialog_watch_ad">Ver anúncio para ganhar tokens</string>
+    <string name="token_label">Token</string>
     <string name="settings_board_block_style">Estilo dos blocos do tabuleiro</string>
     <string name="settings_challenges">Desafios</string>
     <string name="app_language_english">English</string>

@@ -15,6 +15,11 @@
     <string name="settings_tokens_earn_challenge">Tägliche Belohnung: +%1$d Token</string>
     <string name="settings_tokens_earn_score">Spielbelohnung: +1 Token pro %1$d Punkte</string>
     <string name="rewarded_tokens_button">Sieh dir Werbung an und erhalte %1$d Token</string>
+    <string name="reward_earned_message">Du hast %1$d Token erhalten!</string>
+    <string name="reward_piece_row_message">Horizontale Reihenräumer-Teil ausgerüstet!</string>
+    <string name="reward_piece_column_message">Vertikale Spaltenräumer-Teil ausgerüstet!</string>
+    <string name="unlock_dialog_watch_ad">Werbung ansehen, um Token zu verdienen</string>
+    <string name="token_label">Token</string>
     <string name="settings_board_block_style">Spielfeld-Blockstil</string>
     <string name="settings_challenges">Herausforderungen</string>
     <string name="app_language_english">English</string>

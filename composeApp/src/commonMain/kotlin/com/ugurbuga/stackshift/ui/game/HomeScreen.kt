@@ -31,6 +31,7 @@ import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -509,8 +510,61 @@ private fun HomeTitleBanner(
                     ),
                 )
             }
+
+            val handAlpha = when {
+                sequencePhase < 0.15f -> 1f
+                sequencePhase in 0.34f..0.49f -> 1f
+                sequencePhase in 0.68f..0.74f -> 1f
+                sequencePhase in 0.82f..0.88f -> 1f
+                else -> 0f
+            }
+
+            if (handAlpha > 0f) {
+                val isDark = isStackShiftDarkTheme(settings)
+                val handColor = if (isDark) Color.White else Color.Black.copy(alpha = 0.85f)
+                val handX = when {
+                    sequencePhase < 0.15f -> lerpDp(dockSingleStartX, dockSingleLeftX, lowerDrift).let { x ->
+                        if (sequencePhase > 0.10f) lerpDp(x, bottomGapTargetX, lowerAlign) else x
+                    }
+                    sequencePhase < 0.49f -> lerpDp(dockSingleStartX, dockSingleRightX, upperDrift).let { x ->
+                        if (sequencePhase > 0.44f) lerpDp(x, topGapTargetX, upperAlign) else x
+                    }
+                    // For 5-block pieces, offset by 2 cells to center under the 3rd block
+                    sequencePhase < 0.74f -> lerpDp(dockWordStartX, topTargetX, stackAlign) + (dockCellSize * 2f)
+                    else -> lerpDp(dockWordStartX, bottomTargetX, shiftAlign) + (dockCellSize * 2f)
+                }
+
+                HomeTitleDemoHand(
+                    x = handX,
+                    y = dockPieceY,
+                    size = dockCellSize,
+                    alpha = handAlpha,
+                    color = handColor,
+                )
+            }
         }
     }
+}
+
+@Composable
+private fun HomeTitleDemoHand(
+    x: androidx.compose.ui.unit.Dp,
+    y: androidx.compose.ui.unit.Dp,
+    size: androidx.compose.ui.unit.Dp,
+    alpha: Float,
+    color: Color,
+) {
+    Icon(
+        imageVector = Icons.Default.TouchApp,
+        contentDescription = null,
+        tint = color.copy(alpha = 0.72f * alpha),
+        modifier = Modifier
+            .offset(x = x + (size * 0.4f), y = y + (size * 0.6f))
+            .size(size * 0.8f)
+            .graphicsLayer {
+                rotationZ = -15f
+            },
+    )
 }
 
 private data class HomeTitleCell(
@@ -876,6 +930,12 @@ private fun HomePrimaryPlayButton(
                     )
                 }
 
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(StackShiftThemeTokens.uiColors.gameSurface.copy(alpha = 0.35f))
+                )
+
                 Column(
                     modifier = Modifier.padding(12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -955,6 +1015,12 @@ private fun HomeQuickActionButton(
                         pulse = effectivePulse,
                     )
                 }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(StackShiftThemeTokens.uiColors.gameSurface.copy(alpha = 0.35f))
+                )
 
                 Column(
                     modifier = Modifier

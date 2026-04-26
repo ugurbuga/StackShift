@@ -15,6 +15,11 @@
     <string name="settings_tokens_earn_challenge">Günlük görev ödülü: +%1$d token</string>
     <string name="settings_tokens_earn_score">Oyun ödülü: Her %1$d skor için +1 token</string>
     <string name="rewarded_tokens_button">Reklam izle ve %1$d token kazan</string>
+    <string name="reward_earned_message">%1$d token kazandın!</string>
+    <string name="reward_piece_row_message">Yatay Satır Temizleyici parça alındı!</string>
+    <string name="reward_piece_column_message">Dikey Sütun Temizleyici parça alındı!</string>
+    <string name="unlock_dialog_watch_ad">Reklam izleyip token kazan</string>
+    <string name="token_label">Token</string>
     <string name="settings_board_block_style">Tahta Blok Stili</string>
     <string name="settings_challenges">Meydan Okumalar</string>
     <string name="settings_tutorial">Rehber</string>

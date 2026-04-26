@@ -11,6 +11,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.StringResource
 import stackshift.composeapp.generated.resources.Res
 import stackshift.composeapp.generated.resources.app_language_arabic
@@ -157,6 +159,53 @@ enum class BlockVisualStyle {
     Brick,
     SoundWave,
     Prism,
+    ;
+
+    fun cornerScale(): Float = when (this) {
+        Flat -> 1.0f
+        Bubble -> 1.20f
+        Outline -> 0.82f
+        Sharp3D -> 0.30f
+        Wood -> 0.76f
+        GridSplit -> 0.54f
+        Crystal -> 0f
+        DynamicLiquid -> 0.85f
+        MatteSoft -> 1.0f
+        NeonGlow -> 1.20f
+        Tornado -> 1.00f
+        StoneTexture -> 0.76f
+        HoneycombTexture -> 0.78f
+        LightBurst -> 1.04f
+        LiquidMarble -> 0.98f
+        SpiderWeb -> 0.34f
+        Cosmic -> 0.54f
+        Brick -> 0.46f
+        SoundWave -> 0.88f
+        Prism -> 0f
+    }
+
+    fun frameCornerRadius(): Dp = when (this) {
+        Flat -> 18.dp
+        Bubble -> 22.dp
+        Outline -> 14.dp
+        Sharp3D -> 6.dp
+        Wood -> 12.dp
+        GridSplit -> 10.dp
+        Crystal -> 0.dp
+        DynamicLiquid -> 18.dp
+        MatteSoft -> 18.dp
+        NeonGlow -> 22.dp
+        Tornado -> 18.dp
+        StoneTexture -> 12.dp
+        HoneycombTexture -> 12.dp
+        LightBurst -> 20.dp
+        LiquidMarble -> 18.dp
+        SpiderWeb -> 6.dp
+        Cosmic -> 10.dp
+        Brick -> 8.dp
+        SoundWave -> 16.dp
+        Prism -> 0.dp
+    }
 }
 
 enum class BoardBlockStyleMode {

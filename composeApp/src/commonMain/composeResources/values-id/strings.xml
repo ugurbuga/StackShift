@@ -15,6 +15,11 @@
     <string name="settings_tokens_earn_challenge">Hadiah tantangan harian: +%1$d token</string>
     <string name="settings_tokens_earn_score">Hadiah permainan: +1 token setiap %1$d skor</string>
     <string name="rewarded_tokens_button">Tonton iklan dan dapatkan %1$d token</string>
+    <string name="reward_earned_message">Anda mendapatkan %1$d token!</string>
+    <string name="reward_piece_row_message">Bagian Pembersih Baris Horizontal terpasang!</string>
+    <string name="reward_piece_column_message">Bagian Pembersih Kolom Vertikal terpasang!</string>
+    <string name="unlock_dialog_watch_ad">Tonton iklan untuk mendapatkan token</string>
+    <string name="token_label">Token</string>
     <string name="settings_board_block_style">Gaya blok papan</string>
     <string name="settings_challenges">Tantangan</string>
     <string name="app_language_english">English</string>

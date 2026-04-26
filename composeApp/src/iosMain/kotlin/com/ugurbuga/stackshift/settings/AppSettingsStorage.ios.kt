@@ -33,7 +33,6 @@ actual object AppSettingsStorage {
             hasSeenTutorial = defaults.boolForKey(KeyHasSeenTutorial),
             hasShownInteractiveOnboarding = defaults.boolForKey(KeyHasShownInteractiveOnboarding),
             hasInitializedLanguage = defaults.boolForKey(KeyHasInitializedLanguage) || hasStoredLanguage,
-            soundEnabled = false,
             tokenBalance = defaults.integerForKey(KeyTokenBalance).toInt(),
             unlockedThemeModes = decodeEnumSet(defaults.getSafeString(KeyUnlockedThemeModes), AppThemeMode.entries),
             unlockedThemePalettes = decodeEnumSet(defaults.getSafeString(KeyUnlockedThemePalettes), AppColorPalette.entries),
@@ -55,7 +54,6 @@ actual object AppSettingsStorage {
         defaults.setBool(sanitized.hasSeenTutorial, forKey = KeyHasSeenTutorial)
         defaults.setBool(sanitized.hasShownInteractiveOnboarding, forKey = KeyHasShownInteractiveOnboarding)
         defaults.setBool(sanitized.hasInitializedLanguage, forKey = KeyHasInitializedLanguage)
-        defaults.setBool(false, forKey = KeySoundEnabled)
         defaults.setInteger(sanitized.tokenBalance.toLong(), forKey = KeyTokenBalance)
         defaults.setObject(encodeEnumSet(sanitized.unlockedThemeModes), forKey = KeyUnlockedThemeModes)
         defaults.setObject(encodeEnumSet(sanitized.unlockedThemePalettes), forKey = KeyUnlockedThemePalettes)
@@ -78,11 +76,10 @@ actual object AppSettingsStorage {
     private const val KeyHasSeenTutorial = "hasSeenTutorial"
     private const val KeyHasShownInteractiveOnboarding = "hasShownInteractiveOnboarding"
     private const val KeyHasInitializedLanguage = "hasInitializedLanguage"
-    private const val KeySoundEnabled = "soundEnabled"
 
     private fun NSUserDefaults.getSafeString(key: String): String? {
         stringForKey(key)?.takeIf(String::isNotBlank)?.let { return it }
-        return (stringArrayForKey(key) as? List<*>)
+        return stringArrayForKey(key)
             ?.filterIsInstance<String>()
             ?.joinToString(separator = ";")
             ?.takeIf(String::isNotBlank)

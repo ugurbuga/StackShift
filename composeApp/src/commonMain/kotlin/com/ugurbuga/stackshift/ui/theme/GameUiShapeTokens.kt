@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import com.ugurbuga.stackshift.game.model.BlockVisualStyle
 import com.ugurbuga.stackshift.game.model.normalizeBlockVisualStyle
 import com.ugurbuga.stackshift.localization.LocalAppSettings
@@ -67,26 +66,5 @@ fun gameUiShapeSpec(style: BlockVisualStyle): GameUiShapeSpec {
     )
 }
 
-private fun styleFrameCorner(style: BlockVisualStyle): Dp = when (style) {
-    BlockVisualStyle.Flat -> 18.dp
-    BlockVisualStyle.Bubble -> 22.dp
-    BlockVisualStyle.Outline -> 14.dp
-    BlockVisualStyle.Sharp3D -> 6.dp
-    BlockVisualStyle.Wood -> 12.dp
-    BlockVisualStyle.GridSplit -> 4.dp
-    BlockVisualStyle.Crystal -> 0.dp
-    BlockVisualStyle.DynamicLiquid -> 18.dp
-    BlockVisualStyle.MatteSoft -> 18.dp
-    BlockVisualStyle.NeonGlow -> 22.dp
-    BlockVisualStyle.Tornado -> 18.dp
-    BlockVisualStyle.StoneTexture -> 12.dp
-    BlockVisualStyle.HoneycombTexture -> 12.dp
-    BlockVisualStyle.LightBurst -> 20.dp
-    BlockVisualStyle.LiquidMarble -> 18.dp
-    BlockVisualStyle.SpiderWeb -> 6.dp
-    BlockVisualStyle.Cosmic -> 10.dp
-    BlockVisualStyle.Brick -> 8.dp
-    BlockVisualStyle.SoundWave -> 16.dp
-    BlockVisualStyle.Prism -> 12.dp
-}
+private fun styleFrameCorner(style: BlockVisualStyle): Dp = style.frameCornerRadius()
 

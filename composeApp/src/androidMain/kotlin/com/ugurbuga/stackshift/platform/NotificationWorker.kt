@@ -26,7 +26,7 @@ class NotificationWorker(
 ) : CoroutineWorker(context, workerParams) {
 
     companion object {
-        private const val CHANNEL_ID = "stackshift_notification_channel"
+        private const val CHANNEL_ID = "stackshift_notification_channel_v2"
         private const val CHANNEL_NAME_DEFAULT = "Reminders"
         
         const val DATA_KEY_TYPE = "notification_type"
@@ -34,10 +34,10 @@ class NotificationWorker(
         const val TYPE_DAILY_CHALLENGE = "daily_challenge"
     }
 
-    override suspend fun doWork(): androidx.work.ListenableWorker.Result {
+    override suspend fun doWork(): Result {
         val type = inputData.getString(DATA_KEY_TYPE) ?: TYPE_MISS_YOU
         showNotification(type)
-        return androidx.work.ListenableWorker.Result.success()
+        return Result.success()
     }
 
     private suspend fun showNotification(type: String) {
@@ -86,8 +86,11 @@ class NotificationWorker(
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 channelName,
-                NotificationManager.IMPORTANCE_DEFAULT
-            )
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                enableLights(true)
+                enableVibration(true)
+            }
             notificationManager.createNotificationChannel(channel)
         }
 
@@ -108,7 +111,8 @@ class NotificationWorker(
             .setContentText(message)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
             .build()
 
         notificationManager.notify(notificationId, notification)

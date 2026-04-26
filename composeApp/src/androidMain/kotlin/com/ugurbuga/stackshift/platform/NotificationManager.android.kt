@@ -18,8 +18,8 @@ import java.util.concurrent.TimeUnit
 class AndroidNotificationManager(private val context: Context) : NotificationManager {
 
     override fun scheduleMissYouNotification() {
-        val workRequest = PeriodicWorkRequestBuilder<NotificationWorker>(15, TimeUnit.MINUTES)
-            .setInitialDelay(15, TimeUnit.MINUTES)
+        val workRequest = PeriodicWorkRequestBuilder<NotificationWorker>(24, TimeUnit.HOURS)
+            .setInitialDelay(24, TimeUnit.HOURS)
             .build()
 
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
@@ -65,7 +65,7 @@ class AndroidNotificationManager(private val context: Context) : NotificationMan
             val launcher = rememberLauncherForActivityResult(
                 ActivityResultContracts.RequestPermission()
             ) { _ -> }
-            
+
             LaunchedEffect(Unit) {
                 // Small delay to ensure activity is fully resumed
                 kotlinx.coroutines.delay(500)

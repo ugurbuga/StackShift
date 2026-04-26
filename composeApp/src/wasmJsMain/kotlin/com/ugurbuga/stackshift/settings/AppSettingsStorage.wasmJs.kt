@@ -30,7 +30,6 @@ actual object AppSettingsStorage {
             hasSeenTutorial = (parts[6].toIntOrNull() ?: 0) == 1,
             hasInitializedLanguage = (parts.getOrNull(7)?.toIntOrNull() ?: 0) == 1 || parts.isNotEmpty(),
             hasShownInteractiveOnboarding = (parts.getOrNull(8)?.toIntOrNull() ?: 0) == 1,
-            soundEnabled = false,
             challengeProgress = decodeChallengeProgress(parts.getOrNull(10) ?: parts.getOrNull(9)),
             tokenBalance = parts.getOrNull(11)?.toIntOrNull() ?: defaultSettings.tokenBalance,
             unlockedThemeModes = decodeEnumSet(parts.getOrNull(12), AppThemeMode.entries),

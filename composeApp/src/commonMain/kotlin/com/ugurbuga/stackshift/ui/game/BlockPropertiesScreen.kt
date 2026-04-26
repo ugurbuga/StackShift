@@ -179,6 +179,8 @@ private fun BlockTypeRow(
     onClick: () -> Unit,
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
+    val settings = LocalAppSettings.current
+    val contentColor = blockStyleIconTint(style = settings.blockVisualStyle)
     val background = if (selected) {
         uiColors.panelHighlight
     } else {
@@ -212,7 +214,7 @@ private fun BlockTypeRow(
                 Text(
                     text = resolveBlockTitle(special),
                     style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = contentColor,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -221,7 +223,7 @@ private fun BlockTypeRow(
                 Text(
                     text = resolveBlockDesc(special),
                     style = MaterialTheme.typography.bodySmall,
-                    color = uiColors.subtitle,
+                    color = contentColor.copy(alpha = 0.82f),
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -262,11 +264,12 @@ private fun BlockMiniIcon(
 
 @Composable
 private fun BlockTitleAndDesc(special: SpecialBlockType) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val settings = LocalAppSettings.current
+    val contentColor = blockStyleIconTint(style = settings.blockVisualStyle)
     Text(
         text = resolveBlockTitle(special),
         style = MaterialTheme.typography.titleMedium,
-        color = MaterialTheme.colorScheme.onSurface,
+        color = contentColor,
         fontWeight = FontWeight.SemiBold,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
@@ -274,7 +277,7 @@ private fun BlockTitleAndDesc(special: SpecialBlockType) {
     Text(
         text = resolveBlockDesc(special),
         style = MaterialTheme.typography.bodySmall,
-        color = uiColors.subtitle,
+        color = contentColor.copy(alpha = 0.82f),
     )
 }
 

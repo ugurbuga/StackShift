@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -29,6 +30,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Stars
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -49,14 +51,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.ugurbuga.stackshift.ads.GameAdController
 import com.ugurbuga.stackshift.game.model.AppColorPalette
 import com.ugurbuga.stackshift.game.model.AppLanguage
 import com.ugurbuga.stackshift.game.model.AppThemeMode
@@ -66,6 +69,7 @@ import com.ugurbuga.stackshift.game.model.CellTone
 import com.ugurbuga.stackshift.game.model.normalizeBlockVisualStyle
 import com.ugurbuga.stackshift.settings.AppSettings
 import com.ugurbuga.stackshift.settings.DailyChallengeTokenReward
+import com.ugurbuga.stackshift.settings.RewardedTokenAdReward
 import com.ugurbuga.stackshift.settings.ScorePointsPerToken
 import com.ugurbuga.stackshift.settings.isBlockStyleUnlocked
 import com.ugurbuga.stackshift.settings.isThemeModeUnlocked
@@ -116,7 +120,7 @@ import stackshift.composeapp.generated.resources.block_style_stone_texture
 import stackshift.composeapp.generated.resources.block_style_tornado
 import stackshift.composeapp.generated.resources.block_style_wood
 import stackshift.composeapp.generated.resources.cancel
-import stackshift.composeapp.generated.resources.continue_label
+import stackshift.composeapp.generated.resources.rewarded_tokens_button
 import stackshift.composeapp.generated.resources.settings_block_style
 import stackshift.composeapp.generated.resources.settings_language
 import stackshift.composeapp.generated.resources.settings_theme
@@ -133,6 +137,7 @@ import stackshift.composeapp.generated.resources.unlock_dialog_insufficient_titl
 import stackshift.composeapp.generated.resources.unlock_dialog_message
 import stackshift.composeapp.generated.resources.unlock_dialog_not_enough
 import stackshift.composeapp.generated.resources.unlock_dialog_title
+import stackshift.composeapp.generated.resources.unlock_dialog_watch_ad
 
 private val ScreenContentMaxWidth = 920.dp
 
@@ -146,7 +151,9 @@ fun AppSettingsScreen(
     telemetry: AppTelemetry = NoOpAppTelemetry,
     settings: AppSettings,
     onSettingsChange: (AppSettings) -> Unit,
+    onRewardedTokensRequested: () -> Unit,
     onBack: () -> Unit,
+    adController: GameAdController? = null,
     modifier: Modifier = Modifier,
 ) {
     LogScreen(telemetry, TelemetryScreenNames.Theme)
@@ -181,21 +188,30 @@ fun AppSettingsScreen(
                     .fillMaxSize()
                     .statusBarsPadding(),
             ) {
-                Box(
+                // Header
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
-                    contentAlignment = Alignment.Center,
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    HeaderCard(
-                        onBack = onBack,
-                        title = stringResource(Res.string.settings_theme),
-                        summary = buildString {
-                            append(stringResource(Res.string.settings_theme))
-                            append(" • ")
-                            append(stringResource(Res.string.settings_block_style))
-                        },
+                    TopBarActionBlockButton(
+                        tone = CellTone.Cyan,
+                        icon = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(Res.string.settings_theme),
+                        onClick = onBack,
+                        size = 44.dp,
+                        pulse = stylePulse,
                     )
+                    Text(
+                        text = stringResource(Res.string.settings_theme),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.size(44.dp))
                 }
 
                 SecondaryTabRow(
@@ -233,7 +249,11 @@ fun AppSettingsScreen(
                         .padding(horizontal = 16.dp, vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    TokenBalanceCard(settings = settings)
+                    TokenBalanceCard(
+                        settings = settings,
+                        onRewardedTokensRequested = onRewardedTokensRequested,
+                        adController = adController
+                    )
                     when (selectedTabIndex) {
                         0 -> {
                             SettingsSectionCard(
@@ -312,6 +332,8 @@ fun AppSettingsScreen(
                     request.onUnlock(settings)?.let(onSettingsChange)
                     pendingUnlockRequest = null
                 },
+                onWatchAd = onRewardedTokensRequested,
+                adController = adController,
             )
         }
     }
@@ -343,17 +365,29 @@ fun AppLanguageScreen(
                     .fillMaxSize()
                     .statusBarsPadding(),
             ) {
-                Box(
+                // Header
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
-                    contentAlignment = Alignment.Center,
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    HeaderCard(
-                        onBack = onBack,
-                        title = stringResource(Res.string.settings_language),
-                        summary = stringResource(Res.string.app_title),
+                    TopBarActionBlockButton(
+                        tone = CellTone.Cyan,
+                        icon = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(Res.string.settings_language),
+                        onClick = onBack,
+                        size = 44.dp,
                     )
+                    Text(
+                        text = stringResource(Res.string.settings_language),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.size(44.dp))
                 }
 
                 Column(
@@ -376,76 +410,6 @@ fun AppLanguageScreen(
                         )
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun HeaderCard(
-    onBack: () -> Unit,
-    title: String,
-    summary: String,
-) {
-    val uiColors = StackShiftThemeTokens.uiColors
-    val panelShape = RoundedCornerShape(GameUiShapeTokens.panelCorner)
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .stackShiftSurfaceShadow(
-                shape = panelShape,
-                elevation = 10.dp,
-            )
-            .widthIn(max = ScreenContentMaxWidth),
-        shape = panelShape,
-        colors = CardDefaults.cardColors(containerColor = uiColors.panel),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            uiColors.settingsHeroStart.copy(alpha = 0.88f),
-                            uiColors.settingsHeroEnd.copy(alpha = 0.72f),
-                        ),
-                    ),
-                )
-                .padding(horizontal = 12.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            TopBarActionBlockButton(
-                tone = CellTone.Cyan,
-                icon = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = title,
-                onClick = onBack,
-                size = 40.dp,
-            )
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(3.dp),
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Text(
-                    text = stringResource(Res.string.app_title),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.78f),
-                )
-                Text(
-                    text = summary,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.72f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
             }
         }
     }
@@ -660,9 +624,15 @@ private fun unlockRequest(
 )
 
 @Composable
-private fun TokenBalanceCard(settings: AppSettings) {
+private fun TokenBalanceCard(
+    settings: AppSettings,
+    onRewardedTokensRequested: () -> Unit,
+    adController: GameAdController? = null,
+) {
     val uiColors = StackShiftThemeTokens.uiColors
     val surfaceShape = RoundedCornerShape(GameUiShapeTokens.panelCorner)
+    var adLoading by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -676,32 +646,61 @@ private fun TokenBalanceCard(settings: AppSettings) {
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                text = stringResource(Res.string.settings_tokens_title),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = stringResource(Res.string.settings_tokens_balance, settings.tokenBalance),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Text(
-                text = stringResource(Res.string.settings_tokens_earn_challenge, DailyChallengeTokenReward),
-                style = MaterialTheme.typography.bodySmall,
-                color = uiColors.subtitle,
-            )
-            Text(
-                text = stringResource(Res.string.settings_tokens_earn_score, ScorePointsPerToken),
-                style = MaterialTheme.typography.bodySmall,
-                color = uiColors.subtitle,
-            )
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = stringResource(Res.string.settings_tokens_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = stringResource(Res.string.settings_tokens_balance, settings.tokenBalance),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Text(
+                    text = stringResource(Res.string.settings_tokens_earn_challenge, DailyChallengeTokenReward),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = uiColors.subtitle,
+                )
+                Text(
+                    text = stringResource(Res.string.settings_tokens_earn_score, ScorePointsPerToken),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = uiColors.subtitle,
+                )
+            }
+
+            if (adController != null) {
+                TopBarActionBlockButton(
+                    tone = CellTone.Gold,
+                    icon = Icons.Filled.Stars,
+                    contentDescription = stringResource(Res.string.rewarded_tokens_button, RewardedTokenAdReward),
+                    onClick = {
+                        if (adLoading) return@TopBarActionBlockButton
+                        adLoading = true
+                        adController.showRewardedAd { success ->
+                            adLoading = false
+                            if (success) {
+                                onRewardedTokensRequested()
+                            }
+                        }
+                    },
+                    enabled = !adLoading,
+                    size = 56.dp,
+                    showAdIcon = true,
+                )
+            }
         }
     }
 }
@@ -711,6 +710,8 @@ private fun UnlockOptionDialog(
     request: UnlockRequest,
     onDismissRequest: () -> Unit,
     onConfirm: () -> Unit,
+    onWatchAd: () -> Unit,
+    adController: GameAdController? = null,
 ) {
     if (request.canAfford) {
         ThemedConfirmDialog(
@@ -728,6 +729,8 @@ private fun UnlockOptionDialog(
             icon = Icons.Filled.Lock,
         )
     } else {
+        var adLoading by remember { mutableStateOf(false) }
+
         ThemedConfirmDialog(
             onDismissRequest = onDismissRequest,
             title = stringResource(Res.string.unlock_dialog_insufficient_title, request.label),
@@ -736,9 +739,25 @@ private fun UnlockOptionDialog(
                 request.priceTokens,
                 request.currentBalance,
             ),
-            confirmLabel = stringResource(Res.string.continue_label),
+            confirmLabel = stringResource(Res.string.unlock_dialog_watch_ad),
             dismissLabel = stringResource(Res.string.cancel),
-            onConfirm = onDismissRequest,
+            onConfirm = {
+                if (adLoading) return@ThemedConfirmDialog
+                if (adController != null) {
+                    adLoading = true
+                    adController.showRewardedAd { success ->
+                        adLoading = false
+                        if (success) {
+                            onWatchAd()
+                            onDismissRequest()
+                        }
+                    }
+                } else {
+                    // Fallback for previews or if adController is missing
+                    onWatchAd()
+                    onDismissRequest()
+                }
+            },
             icon = Icons.Filled.Lock,
         )
     }
@@ -998,6 +1017,7 @@ private fun AppSettingsScreenPreview() {
     AppSettingsScreen(
         settings = AppSettings(themeMode = AppThemeMode.Light),
         onSettingsChange = {},
+        onRewardedTokensRequested = {},
         onBack = {},
     )
 }

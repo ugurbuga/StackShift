@@ -15,6 +15,11 @@
     <string name="settings_tokens_earn_challenge">Récompense du défi quotidien : +%1$d jetons</string>
     <string name="settings_tokens_earn_score">Récompense de partie : +1 jeton tous les %1$d points</string>
     <string name="rewarded_tokens_button">Regarde une pub et gagne %1$d jetons</string>
+    <string name="reward_earned_message">Tu as gagné %1$d jetons !</string>
+    <string name="reward_piece_row_message">Pièce de nettoyage de ligne horizontale équipée !</string>
+    <string name="reward_piece_column_message">Pièce de nettoyage de colonne verticale équipée !</string>
+    <string name="unlock_dialog_watch_ad">Regarder une publicité pour gagner des jetons</string>
+    <string name="token_label">Jeton</string>
     <string name="settings_board_block_style">Style des blocs du plateau</string>
     <string name="settings_challenges">Défis</string>
     <string name="app_language_english">English</string>

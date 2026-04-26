@@ -17,7 +17,7 @@ actual object LocalAppLocale {
         @Composable get() = LocalLocale.current
 
     @Composable
-    actual infix fun provides(value: String?): ProvidedValue<*> {
+    actual infix fun provides(value: String?): Array<ProvidedValue<*>> {
         val resolved = value ?: defaultLocale
         if (lastAppliedLocaleTag != resolved) {
             println(
@@ -30,7 +30,7 @@ actual object LocalAppLocale {
         } else {
             NSUserDefaults.standardUserDefaults.setObject(listOf(resolved), forKey = LanguageKey)
         }
-        return LocalLocale.provides(resolved)
+        return arrayOf(LocalLocale.provides(resolved))
     }
 }
 

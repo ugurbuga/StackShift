@@ -14,7 +14,7 @@ actual object LocalAppLocale {
         @Composable get() = LocalLocale.current
 
     @Composable
-    actual infix fun provides(value: String?): ProvidedValue<*> {
+    actual infix fun provides(value: String?): Array<ProvidedValue<*>> {
         if (defaultLocale == null) {
             defaultLocale = Locale.getDefault()
         }
@@ -27,7 +27,7 @@ actual object LocalAppLocale {
             lastAppliedLocaleTag = newLocaleTag
         }
         Locale.setDefault(newLocale)
-        return LocalLocale.provides(newLocaleTag)
+        return arrayOf(LocalLocale.provides(newLocaleTag))
     }
 }
 

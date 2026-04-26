@@ -15,6 +15,11 @@
     <string name="settings_tokens_earn_challenge">डेली चैलेंज इनाम: +%1$d टोकन</string>
     <string name="settings_tokens_earn_score">गेम इनाम: हर %1$d स्कोर पर +1 टोकन</string>
     <string name="rewarded_tokens_button">विज्ञापन देखें और %1$d टोकन पाएं</string>
+    <string name="reward_earned_message">आपने %1$d टोकन जीते!</string>
+    <string name="reward_piece_row_message">क्षैतिज पंक्ति साफ़ करने वाला टुकड़ा सुसज्जित!</string>
+    <string name="reward_piece_column_message">ऊर्ध्वाधर स्तंभ साफ़ करने वाला टुकड़ा सुसज्जित!</string>
+    <string name="unlock_dialog_watch_ad">टोकन कमाने के लिए विज्ञापन देखें</string>
+    <string name="token_label">टोकन</string>
     <string name="settings_board_block_style">बोर्ड ब्लॉक शैली</string>
     <string name="settings_challenges">चुनौतियां</string>
     <string name="app_language_english">English</string>

@@ -15,6 +15,11 @@
     <string name="settings_tokens_earn_challenge">Daily challenge reward: +%1$d tokens</string>
     <string name="settings_tokens_earn_score">Game reward: +1 token for every %1$d score</string>
     <string name="rewarded_tokens_button">Watch an ad and earn %1$d tokens</string>
+    <string name="reward_earned_message">You earned %1$d tokens!</string>
+    <string name="reward_piece_row_message">Horizontal Row Clearer piece equipped!</string>
+    <string name="reward_piece_column_message">Vertical Column Clearer piece equipped!</string>
+    <string name="unlock_dialog_watch_ad">Watch ad to earn tokens</string>
+    <string name="token_label">Token</string>
     <string name="settings_board_block_style">Board Block Style</string>
     <string name="settings_challenges">Challenges</string>
     <string name="settings_tutorial">Tutorial</string>

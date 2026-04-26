@@ -33,7 +33,6 @@ actual object AppSettingsStorage {
             hasSeenTutorial = prefs.getBoolean(KeyHasSeenTutorial, defaultSettings.hasSeenTutorial),
             hasShownInteractiveOnboarding = prefs.getBoolean(KeyHasShownInteractiveOnboarding, defaultSettings.hasShownInteractiveOnboarding),
             hasInitializedLanguage = prefs.getBoolean(KeyHasInitializedLanguage, defaultSettings.hasInitializedLanguage) || hasStoredLanguage,
-            soundEnabled = false,
             tokenBalance = prefs.getInt(KeyTokenBalance, defaultSettings.tokenBalance),
             unlockedThemeModes = decodeEnumSet(prefs.getSafeString(KeyUnlockedThemeModes, null), AppThemeMode.entries),
             unlockedThemePalettes = decodeEnumSet(prefs.getSafeString(KeyUnlockedThemePalettes, null), AppColorPalette.entries),
@@ -53,7 +52,6 @@ actual object AppSettingsStorage {
         prefs.putBoolean(KeyHasSeenTutorial, sanitized.hasSeenTutorial)
         prefs.putBoolean(KeyHasShownInteractiveOnboarding, sanitized.hasShownInteractiveOnboarding)
         prefs.putBoolean(KeyHasInitializedLanguage, sanitized.hasInitializedLanguage)
-        prefs.putBoolean(KeySoundEnabled, false)
         prefs.putInt(KeyTokenBalance, sanitized.tokenBalance)
         prefs.put(KeyUnlockedThemeModes, encodeEnumSet(sanitized.unlockedThemeModes))
         prefs.put(KeyUnlockedThemePalettes, encodeEnumSet(sanitized.unlockedThemePalettes))
@@ -76,7 +74,6 @@ actual object AppSettingsStorage {
     private const val KeyHasSeenTutorial = "hasSeenTutorial"
     private const val KeyHasShownInteractiveOnboarding = "hasShownInteractiveOnboarding"
     private const val KeyHasInitializedLanguage = "hasInitializedLanguage"
-    private const val KeySoundEnabled = "soundEnabled"
 
     private fun Preferences.getSafeString(key: String, defaultValue: String?): String? =
         runCatching { get(key, defaultValue) }.getOrDefault(defaultValue)
