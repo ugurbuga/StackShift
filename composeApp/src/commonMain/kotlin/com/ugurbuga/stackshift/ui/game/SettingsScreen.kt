@@ -1,6 +1,7 @@
 package com.ugurbuga.stackshift.ui.game
 
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -8,6 +9,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,9 +19,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
@@ -32,6 +36,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Stars
 import androidx.compose.material.icons.filled.Translate
+import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
@@ -51,7 +56,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -66,20 +73,18 @@ import com.ugurbuga.stackshift.game.model.AppThemeMode
 import com.ugurbuga.stackshift.game.model.BlockColorPalette
 import com.ugurbuga.stackshift.game.model.BlockVisualStyle
 import com.ugurbuga.stackshift.game.model.CellTone
-import com.ugurbuga.stackshift.game.model.normalizeBlockVisualStyle
+import com.ugurbuga.stackshift.game.model.paletteColor
 import com.ugurbuga.stackshift.settings.AppSettings
 import com.ugurbuga.stackshift.settings.DailyChallengeTokenReward
 import com.ugurbuga.stackshift.settings.RewardedTokenAdReward
 import com.ugurbuga.stackshift.settings.ScorePointsPerToken
 import com.ugurbuga.stackshift.settings.isBlockStyleUnlocked
-import com.ugurbuga.stackshift.settings.isThemeModeUnlocked
 import com.ugurbuga.stackshift.settings.isThemePaletteUnlocked
 import com.ugurbuga.stackshift.settings.selectBlockStyle
 import com.ugurbuga.stackshift.settings.selectThemeMode
 import com.ugurbuga.stackshift.settings.selectThemePalette
 import com.ugurbuga.stackshift.settings.tokenCost
 import com.ugurbuga.stackshift.settings.unlockBlockStyle
-import com.ugurbuga.stackshift.settings.unlockThemeMode
 import com.ugurbuga.stackshift.settings.unlockThemePalette
 import com.ugurbuga.stackshift.telemetry.AppTelemetry
 import com.ugurbuga.stackshift.telemetry.LogScreen
@@ -96,15 +101,14 @@ import stackshift.composeapp.generated.resources.Res
 import stackshift.composeapp.generated.resources.app_theme_dark
 import stackshift.composeapp.generated.resources.app_theme_light
 import stackshift.composeapp.generated.resources.app_theme_system
-import stackshift.composeapp.generated.resources.app_title
-import stackshift.composeapp.generated.resources.block_palette_monochrome
-import stackshift.composeapp.generated.resources.block_palette_neon
 import stackshift.composeapp.generated.resources.block_style_brick
 import stackshift.composeapp.generated.resources.block_style_bubble
 import stackshift.composeapp.generated.resources.block_style_cosmic
 import stackshift.composeapp.generated.resources.block_style_crystal
 import stackshift.composeapp.generated.resources.block_style_dynamic_liquid
+import stackshift.composeapp.generated.resources.block_style_flame
 import stackshift.composeapp.generated.resources.block_style_flat
+import stackshift.composeapp.generated.resources.block_style_gears
 import stackshift.composeapp.generated.resources.block_style_grid_split
 import stackshift.composeapp.generated.resources.block_style_honeycomb_texture
 import stackshift.composeapp.generated.resources.block_style_light_burst
@@ -112,6 +116,7 @@ import stackshift.composeapp.generated.resources.block_style_liquid_marble
 import stackshift.composeapp.generated.resources.block_style_matte_soft
 import stackshift.composeapp.generated.resources.block_style_neon_glow
 import stackshift.composeapp.generated.resources.block_style_outline
+import stackshift.composeapp.generated.resources.block_style_pixel
 import stackshift.composeapp.generated.resources.block_style_prism
 import stackshift.composeapp.generated.resources.block_style_sharp_3d
 import stackshift.composeapp.generated.resources.block_style_sound_wave
@@ -122,6 +127,7 @@ import stackshift.composeapp.generated.resources.block_style_wood
 import stackshift.composeapp.generated.resources.cancel
 import stackshift.composeapp.generated.resources.rewarded_tokens_button
 import stackshift.composeapp.generated.resources.settings_block_style
+import stackshift.composeapp.generated.resources.settings_color_palette
 import stackshift.composeapp.generated.resources.settings_language
 import stackshift.composeapp.generated.resources.settings_theme
 import stackshift.composeapp.generated.resources.settings_tokens_balance
@@ -130,6 +136,8 @@ import stackshift.composeapp.generated.resources.settings_tokens_earn_score
 import stackshift.composeapp.generated.resources.settings_tokens_title
 import stackshift.composeapp.generated.resources.theme_palette_aurora
 import stackshift.composeapp.generated.resources.theme_palette_classic
+import stackshift.composeapp.generated.resources.theme_palette_minimal_monochrome
+import stackshift.composeapp.generated.resources.theme_palette_modern_neon
 import stackshift.composeapp.generated.resources.theme_palette_soft_pastel
 import stackshift.composeapp.generated.resources.theme_palette_sunset
 import stackshift.composeapp.generated.resources.unlock_dialog_confirm
@@ -160,8 +168,8 @@ fun AppSettingsScreen(
     val scrollState = rememberScrollState()
     val uiColors = StackShiftThemeTokens.uiColors
     val darkTheme = isStackShiftDarkTheme(settings)
-    val normalizedBlockStyle = normalizeBlockVisualStyle(settings.blockVisualStyle)
-    var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
+    val selectedBlockStyle = settings.blockVisualStyle
+    var selectedTabIndex by rememberSaveable { mutableIntStateOf(1) }
     var pendingUnlockRequest by remember { mutableStateOf<UnlockRequest?>(null) }
     val transition = rememberInfiniteTransition(label = "settingsStylePulse")
     val stylePulse by transition.animateFloat(
@@ -173,6 +181,24 @@ fun AppSettingsScreen(
         ),
         label = "stylePulse",
     )
+    val previewToneStep by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = CellTone.entries.size.toFloat(),
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = CellTone.entries.size * 3500,
+                easing = LinearEasing,
+            ),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "previewToneStep",
+    )
+    val sharedPreviewColor = remember(previewToneStep, settings.blockColorPalette) {
+        interpolatedPreviewColor(
+            palette = settings.blockColorPalette,
+            progress = previewToneStep,
+        )
+    }
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -214,6 +240,13 @@ fun AppSettingsScreen(
                     Spacer(modifier = Modifier.size(44.dp))
                 }
 
+                TokenBalanceCard(
+                    settings = settings,
+                    onRewardedTokensRequested = onRewardedTokensRequested,
+                    adController = adController,
+                    modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp)
+                )
+
                 SecondaryTabRow(
                     selectedTabIndex = selectedTabIndex,
                     modifier = Modifier
@@ -249,11 +282,6 @@ fun AppSettingsScreen(
                         .padding(horizontal = 16.dp, vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    TokenBalanceCard(
-                        settings = settings,
-                        onRewardedTokensRequested = onRewardedTokensRequested,
-                        adController = adController
-                    )
                     when (selectedTabIndex) {
                         0 -> {
                             SettingsSectionCard(
@@ -263,20 +291,11 @@ fun AppSettingsScreen(
                                 SettingsGroup(
                                     title = stringResource(Res.string.settings_theme),
                                     selectedValue = settings.themeMode,
-                                    options = themeModeOptions(settings),
+                                    options = themeModeOptions(),
                                     onSelected = { onSettingsChange(settings.selectThemeMode(it)) },
-                                    onLockedSelected = { option ->
-                                        pendingUnlockRequest = unlockRequest(
-                                            label = option.label,
-                                            priceTokens = option.priceTokens,
-                                            currentBalance = settings.tokenBalance,
-                                        ) { currentSettings ->
-                                            currentSettings.unlockThemeMode(option.value)
-                                        }
-                                    },
                                 )
                                 SettingsGroup(
-                                    title = if (settings.language == AppLanguage.Turkish) "Renk Paleti" else "Color Palette",
+                                    title = stringResource(Res.string.settings_color_palette),
                                     selectedValue = settings.themeColorPalette,
                                     options = themePaletteOptions(settings = settings, darkTheme = darkTheme),
                                     onSelected = { onSettingsChange(settings.selectThemePalette(it)) },
@@ -298,13 +317,21 @@ fun AppSettingsScreen(
                                 title = stringResource(Res.string.settings_block_style),
                                 icon = Icons.Filled.Layers,
                                 trailingContent = {
-                                    StyleFourBlockPreview(settings = settings, pulse = stylePulse)
+                                    StyleFourBlockPreview(
+                                        settings = settings,
+                                        pulse = stylePulse,
+                                        previewColor = sharedPreviewColor,
+                                    )
                                 },
                             ) {
-                                SettingsGroup(
+                                BlockStyleSettingsGroup(
                                     title = stringResource(Res.string.settings_block_style),
-                                    selectedValue = normalizedBlockStyle,
-                                    options = blockStyleOptions(settings = settings, pulse = stylePulse),
+                                    selectedValue = selectedBlockStyle,
+                                    options = blockStyleOptions(
+                                        settings = settings,
+                                        pulse = stylePulse,
+                                        previewColor = sharedPreviewColor,
+                                    ),
                                     onSelected = { onSettingsChange(settings.selectBlockStyle(it)) },
                                     onLockedSelected = { option ->
                                         pendingUnlockRequest = unlockRequest(
@@ -423,6 +450,7 @@ private fun SettingsSectionCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
+    val optionShape = RoundedCornerShape(GameUiShapeTokens.chipCorner)
     val panelShape = RoundedCornerShape(GameUiShapeTokens.panelCorner)
     Card(
         modifier = Modifier
@@ -514,6 +542,7 @@ private fun <T> SettingsGroup(
     onLockedSelected: (SettingsOption<T>) -> Unit = {},
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
+    val optionShape = RoundedCornerShape(GameUiShapeTokens.chipCorner)
     Column(
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier.fillMaxWidth()
@@ -624,17 +653,108 @@ private fun unlockRequest(
 )
 
 @Composable
+private fun BlockStyleSettingsGroup(
+    title: String,
+    selectedValue: BlockVisualStyle,
+    options: List<SettingsOption<BlockVisualStyle>>,
+    onSelected: (BlockVisualStyle) -> Unit,
+    onLockedSelected: (SettingsOption<BlockVisualStyle>) -> Unit = {},
+) {
+    val uiColors = StackShiftThemeTokens.uiColors
+    val optionShape = RoundedCornerShape(GameUiShapeTokens.chipCorner)
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelMedium,
+            color = uiColors.subtitle,
+            modifier = Modifier.padding(horizontal = 4.dp),
+        )
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            options.forEach { option ->
+                val selected = option.value == selectedValue
+                Card(
+                    modifier = Modifier
+                        .width(104.dp)
+                        .stackShiftSurfaceShadow(
+                            elevation = if (selected) 5.dp else 0.dp,
+                            shape = optionShape,
+                        )
+                        .clip(optionShape)
+                        .clickable {
+                            if (option.locked) onLockedSelected(option) else onSelected(option.value)
+                        },
+                    shape = optionShape,
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (selected) uiColors.chipSelected else uiColors.chip.copy(alpha = 0.72f),
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(
+                        width = 1.dp,
+                        color = if (selected) {
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.84f)
+                        } else {
+                            uiColors.panelStroke.copy(alpha = 0.42f)
+                        },
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 7.dp, vertical = 10.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            option.preview?.invoke()
+                            if (option.locked) {
+                                Icon(
+                                    imageVector = Icons.Filled.Lock,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.76f),
+                                    modifier = Modifier.size(20.dp),
+                                )
+                            }
+                        }
+                        Box(
+                            modifier = Modifier.height(36.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = option.label,
+                                style = if (selected) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelMedium,
+                                color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                                textAlign = TextAlign.Center,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun TokenBalanceCard(
     settings: AppSettings,
     onRewardedTokensRequested: () -> Unit,
     adController: GameAdController? = null,
+    modifier: Modifier = Modifier,
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
     val surfaceShape = RoundedCornerShape(GameUiShapeTokens.panelCorner)
     var adLoading by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .stackShiftSurfaceShadow(
                 shape = surfaceShape,
@@ -758,7 +878,7 @@ private fun UnlockOptionDialog(
                     onDismissRequest()
                 }
             },
-            icon = Icons.Filled.Lock,
+            icon = Icons.Outlined.Videocam,
         )
     }
 }
@@ -774,7 +894,7 @@ private fun languageOptions(selected: AppLanguage): List<SettingsOption<AppLangu
     }
 
 @Composable
-private fun themeModeOptions(settings: AppSettings): List<SettingsOption<AppThemeMode>> =
+private fun themeModeOptions(): List<SettingsOption<AppThemeMode>> =
     AppThemeMode.entries.map { mode ->
         SettingsOption(
             value = mode,
@@ -784,8 +904,6 @@ private fun themeModeOptions(settings: AppSettings): List<SettingsOption<AppThem
                 AppThemeMode.Dark -> stringResource(Res.string.app_theme_dark)
             },
             preview = { ThemeModePreview(mode) },
-            locked = !settings.isThemeModeUnlocked(mode),
-            priceTokens = mode.tokenCost(),
         )
     }
 
@@ -801,9 +919,9 @@ private fun themePaletteOptions(
                 AppColorPalette.Classic -> stringResource(Res.string.theme_palette_classic)
                 AppColorPalette.Aurora -> stringResource(Res.string.theme_palette_aurora)
                 AppColorPalette.Sunset -> stringResource(Res.string.theme_palette_sunset)
-                AppColorPalette.ModernNeon -> stringResource(Res.string.block_palette_neon)
+                AppColorPalette.ModernNeon -> stringResource(Res.string.theme_palette_modern_neon)
                 AppColorPalette.SoftPastel -> stringResource(Res.string.theme_palette_soft_pastel)
-                AppColorPalette.MinimalMonochrome -> stringResource(Res.string.block_palette_monochrome)
+                AppColorPalette.MinimalMonochrome -> stringResource(Res.string.theme_palette_minimal_monochrome)
             },
             preview = { ThemePalettePreview(palette = palette, darkTheme = darkTheme) },
             locked = !settings.isThemePaletteUnlocked(palette),
@@ -814,7 +932,8 @@ private fun themePaletteOptions(
 @Composable
 private fun blockStyleOptions(
     settings: AppSettings,
-    pulse: Float
+    pulse: Float,
+    previewColor: Color,
 ): List<SettingsOption<BlockVisualStyle>> {
     val visibleStyles = listOf(
         BlockVisualStyle.Flat,
@@ -832,6 +951,9 @@ private fun blockStyleOptions(
         BlockVisualStyle.Brick,
         BlockVisualStyle.SoundWave,
         BlockVisualStyle.Prism,
+        BlockVisualStyle.Flame,
+        BlockVisualStyle.Gears,
+        BlockVisualStyle.Pixel,
     )
 
     return visibleStyles.map { style ->
@@ -858,8 +980,19 @@ private fun blockStyleOptions(
                 BlockVisualStyle.Brick -> stringResource(Res.string.block_style_brick)
                 BlockVisualStyle.SoundWave -> stringResource(Res.string.block_style_sound_wave)
                 BlockVisualStyle.Prism -> stringResource(Res.string.block_style_prism)
+                BlockVisualStyle.Electric -> stringResource(Res.string.block_style_flat)
+                BlockVisualStyle.Flame -> stringResource(Res.string.block_style_flame)
+                BlockVisualStyle.Gears -> stringResource(Res.string.block_style_gears)
+                BlockVisualStyle.Pixel -> stringResource(Res.string.block_style_pixel)
             },
-            preview = { BlockStylePreview(style = style, palette = settings.blockColorPalette, pulse = pulse) },
+            preview = {
+                BlockStylePreview(
+                    style = style,
+                    pulse = pulse,
+                    previewColor = previewColor,
+                    previewPalette = settings.blockColorPalette,
+                )
+            },
             locked = !settings.isBlockStyleUnlocked(style),
             priceTokens = style.tokenCost(),
         )
@@ -895,10 +1028,52 @@ private fun ThemePalettePreview(
 @Composable
 private fun BlockStylePreview(
     style: BlockVisualStyle,
-    palette: BlockColorPalette,
     pulse: Float,
+    previewColor: Color,
+    previewPalette: BlockColorPalette,
 ) {
-    PreviewBlockRow(palette = palette, style = style, pulse = pulse)
+    BlockCellPreview(
+        baseColor = settingsPreviewColor(
+            style = style,
+            animatedPreviewColor = previewColor,
+            palette = previewPalette,
+        ),
+        style = style,
+        size = 54.dp,
+        pulse = settingsPreviewPulse(style = style, pulse = pulse),
+    )
+}
+
+private fun settingsPreviewPulse(
+    style: BlockVisualStyle,
+    pulse: Float,
+): Float = when (style) {
+    BlockVisualStyle.Pixel,
+        -> 0f
+
+    else -> pulse
+}
+
+private fun settingsPreviewColor(
+    style: BlockVisualStyle,
+    animatedPreviewColor: Color,
+    palette: BlockColorPalette,
+): Color = animatedPreviewColor
+
+private fun interpolatedPreviewColor(
+    palette: BlockColorPalette,
+    progress: Float,
+): Color {
+    val tones = CellTone.entries
+    val normalized = ((progress % tones.size) + tones.size) % tones.size
+    val startIndex = normalized.toInt().coerceIn(0, tones.lastIndex)
+    val endIndex = (startIndex + 1) % tones.size
+    val blend = normalized - startIndex
+    return lerp(
+        tones[startIndex].paletteColor(palette),
+        tones[endIndex].paletteColor(palette),
+        blend,
+    )
 }
 
 @Composable
@@ -917,61 +1092,28 @@ private fun LanguagePreview(
                 },
                 shape = RoundedCornerShape(GameUiShapeTokens.chipCorner)
             )
-            .border(
-                width = 1.dp,
-                color = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.48f) else uiColors.panelStroke,
-                shape = RoundedCornerShape(GameUiShapeTokens.chipCorner)
-            )
+            .padding(horizontal = 6.dp, vertical = 2.dp),
+        contentAlignment = Alignment.Center
     ) {
         Text(
-            text = language.localeTag.uppercase(),
-            modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
-            style = MaterialTheme.typography.labelSmall,
-            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+            text = language.flag,
+            style = MaterialTheme.typography.titleMedium,
         )
     }
 }
 
 @Composable
-private fun PreviewBlockRow(
-    palette: BlockColorPalette,
-    style: BlockVisualStyle,
-    pulse: Float,
-) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        listOf(CellTone.Coral, CellTone.Blue, CellTone.Gold).forEach { tone ->
-            BlockCellPreview(
-                tone = tone,
-                palette = palette,
-                style = style,
-                size = 15.dp,
-                pulse = pulse,
-            )
-        }
-    }
-}
-
-@Composable
-private fun StyleFourBlockPreview(settings: AppSettings, pulse: Float) {
-    val tones = listOf(CellTone.Lime, CellTone.Violet, CellTone.Rose, CellTone.Amber)
-    Row(
-        modifier = Modifier.padding(2.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        tones.take(4).forEach { tone ->
-            BlockCellPreview(
-                tone = tone,
-                palette = settings.blockColorPalette,
-                style = settings.blockVisualStyle,
-                size = 36.dp,
-                pulse = pulse,
-            )
-        }
-    }
+private fun StyleFourBlockPreview(settings: AppSettings, pulse: Float, previewColor: Color) {
+    BlockCellPreview(
+        baseColor = settingsPreviewColor(
+            style = settings.blockVisualStyle,
+            animatedPreviewColor = previewColor,
+            palette = settings.blockColorPalette,
+        ),
+        style = settings.blockVisualStyle,
+        size = 44.dp,
+        pulse = settingsPreviewPulse(style = settings.blockVisualStyle, pulse = pulse),
+    )
 }
 
 @Composable

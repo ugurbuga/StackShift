@@ -74,7 +74,9 @@
     <string name="high_score">Рекорд</string>
     <string name="high_score_new_record">Новый рекорд</string>
     <string name="home_play_cta">Играть</string>
+    <string name="home_time_attack_cta">На время</string>
     <string name="lines">Линии</string>
+    <string name="time_remaining">Осталось времени</string>
     <string name="boost">Ускорение</string>
     <string name="danger">Опасность</string>
     <string name="danger_none">-</string>
@@ -247,4 +249,9 @@
     <string name="reward_piece_column_message">Установлен вертикальный очиститель колонок!</string>
     <string name="unlock_dialog_watch_ad">Посмотреть рекламу и получить токены</string>
     <string name="token_label">Токен</string>
+    <string name="settings_color_palette">Цветовая палитра</string>
+    <string name="block_style_electric">Электричество</string>
+    <string name="block_style_flame">Пламя</string>
+    <string name="block_style_gears">Шестерёнки</string>
+    <string name="block_style_pixel">Пиксель</string>
 </resources>

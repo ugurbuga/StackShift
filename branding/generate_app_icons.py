@@ -8,67 +8,66 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-ANDROID_RES = ROOT / "androidApp" / "src" / "main" / "res"
-COMPOSE_ANDROID_RES = ROOT / "composeApp" / "src" / "androidMain" / "res"
 IOS_APPICON = ROOT / "iosApp" / "iosApp" / "Assets.xcassets" / "AppIcon.appiconset"
 IOS_LAUNCH_LOGO = ROOT / "iosApp" / "iosApp" / "Assets.xcassets" / "LaunchLogo.imageset"
 DESKTOP_RES = ROOT / "composeApp" / "src" / "jvmMain" / "resources"
 DESKTOP_ICONS = ROOT / "composeApp" / "desktop-icons"
 BRANDING_OUT = ROOT / "branding" / "generated"
 
-FULL_SVG_NAME = "stackshift-app-icon.svg"
-FOREGROUND_SVG_NAME = "stackshift-adaptive-foreground.svg"
-MACOS_FOREGROUND_SVG_NAME = "stackshift-macos-foreground.svg"
-ANDROID_ROUND_SVG_NAME = "stackshift-android-round-icon.svg"
-NOTIFICATION_SVG_NAME = "stackshift-notification-icon.svg"
-FULL_PNG_NAME = "stackshift-app-icon-1024.png"
-FOREGROUND_PNG_NAME = "stackshift-adaptive-foreground-1024.png"
-MACOS_FOREGROUND_PNG_NAME = "stackshift-macos-foreground-1024.png"
-ANDROID_ROUND_PNG_NAME = "stackshift-android-round-1024.png"
-NOTIFICATION_PNG_NAME = "stackshift-notification-1024.png"
+BOARD_SVG_FINAL = "stackshift-board.svg"
+BACKGROUND_SVG_FINAL = "stackshift-background.svg"
 FEATURE_GRAPHIC_SVG_NAME = "stackshift-feature-graphic-1024x500.svg"
 FEATURE_GRAPHIC_PNG_NAME = "stackshift-feature-graphic-1024x500.png"
 
+FULL_SVG_NAME = "stackshift-app-icon.svg"
+FOREGROUND_SVG_NAME = "stackshift-adaptive-foreground.svg"
+MACOS_FOREGROUND_SVG_NAME = "stackshift-macos-foreground.svg"
+
+LOGO_GRID_SIZE = 4
 
 def main() -> None:
     ensure_tools()
     with tempfile.TemporaryDirectory(prefix="stackshift-icon-") as temp_dir:
         temp_path = Path(temp_dir)
-        full_svg = temp_path / FULL_SVG_NAME
-        foreground_svg = temp_path / FOREGROUND_SVG_NAME
-        macos_foreground_svg = temp_path / MACOS_FOREGROUND_SVG_NAME
-        android_round_svg = temp_path / ANDROID_ROUND_SVG_NAME
-        notification_svg = temp_path / NOTIFICATION_SVG_NAME
-
-        full_svg.write_text(full_icon_svg(), encoding="utf-8")
-        foreground_svg.write_text(foreground_icon_svg(), encoding="utf-8")
-        macos_foreground_svg.write_text(macos_foreground_icon_svg(), encoding="utf-8")
-        android_round_svg.write_text(android_round_icon_svg(), encoding="utf-8")
-        notification_svg.write_text(notification_icon_svg(), encoding="utf-8")
-
-        full_png = BRANDING_OUT / FULL_PNG_NAME
-        foreground_png = BRANDING_OUT / FOREGROUND_PNG_NAME
-        macos_foreground_png = BRANDING_OUT / MACOS_FOREGROUND_PNG_NAME
-        android_round_png = BRANDING_OUT / ANDROID_ROUND_PNG_NAME
-        notification_png = BRANDING_OUT / NOTIFICATION_PNG_NAME
-
         BRANDING_OUT.mkdir(parents=True, exist_ok=True)
-        rasterize_svg(full_svg, full_png, 1024)
-        rasterize_svg(foreground_svg, foreground_png, 1024)
-        rasterize_svg(macos_foreground_svg, macos_foreground_png, 1024)
-        rasterize_svg(android_round_svg, android_round_png, 1024)
-        rasterize_svg(notification_svg, notification_png, 1024)
 
+        # 1. Android / Manual SVG Outputs
+        (BRANDING_OUT / BOARD_SVG_FINAL).write_text(
+            mosaic_icon_svg(include_background=False, include_art=True, logo_scale=0.8),
+            encoding="utf-8"
+        )
+        (BRANDING_OUT / BACKGROUND_SVG_FINAL).write_text(
+            mosaic_icon_svg(include_background=True, include_art=False),
+            encoding="utf-8"
+        )
+
+        # 2. Google Play Feature Graphic
         feature_graphic_svg = temp_path / FEATURE_GRAPHIC_SVG_NAME
         feature_graphic_svg.write_text(feature_graphic_svg_content(), encoding="utf-8")
         feature_graphic_png = BRANDING_OUT / FEATURE_GRAPHIC_PNG_NAME
         rasterize_svg(feature_graphic_svg, feature_graphic_png, 1024, height=500)
 
-        generate_android_assets(full_png, foreground_png, android_round_png, notification_png)
+        # 3. iOS, macOS, Desktop Assets
+        full_svg = temp_path / FULL_SVG_NAME
+        foreground_svg = temp_path / FOREGROUND_SVG_NAME
+        macos_foreground_svg = temp_path / MACOS_FOREGROUND_SVG_NAME
+
+        full_svg.write_text(full_icon_svg(), encoding="utf-8")
+        foreground_svg.write_text(foreground_icon_svg(), encoding="utf-8")
+        macos_foreground_svg.write_text(macos_foreground_icon_svg(), encoding="utf-8")
+
+        full_png = temp_path / "full-1024.png"
+        foreground_png = temp_path / "foreground-1024.png"
+        macos_foreground_png = temp_path / "macos-foreground-1024.png"
+
+        rasterize_svg(full_svg, full_png, 1024)
+        rasterize_svg(foreground_svg, foreground_png, 1024)
+        rasterize_svg(macos_foreground_svg, macos_foreground_png, 1024)
+
         generate_ios_assets(full_png, foreground_png)
         generate_desktop_assets(full_png, macos_foreground_png)
 
-    print("Generated StackShift icons for Android, iOS, desktop, and feature graphic.")
+    print(f"Generated assets in {BRANDING_OUT} and platform resource folders.")
 
 
 def ensure_tools() -> None:
@@ -90,55 +89,16 @@ def rasterize_svg(svg_path: Path, output_png: Path, size: int, height: int | Non
             run("sips", "-s", "format", "png", str(svg_path), "--resampleHeightWidth", str(height), str(size), "--out", str(converted))
         else:
             run("sips", "-s", "format", "png", str(svg_path), "--out", str(converted))
+
         if height is not None:
             run("sips", "-z", str(height), str(size), str(converted), "--out", str(output_png))
         else:
-            resize_png(converted, output_png, size)
+            run("sips", "-z", str(size), str(size), str(converted), "--out", str(output_png))
 
 
 def resize_png(source: Path, target: Path, size: int) -> None:
     target.parent.mkdir(parents=True, exist_ok=True)
     run("sips", "-z", str(size), str(size), str(source), "--out", str(target))
-
-
-def generate_android_assets(full_png: Path, foreground_png: Path, round_png: Path, notification_png: Path) -> None:
-    android_sizes = {
-        "mipmap-mdpi": 48,
-        "mipmap-hdpi": 72,
-        "mipmap-xhdpi": 96,
-        "mipmap-xxhdpi": 144,
-        "mipmap-xxxhdpi": 192,
-    }
-    for folder, size in android_sizes.items():
-        resize_png(full_png, ANDROID_RES / folder / "ic_launcher.png", size)
-        resize_png(round_png, ANDROID_RES / folder / "ic_launcher_round.png", size)
-
-    resize_png(
-        foreground_png,
-        ANDROID_RES / "drawable" / "ic_launcher_foreground_art.png",
-        432,
-    )
-    resize_png(
-        foreground_png,
-        ANDROID_RES / "drawable-nodpi" / "ic_launcher_foreground_art.png",
-        432,
-    )
-
-    # Notification icons (Monochrome)
-    notification_sizes = {
-        "drawable-mdpi": 24,
-        "drawable-hdpi": 36,
-        "drawable-xhdpi": 48,
-        "drawable-xxhdpi": 72,
-        "drawable-xxxhdpi": 96,
-    }
-    for folder, size in notification_sizes.items():
-        resize_png(notification_png, COMPOSE_ANDROID_RES / folder / "ic_notification.png", size)
-
-    # Clean up existing XML if it exists to ensure PNGs are used
-    existing_xml = COMPOSE_ANDROID_RES / "drawable" / "ic_notification.xml"
-    if existing_xml.exists():
-        existing_xml.unlink()
 
 
 def generate_ios_assets(full_png: Path, foreground_png: Path) -> None:
@@ -225,9 +185,7 @@ def write_ico(path: Path, images: list[tuple[int, bytes]]) -> None:
 def full_icon_svg() -> str:
     return mosaic_icon_svg(
         include_background=True,
-        logo_scale=1.0,
-        surface_inset=0,
-        surface_radius=0,
+        logo_scale=0.64,
     )
 
 
@@ -235,105 +193,37 @@ def foreground_icon_svg() -> str:
     return mosaic_icon_svg(
         include_background=False,
         clip_shape="rounded_rect",
-        logo_scale=1.0,
+        logo_scale=0.45,
         clip_inset=56,
         clip_radius=192,
-        surface_inset=0,
-        surface_radius=0,
     )
 
 
 def macos_foreground_icon_svg() -> str:
-    # Scale down the logo and background to standard Apple proportions (824/1024 ~ 0.8)
-    # The grid itself is slightly larger (0.82) to ensure a "cut-off" look at the edges
     return mosaic_icon_svg(
         include_background=False,
         clip_shape="rounded_rect",
-        logo_scale=0.82,
+        logo_scale=0.64,
         clip_inset=100,
         clip_radius=180,
-        surface_inset=100,
-        surface_radius=180,
-    )
-
-
-def android_round_icon_svg() -> str:
-    return mosaic_icon_svg(
-        include_background=True,
-        clip_shape="circle",
-        logo_scale=1.0,
-        surface_inset=0,
-        surface_radius=0,
-    )
-
-
-def notification_icon_svg() -> str:
-    geometry = notification_geometry(board_scale=0.85)
-
-    lines: list[str] = []
-    slot_corner = round(geometry["cell_size"] * 0.21)
-
-    # Slots
-    for row in range(geometry["grid_size"]):
-        for column in range(geometry["grid_size"]):
-            x = geometry["board_x"] + column * (geometry["cell_size"] + geometry["gap"])
-            y = geometry["board_y"] + row * (geometry["cell_size"] + geometry["gap"])
-            lines.append(
-                f'  <rect x="{x}" y="{y}" width="{geometry["cell_size"]}" height="{geometry["cell_size"]}" rx="{slot_corner}" stroke="white" stroke-width="40" stroke-opacity="0.3"/>'
-            )
-
-    # Blocks (matching main mosaic layout)
-    placements = [
-        (0, 0), (0, 1), (0, 2), (0, 4),
-        (1, 0), (1, 1), (1, 3), (1, 4),
-        (2, 2), (2, 3),
-        (3, 0), (3, 1), (3, 2), (3, 4),
-        (4, 0), (4, 1), (4, 2), (4, 3), (4, 4),
-    ]
-
-    for row, column in placements:
-        x = geometry["board_x"] + column * (geometry["cell_size"] + geometry["gap"])
-        y = geometry["board_y"] + row * (geometry["cell_size"] + geometry["gap"])
-        lines.append(
-            f'  <rect x="{x}" y="{y}" width="{geometry["cell_size"]}" height="{geometry["cell_size"]}" rx="{slot_corner}" fill="white"/>'
-        )
-
-    content = "\n".join(lines)
-    return f"""<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
-{content}
-</svg>"""
-
-
-def board_icon_svg(
-    include_background: bool,
-    clip_shape: str | None = None,
-    board_scale: float = 1.0,
-    clip_inset: int | None = None,
-    clip_radius: int | None = None,
-    surface_inset: int | None = None,
-    surface_radius: int | None = None,
-) -> str:
-    return mosaic_icon_svg(
-        include_background=include_background,
-        clip_shape=clip_shape,
-        logo_scale=board_scale,
-        clip_inset=clip_inset,
-        clip_radius=clip_radius,
-        surface_inset=surface_inset,
-        surface_radius=surface_radius,
     )
 
 
 def mosaic_icon_svg(
     include_background: bool,
+    include_art: bool = True,
     clip_shape: str | None = None,
     logo_scale: float = 1.0,
+    logo_offset_x: int = 0,
+    logo_offset_y: int = 0,
     clip_inset: int | None = None,
     clip_radius: int | None = None,
-    surface_inset: int | None = 0,
-    surface_radius: int | None = 0,
 ) -> str:
-    geometry = logo_geometry(logo_scale=logo_scale)
+    geometry = logo_geometry(
+        logo_scale=logo_scale,
+        offset_x=logo_offset_x,
+        offset_y=logo_offset_y,
+    )
     background = "" if not include_background else """
   <rect width=\"1024\" height=\"1024\" fill=\"url(#screenBg)\"/>
   <rect width=\"1024\" height=\"1024\" fill=\"url(#screenGlowA)\"/>
@@ -355,21 +245,12 @@ def mosaic_icon_svg(
     </clipPath>
 """,
     }[clip_shape]
-    resolved_surface_inset = surface_inset if surface_inset is not None else 0
-    surface_x = resolved_surface_inset
-    surface_y = resolved_surface_inset
-    surface_size = 1024 - (resolved_surface_inset * 2)
-    surface_corner = surface_radius if surface_radius is not None else 0
 
-    board_surface = f"""
-  <rect x=\"{surface_x}\" y=\"{surface_y}\" width=\"{surface_size}\" height=\"{surface_size}\" rx=\"{surface_corner}\" fill=\"url(#surfaceBg)\"/>
-  <rect x=\"{surface_x}\" y=\"{surface_y}\" width=\"{surface_size}\" height=\"{surface_size}\" rx=\"{surface_corner}\" fill=\"url(#surfaceGlowA)\"/>
-  <rect x=\"{surface_x}\" y=\"{surface_y}\" width=\"{surface_size}\" height=\"{surface_size}\" rx=\"{surface_corner}\" fill=\"url(#surfaceGlowB)\"/>
-  <rect x=\"{surface_x}\" y=\"{surface_y}\" width=\"{surface_size}\" height=\"{surface_size}\" rx=\"{surface_corner}\" stroke=\"#FFFFFF\" stroke-opacity=\"0.08\" stroke-width=\"4\"/>
-"""
-    art = f"""  {background}
-  {board_surface}
+    art_content = "" if not include_art else f"""
   {mosaic_tiles(geometry)}"""
+
+    art = f"""  {background}
+{art_content}"""
     content = art if clip_shape is None else f"  <g clip-path=\"url(#iconMask)\">\n{art}\n  </g>"
     return f"""<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1024\" height=\"1024\" viewBox=\"0 0 1024 1024\" fill=\"none\">
   <defs>
@@ -386,22 +267,9 @@ def mosaic_icon_svg(
       <stop stop-color=\"#6B74FF\" stop-opacity=\"0.22\"/>
       <stop offset=\"1\" stop-color=\"#6B74FF\" stop-opacity=\"0\"/>
     </radialGradient>
-    <linearGradient id=\"surfaceBg\" x1=\"120\" y1=\"112\" x2=\"902\" y2=\"918\" gradientUnits=\"userSpaceOnUse\">
-      <stop offset=\"0\" stop-color=\"#111D29\"/>
-      <stop offset=\"0.52\" stop-color=\"#162433\"/>
-      <stop offset=\"1\" stop-color=\"#0B121B\"/>
-    </linearGradient>
-    <radialGradient id=\"surfaceGlowA\" cx=\"0\" cy=\"0\" r=\"1\" gradientUnits=\"userSpaceOnUse\" gradientTransform=\"translate(244 228) rotate(45) scale(502)\">
-      <stop stop-color=\"#48D8C8\" stop-opacity=\"0.18\"/>
-      <stop offset=\"1\" stop-color=\"#48D8C8\" stop-opacity=\"0\"/>
-    </radialGradient>
-    <radialGradient id=\"surfaceGlowB\" cx=\"0\" cy=\"0\" r=\"1\" gradientUnits=\"userSpaceOnUse\" gradientTransform=\"translate(806 818) rotate(45) scale(452)\">
-      <stop stop-color=\"#6B74FF\" stop-opacity=\"0.16\"/>
-      <stop offset=\"1\" stop-color=\"#6B74FF\" stop-opacity=\"0\"/>
-    </radialGradient>
-{clip_definition}
   </defs>
-{content}
+  {background}
+  {art_content}
 </svg>
 """
 
@@ -427,17 +295,17 @@ def feature_graphic_svg_content() -> str:
   <rect width="1024" height="500" fill="url(#featureGlowA)"/>
   <rect width="1024" height="500" fill="url(#featureGlowB)"/>
   <g transform="translate(312, 50) scale(0.390625)">
-    {mosaic_icon_svg(include_background=False, logo_scale=0.88, surface_inset=114, surface_radius=196)}
+    {mosaic_icon_svg(include_background=False, logo_scale=0.8)}
   </g>
 </svg>'''
 
 
-def logo_geometry(logo_scale: float = 1.0) -> dict[str, int]:
+def logo_geometry(logo_scale: float = 1.0, offset_x: int = 0, offset_y: int = 0) -> dict[str, int]:
     base_logo_size = 1024
     logo_size = round(base_logo_size * logo_scale)
-    logo_x = (1024 - logo_size) // 2
-    logo_y = (1024 - logo_size) // 2
-    grid_size = 5
+    logo_x = ((1024 - logo_size) // 2) + offset_x
+    logo_y = ((1024 - logo_size) // 2) + offset_y
+    grid_size = LOGO_GRID_SIZE
     gap = max(10, round(12 * logo_scale))
     cell_size = (logo_size - ((grid_size - 1) * gap)) // grid_size
     return {
@@ -451,98 +319,119 @@ def logo_geometry(logo_scale: float = 1.0) -> dict[str, int]:
 
 
 def mosaic_tiles(geometry: dict[str, int]) -> str:
-    # 5x5 Clustered Layout with 4 vibrant neon colors
-    # Layer (ghost) icon moved to yellow (gold) block
-    # One unique icon per color cluster
-    c_cyan = "#00BBF9"
-    c_pink = "#F15BB5"
-    c_gold = "#FEE440"
-    c_purple = "#9B5DE5"
+    c_pink = "#FF4D6D"
+    c_lime = "#A2FF00"
+    c_cyan = "#00D2FF"
+    c_gold = "#FFEA00"
 
     tile_layout: list[list[dict[str, str] | None]] = [
         [
             {"color": c_cyan},
-            {"color": c_cyan},
-            {"color": c_cyan},
+            {"color": c_gold},
             None,
+            {"color": c_pink},
+        ],
+        [
+            None,
+            {"color": c_cyan},
+            {"color": c_lime},
             {"color": c_gold},
         ],
         [
+            None,
+            {"color": c_pink},
             {"color": c_cyan},
-            {"color": c_cyan, "special": "column_clearer"},
-            None,
-            {"color": c_gold},
-            {"color": c_gold},
-        ],
-        [
-            None,
-            None,
-            {"color": c_pink},
-            {"color": c_gold, "special": "ghost"},
             None,
         ],
         [
-            {"color": c_purple},
-            {"color": c_purple, "special": "row_clearer"},
-            {"color": c_pink},
             None,
-            {"color": c_pink},
-        ],
-        [
-            {"color": c_purple},
-            {"color": c_purple},
-            {"color": c_pink},
-            {"color": c_pink, "special": "heavy"},
-            {"color": c_pink},
+            None,
+            None,
+            None,
         ],
     ]
 
     lines: list[str] = []
-    for row, cells in enumerate(tile_layout):
-        for column, cell in enumerate(cells):
+    # Background slots first.
+    for row in range(geometry["grid_size"]):
+        for column in range(geometry["grid_size"]):
             x = geometry["logo_x"] + column * (geometry["cell_size"] + geometry["gap"])
             y = geometry["logo_y"] + row * (geometry["cell_size"] + geometry["gap"])
             lines.append(empty_slot(x=x, y=y, size=geometry["cell_size"]))
+
+    # Draw static tiles
+    for row, cells in enumerate(tile_layout):
+        for column, cell in enumerate(cells):
             if cell is None:
                 continue
+            x = geometry["logo_x"] + column * (geometry["cell_size"] + geometry["gap"])
+            y = geometry["logo_y"] + row * (geometry["cell_size"] + geometry["gap"])
             lines.append(
                 tile_block(
                     x=x,
                     y=y,
                     color=cell["color"],
                     size=geometry["cell_size"],
-                    special=cell.get("special"),
+                    falling=False
                 )
             )
+
+    falling_pieces = [
+        {"color": c_lime, "x_col": 0, "angle": 12, "row_idx": 1.4},
+        {"color": c_gold, "x_col": 3, "angle": -15, "row_idx": 2.2},
+        {"color": c_cyan, "x_col": 1, "angle": -5, "row_idx": 3.0},
+    ]
+
+    for piece in falling_pieces:
+        x = geometry["logo_x"] + piece["x_col"] * (geometry["cell_size"] + geometry["gap"])
+        y = geometry["logo_y"] + piece["row_idx"] * (geometry["cell_size"] + geometry["gap"])
+        lines.append(
+            tile_block(
+                x=x,
+                y=y,
+                color=piece["color"],
+                size=geometry["cell_size"],
+                falling=True,
+                angle=piece["angle"],
+            )
+        )
 
     return "\n".join(lines)
 
 
 def empty_slot(x: int, y: int, size: int = 150) -> str:
     corner = round(size * 0.21)
-    stroke_width = round(max(1.2, size * 0.018) * 10) / 10
-    inner_inset = round(size * 0.06)
     return f"""
-  <g>
-    <rect x=\"{x}\" y=\"{y}\" width=\"{size}\" height=\"{size}\" rx=\"{corner}\" fill=\"#FFFFFF\" fill-opacity=\"0.028\"/>
-    <rect x=\"{x}\" y=\"{y}\" width=\"{size}\" height=\"{size}\" rx=\"{corner}\" stroke=\"#FFFFFF\" stroke-opacity=\"0.10\" stroke-width=\"{stroke_width}\"/>
-    <rect x=\"{x + inner_inset}\" y=\"{y + inner_inset}\" width=\"{size - (inner_inset * 2)}\" height=\"{max(1, round(size * 0.20))}\" rx=\"{round(size * 0.10)}\" fill=\"#FFFFFF\" fill-opacity=\"0.032\"/>
+  <rect x=\"{x}\" y=\"{y}\" width=\"{size}\" height=\"{size}\" rx=\"{corner}\" fill=\"#FFFFFF\" fill-opacity=\"0.05\" stroke=\"#FFFFFF\" stroke-opacity=\"0.1\" stroke-width=\"2\"/>"""
+
+
+def tile_block(x: int, y: int, color: str, size: int = 150, special: str | None = None, falling: bool = False, angle: float = 0) -> str:
+    corner = round(size * 0.21)
+    special_art = "" if special is None else special_overlay(x=x, y=y, size=size, kind=special)
+
+    if falling:
+        offset_y = size * 0.28
+        cx = x + size / 2
+        cy = y + size / 2
+        transform = f'transform="translate({cx}, {cy + offset_y}) rotate({angle}) translate({-size/2}, {-size/2})"'
+
+        # Trail for motion, reduced opacity to keep block vivid
+        trail = f'<rect x="0" y="{-offset_y}" width="{size}" height="{offset_y + size/2}" rx="{corner}" fill="{color}" opacity="0.4"/>'
+
+        return f"""
+  <g {transform}>
+    {trail}
+    <rect width="{size}" height="{size}" rx="{corner}" fill="{color}"/>
+    <rect width="{size}" height="{size}" rx="{corner}" fill="#FFFFFF" fill-opacity="0.12"/>
+    <rect width="{size}" height="{size}" rx="{corner}" stroke="#FFFFFF" stroke-opacity="0.8" stroke-width="3"/>
+    {special_art}
   </g>"""
 
-
-def tile_block(x: int, y: int, color: str, size: int = 150, special: str | None = None) -> str:
-    corner = round(size * 0.21)
-    shadow_offset = round(size * 0.06)
-    gloss_inset = round(size * 0.08)
-    gloss_height = round(size * 0.28)
-    stroke_width = round(max(1.5, size * 0.02) * 10) / 10
-    special_art = "" if special is None else special_overlay(x=x, y=y, size=size, kind=special)
     return f"""
   <g>
-    <rect x=\"{x}\" y=\"{y + shadow_offset}\" width=\"{size}\" height=\"{size}\" rx=\"{corner}\" fill=\"#040910\" fill-opacity=\"0.22\"/>
-    <rect x=\"{x}\" y=\"{y}\" width=\"{size}\" height=\"{size}\" rx=\"{corner}\" fill=\"{color}\"/>
-    <rect x=\"{x}\" y=\"{y}\" width=\"{size}\" height=\"{size}\" rx=\"{corner}\" stroke=\"#FFFFFF\" stroke-opacity=\"0.14\" stroke-width=\"{stroke_width}\"/>
-    <rect x=\"{x + gloss_inset}\" y=\"{y + gloss_inset}\" width=\"{size - (gloss_inset * 2)}\" height=\"{gloss_height}\" rx=\"{round(size * 0.12)}\" fill=\"#FFFFFF\" fill-opacity=\"0.18\"/>
+    <rect x="{x}" y="{y}" width="{size}" height="{size}" rx="{corner}" fill="{color}"/>
+    <rect x="{x}" y="{y}" width="{size}" height="{size}" rx="{corner}" fill="#FFFFFF" fill-opacity="0.12"/>
+    <rect x="{x}" y="{y}" width="{size}" height="{size}" rx="{corner}" stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="2.5"/>
     {special_art}
   </g>"""
 
@@ -566,26 +455,7 @@ def special_overlay(x: int, y: int, size: int, kind: str) -> str:
     if not path_data:
         return ""
 
-    return f'<path d="{path_data}" fill="#FFFFFF" fill-opacity="0.94" transform="translate({offset_x}, {offset_y}) scale({scale})"/>'
-
-
-def notification_geometry(board_scale: float = 1.0) -> dict[str, int]:
-    base_board_size = 636
-    board_size = round(base_board_size * board_scale)
-    board_x = (1024 - board_size) // 2
-    board_y = (1024 - board_size) // 2
-    grid_size = 5
-    gap = max(8, round(10 * board_scale))
-    cell_size = (board_size - ((grid_size - 1) * gap)) // grid_size
-    return {
-        "board_x": board_x,
-        "board_y": board_y,
-        "board_size": board_size,
-        "grid_size": grid_size,
-        "gap": gap,
-        "cell_size": cell_size,
-    }
-
+    return f'<path d="{path_data}" fill="#FFFFFF" transform="translate({offset_x}, {offset_y}) scale({scale})"/>'
 
 
 if __name__ == "__main__":

@@ -35,6 +35,7 @@ actual object AppSettingsStorage {
             unlockedThemeModes = decodeEnumSet(parts.getOrNull(12), AppThemeMode.entries),
             unlockedThemePalettes = decodeEnumSet(parts.getOrNull(13), AppColorPalette.entries),
             unlockedBlockStyles = decodeEnumSet(parts.getOrNull(14), BlockVisualStyle.entries),
+            lastAppOpenedAtEpochMillis = parts.getOrNull(15)?.toLongOrNull() ?: defaultSettings.lastAppOpenedAtEpochMillis,
         ).sanitized()
     }
 
@@ -58,12 +59,13 @@ actual object AppSettingsStorage {
                 encodeEnumSet(sanitized.unlockedThemeModes),
                 encodeEnumSet(sanitized.unlockedThemePalettes),
                 encodeEnumSet(sanitized.unlockedBlockStyles),
+                sanitized.lastAppOpenedAtEpochMillis,
             ).joinToString(separator = Separator.toString()),
         )
     }
 
     private const val StorageKey = "stackshift.settings"
     private const val Separator = ','
-    private val SupportedFieldCounts = 7..15
+    private val SupportedFieldCounts = 7..16
 }
 

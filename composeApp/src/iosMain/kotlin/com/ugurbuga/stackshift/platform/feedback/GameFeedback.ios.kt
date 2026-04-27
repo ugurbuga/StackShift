@@ -19,6 +19,7 @@ private fun ByteArray.toNSData(): NSData {
 }
 
 @Composable
+@OptIn(ExperimentalForeignApi::class)
 actual fun rememberNativeSoundEffectPlayer(
     moveBytes: ByteArray?,
     dropBytes: ByteArray?,

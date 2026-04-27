@@ -1,10 +1,12 @@
 package com.ugurbuga.stackshift.platform
 
+import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSCalendar
 import platform.Foundation.NSCalendarUnitDay
 import platform.Foundation.NSCalendarUnitMonth
 import platform.Foundation.NSCalendarUnitYear
 import platform.Foundation.NSDate
+import platform.posix.time
 
 actual fun getCurrentDate(): CurrentDate {
     val date = NSDate()
@@ -19,3 +21,7 @@ actual fun getCurrentDate(): CurrentDate {
         day = components.day.toInt()
     )
 }
+
+@OptIn(ExperimentalForeignApi::class)
+actual fun currentEpochMillis(): Long = time(null) * 1000L
+

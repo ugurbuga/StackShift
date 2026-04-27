@@ -31,18 +31,19 @@ import kotlin.math.max
 enum class AppLanguage(
     val localeTag: String,
     val labelRes: StringResource,
+    val flag: String,
 ) {
-    English(localeTag = "en", labelRes = Res.string.app_language_english),
-    Turkish(localeTag = "tr", labelRes = Res.string.app_language_turkish),
-    Spanish(localeTag = "es", labelRes = Res.string.app_language_spanish),
-    French(localeTag = "fr", labelRes = Res.string.app_language_french),
-    German(localeTag = "de", labelRes = Res.string.app_language_german),
-    Russian(localeTag = "ru", labelRes = Res.string.app_language_russian),
-    ChineseSimplified(localeTag = "zh-Hans", labelRes = Res.string.app_language_chinese_simplified),
-    Hindi(localeTag = "hi", labelRes = Res.string.app_language_hindi),
-    Arabic(localeTag = "ar", labelRes = Res.string.app_language_arabic),
-    Portuguese(localeTag = "pt", labelRes = Res.string.app_language_portuguese),
-    Indonesian(localeTag = "id", labelRes = Res.string.app_language_indonesian),
+    English(localeTag = "en", labelRes = Res.string.app_language_english, flag = "🇺🇸"),
+    Turkish(localeTag = "tr", labelRes = Res.string.app_language_turkish, flag = "🇹🇷"),
+    Spanish(localeTag = "es", labelRes = Res.string.app_language_spanish, flag = "🇪🇸"),
+    French(localeTag = "fr", labelRes = Res.string.app_language_french, flag = "🇫🇷"),
+    German(localeTag = "de", labelRes = Res.string.app_language_german, flag = "🇩🇪"),
+    Russian(localeTag = "ru", labelRes = Res.string.app_language_russian, flag = "🇷🇺"),
+    ChineseSimplified(localeTag = "zh-Hans", labelRes = Res.string.app_language_chinese_simplified, flag = "🇨🇳"),
+    Hindi(localeTag = "hi", labelRes = Res.string.app_language_hindi, flag = "🇮🇳"),
+    Arabic(localeTag = "ar", labelRes = Res.string.app_language_arabic, flag = "🇸🇦"),
+    Portuguese(localeTag = "pt", labelRes = Res.string.app_language_portuguese, flag = "🇵🇹"),
+    Indonesian(localeTag = "id", labelRes = Res.string.app_language_indonesian, flag = "🇮🇩"),
 
     ;
 
@@ -159,6 +160,10 @@ enum class BlockVisualStyle {
     Brick,
     SoundWave,
     Prism,
+    Electric,
+    Flame,
+    Gears,
+    Pixel,
     ;
 
     fun cornerScale(): Float = when (this) {
@@ -182,6 +187,10 @@ enum class BlockVisualStyle {
         Brick -> 0.46f
         SoundWave -> 0.88f
         Prism -> 0f
+        Electric -> 0.64f
+        Flame -> 1.15f
+        Gears -> 0.12f
+        Pixel -> 0.10f
     }
 
     fun frameCornerRadius(): Dp = when (this) {
@@ -205,6 +214,10 @@ enum class BlockVisualStyle {
         Brick -> 8.dp
         SoundWave -> 16.dp
         Prism -> 0.dp
+        Electric -> 10.dp
+        Flame -> 20.dp
+        Gears -> 4.dp
+        Pixel -> 4.dp
     }
 }
 
@@ -229,6 +242,11 @@ data class GameConfig(
     val difficultyIntervalSeconds: Int = 18,
     val linesPerLevel: Int = 6,
 )
+
+enum class GameMode {
+    Classic,
+    TimeAttack,
+}
 
 enum class GameStatus {
     Running,
@@ -737,6 +755,7 @@ data class PlacementPreview(
 @Immutable
 data class GameState(
     val config: GameConfig,
+    val gameMode: GameMode = GameMode.Classic,
     val board: BoardMatrix,
     val activePiece: Piece?,
     val nextQueue: List<Piece>,
@@ -768,6 +787,7 @@ data class GameState(
     val feedbackToken: Long = 0L,
     val rewardedReviveUsed: Boolean = false,
     val lastActionTime: Long = 0L,
+    val remainingTimeMillis: Long? = null,
     val message: GameText = GameText(GameTextKey.GameMessageSelectColumn),
     val activeChallenge: DailyChallenge? = null,
 ) {
@@ -779,6 +799,9 @@ data class GameState(
 
     val criticalColumns: Set<Int>
         get() = columnPressure.filter { it.level == PressureLevel.Critical || it.level == PressureLevel.Overflow }.map(ColumnPressure::column).toSet()
+
+    val isTimeAttack: Boolean
+        get() = gameMode == GameMode.TimeAttack
 }
 
 fun gameText(
@@ -908,6 +931,7 @@ fun normalizeBlockVisualStyle(style: BlockVisualStyle): BlockVisualStyle = when 
     BlockVisualStyle.NeonGlow -> BlockVisualStyle.Bubble
     BlockVisualStyle.LightBurst -> BlockVisualStyle.Outline
     BlockVisualStyle.LiquidMarble -> BlockVisualStyle.Crystal
+    BlockVisualStyle.Electric -> BlockVisualStyle.Flat
     else -> style
 }
 

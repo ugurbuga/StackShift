@@ -1,0 +1,54 @@
+package com.ugurbuga.stackshift.settings
+
+import com.ugurbuga.stackshift.game.logic.GameLogic
+import com.ugurbuga.stackshift.game.model.ChallengeTask
+import com.ugurbuga.stackshift.game.model.ChallengeTaskType
+import com.ugurbuga.stackshift.game.model.DailyChallenge
+import com.ugurbuga.stackshift.game.model.GameConfig
+import com.ugurbuga.stackshift.game.model.GameMode
+import kotlin.random.Random
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
+
+class GameSessionCodecTest {
+    private val logic = GameLogic(random = Random(21))
+
+    @Test
+    fun encodeDecode_preservesTimeAttackSessionDetails() {
+        val challenge = DailyChallenge(
+            year = 2026,
+            month = 4,
+            day = 28,
+            tasks = listOf(
+                ChallengeTask(type = ChallengeTaskType.ClearBlocks, target = 24, current = 7),
+                ChallengeTask(type = ChallengeTaskType.ReachScore, target = 1200, current = 450),
+            ),
+        )
+        val state = logic.newGame(
+            config = GameConfig(columns = 6, rows = 8),
+            challenge = challenge,
+            mode = GameMode.TimeAttack,
+        ).copy(
+            remainingTimeMillis = 42_000L,
+            recentlyClearedColumns = setOf(1, 4),
+            rewardedReviveUsed = true,
+            activeChallenge = challenge,
+        )
+
+        val decoded = GameSessionCodec.decode(GameSessionCodec.encode(state))
+
+        assertNotNull(decoded)
+        assertEquals(GameMode.TimeAttack, decoded.gameMode)
+        assertEquals(42_000L, decoded.remainingTimeMillis)
+        assertEquals(setOf(1, 4), decoded.recentlyClearedColumns)
+        assertTrue(decoded.rewardedReviveUsed)
+        assertNotNull(decoded.activeChallenge)
+        assertEquals(challenge.year, decoded.activeChallenge.year)
+        assertEquals(challenge.month, decoded.activeChallenge.month)
+        assertEquals(challenge.day, decoded.activeChallenge.day)
+        assertEquals(challenge.tasks, decoded.activeChallenge.tasks)
+    }
+}
+

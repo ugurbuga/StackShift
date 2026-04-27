@@ -12,7 +12,7 @@
     </item>
 
     <item
-        android:drawable="@drawable/ic_launcher_foreground_art"
+        android:drawable="@drawable/ic_launcher_foreground"
         android:gravity="center"
         android:width="160dp"
         android:height="160dp" />

@@ -31,6 +31,7 @@ import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.Card
@@ -78,6 +79,7 @@ import stackshift.composeapp.generated.resources.Res
 import stackshift.composeapp.generated.resources.app_title
 import stackshift.composeapp.generated.resources.high_score
 import stackshift.composeapp.generated.resources.home_play_cta
+import stackshift.composeapp.generated.resources.home_time_attack_cta
 import stackshift.composeapp.generated.resources.settings_challenges
 import stackshift.composeapp.generated.resources.settings_language
 import stackshift.composeapp.generated.resources.settings_theme
@@ -90,9 +92,11 @@ private const val HomeTitleBannerRows = 2
 @Composable
 fun HomeScreen(
     settings: AppSettings,
-    highestScore: Int,
+    classicHighScore: Int,
+    timeAttackHighScore: Int,
     telemetry: AppTelemetry,
     onPlay: () -> Unit,
+    onPlayTimeAttack: () -> Unit,
     onOpenInteractiveGuide: () -> Unit,
     onOpenTutorial: () -> Unit,
     onOpenTheme: () -> Unit,
@@ -156,15 +160,29 @@ fun HomeScreen(
                 )
             }
 
-            HomePrimaryPlayButton(
-                text = stringResource(Res.string.home_play_cta),
-                settings = settings,
-                pulse = stylePulse,
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .size(120.dp),
-                onClick = onPlay,
-            )
+            Column(
+                modifier = Modifier.align(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                HomePrimaryPlayButton(
+                    text = stringResource(Res.string.home_play_cta),
+                    settings = settings,
+                    pulse = stylePulse,
+                    modifier = Modifier.size(120.dp),
+                    onClick = onPlay,
+                )
+
+                HomeQuickActionButton(
+                    text = stringResource(Res.string.home_time_attack_cta),
+                    icon = Icons.Filled.Timer,
+                    tone = CellTone.Amber,
+                    settings = settings,
+                    pulse = stylePulse,
+                    modifier = Modifier.fillMaxWidth(0.62f),
+                    onClick = onPlayTimeAttack,
+                )
+            }
 
             Column(
                 modifier = Modifier
@@ -175,7 +193,8 @@ fun HomeScreen(
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 HomeHighScoreCard(
-                    highestScore = highestScore,
+                    classicHighScore = classicHighScore,
+                    timeAttackHighScore = timeAttackHighScore,
                     onClick = { notificationManager.sendTestNotification() }
                 )
 
@@ -833,7 +852,8 @@ private fun HomeTitleRowClearOverlay(
 
 @Composable
 private fun HomeHighScoreCard(
-    highestScore: Int,
+    classicHighScore: Int,
+    timeAttackHighScore: Int,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
 ) {
@@ -854,7 +874,7 @@ private fun HomeHighScoreCard(
         Column(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(
                 text = stringResource(Res.string.high_score),
@@ -862,13 +882,51 @@ private fun HomeHighScoreCard(
                 color = uiColors.subtitle,
                 fontWeight = FontWeight.SemiBold,
             )
-            Text(
-                text = highestScore.toString(),
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold,
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                HomeHighScoreMetric(
+                    title = stringResource(Res.string.home_play_cta),
+                    value = classicHighScore.toString(),
+                )
+                Box(
+                    modifier = Modifier
+                        .size(width = 1.dp, height = 32.dp)
+                        .height(32.dp)
+                        .background(uiColors.panelStroke.copy(alpha = 0.48f)),
+                )
+                HomeHighScoreMetric(
+                    title = stringResource(Res.string.home_time_attack_cta),
+                    value = timeAttackHighScore.toString(),
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun HomeHighScoreMetric(
+    title: String,
+    value: String,
+) {
+    val uiColors = StackShiftThemeTokens.uiColors
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelSmall,
+            color = uiColors.subtitle,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.Bold,
+        )
     }
 }
 
@@ -1063,9 +1121,11 @@ fun HomeScreenLightPreview() {
     StackShiftTheme(settings = settings) {
         HomeScreen(
             settings = settings,
-            highestScore = 1250,
+            classicHighScore = 1250,
+            timeAttackHighScore = 860,
             telemetry = NoOpAppTelemetry,
             onPlay = {},
+            onPlayTimeAttack = {},
             onOpenInteractiveGuide = {},
             onOpenTutorial = {},
             onOpenTheme = {},
@@ -1087,9 +1147,11 @@ fun HomeScreenDarkPreview() {
     StackShiftTheme(settings = settings) {
         HomeScreen(
             settings = settings,
-            highestScore = 1250,
+            classicHighScore = 1250,
+            timeAttackHighScore = 860,
             telemetry = NoOpAppTelemetry,
             onPlay = {},
+            onPlayTimeAttack = {},
             onOpenInteractiveGuide = {},
             onOpenTutorial = {},
             onOpenTheme = {},

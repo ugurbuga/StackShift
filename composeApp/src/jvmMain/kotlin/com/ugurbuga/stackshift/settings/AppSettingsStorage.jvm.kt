@@ -38,6 +38,7 @@ actual object AppSettingsStorage {
             unlockedThemePalettes = decodeEnumSet(prefs.getSafeString(KeyUnlockedThemePalettes, null), AppColorPalette.entries),
             unlockedBlockStyles = decodeEnumSet(prefs.getSafeString(KeyUnlockedBlockStyles, null), BlockVisualStyle.entries),
             challengeProgress = decodeChallengeProgress(prefs.getSafeString(KeyChallengeProgress, null)),
+            lastAppOpenedAtEpochMillis = prefs.getLong(KeyLastAppOpenedAtEpochMillis, defaultSettings.lastAppOpenedAtEpochMillis),
         ).sanitized()
     }
 
@@ -57,9 +58,11 @@ actual object AppSettingsStorage {
         prefs.put(KeyUnlockedThemePalettes, encodeEnumSet(sanitized.unlockedThemePalettes))
         prefs.put(KeyUnlockedBlockStyles, encodeEnumSet(sanitized.unlockedBlockStyles))
         prefs.put(KeyChallengeProgress, encodeChallengeProgress(sanitized.challengeProgress))
+        prefs.putLong(KeyLastAppOpenedAtEpochMillis, sanitized.lastAppOpenedAtEpochMillis)
     }
 
     private const val Namespace = "com.ugurbuga.stackshift.settings"
+    private const val KeyLastAppOpenedAtEpochMillis = "lastAppOpenedAtEpochMillis"
     private const val KeyChallengeProgress = "challengeProgress"
     private const val KeyTokenBalance = "tokenBalance"
     private const val KeyUnlockedThemeModes = "unlockedThemeModes"

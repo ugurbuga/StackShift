@@ -8,7 +8,6 @@ import com.ugurbuga.stackshift.game.model.AppThemeMode
 import com.ugurbuga.stackshift.game.model.BlockColorPalette
 import com.ugurbuga.stackshift.game.model.BlockVisualStyle
 import com.ugurbuga.stackshift.game.model.BoardBlockStyleMode
-import com.ugurbuga.stackshift.game.model.normalizeBlockVisualStyle
 import com.ugurbuga.stackshift.game.model.resolveUnifiedThemePalette
 
 actual object AppSettingsStorage {
@@ -50,14 +49,12 @@ actual object AppSettingsStorage {
                 themePalette = legacyThemePalette,
                 blockPalette = legacyBlockPalette,
             ),
-            blockVisualStyle = normalizeBlockVisualStyle(
-                BlockVisualStyle.entries.getOrElse(
-                    prefs.getInt(
-                        KeyBlockVisualStyle,
-                        defaultSettings.blockVisualStyle.ordinal
-                    )
-                ) { defaultSettings.blockVisualStyle }
-            ),
+            blockVisualStyle = BlockVisualStyle.entries.getOrElse(
+                prefs.getInt(
+                    KeyBlockVisualStyle,
+                    defaultSettings.blockVisualStyle.ordinal
+                )
+            ) { defaultSettings.blockVisualStyle },
             boardBlockStyleMode = BoardBlockStyleMode.entries.getOrElse(
                 prefs.getInt(
                     KeyBoardBlockStyleMode,
@@ -89,6 +86,10 @@ actual object AppSettingsStorage {
             challengeProgress = decodeChallengeProgress(
                 prefs.getSafeString(KeyChallengeProgress, null)
             ),
+            lastAppOpenedAtEpochMillis = prefs.getLong(
+                KeyLastAppOpenedAtEpochMillis,
+                defaultSettings.lastAppOpenedAtEpochMillis,
+            ),
         ).sanitized()
     }
 
@@ -107,10 +108,7 @@ actual object AppSettingsStorage {
             .putInt(KeyThemeMode, sanitized.themeMode.ordinal)
             .putInt(KeyThemeColorPalette, sanitized.themeColorPalette.ordinal)
             .putInt(KeyBlockColorPalette, sanitized.blockColorPalette.ordinal)
-            .putInt(
-                KeyBlockVisualStyle,
-                normalizeBlockVisualStyle(sanitized.blockVisualStyle).ordinal
-            )
+            .putInt(KeyBlockVisualStyle, sanitized.blockVisualStyle.ordinal)
             .putInt(KeyBoardBlockStyleMode, sanitized.boardBlockStyleMode.ordinal)
             .putBoolean(KeyHasSeenTutorial, sanitized.hasSeenTutorial)
             .putBoolean(KeyHasShownInteractiveOnboarding, sanitized.hasShownInteractiveOnboarding)
@@ -120,9 +118,11 @@ actual object AppSettingsStorage {
             .putString(KeyUnlockedThemePalettes, encodeEnumSet(sanitized.unlockedThemePalettes))
             .putString(KeyUnlockedBlockStyles, encodeEnumSet(sanitized.unlockedBlockStyles))
             .putString(KeyChallengeProgress, encodeChallengeProgress(sanitized.challengeProgress))
+            .putLong(KeyLastAppOpenedAtEpochMillis, sanitized.lastAppOpenedAtEpochMillis)
             .apply()
     }
 
+    private const val KeyLastAppOpenedAtEpochMillis = "lastAppOpenedAtEpochMillis"
     private const val KeyChallengeProgress = "challengeProgress"
     private const val KeyTokenBalance = "tokenBalance"
     private const val KeyUnlockedThemeModes = "unlockedThemeModes"

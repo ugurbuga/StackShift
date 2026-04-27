@@ -8,6 +8,7 @@
     <string name="settings_sound_off">Off</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_theme_palette">Theme Color Palette</string>
+    <string name="settings_color_palette">Color Palette</string>
     <string name="settings_block_palette">Block Color Palette</string>
     <string name="settings_block_style">Block Style</string>
     <string name="settings_tokens_title">Tokens</string>
@@ -70,6 +71,10 @@
     <string name="block_style_liquid_marble">Liquid Marble</string>
     <string name="block_style_spider_web">Spider Web</string>
     <string name="block_style_cosmic">Cosmic</string>
+    <string name="block_style_electric">Electric</string>
+    <string name="block_style_flame">Flame</string>
+    <string name="block_style_gears">Gears</string>
+    <string name="block_style_pixel">Pixel</string>
     <string name="board_block_style_always_flat">Always flat</string>
     <string name="board_block_style_match_selected">Match selected block style</string>
     <string name="hold">Hold</string>
@@ -87,7 +92,9 @@
     <string name="high_score">Best</string>
     <string name="high_score_new_record">New Record</string>
     <string name="home_play_cta">Play</string>
+    <string name="home_time_attack_cta">Time Attack</string>
     <string name="lines">Line</string>
+    <string name="time_remaining">Time Left</string>
     <string name="boost">Boost</string>
     <string name="danger">Danger</string>
     <string name="danger_none">-</string>

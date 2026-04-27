@@ -8,6 +8,7 @@
     <string name="settings_sound_off">Kapalı</string>
     <string name="settings_theme">Tema</string>
     <string name="settings_theme_palette">Tema Renkleri</string>
+    <string name="settings_color_palette">Renk Paleti</string>
     <string name="settings_block_palette">Blok Renkleri</string>
     <string name="settings_block_style">Blok Şekilleri</string>
     <string name="settings_tokens_title">Tokenlar</string>
@@ -70,6 +71,10 @@
     <string name="block_style_liquid_marble">Sıvı Mermer</string>
     <string name="block_style_spider_web">Örümcek Ağı</string>
     <string name="block_style_cosmic">Kozmik</string>
+    <string name="block_style_electric">Elektrik</string>
+    <string name="block_style_flame">Alev</string>
+    <string name="block_style_gears">Dişliler</string>
+    <string name="block_style_pixel">Piksel</string>
     <string name="board_block_style_always_flat">Her zaman düz</string>
     <string name="board_block_style_match_selected">Seçili blok stiliyle eşleşsin</string>
     <string name="hold">Beklet</string>
@@ -87,7 +92,9 @@
     <string name="high_score">Rekor</string>
     <string name="high_score_new_record">Yeni Rekor</string>
     <string name="home_play_cta">Başlat</string>
+    <string name="home_time_attack_cta">Zamana Karşı</string>
     <string name="lines">Satır</string>
+    <string name="time_remaining">Kalan Süre</string>
     <string name="boost">Hız</string>
     <string name="danger">Tehlike</string>
     <string name="danger_none">-</string>

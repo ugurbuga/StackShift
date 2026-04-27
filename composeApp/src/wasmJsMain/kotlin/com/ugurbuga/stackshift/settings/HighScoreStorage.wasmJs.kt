@@ -1,12 +1,17 @@
 package com.ugurbuga.stackshift.settings
 
-actual object HighScoreStorage {
-    actual fun load(): Int = BrowserStorage.get(StorageKey)?.toIntOrNull() ?: 0
+import com.ugurbuga.stackshift.game.model.GameMode
 
-    actual fun save(highScore: Int) {
-        BrowserStorage.set(StorageKey, highScore.toString())
+actual object HighScoreStorage {
+    actual fun load(mode: GameMode): Int = BrowserStorage.get(keyFor(mode))?.toIntOrNull() ?: 0
+
+    actual fun save(highScore: Int, mode: GameMode) {
+        BrowserStorage.set(keyFor(mode), highScore.toString())
     }
 
-    private const val StorageKey = "stackshift.highscore"
+    private fun keyFor(mode: GameMode): String = when (mode) {
+        GameMode.Classic -> "stackshift.highscore.classic"
+        GameMode.TimeAttack -> "stackshift.highscore.time_attack"
+    }
 }
 

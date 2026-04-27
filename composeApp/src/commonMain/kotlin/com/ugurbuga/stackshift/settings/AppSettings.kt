@@ -10,15 +10,16 @@ import com.ugurbuga.stackshift.game.model.ChallengeProgress
 
 data class AppSettings(
     val language: AppLanguage = AppLanguage.English,
-    val themeMode: AppThemeMode = AppThemeMode.Light,
+    val themeMode: AppThemeMode = AppThemeMode.System,
     val themeColorPalette: AppColorPalette = AppColorPalette.Classic,
     val blockVisualStyle: BlockVisualStyle = BlockVisualStyle.Flat,
     val boardBlockStyleMode: BoardBlockStyleMode = BoardBlockStyleMode.MatchSelectedBlockStyle,
     val tokenBalance: Int = 0,
-    val unlockedThemeModes: Set<AppThemeMode> = setOf(AppThemeMode.Light),
+    val unlockedThemeModes: Set<AppThemeMode> = AppThemeMode.entries.toSet(),
     val unlockedThemePalettes: Set<AppColorPalette> = setOf(AppColorPalette.Classic),
     val unlockedBlockStyles: Set<BlockVisualStyle> = setOf(BlockVisualStyle.Flat),
     val challengeProgress: ChallengeProgress = ChallengeProgress(),
+    val lastAppOpenedAtEpochMillis: Long = 0L,
     val hasSeenTutorial: Boolean = false,
     val hasShownInteractiveOnboarding: Boolean = false,
     val hasInitializedLanguage: Boolean = false,

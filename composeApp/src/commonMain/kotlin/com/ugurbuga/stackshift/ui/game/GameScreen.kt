@@ -211,6 +211,7 @@ import stackshift.composeapp.generated.resources.special_column_clearer
 import stackshift.composeapp.generated.resources.special_ghost
 import stackshift.composeapp.generated.resources.special_heavy
 import stackshift.composeapp.generated.resources.special_row_clearer
+import stackshift.composeapp.generated.resources.time_remaining
 import stackshift.composeapp.generated.resources.tutorial_back
 import stackshift.composeapp.generated.resources.tutorial_finish
 import stackshift.composeapp.generated.resources.tutorial_ready_body
@@ -437,16 +438,18 @@ fun StackShiftGameApp(
         onboardingAdvanceRequest = null
     }
 
-    var highestScore by remember { mutableIntStateOf(HighScoreStorage.load()) }
-    var newHighScoreReached by remember { mutableStateOf(value = false) }
-    LaunchedEffect(uiState.gameState.score) {
+    var highestScore by remember(uiState.gameState.gameMode) {
+        mutableIntStateOf(HighScoreStorage.load(uiState.gameState.gameMode))
+    }
+    var newHighScoreReached by remember(uiState.gameState.gameMode) { mutableStateOf(value = false) }
+    LaunchedEffect(uiState.gameState.score, uiState.gameState.gameMode) {
         if (uiState.gameState.score > highestScore) {
             telemetry.logHighScoreReached(
                 newScore = uiState.gameState.score,
                 previousHighScore = highestScore,
             )
             highestScore = uiState.gameState.score
-            HighScoreStorage.save(highestScore)
+            HighScoreStorage.save(highestScore, uiState.gameState.gameMode)
             newHighScoreReached = true
         }
     }
@@ -1084,6 +1087,7 @@ fun GameScreen(
                             gameState = gameState,
                             scoreHighlightStrengthProvider = scoreHighlightStrengthProvider,
                             scoreHighlightScaleProvider = scorePulseScaleProvider,
+                            remainingTimeLabel = stringResource(Res.string.time_remaining),
                             onBack = onBack,
                             onRestart = {
                                 if (!topBarControlsEnabled) return@MinimalTopBar
@@ -1692,6 +1696,7 @@ private fun MinimalTopBar(
     gameState: GameState,
     scoreHighlightStrengthProvider: () -> Float,
     scoreHighlightScaleProvider: () -> Float,
+    remainingTimeLabel: String,
     onBack: () -> Unit,
     onRestart: () -> Unit,
     controlsEnabled: Boolean = true,
@@ -1746,6 +1751,13 @@ private fun MinimalTopBar(
                     scaleProvider = scoreHighlightScaleProvider,
                     modifier = Modifier.weight(1f).height(TopBarMetricHeight),
                 )
+                gameState.remainingTimeMillis?.let { remainingTimeMillis ->
+                    CompactMetricChip(
+                        title = remainingTimeLabel,
+                        value = formatRemainingTime(remainingTimeMillis),
+                        modifier = Modifier.weight(1f).height(TopBarMetricHeight),
+                    )
+                }
                 TopBarActionBlockButton(
                     tone = TopBarActionBlockTones[2],
                     icon = Icons.Filled.Refresh,
@@ -1758,6 +1770,13 @@ private fun MinimalTopBar(
             }
         }
     }
+}
+
+private fun formatRemainingTime(remainingTimeMillis: Long): String {
+    val totalSeconds = (remainingTimeMillis.coerceAtLeast(0L) + 999L) / 1_000L
+    val minutes = totalSeconds / 60L
+    val seconds = totalSeconds % 60L
+    return "${minutes}:${seconds.toString().padStart(2, '0')}"
 }
 
 @Composable
@@ -2060,7 +2079,8 @@ internal fun rememberBlockStylePulse(
     val needsPulse = style == BlockVisualStyle.DynamicLiquid ||
             style == BlockVisualStyle.Tornado ||
             style == BlockVisualStyle.Prism ||
-            style == BlockVisualStyle.SoundWave
+            style == BlockVisualStyle.SoundWave ||
+            style == BlockVisualStyle.Flame
 
     if (pulse != 0f || !needsPulse) {
         return pulse
@@ -2162,7 +2182,7 @@ internal fun TopBarActionBlockButton(
         enabled = enabled,
         emphasized = true,
     )
-    val contentTint = blockStyleIconTint(style = resolvedBlockStyle, enabled = enabled)
+    val contentTint = blockStyleIconTint(style = resolvedBlockStyle)
 
     Box(
         modifier = Modifier
@@ -2503,7 +2523,7 @@ internal fun BlockStyleActionButton(
         enabled = enabled,
         emphasized = emphasized,
     )
-    val contentColor = textColor ?: blockStyleIconTint(style = resolvedStyle, enabled = enabled)
+    val contentColor = textColor ?: blockStyleIconTint(style = resolvedStyle)
     val buttonShape = RoundedCornerShape(boardCellCornerRadiusDp(height, resolvedStyle))
 
     Box(

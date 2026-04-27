@@ -1,5 +1,11 @@
 package com.ugurbuga.stackshift.ui.game
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -65,6 +71,17 @@ fun BlockPropertiesScreen(
     LogScreen(telemetry, TelemetryScreenNames.BlockProperties)
     var selected by remember { mutableStateOf(SpecialBlockType.None) }
     val uiColors = StackShiftThemeTokens.uiColors
+    
+    val transition = rememberInfiniteTransition(label = "blockPropsPulse")
+    val stylePulse by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "stylePulse",
+    )
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -98,6 +115,7 @@ fun BlockPropertiesScreen(
                         contentDescription = stringResource(Res.string.block_properties_title),
                         onClick = onBack,
                         size = 40.dp,
+                        pulse = stylePulse,
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Column(modifier = Modifier.weight(1f)) {
@@ -150,6 +168,7 @@ fun BlockPropertiesScreen(
                         BlockSample(
                             tone = sampleToneFor(selected),
                             special = selected,
+                            pulse = stylePulse,
                         )
                         BlockTitleAndDesc(special = selected)
                     }
@@ -164,6 +183,7 @@ fun BlockPropertiesScreen(
                             special = type,
                             selected = type == selected,
                             onClick = { selected = type },
+                            pulse = stylePulse,
                         )
                     }
                 }
@@ -177,8 +197,20 @@ private fun BlockTypeRow(
     special: SpecialBlockType,
     selected: Boolean,
     onClick: () -> Unit,
+    pulse: Float = 0f,
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
+    
+    val transition = rememberInfiniteTransition(label = "blockPropsPulse")
+    val stylePulse by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "stylePulse",
+    )
     val settings = LocalAppSettings.current
     val contentColor = blockStyleIconTint(style = settings.blockVisualStyle)
     val background = if (selected) {
@@ -209,7 +241,7 @@ private fun BlockTypeRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            BlockMiniIcon(tone = sampleToneFor(special), special = special)
+            BlockMiniIcon(tone = sampleToneFor(special), special = special, pulse = pulse)
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = resolveBlockTitle(special),
@@ -236,6 +268,7 @@ private fun BlockTypeRow(
 private fun BlockSample(
     tone: CellTone,
     special: SpecialBlockType,
+    pulse: Float = 0f,
 ) {
     val settings = LocalAppSettings.current
     BlockCellPreview(
@@ -244,6 +277,7 @@ private fun BlockSample(
         style = settings.blockVisualStyle,
         size = BlockSampleSize,
         special = special,
+        pulse = pulse,
     )
 }
 
@@ -251,6 +285,7 @@ private fun BlockSample(
 private fun BlockMiniIcon(
     tone: CellTone,
     special: SpecialBlockType,
+    pulse: Float = 0f,
 ) {
     val settings = LocalAppSettings.current
     BlockCellPreview(
@@ -259,6 +294,7 @@ private fun BlockMiniIcon(
         style = settings.blockVisualStyle,
         size = 28.dp,
         special = special,
+        pulse = pulse,
     )
 }
 

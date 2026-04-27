@@ -4,6 +4,7 @@ import com.ugurbuga.stackshift.game.logic.GameEvent
 import com.ugurbuga.stackshift.game.logic.GameLogic
 import com.ugurbuga.stackshift.game.model.DailyChallenge
 import com.ugurbuga.stackshift.game.model.GameConfig
+import com.ugurbuga.stackshift.game.model.GameMode
 import com.ugurbuga.stackshift.game.model.GameState
 import com.ugurbuga.stackshift.game.model.GridPoint
 import com.ugurbuga.stackshift.game.model.PlacementPreview
@@ -70,9 +71,10 @@ class GameViewModel(
 
     fun restart(
         config: GameConfig = uiState.value.gameState.config,
-        challenge: DailyChallenge? = uiState.value.gameState.activeChallenge
+        challenge: DailyChallenge? = uiState.value.gameState.activeChallenge,
+        mode: GameMode = uiState.value.gameState.gameMode,
     ): InteractionFeedback {
-        return dispatch(GameIntent.Restart(config, challenge))
+        return dispatch(GameIntent.Restart(config, challenge, mode))
     }
 
     fun replaceState(state: GameState) {

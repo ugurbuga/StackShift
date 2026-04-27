@@ -4,6 +4,10 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.graphics.toColorInt
@@ -11,6 +15,8 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.ugurbuga.stackshift.R
 import com.ugurbuga.stackshift.settings.AppSettingsStorage
+import com.ugurbuga.stackshift.settings.shouldSendDailyChallengeReminder
+import com.ugurbuga.stackshift.settings.shouldSendMissYouReminder
 import org.jetbrains.compose.resources.getString
 import stackshift.composeapp.generated.resources.Res
 import stackshift.composeapp.generated.resources.notification_daily_challenge_body
@@ -28,26 +34,38 @@ class NotificationWorker(
     companion object {
         private const val CHANNEL_ID = "stackshift_notification_channel_v2"
         private const val CHANNEL_NAME_DEFAULT = "Reminders"
-        
+
+        const val TAG_MISS_YOU = "miss_you_notification"
+        const val TAG_DAILY_CHALLENGE = "daily_challenge_notification"
+
         const val DATA_KEY_TYPE = "notification_type"
+
         const val TYPE_MISS_YOU = "miss_you"
         const val TYPE_DAILY_CHALLENGE = "daily_challenge"
+        const val TYPE_TEST = "test"
     }
 
     override suspend fun doWork(): Result {
         val type = inputData.getString(DATA_KEY_TYPE) ?: TYPE_MISS_YOU
-        showNotification(type)
+        val settings = AppSettingsStorage.load()
+        val shouldShow = when (type) {
+            TYPE_DAILY_CHALLENGE -> settings.shouldSendDailyChallengeReminder(getCurrentDate())
+            TYPE_MISS_YOU -> settings.shouldSendMissYouReminder(currentEpochMillis())
+            TYPE_TEST -> true
+            else -> true
+        }
+        if (shouldShow) showNotification(type)
         return Result.success()
     }
 
     private suspend fun showNotification(type: String) {
         val settings = AppSettingsStorage.load()
         val appLocale = Locale.forLanguageTag(settings.language.localeTag)
-        
+
         // Temporarily set default locale to fetch strings in app-selected language
         val originalLocale = Locale.getDefault()
         Locale.setDefault(appLocale)
-        
+
         val title = try {
             if (type == TYPE_DAILY_CHALLENGE) {
                 getString(Res.string.notification_daily_challenge_title)
@@ -57,27 +75,31 @@ class NotificationWorker(
         } catch (_: Exception) {
             "StackShift"
         }
-        
+
         val message = try {
             if (type == TYPE_DAILY_CHALLENGE) {
                 getString(Res.string.notification_daily_challenge_body)
+            } else if (type == TYPE_TEST) {
+                "This is a test notification."
             } else {
                 getString(Res.string.notification_miss_you_body)
             }
         } catch (_: Exception) {
             if (type == TYPE_DAILY_CHALLENGE) {
                 "Have you completed today's daily challenge tasks yet?"
+            } else if (type == TYPE_TEST) {
+                "This is a test notification."
             } else {
                 "We missed you! Come back and play some more."
             }
         }
-        
+
         val channelName = try {
             getString(Res.string.notification_reminders_channel_name)
         } catch (_: Exception) {
             CHANNEL_NAME_DEFAULT
         }
-        
+
         Locale.setDefault(originalLocale)
 
         val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -102,9 +124,18 @@ class NotificationWorker(
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        val notificationId = if (type == TYPE_DAILY_CHALLENGE) 1002 else 1001
+        val notificationId = when (type) {
+            TYPE_DAILY_CHALLENGE -> 1002
+            TYPE_TEST -> 1003
+            else -> 1001
+        }
+        val largeIcon = runCatching {
+            applicationContext.packageManager
+                .getApplicationIcon(applicationContext.packageName)
+                .toBitmap()
+        }.getOrNull()
 
-        val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
+        val notificationBuilder = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setColor("#4FC3F7".toColorInt())
             .setContentTitle(title)
@@ -113,8 +144,26 @@ class NotificationWorker(
             .setContentIntent(pendingIntent)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
-            .build()
+
+        largeIcon?.let(notificationBuilder::setLargeIcon)
+
+        val notification = notificationBuilder.build()
 
         notificationManager.notify(notificationId, notification)
     }
 }
+
+private fun Drawable.toBitmap(): Bitmap {
+    if (this is BitmapDrawable) {
+        bitmap?.let { return it }
+    }
+
+    val width = intrinsicWidth.takeIf { it > 0 } ?: 256
+    val height = intrinsicHeight.takeIf { it > 0 } ?: 256
+    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    setBounds(0, 0, canvas.width, canvas.height)
+    draw(canvas)
+    return bitmap
+}
+

@@ -84,7 +84,9 @@
     <string name="high_score">सर्वश्रेष्ठ</string>
     <string name="high_score_new_record">नया रिकॉर्ड</string>
     <string name="home_play_cta">खेलें</string>
+    <string name="home_time_attack_cta">टाइम अटैक</string>
     <string name="lines">लाइन</string>
+    <string name="time_remaining">शेष समय</string>
     <string name="boost">बूस्ट</string>
     <string name="danger">खतरा</string>
     <string name="danger_none">-</string>
@@ -256,4 +258,9 @@
     <string name="interactive_onboarding_ghost_body">भूत ब्लॉक मौजूद सेल्स के आर-पार जा सकते हैं। इसे चिन्हित कॉलम में छोड़ें और देखें कि यह उन जगहों तक कैसे पहुँचता है जहाँ सामान्य पीस नहीं पहुँच पाते।</string>
     <string name="interactive_onboarding_heavy_title">भारी ब्लॉक बोर्ड को ज़्यादा ताक़त से बदलता है</string>
     <string name="interactive_onboarding_heavy_body">भारी ब्लॉक लैंड करने के बाद आसपास के क्षेत्र को तेज़ी से बदल देते हैं। निर्देशित ड्रॉप करें, फिर वहीं से खेल सामान्य रूप से जारी रखें।</string>
+    <string name="settings_color_palette">रंग पैलेट</string>
+    <string name="block_style_electric">इलेक्ट्रिक</string>
+    <string name="block_style_flame">लौ</string>
+    <string name="block_style_gears">गियर्स</string>
+    <string name="block_style_pixel">पिक्सेल</string>
 </resources>

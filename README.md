@@ -1,7 +1,7 @@
 # StackShift
 
 <p align="center">
-  <img src="./branding/generated/stackshift-app-icon-1024.png" alt="StackShift logo" width="160" />
+  <img src="./branding/generated/stackshift-board.svg" alt="StackShift logo" width="160" />
 </p>
 
 StackShift is a reverse-Tetris inspired puzzle game built with **Kotlin** and **Compose Multiplatform** for **Android, iOS, Web, macOS, Windows, and Desktop JVM**.

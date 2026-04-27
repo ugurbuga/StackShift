@@ -1,11 +1,14 @@
 package com.ugurbuga.stackshift.game.logic
 
 import com.ugurbuga.stackshift.game.model.BoardMatrix
+import com.ugurbuga.stackshift.game.model.ChallengeTaskType
 import com.ugurbuga.stackshift.game.model.ColumnPressure
 import com.ugurbuga.stackshift.game.model.ComboState
+import com.ugurbuga.stackshift.game.model.DailyChallenge
 import com.ugurbuga.stackshift.game.model.FeedbackEmphasis
 import com.ugurbuga.stackshift.game.model.FloatingFeedback
 import com.ugurbuga.stackshift.game.model.GameConfig
+import com.ugurbuga.stackshift.game.model.GameMode
 import com.ugurbuga.stackshift.game.model.GameState
 import com.ugurbuga.stackshift.game.model.GameStatus
 import com.ugurbuga.stackshift.game.model.GameTextKey
@@ -17,8 +20,6 @@ import com.ugurbuga.stackshift.game.model.PlacementPreview
 import com.ugurbuga.stackshift.game.model.PressureLevel
 import com.ugurbuga.stackshift.game.model.SoftLockState
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
-import com.ugurbuga.stackshift.game.model.DailyChallenge
-import com.ugurbuga.stackshift.game.model.ChallengeTaskType
 import com.ugurbuga.stackshift.game.model.gameText
 import com.ugurbuga.stackshift.settings.GameSessionCodec
 import kotlin.random.Random
@@ -29,12 +30,26 @@ class GameLogic(
 ) {
     private var nextPieceId: Long = 1L
 
+    companion object {
+        const val DefaultTimeAttackDurationMillis = 120_000L
+        const val TimeAttackBonusPerClearedBlockMillis = 400L
+        const val TimeAttackReviveBonusMillis = 15_000L
+        private const val QueueSize = 3
+        private const val SoftLockMillis = 260L
+        private const val RewardedReviveRowCount = 6
+        private const val PlayablePieceGenerationAttempts = 16
+    }
+
     fun restoreGame(state: GameState): GameState {
         nextPieceId = maxOf(nextPieceId, GameSessionCodec.maxPieceId(state) + 1L)
         return state
     }
 
-    fun newGame(config: GameConfig = GameConfig(), challenge: DailyChallenge? = null): GameState {
+    fun newGame(
+        config: GameConfig = GameConfig(),
+        challenge: DailyChallenge? = null,
+        mode: GameMode = GameMode.Classic,
+    ): GameState {
         val level = 1
         val board = BoardMatrix.empty(columns = config.columns, rows = config.rows)
         val openingBag = List(QueueSize + 1) { createPiece(level = level, launchBar = LaunchBarState()) }
@@ -42,6 +57,7 @@ class GameLogic(
         val nextQueue = openingBag.drop(1)
         val state = GameState(
             config = config,
+            gameMode = mode,
             board = board,
             activePiece = activePiece,
             nextQueue = nextQueue,
@@ -67,6 +83,7 @@ class GameLogic(
             clearAnimationToken = 0L,
             floatingFeedback = null,
             feedbackToken = 0L,
+            remainingTimeMillis = if (mode == GameMode.TimeAttack) DefaultTimeAttackDurationMillis else null,
             message = gameText(GameTextKey.GameMessageSelectColumn),
             activeChallenge = challenge?.let { c ->
                 c.copy(tasks = c.tasks.map { it.copy(current = 0) })
@@ -295,6 +312,12 @@ class GameLogic(
             )
         )
         val lastMoveScore = nextScore - state.score
+        val awardedTimeMillis = if (state.gameMode == GameMode.TimeAttack) {
+            resolution.totalBlocksCleared * TimeAttackBonusPerClearedBlockMillis
+        } else {
+            0L
+        }
+        val nextRemainingTimeMillis = state.remainingTimeMillis?.plus(awardedTimeMillis)
         val nextToken = state.feedbackToken + 1L
         val floatingFeedback = buildFloatingFeedback(
             state = state,
@@ -365,6 +388,7 @@ class GameLogic(
                 comboPopupToken = if (nextComboChain > 1 || perfectDrop || resolution.triggeredSpecialCells > 0) state.comboPopupToken + 1L else state.comboPopupToken,
                 floatingFeedback = floatingFeedback,
                 feedbackToken = nextToken,
+                remainingTimeMillis = nextRemainingTimeMillis,
                 message = message,
                 activeChallenge = updatedChallenge,
             ),
@@ -469,6 +493,7 @@ class GameLogic(
         return GameMoveResult(
             state = state.copy(
                 board = revivedBoard,
+                gameMode = state.gameMode,
                 activePiece = queueAdvance.activePiece,
                 nextQueue = queueAdvance.nextQueue,
                 lastMoveScore = 0,
@@ -491,6 +516,7 @@ class GameLogic(
                 ),
                 feedbackToken = nextToken,
                 rewardedReviveUsed = true,
+                remainingTimeMillis = state.remainingTimeMillis?.plus(TimeAttackReviveBonusMillis),
                 message = gameText(GameTextKey.GameMessageExtraLifeUsed, revivedRows.size),
             ),
             events = setOf(GameEvent.Revived),
@@ -500,11 +526,21 @@ class GameLogic(
     fun tick(state: GameState): GameState {
         if (state.status != GameStatus.Running) return state
 
+        val nextRemainingTimeMillis = state.remainingTimeMillis?.minus(1_000L)
+        if (nextRemainingTimeMillis != null && nextRemainingTimeMillis <= 0L) {
+            return state.copy(
+                remainingTimeMillis = 0L,
+                status = GameStatus.GameOver,
+                message = gameText(GameTextKey.GameOverTitle),
+            )
+        }
+
         val nextSeconds = state.secondsUntilDifficultyIncrease - 1
         if (nextSeconds > 0) {
             return state.copy(
                 secondsUntilDifficultyIncrease = nextSeconds,
                 columnPressure = computeColumnPressure(state.board, state.config),
+                remainingTimeMillis = nextRemainingTimeMillis,
             )
         }
 
@@ -520,6 +556,7 @@ class GameLogic(
             level = nextLevel,
             secondsUntilDifficultyIncrease = state.config.difficultyIntervalSeconds,
             columnPressure = pressure,
+            remainingTimeMillis = nextRemainingTimeMillis,
             status = if (pressure.any { it.level == PressureLevel.Overflow }) GameStatus.GameOver else state.status,
             message = if (pressure.any { it.level == PressureLevel.Critical || it.level == PressureLevel.Overflow }) {
                 gameText(GameTextKey.GameMessageTempoCritical)
@@ -1221,12 +1258,6 @@ class GameLogic(
         events = setOf(GameEvent.InvalidDrop),
     )
 
-    private companion object {
-        const val QueueSize = 3
-        const val SoftLockMillis = 260L
-        const val RewardedReviveRowCount = 6
-        const val PlayablePieceGenerationAttempts = 16
-    }
 }
 
 enum class GameEvent {

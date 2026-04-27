@@ -24,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.ugurbuga.stackshift.ads.AppFooterAdSlot
 import com.ugurbuga.stackshift.ads.rememberPlatformGameAdController
 import com.ugurbuga.stackshift.game.model.GameConfig
+import com.ugurbuga.stackshift.game.model.GameMode
 import com.ugurbuga.stackshift.game.model.GameState
 import com.ugurbuga.stackshift.game.model.GameStatus
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
@@ -31,6 +32,7 @@ import com.ugurbuga.stackshift.localization.AppEnvironment
 import com.ugurbuga.stackshift.localization.currentDeviceLocaleTag
 import com.ugurbuga.stackshift.platform.feedback.GameSound
 import com.ugurbuga.stackshift.platform.feedback.rememberSoundEffectPlayer
+import com.ugurbuga.stackshift.platform.currentEpochMillis
 import com.ugurbuga.stackshift.platform.getCurrentDate
 import com.ugurbuga.stackshift.platform.rememberNotificationManager
 import com.ugurbuga.stackshift.presentation.game.GameViewModel
@@ -45,6 +47,7 @@ import com.ugurbuga.stackshift.settings.awardCompletedChallenge
 import com.ugurbuga.stackshift.settings.awardScoreTokens
 import com.ugurbuga.stackshift.settings.initializeAppSettingsForFirstLaunch
 import com.ugurbuga.stackshift.settings.logLanguageBootstrapDecision
+import com.ugurbuga.stackshift.settings.recordAppOpened
 import com.ugurbuga.stackshift.settings.sanitized
 import com.ugurbuga.stackshift.telemetry.AppTelemetry
 import com.ugurbuga.stackshift.telemetry.TelemetryActionNames
@@ -119,10 +122,12 @@ fun StackShiftRoot(
     telemetry: AppTelemetry,
     gameViewModel: GameViewModel,
     currentRoute: AppRoute,
-    highestScore: Int,
+    classicHighScore: Int,
+    timeAttackHighScore: Int,
     rewardFeedback: RewardFeedbackState,
     onRewardFeedbackDismiss: () -> Unit,
     onPlayRequested: () -> Unit,
+    onTimeAttackRequested: () -> Unit,
     onNavigateToInteractiveOnboarding: () -> Unit,
     onNavigateToTheme: () -> Unit,
     onNavigateToLanguage: () -> Unit,
@@ -153,8 +158,13 @@ fun StackShiftRoot(
 
     AppEnvironment(settings = settings) {
         LaunchedEffect(Unit) {
-            notificationManager.scheduleMissYouNotification()
+            onSettingsChange(settings.recordAppOpened(currentEpochMillis()))
+        }
+        LaunchedEffect(settings.challengeProgress, settings.lastAppOpenedAtEpochMillis) {
+            notificationManager.cancelDailyChallengeNotification()
             notificationManager.scheduleDailyChallengeNotification()
+            notificationManager.cancelMissYouNotification()
+            notificationManager.scheduleMissYouNotification()
         }
         notificationManager.RequestPermission()
         StackShiftTheme(settings = settings) {
@@ -170,9 +180,11 @@ fun StackShiftRoot(
                                 HomeScreen(
                                     modifier = Modifier.fillMaxSize(),
                                     settings = settings,
-                                    highestScore = highestScore,
+                                    classicHighScore = classicHighScore,
+                                    timeAttackHighScore = timeAttackHighScore,
                                     telemetry = telemetry,
                                     onPlay = onPlayRequested,
+                                    onPlayTimeAttack = onTimeAttackRequested,
                                     onOpenInteractiveGuide = onNavigateToInteractiveOnboarding,
                                     onOpenTutorial = {
                                         telemetry.logUserAction(TelemetryActionNames.OpenTutorial)
@@ -202,7 +214,7 @@ fun StackShiftRoot(
                                     progress = settings.challengeProgress,
                                     onBack = onNavigateBack,
                                     onPlayChallenge = { challenge ->
-                                        gameViewModel.restart(GameConfig(), challenge)
+                                        gameViewModel.restart(GameConfig(), challenge, GameMode.Classic)
                                         onPlayRequested()
                                     }
                                 )
@@ -385,12 +397,13 @@ fun StackShiftAppHost(
         gameViewModel = createGameViewModel(FirstRunGameOnboardingStateFactory.initialState())
     }
 
-    fun startPlayFlow() {
-        if (!settings.hasShownInteractiveOnboarding) {
+    fun startPlayFlow(mode: GameMode = GameMode.Classic) {
+        if (mode == GameMode.Classic && !settings.hasShownInteractiveOnboarding) {
             prepareInteractiveOnboarding()
             navigateTo(AppRoute.InteractiveOnboarding)
         } else {
             persistActiveSession.value = true
+            gameViewModel.restart(mode = mode)
             navigateTo(AppRoute.Game)
         }
     }
@@ -443,12 +456,17 @@ fun StackShiftAppHost(
         telemetry = telemetry,
         gameViewModel = gameViewModel,
         currentRoute = currentRoute,
-        highestScore = HighScoreStorage.load(),
+        classicHighScore = HighScoreStorage.load(GameMode.Classic),
+        timeAttackHighScore = HighScoreStorage.load(GameMode.TimeAttack),
         rewardFeedback = rewardFeedback,
         onRewardFeedbackDismiss = { rewardFeedback = rewardFeedback.copy(visible = false) },
         onPlayRequested = {
             telemetry.logUserAction(TelemetryActionNames.StartGameFromHome)
-            startPlayFlow()
+            startPlayFlow(GameMode.Classic)
+        },
+        onTimeAttackRequested = {
+            telemetry.logUserAction("start_time_attack_from_home")
+            startPlayFlow(GameMode.TimeAttack)
         },
         onNavigateToInteractiveOnboarding = {
             telemetry.logUserAction(TelemetryActionNames.OpenInteractiveOnboarding)

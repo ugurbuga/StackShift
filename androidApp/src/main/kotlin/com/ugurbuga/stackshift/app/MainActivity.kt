@@ -10,12 +10,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.drawable.toDrawable
 import com.ugurbuga.stackshift.ads.AndroidAdMobIds
+import com.ugurbuga.stackshift.platform.GlobalPlatformConfig
 import com.ugurbuga.stackshift.settings.AppContextHolder
 import com.ugurbuga.stackshift.settings.AppSettingsStorage
 import com.ugurbuga.stackshift.ui.theme.stackShiftThemeSpec
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        GlobalPlatformConfig.isDebug = BuildConfig.DEBUG
         AppContextHolder.context = applicationContext
         AndroidAdMobIds.BannerAdUnitId = BuildConfig.ADS_BANNER_UNIT_ID
         AndroidAdMobIds.InterstitialAdUnitId = BuildConfig.ADS_INTERSTITIAL_UNIT_ID

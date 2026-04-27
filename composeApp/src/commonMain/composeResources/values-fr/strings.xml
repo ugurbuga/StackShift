@@ -84,7 +84,9 @@
     <string name="high_score">Record</string>
     <string name="high_score_new_record">Nouveau record</string>
     <string name="home_play_cta">Jouer</string>
+    <string name="home_time_attack_cta">Contre-la-montre</string>
     <string name="lines">Lignes</string>
+    <string name="time_remaining">Temps restant</string>
     <string name="boost">Élan</string>
     <string name="danger">Danger</string>
     <string name="danger_none">-</string>
@@ -247,5 +249,10 @@
     <string name="interactive_onboarding_ghost_body">Les blocs Ghost peuvent traverser les cellules déjà occupées. Lâchez-le dans la colonne marquée pour voir comment il atteint des espaces impossibles pour les pièces normales.</string>
     <string name="interactive_onboarding_heavy_title">Heavy transforme le plateau de façon agressive</string>
     <string name="interactive_onboarding_heavy_body">Les blocs Heavy remodèlent la zone après l’atterrissage. Effectuez le drop guidé, puis continuez la partie normalement.</string>
+    <string name="settings_color_palette">Palette de couleurs</string>
+    <string name="block_style_electric">Électrique</string>
+    <string name="block_style_flame">Flamme</string>
+    <string name="block_style_gears">Engrenages</string>
+    <string name="block_style_pixel">Pixel</string>
 </resources>
 

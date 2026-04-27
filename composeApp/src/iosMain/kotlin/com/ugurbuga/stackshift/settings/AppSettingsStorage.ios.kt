@@ -6,7 +6,6 @@ import com.ugurbuga.stackshift.game.model.AppThemeMode
 import com.ugurbuga.stackshift.game.model.BlockColorPalette
 import com.ugurbuga.stackshift.game.model.BlockVisualStyle
 import com.ugurbuga.stackshift.game.model.BoardBlockStyleMode
-import com.ugurbuga.stackshift.game.model.normalizeBlockVisualStyle
 import com.ugurbuga.stackshift.game.model.resolveUnifiedThemePalette
 import platform.Foundation.NSUserDefaults
 
@@ -26,9 +25,7 @@ actual object AppSettingsStorage {
             language = AppLanguage.entries.getOrElse(defaults.integerForKey(KeyLanguage).toInt()) { defaultSettings.language },
             themeMode = AppThemeMode.entries.getOrElse(defaults.integerForKey(KeyThemeMode).toInt()) { defaultSettings.themeMode },
             themeColorPalette = resolveUnifiedThemePalette(themePalette = legacyThemePalette, blockPalette = legacyBlockPalette),
-            blockVisualStyle = normalizeBlockVisualStyle(
-                BlockVisualStyle.entries.getOrElse(defaults.integerForKey(KeyBlockVisualStyle).toInt()) { defaultSettings.blockVisualStyle }
-            ),
+            blockVisualStyle = BlockVisualStyle.entries.getOrElse(defaults.integerForKey(KeyBlockVisualStyle).toInt()) { defaultSettings.blockVisualStyle },
             boardBlockStyleMode = BoardBlockStyleMode.entries.getOrElse(defaults.integerForKey(KeyBoardBlockStyleMode).toInt()) { defaultSettings.boardBlockStyleMode },
             hasSeenTutorial = defaults.boolForKey(KeyHasSeenTutorial),
             hasShownInteractiveOnboarding = defaults.boolForKey(KeyHasShownInteractiveOnboarding),
@@ -40,6 +37,10 @@ actual object AppSettingsStorage {
             challengeProgress = decodeChallengeProgress(
                 defaults.getSafeString(KeyChallengeProgress),
             ),
+            lastAppOpenedAtEpochMillis = defaults.objectForKey(KeyLastAppOpenedAtEpochMillis)?.let {
+                defaults.stringForKey(KeyLastAppOpenedAtEpochMillis)?.toLongOrNull()
+                    ?: defaults.integerForKey(KeyLastAppOpenedAtEpochMillis).toLong()
+            } ?: defaultSettings.lastAppOpenedAtEpochMillis,
         ).sanitized()
     }
 
@@ -49,7 +50,7 @@ actual object AppSettingsStorage {
         defaults.setInteger(sanitized.themeMode.ordinal.toLong(), forKey = KeyThemeMode)
         defaults.setInteger(sanitized.themeColorPalette.ordinal.toLong(), forKey = KeyThemeColorPalette)
         defaults.setInteger(sanitized.blockColorPalette.ordinal.toLong(), forKey = KeyBlockColorPalette)
-        defaults.setInteger(normalizeBlockVisualStyle(sanitized.blockVisualStyle).ordinal.toLong(), forKey = KeyBlockVisualStyle)
+        defaults.setInteger(sanitized.blockVisualStyle.ordinal.toLong(), forKey = KeyBlockVisualStyle)
         defaults.setInteger(sanitized.boardBlockStyleMode.ordinal.toLong(), forKey = KeyBoardBlockStyleMode)
         defaults.setBool(sanitized.hasSeenTutorial, forKey = KeyHasSeenTutorial)
         defaults.setBool(sanitized.hasShownInteractiveOnboarding, forKey = KeyHasShownInteractiveOnboarding)
@@ -59,8 +60,10 @@ actual object AppSettingsStorage {
         defaults.setObject(encodeEnumSet(sanitized.unlockedThemePalettes), forKey = KeyUnlockedThemePalettes)
         defaults.setObject(encodeEnumSet(sanitized.unlockedBlockStyles), forKey = KeyUnlockedBlockStyles)
         defaults.setObject(encodeChallengeProgress(sanitized.challengeProgress), forKey = KeyChallengeProgress)
+        defaults.setObject(sanitized.lastAppOpenedAtEpochMillis.toString(), forKey = KeyLastAppOpenedAtEpochMillis)
     }
 
+    private const val KeyLastAppOpenedAtEpochMillis = "lastAppOpenedAtEpochMillis"
     private const val KeyChallengeProgress = "challengeProgress"
     private const val KeyTokenBalance = "tokenBalance"
     private const val KeyUnlockedThemeModes = "unlockedThemeModes"

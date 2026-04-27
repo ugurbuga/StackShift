@@ -46,6 +46,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
@@ -80,6 +81,7 @@ import kotlin.math.sin
 private const val DefaultBoardClearFlashDurationMillis = 420
 private const val DefaultBoardShiftDurationMillis = 220
 private const val CosmicStarCount = 20
+private const val CosmicFieldSeed = 0x51A71C
 private val BoardFrameInset = 1.dp
 
 @Composable
@@ -196,7 +198,10 @@ fun BoardGrid(
         remember { mutableFloatStateOf(0f) }
     }
     val shouldAnimateStylePulse = stylePulse == 0f && (
-        boardBlockStyle == BlockVisualStyle.DynamicLiquid || boardBlockStyle == BlockVisualStyle.Tornado || boardBlockStyle == BlockVisualStyle.Prism
+        boardBlockStyle == BlockVisualStyle.DynamicLiquid ||
+            boardBlockStyle == BlockVisualStyle.Tornado ||
+            boardBlockStyle == BlockVisualStyle.Prism ||
+            boardBlockStyle == BlockVisualStyle.Flame
     )
     val stylePulseTransition = if (shouldAnimateStylePulse) {
         rememberInfiniteTransition(label = "stylePulse")
@@ -1366,6 +1371,40 @@ internal fun BlockCellPreview(
 }
 
 @Composable
+internal fun BlockCellPreview(
+    baseColor: Color,
+    style: BlockVisualStyle,
+    size: Dp,
+    modifier: Modifier = Modifier,
+    alpha: Float = 1f,
+    pulse: Float = 0f,
+) {
+    val density = LocalDensity.current
+    val cellInset = boardCellInsetDp(size)
+    val cellCornerRadius = boardCellCornerRadiusDp(size, style)
+    val cellCornerRadiusPx = with(density) { cellCornerRadius.toPx() }
+    Box(
+        modifier = modifier
+            .size(size)
+            .padding(cellInset),
+        contentAlignment = Alignment.Center,
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            drawCellBody(
+                baseColor = baseColor,
+                palette = BlockColorPalette.Classic,
+                style = style,
+                topLeft = Offset.Zero,
+                size = this.size,
+                cornerRadius = CornerRadius(cellCornerRadiusPx, cellCornerRadiusPx),
+                alpha = alpha,
+                pulse = pulse,
+            )
+        }
+    }
+}
+
+@Composable
 fun PieceBlocks(
     piece: Piece,
     cellSize: Dp,
@@ -1943,6 +1982,7 @@ internal fun DrawScope.drawCellBody(
                 size = size,
                 baseGlow = tintColor(rawBaseColor, 0.22f),
                 alpha = constrainedAlpha,
+                pulse = pulse,
             )
         }
 
@@ -1989,6 +2029,525 @@ internal fun DrawScope.drawCellBody(
                 cornerRadius = cornerRadius,
                 pulse = pulse,
             )
+        }
+
+        BlockVisualStyle.Electric -> {
+            drawRoundRect(
+                color = baseColor,
+                topLeft = topLeft,
+                size = size,
+                cornerRadius = cornerRadius,
+            )
+        }
+
+        BlockVisualStyle.Flame -> {
+            drawFlamePattern(
+                topLeft = topLeft,
+                size = size,
+                toneColor = rawBaseColor,
+                alpha = constrainedAlpha,
+                cornerRadius = cornerRadius,
+                pulse = pulse,
+            )
+        }
+
+        BlockVisualStyle.Gears -> {
+            drawGearsPattern(
+                topLeft = topLeft,
+                size = size,
+                toneColor = rawBaseColor,
+                alpha = constrainedAlpha,
+                cornerRadius = cornerRadius,
+                pulse = pulse,
+            )
+        }
+
+        BlockVisualStyle.Pixel -> {
+            drawPixelPattern(
+                topLeft = topLeft,
+                size = size,
+                toneColor = rawBaseColor,
+                alpha = constrainedAlpha,
+                cornerRadius = cornerRadius,
+                pulse = pulse,
+            )
+        }
+    }
+}
+
+private fun roundedClipPath(
+    topLeft: Offset,
+    size: Size,
+    cornerRadius: CornerRadius,
+): Path = Path().apply {
+    addRoundRect(
+        androidx.compose.ui.geometry.RoundRect(
+            rect = androidx.compose.ui.geometry.Rect(topLeft, size),
+            cornerRadius = cornerRadius,
+        )
+    )
+}
+
+private fun DrawScope.drawFlamePattern(
+    topLeft: Offset,
+    size: Size,
+    toneColor: Color,
+    alpha: Float,
+    cornerRadius: CornerRadius,
+    pulse: Float,
+) {
+    val clipShape = roundedClipPath(topLeft, size, cornerRadius)
+    val pulseAmount = pulse.coerceIn(0f, 1f)
+    val cycle = sin(pulseAmount * PI.toFloat()).coerceIn(0f, 1f)
+    val sway = sin(pulseAmount * PI.toFloat() * 2f) * size.width * 0.014f
+    val widthScale = 1f + (cycle * 0.20f)
+    val heightCompression = 1f - (cycle * 0.22f)
+    val centerX = topLeft.x + size.width * 0.5f + sway
+    val bottomY = topLeft.y + size.height * (0.94f + (cycle * 0.01f))
+    val topY = topLeft.y + size.height * (0.10f + (cycle * 0.16f))
+    val innerTopY = topLeft.y + size.height * (0.25f + (cycle * 0.14f))
+    val coreTopY = topLeft.y + size.height * (0.39f + (cycle * 0.10f))
+    fun x(fraction: Float): Float = centerX + ((size.width * (fraction - 0.5f)) * widthScale)
+    fun y(baseFraction: Float): Float = topLeft.y + size.height * (baseFraction * heightCompression + (1f - heightCompression) * 0.96f)
+
+    val outerTop = shadeColor(toneColor, 0.14f)
+    val outerMid = toneColor
+    val outerBottom = tintColor(toneColor, 0.10f)
+    val innerTop = tintColor(toneColor, 0.14f)
+    val innerBottom = tintColor(toneColor, 0.04f)
+    val coreTop = tintColor(toneColor, 0.22f)
+    val coreBottom = tintColor(toneColor, 0.10f)
+
+    val outerFlame = Path().apply {
+        moveTo(centerX, topY)
+        cubicTo(
+            x(0.78f),
+            y(0.18f),
+            x(0.96f),
+            y(0.56f),
+            x(0.72f),
+            bottomY,
+        )
+        cubicTo(
+            x(0.63f),
+            y(0.98f),
+            x(0.37f),
+            y(0.98f),
+            x(0.28f),
+            bottomY,
+        )
+        cubicTo(
+            x(0.04f),
+            y(0.56f),
+            x(0.22f),
+            y(0.18f),
+            centerX,
+            topY,
+        )
+        close()
+    }
+    val innerFlame = Path().apply {
+        moveTo(centerX, innerTopY)
+        cubicTo(
+            x(0.70f),
+            y(0.33f),
+            x(0.80f),
+            y(0.61f),
+            x(0.65f),
+            y(0.84f),
+        )
+        cubicTo(
+            x(0.58f),
+            y(0.92f),
+            x(0.42f),
+            y(0.92f),
+            x(0.35f),
+            y(0.84f),
+        )
+        cubicTo(
+            x(0.20f),
+            y(0.61f),
+            x(0.30f),
+            y(0.33f),
+            centerX,
+            innerTopY,
+        )
+        close()
+    }
+    val coreFlame = Path().apply {
+        moveTo(centerX, coreTopY)
+        cubicTo(
+            x(0.62f),
+            y(0.46f),
+            x(0.69f),
+            y(0.65f),
+            x(0.58f),
+            y(0.78f),
+        )
+        cubicTo(
+            x(0.54f),
+            y(0.84f),
+            x(0.46f),
+            y(0.84f),
+            x(0.42f),
+            y(0.78f),
+        )
+        cubicTo(
+            x(0.31f),
+            y(0.65f),
+            x(0.38f),
+            y(0.46f),
+            centerX,
+            coreTopY,
+        )
+        close()
+    }
+
+    clipPath(clipShape) {
+        drawRoundRect(
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    shadeColor(toneColor, 0.34f).copy(alpha = 0.12f * alpha),
+                    toneColor.copy(alpha = (0.16f + (cycle * 0.16f)) * alpha),
+                    Color.Transparent,
+                ),
+                startY = topLeft.y,
+                endY = topLeft.y + size.height,
+            ),
+            topLeft = topLeft,
+            size = size,
+            cornerRadius = cornerRadius,
+        )
+        drawPath(
+            path = outerFlame,
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    outerTop.copy(alpha = 0.96f * alpha),
+                    outerMid.copy(alpha = 0.98f * alpha),
+                    outerBottom.copy(alpha = 0.90f * alpha),
+                ),
+                startY = bottomY,
+                endY = topLeft.y,
+            ),
+        )
+        drawPath(
+            path = innerFlame,
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    innerTop.copy(alpha = 0.82f * alpha),
+                    innerBottom.copy(alpha = 0.94f * alpha),
+                ),
+                startY = topLeft.y + size.height,
+                endY = topLeft.y,
+            ),
+        )
+        drawPath(
+            path = coreFlame,
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    coreTop.copy(alpha = 0.74f * alpha),
+                    coreBottom.copy(alpha = 0.86f * alpha),
+                ),
+                startY = topLeft.y + size.height,
+                endY = topLeft.y,
+            ),
+        )
+        drawRoundRect(
+            color = Color.White.copy(alpha = 0.08f * alpha),
+            topLeft = Offset(
+                x(0.22f),
+                y(0.24f),
+            ),
+            size = Size(size.width * 0.26f * widthScale, size.height * 0.07f),
+            cornerRadius = CornerRadius(cornerRadius.x * 0.60f, cornerRadius.y * 0.60f),
+        )
+        drawRoundRect(
+            color = tintColor(toneColor, 0.18f).copy(alpha = (0.12f + (cycle * 0.10f)) * alpha),
+            topLeft = Offset(
+                x(0.57f),
+                y(0.31f),
+            ),
+            size = Size(size.width * 0.08f * widthScale, size.height * (0.23f * heightCompression + 0.03f)),
+            cornerRadius = CornerRadius(cornerRadius.x * 0.46f, cornerRadius.y * 0.46f),
+        )
+    }
+}
+
+private fun DrawScope.drawGearsPattern(
+    topLeft: Offset,
+    size: Size,
+    toneColor: Color,
+    alpha: Float,
+    cornerRadius: CornerRadius,
+    pulse: Float,
+) {
+    val clipShape = roundedClipPath(topLeft, size, cornerRadius)
+    val minDimension = minOf(size.width, size.height)
+    val rotationPhase = pulse.coerceIn(0f, 1f)
+    val spinDegrees = rotationPhase * 360f
+
+    clipPath(clipShape) {
+        drawRoundRect(
+            brush = Brush.linearGradient(
+                colors = listOf(
+                    tintColor(toneColor, 0.24f).copy(alpha = 0.94f * alpha),
+                    shadeColor(toneColor, 0.08f).copy(alpha = 0.98f * alpha),
+                    shadeColor(toneColor, 0.34f).copy(alpha = 0.96f * alpha),
+                ),
+                start = topLeft,
+                end = topLeft + Offset(size.width, size.height),
+            ),
+            topLeft = topLeft,
+            size = size,
+            cornerRadius = cornerRadius,
+        )
+        drawRoundRect(
+            color = Color.White.copy(alpha = 0.08f * alpha),
+            topLeft = topLeft + Offset(minDimension * 0.03f, minDimension * 0.03f),
+            size = Size(size.width - (minDimension * 0.06f), size.height - (minDimension * 0.06f)),
+            cornerRadius = CornerRadius(
+                (cornerRadius.x - minDimension * 0.03f).coerceAtLeast(0f),
+                (cornerRadius.y - minDimension * 0.03f).coerceAtLeast(0f),
+            ),
+            style = Stroke(width = (minDimension * 0.018f).coerceAtLeast(0.8f)),
+        )
+
+        val mainTeeth = 20f
+        data class GearSpec(
+            val centerFraction: Offset,
+            val radiusFactor: Float,
+            val toothDepthFactor: Float,
+            val teeth: Int,
+            val direction: Float,
+            val baseRotation: Float,
+            val color: Color,
+        )
+        listOf(
+            GearSpec(Offset(0.29f, 0.69f), 0.150f, 0.026f, 20, -1f, -18f, toneColor),
+            GearSpec(Offset(0.61f, 0.68f), 0.124f, 0.024f, 17, 1f, 12f, tintColor(toneColor, 0.05f)),
+            GearSpec(Offset(0.44f, 0.45f), 0.108f, 0.021f, 15, 1f, -8f, shadeColor(toneColor, 0.04f)),
+            GearSpec(Offset(0.20f, 0.45f), 0.082f, 0.017f, 12, -1f, 20f, tintColor(toneColor, 0.12f)),
+        ).forEach { gear ->
+            drawGear(
+                center = Offset(
+                    topLeft.x + size.width * gear.centerFraction.x,
+                    topLeft.y + size.height * gear.centerFraction.y,
+                ),
+                radius = minDimension * gear.radiusFactor,
+                toothDepth = minDimension * gear.toothDepthFactor,
+                teeth = gear.teeth,
+                rotationDegrees = gear.baseRotation + (gear.direction * spinDegrees * (mainTeeth / gear.teeth)),
+                toneColor = gear.color,
+                alpha = alpha,
+            )
+        }
+    }
+}
+
+private fun DrawScope.drawGear(
+    center: Offset,
+    radius: Float,
+    toothDepth: Float,
+    teeth: Int,
+    rotationDegrees: Float,
+    toneColor: Color,
+    alpha: Float,
+) {
+    val outerRadius = radius + toothDepth
+    val rotationRadians = rotationDegrees * (PI.toFloat() / 180f)
+    val toothStep = (PI.toFloat() * 2f) / teeth
+    val rootRadius = radius * 0.84f
+    val path = Path().apply {
+        for (index in 0 until teeth) {
+            val baseAngle = rotationRadians + (toothStep * index)
+            val points = listOf(
+                Offset(
+                    x = center.x + (cos(baseAngle - toothStep * 0.34f) * rootRadius),
+                    y = center.y + (sin(baseAngle - toothStep * 0.34f) * rootRadius),
+                ),
+                Offset(
+                    x = center.x + (cos(baseAngle - toothStep * 0.12f) * outerRadius),
+                    y = center.y + (sin(baseAngle - toothStep * 0.12f) * outerRadius),
+                ),
+                Offset(
+                    x = center.x + (cos(baseAngle) * outerRadius),
+                    y = center.y + (sin(baseAngle) * outerRadius),
+                ),
+                Offset(
+                    x = center.x + (cos(baseAngle + toothStep * 0.12f) * outerRadius),
+                    y = center.y + (sin(baseAngle + toothStep * 0.12f) * outerRadius),
+                ),
+                Offset(
+                    x = center.x + (cos(baseAngle + toothStep * 0.34f) * rootRadius),
+                    y = center.y + (sin(baseAngle + toothStep * 0.34f) * rootRadius),
+                ),
+            )
+            points.forEachIndexed { pointIndex, point ->
+                if (index == 0 && pointIndex == 0) moveTo(point.x, point.y) else lineTo(point.x, point.y)
+            }
+        }
+        close()
+    }
+    val ringRadius = radius * 0.66f
+    val innerRadius = radius * 0.26f
+
+    drawPath(
+        path = path,
+        brush = Brush.radialGradient(
+            colors = listOf(
+                tintColor(toneColor, 0.24f).copy(alpha = 0.98f * alpha),
+                toneColor.copy(alpha = 0.96f * alpha),
+                shadeColor(toneColor, 0.32f).copy(alpha = 0.98f * alpha),
+            ),
+            center = center,
+            radius = outerRadius,
+        ),
+    )
+    drawPath(
+        path = path,
+        color = Color.Black.copy(alpha = 0.18f * alpha),
+        style = Stroke(width = (radius * 0.075f).coerceAtLeast(0.9f)),
+    )
+    drawCircle(
+        brush = Brush.radialGradient(
+            colors = listOf(
+                tintColor(toneColor, 0.18f).copy(alpha = 0.98f * alpha),
+                shadeColor(toneColor, 0.16f).copy(alpha = 0.94f * alpha),
+            ),
+            center = center + Offset(-radius * 0.04f, -radius * 0.08f),
+            radius = radius,
+        ),
+        center = center,
+        radius = radius,
+    )
+    drawCircle(
+        color = shadeColor(toneColor, 0.42f).copy(alpha = 0.92f * alpha),
+        center = center + Offset(radius * 0.02f, radius * 0.04f),
+        radius = ringRadius,
+    )
+    drawCircle(
+        brush = Brush.radialGradient(
+            colors = listOf(
+                tintColor(toneColor, 0.14f).copy(alpha = 0.94f * alpha),
+                shadeColor(toneColor, 0.28f).copy(alpha = 0.96f * alpha),
+            ),
+            center = center,
+            radius = ringRadius,
+        ),
+        center = center,
+        radius = ringRadius * 0.94f,
+    )
+    repeat(3) { spokeIndex ->
+        val spokeAngle = rotationRadians + (spokeIndex * ((PI.toFloat() * 2f) / 3f))
+        drawLine(
+            color = shadeColor(toneColor, 0.34f).copy(alpha = 0.82f * alpha),
+            start = Offset(
+                center.x + (cos(spokeAngle) * innerRadius * 0.72f),
+                center.y + (sin(spokeAngle) * innerRadius * 0.72f),
+            ),
+            end = Offset(
+                center.x + (cos(spokeAngle) * ringRadius * 0.84f),
+                center.y + (sin(spokeAngle) * ringRadius * 0.84f),
+            ),
+            strokeWidth = (radius * 0.16f).coerceAtLeast(1.3f),
+            cap = StrokeCap.Round,
+        )
+    }
+    drawCircle(
+        color = Color.White.copy(alpha = 0.08f * alpha),
+        center = center + Offset(-radius * 0.08f, -radius * 0.12f),
+        radius = ringRadius * 0.58f,
+    )
+    drawCircle(
+        color = shadeColor(toneColor, 0.52f).copy(alpha = 0.98f * alpha),
+        center = center,
+        radius = innerRadius,
+    )
+}
+
+private fun DrawScope.drawPixelPattern(
+    topLeft: Offset,
+    size: Size,
+    toneColor: Color,
+    alpha: Float,
+    cornerRadius: CornerRadius,
+    pulse: Float,
+) {
+    val clipShape = roundedClipPath(topLeft, size, cornerRadius)
+    val pixelCount = 7
+    val cellWidth = size.width / pixelCount
+    val cellHeight = size.height / pixelCount
+    val covered = Array(pixelCount) { BooleanArray(pixelCount) }
+
+    clipPath(clipShape) {
+        drawRoundRect(
+            brush = Brush.linearGradient(
+                colors = listOf(
+                    shadeColor(toneColor, 0.12f).copy(alpha = 0.86f * alpha),
+                    toneColor.copy(alpha = 0.92f * alpha),
+                    tintColor(toneColor, 0.08f).copy(alpha = 0.88f * alpha),
+                ),
+                start = topLeft,
+                end = topLeft + Offset(size.width, size.height),
+            ),
+            topLeft = topLeft,
+            size = size,
+            cornerRadius = cornerRadius,
+        )
+
+        for (row in 0 until pixelCount) {
+            for (col in 0 until pixelCount) {
+                if (covered[row][col]) continue
+
+                val noiseA = row * 73 + col * 29
+                val noiseB = row * 19 + col * 61 + 7
+                val variant = (noiseA + noiseB) % 4
+                val clusterWidth = when {
+                    col == pixelCount - 1 -> 1
+                    variant >= 2 && noiseA % 4 == 0 -> 2
+                    else -> 1
+                }
+                val clusterHeight = when {
+                    row == pixelCount - 1 -> 1
+                    variant == 3 && noiseB % 3 == 0 -> 2
+                    variant == 1 && noiseA % 5 == 0 -> 2
+                    else -> 1
+                }
+                val actualWidth = clusterWidth.coerceAtMost(pixelCount - col)
+                val actualHeight = clusterHeight.coerceAtMost(pixelCount - row)
+
+                for (coverRow in row until row + actualHeight) {
+                    for (coverCol in col until col + actualWidth) {
+                        covered[coverRow][coverCol] = true
+                    }
+                }
+
+                val primaryLayer = (row + col + variant) % 2 == 0
+                val pixelColor = if (primaryLayer) {
+                    tintColor(toneColor, if (variant == 3) 0.16f else 0.08f)
+                } else {
+                    shadeColor(toneColor, if (variant == 1) 0.14f else 0.06f)
+                }
+                val pixelAlpha = if (primaryLayer) 0.54f * alpha else 0.96f * alpha
+                val pixelTopLeft = Offset(
+                    x = topLeft.x + (col * cellWidth),
+                    y = topLeft.y + (row * cellHeight),
+                )
+                val pixelSize = Size(cellWidth * actualWidth, cellHeight * actualHeight)
+
+                drawRect(
+                    color = pixelColor.copy(alpha = pixelAlpha),
+                    topLeft = pixelTopLeft,
+                    size = pixelSize,
+                )
+                if (actualWidth > 1 || actualHeight > 1) {
+                    drawRect(
+                        color = Color.White.copy(alpha = 0.08f * alpha),
+                        topLeft = pixelTopLeft,
+                        size = Size(pixelSize.width, (cellHeight * 0.22f).coerceAtLeast(1f)),
+                    )
+                }
+            }
         }
     }
 }
@@ -2202,15 +2761,21 @@ private fun DrawScope.drawCosmicField(
     size: Size,
     baseGlow: Color,
     alpha: Float,
+    pulse: Float,
 ) {
     val minDimension = minOf(size.width, size.height)
+    val phase = pulse.coerceIn(0f, 1f)
     listOf(
         Triple(Offset(0.26f, 0.32f), 0.34f, baseGlow.copy(alpha = 0.34f * alpha)),
         Triple(Offset(0.64f, 0.44f), 0.28f, Color.White.copy(alpha = 0.18f * alpha)),
         Triple(Offset(0.76f, 0.24f), 0.20f, tintColor(baseGlow, 0.32f).copy(alpha = 0.22f * alpha)),
         Triple(Offset(0.44f, 0.74f), 0.24f, Color(0xFF6FC3FF).copy(alpha = 0.16f * alpha)),
-    ).forEach { (fraction, radiusFactor, color) ->
-        val center = topLeft + Offset(size.width * fraction.x, size.height * fraction.y)
+    ).forEachIndexed { index, (fraction, radiusFactor, color) ->
+        val orbit = phase * PI.toFloat() * 2f + index
+        val center = topLeft + Offset(
+            size.width * fraction.x + cos(orbit) * size.width * 0.010f,
+            size.height * fraction.y + sin(orbit * 0.82f) * size.height * 0.010f,
+        )
         drawCircle(
             brush = Brush.radialGradient(
                 colors = listOf(color, Color.Transparent),
@@ -2249,7 +2814,12 @@ private fun DrawScope.drawCosmicField(
         )
     ).forEachIndexed { index, star ->
         val fraction = Offset(star.x, star.y)
-        val center = topLeft + Offset(size.width * fraction.x, size.height * fraction.y)
+        val twinkleWave = (sin((phase + (index * 0.13f)) * PI.toFloat() * 2f) * 0.5f) + 0.5f
+        val driftAmount = if (star.twinkle) 0.006f else 0.0025f
+        val center = topLeft + Offset(
+            size.width * fraction.x + cos((phase + index) * PI.toFloat() * 2f) * size.width * driftAmount,
+            size.height * fraction.y + sin((phase * 0.8f + index) * PI.toFloat() * 2f) * size.height * driftAmount,
+        )
         val radius = minDimension * star.radiusFactor
         val starColor = when (index % 4) {
             0 -> Color.White
@@ -2258,18 +2828,18 @@ private fun DrawScope.drawCosmicField(
             else -> tintColor(baseGlow, 0.50f)
         }
         drawCircle(
-            color = starColor.copy(alpha = star.alpha * alpha),
+            color = starColor.copy(alpha = star.alpha * (0.72f + (twinkleWave * 0.28f)) * alpha),
             center = center,
             radius = radius
         )
         if (star.twinkle) {
             drawBurstRays(
                 center = center,
-                radius = radius * 3.1f,
+                radius = radius * (2.4f + twinkleWave),
                 rayCount = 4,
                 color = starColor,
-                alpha = 0.24f * alpha,
-                strokeWidth = radius * 0.42f,
+                alpha = (0.10f + (twinkleWave * 0.18f)) * alpha,
+                strokeWidth = radius * (0.28f + (twinkleWave * 0.18f)),
             )
         }
     }
@@ -2770,9 +3340,7 @@ private data class StableStar(
 )
 
 private fun cosmicSeed(topLeft: Offset, size: Size, colorSeed: Int): Int {
-    val columnBucket = if (size.width > 0f) (topLeft.x / size.width).toInt() else 0
-    val rowBucket = if (size.height > 0f) (topLeft.y / size.height).toInt() else 0
-    return (columnBucket * 31) xor (rowBucket * 17) xor (size.width.toBits() * 13) xor size.height.toBits() xor colorSeed
+    return CosmicFieldSeed
 }
 
 private fun stableStarField(seed: Int): List<StableStar> {
@@ -2875,6 +3443,10 @@ private fun boardCellVisual(
             BlockVisualStyle.Brick -> 0.46f
             BlockVisualStyle.SoundWave -> 0.82f
             BlockVisualStyle.Prism -> 0.68f
+            BlockVisualStyle.Electric -> 0.78f
+            BlockVisualStyle.Flame -> 0.88f
+            BlockVisualStyle.Gears -> 0.18f
+            BlockVisualStyle.Pixel -> 0.08f
         },
     )
 }

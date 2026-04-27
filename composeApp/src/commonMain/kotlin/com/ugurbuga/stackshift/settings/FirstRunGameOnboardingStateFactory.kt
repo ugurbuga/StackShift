@@ -42,7 +42,7 @@ object FirstRunGameOnboardingStateFactory {
     private val guideLogic = GameLogic()
     private val config = GameConfig(
         columns = 10,
-        rows = 10,
+        rows = 6,
         difficultyIntervalSeconds = 9_999,
         linesPerLevel = 9_999,
     )

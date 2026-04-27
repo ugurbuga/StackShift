@@ -7,6 +7,7 @@ private external class JsDate : JsAny {
     fun getFullYear(): Int
     fun getMonth(): Int
     fun getDate(): Int
+    fun getTime(): Double
 }
 
 @OptIn(ExperimentalWasmJsInterop::class)
@@ -18,3 +19,7 @@ actual fun getCurrentDate(): CurrentDate {
         day = date.getDate()
     )
 }
+
+@OptIn(ExperimentalWasmJsInterop::class)
+actual fun currentEpochMillis(): Long = JsDate().getTime().toLong()
+

@@ -18,13 +18,13 @@ class ScoreCalculatorTest {
             ),
         )
 
-        assertEquals(4, breakdown.rawBlockScore)
+        assertEquals(40, breakdown.rawBlockScore)
         assertEquals(0, breakdown.clearBonusScore)
-        assertEquals(4, breakdown.blockScore)
+        assertEquals(40, breakdown.blockScore)
         assertEquals(0, breakdown.lineScore)
-        assertEquals(4, breakdown.subtotalBeforeMultipliers)
+        assertEquals(40, breakdown.subtotalBeforeMultipliers)
         assertEquals(1f, breakdown.totalMultiplier)
-        assertEquals(4, breakdown.totalScore)
+        assertEquals(40, breakdown.totalScore)
     }
 
     @Test
@@ -47,20 +47,20 @@ class ScoreCalculatorTest {
             ),
         )
 
-        assertEquals(4, breakdown.rawBlockScore)
-        assertEquals(2, breakdown.clearBonusScore)
-        assertEquals(6, breakdown.blockScore)
-        assertEquals(25, breakdown.lineScore)
-        assertEquals(15, breakdown.specialBlockBonus)
-        assertEquals(5, breakdown.perfectPlacementBonus)
-        assertEquals(3, breakdown.hardPlacementBonus)
-        assertEquals(10, breakdown.chainReactionBonus)
-        assertEquals(64, breakdown.subtotalBeforeMultipliers)
+        assertEquals(40, breakdown.rawBlockScore)
+        assertEquals(20, breakdown.clearBonusScore)
+        assertEquals(60, breakdown.blockScore)
+        assertEquals(250, breakdown.lineScore)
+        assertEquals(150, breakdown.specialBlockBonus)
+        assertEquals(50, breakdown.perfectPlacementBonus)
+        assertEquals(30, breakdown.hardPlacementBonus)
+        assertEquals(100, breakdown.chainReactionBonus)
+        assertEquals(640, breakdown.subtotalBeforeMultipliers)
         assertEquals(1.2f, breakdown.comboMultiplier)
         assertEquals(1.25f, breakdown.streakMultiplier)
         assertEquals(1.1f, breakdown.speedMultiplier)
         assertEquals(1.3f, breakdown.riskMultiplier)
-        assertEquals(137, breakdown.totalScore)
+        assertEquals(1372, breakdown.totalScore)
     }
 
     @Test
@@ -75,11 +75,11 @@ class ScoreCalculatorTest {
             ),
         )
 
-        assertEquals(7, breakdown.blockScore)
-        assertEquals(70, breakdown.lineScore)
+        assertEquals(75, breakdown.blockScore)
+        assertEquals(700, breakdown.lineScore)
         assertEquals(2f, breakdown.comboMultiplier)
         assertEquals(2f, breakdown.streakMultiplier)
-        assertEquals(77 * 4, breakdown.totalScore)
+        assertEquals(775 * 4, breakdown.totalScore)
     }
 
     @Test

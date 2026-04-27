@@ -84,7 +84,9 @@
     <string name="high_score">Bestwert</string>
     <string name="high_score_new_record">Neuer Rekord</string>
     <string name="home_play_cta">Spielen</string>
+    <string name="home_time_attack_cta">Zeitangriff</string>
     <string name="lines">Linien</string>
+    <string name="time_remaining">Restzeit</string>
     <string name="boost">Schub</string>
     <string name="danger">Gefahr</string>
     <string name="danger_none">-</string>
@@ -247,5 +249,10 @@
     <string name="interactive_onboarding_ghost_body">Geist-Blöcke können durch vorhandene Zellen hindurchgehen. Lass ihn in die markierte Spalte fallen, um zu sehen, wie er Stellen erreicht, die normale Teile nicht erreichen.</string>
     <string name="interactive_onboarding_heavy_title">Schwer verändert das Brett aggressiv</string>
     <string name="interactive_onboarding_heavy_body">Schwere Blöcke formen den Bereich nach der Landung deutlich um. Nutze den geführten Drop und spiele danach normal weiter.</string>
+    <string name="settings_color_palette">Farbpalette</string>
+    <string name="block_style_electric">Elektrisch</string>
+    <string name="block_style_flame">Flamme</string>
+    <string name="block_style_gears">Zahnräder</string>
+    <string name="block_style_pixel">Pixel</string>
 </resources>
 

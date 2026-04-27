@@ -3,61 +3,195 @@ package com.ugurbuga.stackshift.platform
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import com.ugurbuga.stackshift.settings.AppSettingsStorage
+import com.ugurbuga.stackshift.settings.DailyChallengeReminderSlots
+import com.ugurbuga.stackshift.settings.MissYouReminderMinimumInactivityMillis
+import com.ugurbuga.stackshift.settings.MissYouReminderSlots
+import com.ugurbuga.stackshift.settings.NotificationReminderSchedulingHorizonDays
+import com.ugurbuga.stackshift.settings.ReminderTimeSlot
+import com.ugurbuga.stackshift.settings.hasCompletedChallengeForDate
+import platform.Foundation.NSCalendar
+import platform.Foundation.NSCalendarUnitDay
+import platform.Foundation.NSCalendarUnitHour
+import platform.Foundation.NSCalendarUnitMinute
+import platform.Foundation.NSCalendarUnitMonth
+import platform.Foundation.NSCalendarUnitYear
+import platform.Foundation.NSDate
+import platform.Foundation.NSDateComponents
+import platform.Foundation.timeIntervalSince1970
+import platform.UserNotifications.UNAuthorizationOptionAlert
+import platform.UserNotifications.UNAuthorizationOptionBadge
+import platform.UserNotifications.UNAuthorizationOptionSound
+import platform.UserNotifications.UNCalendarNotificationTrigger
 import platform.UserNotifications.UNMutableNotificationContent
 import platform.UserNotifications.UNNotificationRequest
 import platform.UserNotifications.UNNotificationSound
 import platform.UserNotifications.UNTimeIntervalNotificationTrigger
 import platform.UserNotifications.UNUserNotificationCenter
-import platform.UserNotifications.UNAuthorizationOptionAlert
-import platform.UserNotifications.UNAuthorizationOptionSound
-import platform.UserNotifications.UNAuthorizationOptionBadge
+
+private const val DayMillis = 24L * 60L * 60L * 1000L
+private const val MinuteMillis = 60L * 1000L
 
 class IosNotificationManager : NotificationManager {
-    
+
     private val center = UNUserNotificationCenter.currentNotificationCenter()
+    private val calendar = NSCalendar.currentCalendar
+
+    private fun currentReminderTime(): Pair<Int, Int> {
+        val components = calendar.components(
+            NSCalendarUnitHour or NSCalendarUnitMinute,
+            fromDate = NSDate(),
+        )
+        return components.hour.toInt() to components.minute.toInt()
+    }
+
+    private fun slotPassedToday(
+        slot: ReminderTimeSlot,
+        currentHour: Int,
+        currentMinute: Int,
+    ): Boolean = slot.hour < currentHour || (slot.hour == currentHour && slot.minute <= currentMinute)
+
+    private fun slotDateComponents(
+        dayOffset: Int,
+        slot: ReminderTimeSlot,
+    ): NSDateComponents {
+        val futureDate = NSDate(timeIntervalSinceReferenceDate = NSDate().timeIntervalSinceReferenceDate + (dayOffset * 86400.0))
+        val base = calendar.components(
+            NSCalendarUnitYear or NSCalendarUnitMonth or NSCalendarUnitDay,
+            fromDate = futureDate,
+        )
+        return NSDateComponents().apply {
+            setYear(base.year)
+            setMonth(base.month)
+            setDay(base.day)
+            setHour(slot.hour.toLong())
+            setMinute(slot.minute.toLong())
+        }
+    }
+
+    private fun slotIdentifier(
+        prefix: String,
+        components: NSDateComponents,
+        slot: ReminderTimeSlot,
+    ): String = buildString {
+        append(prefix)
+        append('_')
+        append(components.year)
+        append('_')
+        append(components.month)
+        append('_')
+        append(components.day)
+        append('_')
+        append(slot.idSuffix)
+    }
+
+    private fun scheduledEpochMillis(
+        dayOffset: Int,
+        slot: ReminderTimeSlot,
+        currentHour: Int,
+        currentMinute: Int,
+    ): Long {
+        val now = currentEpochMillis()
+        val currentMinutesOfDay = currentHour * 60 + currentMinute
+        val targetMinutesOfDay = slot.hour * 60 + slot.minute
+        val deltaMinutes = (dayOffset * 24 * 60) + (targetMinutesOfDay - currentMinutesOfDay)
+        return now + (deltaMinutes.toLong() * MinuteMillis)
+    }
+
+    private fun pendingIdentifiers(prefix: String, slots: List<ReminderTimeSlot>): List<String> = buildList {
+        repeat(NotificationReminderSchedulingHorizonDays) { dayOffset ->
+            slots.forEach { slot ->
+                add(slotIdentifier(prefix, slotDateComponents(dayOffset, slot), slot))
+            }
+        }
+    }
 
     override fun scheduleMissYouNotification() {
-        val content = UNMutableNotificationContent().apply {
-            setTitle("StackShift")
-            setBody("We missed you! Come back and play some more.")
-            setSound(UNNotificationSound.defaultSound)
-        }
+        val settings = AppSettingsStorage.load()
+        val (currentHour, currentMinute) = currentReminderTime()
+        repeat(NotificationReminderSchedulingHorizonDays) { dayOffset ->
+            MissYouReminderSlots.forEach { slot ->
+                if (dayOffset == 0 && slotPassedToday(slot, currentHour, currentMinute)) return@forEach
+                val components = slotDateComponents(dayOffset, slot)
+                val scheduledAt = scheduledEpochMillis(dayOffset, slot, currentHour, currentMinute)
+                val lastOpenedAt = settings.lastAppOpenedAtEpochMillis
+                val inactiveEnough = lastOpenedAt <= 0L ||
+                    (scheduledAt - lastOpenedAt) >= MissYouReminderMinimumInactivityMillis
+                if (!inactiveEnough) return@forEach
 
-        // 24 hours = 86400 seconds
-        val trigger = UNTimeIntervalNotificationTrigger.triggerWithTimeInterval(86400.0, repeats = true)
-        val request = UNNotificationRequest.requestWithIdentifier("miss_you_notification", content, trigger)
-
-        center.addNotificationRequest(request) { error ->
-            if (error != null) {
-                println("Error scheduling notification: ${error.localizedDescription}")
+                val content = UNMutableNotificationContent().apply {
+                    setTitle("StackShift")
+                    setBody("We missed you! Come back and play some more.")
+                    setSound(UNNotificationSound.defaultSound)
+                }
+                val trigger = UNCalendarNotificationTrigger.triggerWithDateMatchingComponents(
+                    dateComponents = components,
+                    repeats = false,
+                )
+                val request = UNNotificationRequest.requestWithIdentifier(
+                    slotIdentifier("miss_you", components, slot),
+                    content,
+                    trigger,
+                )
+                center.addNotificationRequest(request) { error ->
+                    if (error != null) {
+                        println("Error scheduling miss-you notification: ${error.localizedDescription}")
+                    }
+                }
             }
         }
     }
 
     override fun cancelMissYouNotification() {
-        center.removePendingNotificationRequestsWithIdentifiers(listOf("miss_you_notification"))
+        center.removePendingNotificationRequestsWithIdentifiers(pendingIdentifiers("miss_you", MissYouReminderSlots))
     }
 
     override fun scheduleDailyChallengeNotification() {
-        val content = UNMutableNotificationContent().apply {
-            setTitle("StackShift")
-            setBody("Have you completed today's daily challenge tasks yet?")
-            setSound(UNNotificationSound.defaultSound)
-        }
-
-        // 24 hours = 86400 seconds
-        val trigger = UNTimeIntervalNotificationTrigger.triggerWithTimeInterval(86400.0, repeats = true)
-        val request = UNNotificationRequest.requestWithIdentifier("daily_challenge_notification", content, trigger)
-
-        center.addNotificationRequest(request) { error ->
-            if (error != null) {
-                println("Error scheduling daily challenge notification: ${error.localizedDescription}")
+        val settings = AppSettingsStorage.load()
+        val today = getCurrentDate()
+        val todayCompleted = settings.hasCompletedChallengeForDate(today)
+        val (currentHour, currentMinute) = currentReminderTime()
+        repeat(NotificationReminderSchedulingHorizonDays) { dayOffset ->
+            DailyChallengeReminderSlots.forEach { slot ->
+                if (dayOffset == 0 && todayCompleted) return@forEach
+                if (dayOffset == 0 && slotPassedToday(slot, currentHour, currentMinute)) return@forEach
+                val components = slotDateComponents(dayOffset, slot)
+                val content = UNMutableNotificationContent().apply {
+                    setTitle("StackShift")
+                    setBody("Have you completed today's daily challenge tasks yet?")
+                    setSound(UNNotificationSound.defaultSound)
+                }
+                val trigger = UNCalendarNotificationTrigger.triggerWithDateMatchingComponents(
+                    dateComponents = components,
+                    repeats = false,
+                )
+                val request = UNNotificationRequest.requestWithIdentifier(
+                    slotIdentifier("daily_challenge", components, slot),
+                    content,
+                    trigger,
+                )
+                center.addNotificationRequest(request) { error ->
+                    if (error != null) {
+                        println("Error scheduling daily challenge notification: ${error.localizedDescription}")
+                    }
+                }
             }
         }
     }
 
     override fun cancelDailyChallengeNotification() {
-        center.removePendingNotificationRequestsWithIdentifiers(listOf("daily_challenge_notification"))
+        center.removePendingNotificationRequestsWithIdentifiers(pendingIdentifiers("daily_challenge", DailyChallengeReminderSlots))
+    }
+
+    override fun sendTestNotification() {
+        val content = UNMutableNotificationContent().apply {
+            setTitle("StackShift")
+            setBody("This is a test notification.")
+            setSound(UNNotificationSound.defaultSound)
+        }
+        val trigger = UNTimeIntervalNotificationTrigger.triggerWithTimeInterval(5.0, repeats = false)
+        val request = UNNotificationRequest.requestWithIdentifier("test_notification", content, trigger)
+        center.addNotificationRequest(request, withCompletionHandler = null)
     }
 
     @Composable

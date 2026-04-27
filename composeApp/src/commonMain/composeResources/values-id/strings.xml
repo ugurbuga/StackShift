@@ -84,7 +84,9 @@
     <string name="high_score">Terbaik</string>
     <string name="high_score_new_record">Rekor baru</string>
     <string name="home_play_cta">Main</string>
+    <string name="home_time_attack_cta">Serangan Waktu</string>
     <string name="lines">Baris</string>
+    <string name="time_remaining">Sisa Waktu</string>
     <string name="boost">Dorongan</string>
     <string name="danger">Bahaya</string>
     <string name="danger_none">-</string>
@@ -256,4 +258,9 @@
     <string name="interactive_onboarding_ghost_body">Blok Hantu bisa menembus sel yang sudah ada. Jatuhkan ke kolom yang ditandai untuk melihat bagaimana ia mencapai ruang yang tidak bisa dijangkau piece biasa.</string>
     <string name="interactive_onboarding_heavy_title">Berat mengubah papan dengan lebih agresif</string>
     <string name="interactive_onboarding_heavy_body">Blok Berat membentuk ulang area setelah mendarat. Lakukan drop terpandu, lalu lanjutkan permainan seperti biasa dari sana.</string>
+    <string name="settings_color_palette">Palet Warna</string>
+    <string name="block_style_electric">Listrik</string>
+    <string name="block_style_flame">Api</string>
+    <string name="block_style_gears">Roda Gigi</string>
+    <string name="block_style_pixel">Piksel</string>
 </resources>

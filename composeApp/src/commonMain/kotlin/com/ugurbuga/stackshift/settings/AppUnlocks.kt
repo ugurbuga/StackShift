@@ -6,31 +6,37 @@ import com.ugurbuga.stackshift.game.model.BlockVisualStyle
 import com.ugurbuga.stackshift.game.model.ChallengeProgress
 import com.ugurbuga.stackshift.game.model.DailyChallenge
 import com.ugurbuga.stackshift.game.model.normalizeBlockVisualStyle
+import com.ugurbuga.stackshift.platform.isDebugBuild
 
 const val DailyChallengeTokenReward = 10
 const val RewardedTokenAdReward = 10
 const val ScorePointsPerToken = 1_000
 
-private val DefaultUnlockedThemeModes = setOf(AppThemeMode.Light)
+private val DefaultUnlockedThemeModes = AppThemeMode.entries.toSet()
 private val DefaultUnlockedThemePalettes = setOf(AppColorPalette.Classic)
 private val DefaultUnlockedBlockStyles = setOf(BlockVisualStyle.Flat)
+
+internal fun resolvedThemePaletteUnlocks(
+    debugBuild: Boolean,
+    unlockedThemePalettes: Set<AppColorPalette>,
+): Set<AppColorPalette> =
+    if (debugBuild) AppColorPalette.entries.toSet() else unlockedThemePalettes + DefaultUnlockedThemePalettes
 
 fun AppSettings.availableThemeModes(): Set<AppThemeMode> =
     this.unlockedThemeModes + DefaultUnlockedThemeModes
 
 fun AppSettings.availableThemePalettes(): Set<AppColorPalette> =
-    this.unlockedThemePalettes + DefaultUnlockedThemePalettes
+    resolvedThemePaletteUnlocks(
+        debugBuild = isDebugBuild(),
+        unlockedThemePalettes = this.unlockedThemePalettes,
+    )
 
 fun AppSettings.availableBlockStyles(): Set<BlockVisualStyle> =
-    (this.unlockedBlockStyles + DefaultUnlockedBlockStyles)
-        .map { normalizeBlockVisualStyle(it) }
+    ((if (isDebugBuild()) BlockVisualStyle.entries.toSet() else this.unlockedBlockStyles) + DefaultUnlockedBlockStyles)
+        .map(::normalizeBlockVisualStyle)
         .toSet()
 
-fun AppThemeMode.tokenCost(): Int = when (this) {
-    AppThemeMode.Light -> 0
-    AppThemeMode.System -> 40
-    AppThemeMode.Dark -> 45
-}
+fun AppThemeMode.tokenCost(): Int = 0
 
 fun AppColorPalette.tokenCost(): Int = when (this) {
     AppColorPalette.Classic -> 0
@@ -64,26 +70,33 @@ fun AppSettings.isThemeModeUnlocked(mode: AppThemeMode): Boolean = mode in avail
 
 fun AppSettings.isThemePaletteUnlocked(palette: AppColorPalette): Boolean = palette in availableThemePalettes()
 
-fun AppSettings.isBlockStyleUnlocked(style: BlockVisualStyle): Boolean = normalizeBlockVisualStyle(style) in availableBlockStyles()
+fun AppSettings.isBlockStyleUnlocked(style: BlockVisualStyle): Boolean =
+    isDebugBuild() || normalizeBlockVisualStyle(style) in availableBlockStyles()
 
 fun AppSettings.sanitized(): AppSettings {
-    val normalizedUnlockedBlockStyles: Set<BlockVisualStyle> = (this.unlockedBlockStyles + DefaultUnlockedBlockStyles)
-        .map { normalizeBlockVisualStyle(it) }
-        .toSet()
-    val sanitizedThemeModes: Set<AppThemeMode> = this.unlockedThemeModes + DefaultUnlockedThemeModes
-    val sanitizedThemePalettes: Set<AppColorPalette> = this.unlockedThemePalettes + DefaultUnlockedThemePalettes
-    val sanitizedThemeMode = this.themeMode.takeIf { it in sanitizedThemeModes } ?: AppThemeMode.Light
+    val isDebug = isDebugBuild()
+    val sanitizedUnlockedBlockStyles: Set<BlockVisualStyle> =
+        ((if (isDebug) BlockVisualStyle.entries.toSet() else this.unlockedBlockStyles) + DefaultUnlockedBlockStyles)
+            .map(::normalizeBlockVisualStyle)
+            .toSet()
+    val sanitizedThemeModes: Set<AppThemeMode> = AppThemeMode.entries.toSet()
+    val sanitizedThemePalettes: Set<AppColorPalette> = resolvedThemePaletteUnlocks(
+        debugBuild = isDebug,
+        unlockedThemePalettes = this.unlockedThemePalettes,
+    )
+    val sanitizedThemeMode = this.themeMode.takeIf { it in sanitizedThemeModes } ?: AppThemeMode.System
     val sanitizedThemePalette = this.themeColorPalette.takeIf { it in sanitizedThemePalettes } ?: AppColorPalette.Classic
     val normalizedBlockStyle = normalizeBlockVisualStyle(this.blockVisualStyle)
-    val sanitizedBlockStyle = normalizedBlockStyle.takeIf { it in normalizedUnlockedBlockStyles } ?: BlockVisualStyle.Flat
+    val sanitizedBlockStyle = normalizedBlockStyle.takeIf { it in sanitizedUnlockedBlockStyles } ?: BlockVisualStyle.Flat
     return this.copy(
         themeMode = sanitizedThemeMode,
         themeColorPalette = sanitizedThemePalette,
         blockVisualStyle = sanitizedBlockStyle,
         unlockedThemeModes = sanitizedThemeModes,
         unlockedThemePalettes = sanitizedThemePalettes,
-        unlockedBlockStyles = normalizedUnlockedBlockStyles,
+        unlockedBlockStyles = sanitizedUnlockedBlockStyles,
         tokenBalance = this.tokenBalance.coerceAtLeast(0),
+        lastAppOpenedAtEpochMillis = this.lastAppOpenedAtEpochMillis.coerceAtLeast(0L),
         soundEnabled = false,
     )
 }
@@ -97,16 +110,7 @@ fun AppSettings.selectThemePalette(palette: AppColorPalette): AppSettings =
 fun AppSettings.selectBlockStyle(style: BlockVisualStyle): AppSettings =
     this.copy(blockVisualStyle = normalizeBlockVisualStyle(style)).sanitized()
 
-fun AppSettings.unlockThemeMode(mode: AppThemeMode): AppSettings? {
-    if (isThemeModeUnlocked(mode)) return selectThemeMode(mode)
-    val price = mode.tokenCost()
-    if (this.tokenBalance < price) return null
-    return this.copy(
-        tokenBalance = this.tokenBalance - price,
-        unlockedThemeModes = this.unlockedThemeModes + mode,
-        themeMode = mode,
-    ).sanitized()
-}
+fun AppSettings.unlockThemeMode(mode: AppThemeMode): AppSettings = selectThemeMode(mode)
 
 fun AppSettings.unlockThemePalette(palette: AppColorPalette): AppSettings? {
     if (isThemePaletteUnlocked(palette)) return selectThemePalette(palette)

@@ -133,13 +133,14 @@ fun DailyChallengeScreen(
     }
     val pagerState = rememberPagerState(initialPage = months.size - 1) { months.size }
     val coroutineScope = rememberCoroutineScope()
-    
+
     var selectedDay by remember(currentDay) { mutableStateOf(currentDay) }
     var showInfoDialog by remember { mutableStateOf(false) }
     val currentMonthYear = months[pagerState.currentPage]
-    
+
     val selectedChallenge = remember(currentMonthYear, selectedDay, progress) {
-        val base = ChallengeGenerator.generate(currentMonthYear.year, currentMonthYear.month, selectedDay)
+        val base =
+            ChallengeGenerator.generate(currentMonthYear.year, currentMonthYear.month, selectedDay)
         val key = "${currentMonthYear.year}-${currentMonthYear.month.toString().padStart(2, '0')}"
         val isCompleted = progress.completedDays[key]?.contains(selectedDay) == true
         if (isCompleted) {
@@ -151,7 +152,8 @@ fun DailyChallengeScreen(
 
     val monthProgress = remember(currentMonthYear, progress) {
         val key = "${currentMonthYear.year}-${currentMonthYear.month.toString().padStart(2, '0')}"
-        progress.completedDays[key]?.size?.toFloat()?.div(getDaysInMonth(currentMonthYear.year, currentMonthYear.month).toFloat()) ?: 0f
+        progress.completedDays[key]?.size?.toFloat()
+            ?.div(getDaysInMonth(currentMonthYear.year, currentMonthYear.month).toFloat()) ?: 0f
     }
 
     val settings = LocalAppSettings.current
@@ -206,7 +208,7 @@ fun DailyChallengeScreen(
                     modifier = Modifier.size(110.dp) // Reduced from 150.dp
                 )
             }
-            
+
             // Month Selector
             Row(
                 modifier = Modifier
@@ -227,14 +229,14 @@ fun DailyChallengeScreen(
                 ) {
                     Icon(Icons.Default.ChevronLeft, contentDescription = null)
                 }
-                
+
                 Text(
                     text = "${monthName(currentMonthYear.month)} ${currentMonthYear.year}",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                
+
                 IconButton(
                     onClick = {
                         if (pagerState.currentPage < months.size - 1) {
@@ -263,7 +265,9 @@ fun DailyChallengeScreen(
                     currentYear = currentYear,
                     currentMonth = currentMonth,
                     currentDay = currentDay,
-                    completedDays = progress.completedDays["${monthYear.year}-${monthYear.month.toString().padStart(2, '0')}"] ?: emptySet(),
+                    completedDays = progress.completedDays["${monthYear.year}-${
+                        monthYear.month.toString().padStart(2, '0')
+                    }"] ?: emptySet(),
                     selectedDay = if (page == pagerState.currentPage) selectedDay else null,
                     onDayClick = { selectedDay = it }
                 )
@@ -274,6 +278,7 @@ fun DailyChallengeScreen(
                 challenge = selectedChallenge,
                 onPlay = { onPlayChallenge(selectedChallenge) },
                 onShowInfo = { showInfoDialog = true },
+                stylePulse = stylePulse,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
@@ -282,6 +287,7 @@ fun DailyChallengeScreen(
 
         if (showInfoDialog) {
             ChallengeInfoDialog(
+                stylePulse = stylePulse,
                 onDismiss = { showInfoDialog = false }
             )
         }
@@ -296,14 +302,15 @@ fun TrophyIcon(
     val settings = LocalAppSettings.current
     val palette = settings.blockColorPalette
     val isDark = isStackShiftDarkTheme(settings)
-    
+
     val baseColor = CellTone.Gold.paletteColor(palette)
-    val emptyColor = if (isDark) Color.DarkGray.copy(alpha = 0.3f) else Color.LightGray.copy(alpha = 0.3f)
+    val emptyColor =
+        if (isDark) Color.DarkGray.copy(alpha = 0.3f) else Color.LightGray.copy(alpha = 0.3f)
 
     Canvas(modifier = modifier) {
         val w = size.width
         val h = size.height
-        
+
         val trophyPath = Path().apply {
             moveTo(w * 0.3f, h * 0.2f)
             lineTo(w * 0.7f, h * 0.2f)
@@ -314,7 +321,7 @@ fun TrophyIcon(
             lineTo(w * 0.45f, h * 0.6f)
             lineTo(w * 0.35f, h * 0.6f)
             close()
-            
+
             // Handles
             moveTo(w * 0.3f, h * 0.25f)
             cubicTo(w * 0.15f, h * 0.25f, w * 0.15f, h * 0.5f, w * 0.33f, h * 0.5f)
@@ -341,7 +348,7 @@ fun TrophyIcon(
                 color = baseColor,
                 style = androidx.compose.ui.graphics.drawscope.Fill
             )
-            
+
             // Highlight shine
             clipPath(trophyPath) {
                 drawRect(
@@ -353,7 +360,7 @@ fun TrophyIcon(
                 )
             }
         }
-        
+
         // Outline
         drawPath(
             path = trophyPath,
@@ -375,7 +382,7 @@ fun CalendarGrid(
     onDayClick: (Int) -> Unit
 ) {
     val daysInMonth = getDaysInMonth(year, month)
-    
+
     LazyVerticalGrid(
         columns = GridCells.Fixed(7),
         modifier = Modifier
@@ -407,14 +414,14 @@ fun CalendarGrid(
             val day = index + 1
             val isCompleted = day in completedDays
             val isSelected = day == selectedDay
-            
+
             val isFuture = when {
                 year > currentYear -> true
                 year == currentYear && month > currentMonth -> true
                 year == currentYear && month == currentMonth && day > currentDay -> true
                 else -> false
             }
-            
+
             DayCell(
                 day = day,
                 isCompleted = isCompleted,
@@ -437,14 +444,14 @@ fun DayCell(
     val uiColors = StackShiftThemeTokens.uiColors
     val settings = LocalAppSettings.current
     val palette = settings.blockColorPalette
-    
+
     val baseColor = when {
         isCompleted -> CellTone.Emerald.paletteColor(palette)
         isSelected -> MaterialTheme.colorScheme.primary
         !isEnabled -> uiColors.panelMuted.copy(alpha = 0.2f)
         else -> uiColors.panelMuted.copy(alpha = 0.5f)
     }
-    
+
     Box(
         modifier = Modifier
             .aspectRatio(1f)
@@ -485,10 +492,11 @@ fun ChallengeTasksCard(
     challenge: DailyChallenge,
     onPlay: () -> Unit,
     onShowInfo: () -> Unit,
+    stylePulse: Float,
     modifier: Modifier = Modifier
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
-    
+
     Card(
         modifier = modifier.stackShiftSurfaceShadow(
             shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
@@ -511,7 +519,7 @@ fun ChallengeTasksCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                
+
                 IconButton(
                     onClick = onShowInfo,
                     modifier = Modifier.size(24.dp)
@@ -524,11 +532,11 @@ fun ChallengeTasksCard(
                     )
                 }
             }
-            
+
             challenge.tasks.forEach { task ->
                 ChallengeTaskItem(task = task)
             }
-            
+
             if (!challenge.isCompleted) {
                 Spacer(modifier = Modifier.height(4.dp))
 
@@ -536,7 +544,8 @@ fun ChallengeTasksCard(
                     text = stringResource(Res.string.home_play_cta),
                     onClick = onPlay,
                     modifier = Modifier.fillMaxWidth(),
-                    tone = CellTone.Cyan
+                    tone = CellTone.Cyan,
+                    pulse = stylePulse,
                 )
             }
         }
@@ -566,7 +575,7 @@ fun ChallengeTaskItem(
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
     val isCompleted = task.isCompleted
-    
+
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
@@ -588,9 +597,9 @@ fun ChallengeTaskItem(
                 )
             }
         }
-        
+
         Spacer(modifier = Modifier.width(if (compact) 8.dp else 12.dp))
-        
+
         Text(
             text = taskDescription(task),
             style = if (compact) MaterialTheme.typography.labelSmall else MaterialTheme.typography.bodyMedium,
@@ -599,7 +608,7 @@ fun ChallengeTaskItem(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
-        
+
         Text(
             text = "${task.current}/${task.target}",
             style = MaterialTheme.typography.labelSmall,
@@ -623,10 +632,11 @@ fun taskDescription(task: ChallengeTask): String {
 
 @Composable
 fun ChallengeInfoDialog(
+    stylePulse: Float,
     onDismiss: () -> Unit
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
-    
+
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
         Card(
             shape = RoundedCornerShape(24.dp),
@@ -674,7 +684,8 @@ fun ChallengeInfoDialog(
                     text = stringResource(Res.string.continue_label),
                     onClick = onDismiss,
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    tone = CellTone.Cyan
+                    tone = CellTone.Cyan,
+                    pulse = stylePulse,
                 )
             }
         }

@@ -10,3 +10,6 @@ actual fun getCurrentDate(): CurrentDate {
         day = now.dayOfMonth
     )
 }
+
+actual fun currentEpochMillis(): Long = System.currentTimeMillis()
+

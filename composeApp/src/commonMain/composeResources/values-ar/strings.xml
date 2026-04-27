@@ -8,6 +8,7 @@
     <string name="settings_sound_off">Off</string>
     <string name="settings_theme">المظهر</string>
     <string name="settings_theme_palette">لوحة ألوان المظهر</string>
+    <string name="settings_color_palette">لوحة الألوان</string>
     <string name="settings_block_palette">لوحة ألوان الكتل</string>
     <string name="settings_block_style">نمط الكتل</string>
     <string name="settings_tokens_title">الرموز</string>
@@ -84,7 +85,9 @@
     <string name="high_score">الأفضل</string>
     <string name="high_score_new_record">رقم قياسي جديد</string>
     <string name="home_play_cta">ابدأ</string>
+    <string name="home_time_attack_cta">هجوم الوقت</string>
     <string name="lines">خط</string>
+    <string name="time_remaining">الوقت المتبقي</string>
     <string name="boost">تعزيز</string>
     <string name="danger">خطر</string>
     <string name="danger_none">-</string>
@@ -256,4 +259,8 @@
     <string name="interactive_onboarding_ghost_body">يمكن لقطع الشبح المرور عبر الخلايا الموجودة. أسقطها في العمود المحدد لترى كيف تصل إلى أماكن لا تستطيعها القطع العادية.</string>
     <string name="interactive_onboarding_heavy_title">الثقيل يغيّر اللوحة بقوة</string>
     <string name="interactive_onboarding_heavy_body">القطع الثقيلة تعيد تشكيل المنطقة بعد الهبوط. استخدم الإسقاط الموجّه ثم واصل الجولة بشكل طبيعي من هناك.</string>
+    <string name="block_style_electric">كهربائي</string>
+    <string name="block_style_flame">لهب</string>
+    <string name="block_style_gears">تروس</string>
+    <string name="block_style_pixel">بكسل</string>
 </resources>

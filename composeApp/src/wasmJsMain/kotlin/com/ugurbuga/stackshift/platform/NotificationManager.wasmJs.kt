@@ -8,6 +8,7 @@ class WasmNotificationManager : NotificationManager {
     override fun cancelMissYouNotification() {}
     override fun scheduleDailyChallengeNotification() {}
     override fun cancelDailyChallengeNotification() {}
+    override fun sendTestNotification() {}
     @Composable override fun RequestPermission() {}
 }
 

@@ -1,5 +1,7 @@
 package com.ugurbuga.stackshift.ui.game
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
@@ -371,6 +373,17 @@ fun GameTutorialScreen(
     val coroutineScope = rememberCoroutineScope()
     val currentStep = pagerState.currentPage
     val isLastStep = (currentStep == (totalSteps - 1))
+    
+    val transition = rememberInfiniteTransition(label = "tutorialStylePulse")
+    val stylePulse by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "stylePulse",
+    )
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -400,6 +413,7 @@ fun GameTutorialScreen(
                                 contentDescription = stringResource(Res.string.tutorial_back),
                                 onClick = onBack,
                                 size = 44.dp,
+                                pulse = stylePulse,
                             )
 
                     Text(
@@ -463,6 +477,7 @@ fun GameTutorialScreen(
                                 }
                             },
                             size = 40.dp,
+                            pulse = stylePulse,
                         )
                     } else {
                         Spacer(modifier = Modifier.size(40.dp))
@@ -488,6 +503,7 @@ fun GameTutorialScreen(
                         emphasized = true,
                         tone = if (isLastStep) CellTone.Emerald else CellTone.Cyan,
                         iconOnRight = true,
+                        pulse = stylePulse,
                     )
                 }
             }

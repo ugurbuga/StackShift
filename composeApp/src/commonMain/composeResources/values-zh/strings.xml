@@ -84,7 +84,9 @@
     <string name="high_score">最高分</string>
     <string name="high_score_new_record">新纪录</string>
     <string name="home_play_cta">开始</string>
+    <string name="home_time_attack_cta">限时挑战</string>
     <string name="lines">行</string>
+    <string name="time_remaining">剩余时间</string>
     <string name="boost">加速</string>
     <string name="danger">危险</string>
     <string name="danger_none">-</string>
@@ -256,4 +258,9 @@
     <string name="interactive_onboarding_ghost_body">幽灵方块可以穿过已有格子。把它落到标记的列里，看看它如何到达普通方块无法进入的位置。</string>
     <string name="interactive_onboarding_heavy_title">重型块会猛烈改变棋盘</string>
     <string name="interactive_onboarding_heavy_body">重型方块落地后会更强烈地改变周围区域。完成这次引导投放后，游戏就会从这里继续正常进行。</string>
+    <string name="settings_color_palette">调色板</string>
+    <string name="block_style_electric">电力</string>
+    <string name="block_style_flame">火焰</string>
+    <string name="block_style_gears">齿轮</string>
+    <string name="block_style_pixel">像素</string>
 </resources>

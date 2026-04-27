@@ -84,7 +84,9 @@
     <string name="high_score">Melhor</string>
     <string name="high_score_new_record">Novo recorde</string>
     <string name="home_play_cta">Jogar</string>
+    <string name="home_time_attack_cta">Ataque contra o tempo</string>
     <string name="lines">Linha</string>
+    <string name="time_remaining">Tempo restante</string>
     <string name="boost">Impulso</string>
     <string name="danger">Perigo</string>
     <string name="danger_none">-</string>
@@ -256,4 +258,9 @@
     <string name="interactive_onboarding_ghost_body">Blocos Fantasma podem atravessar células existentes. Solte-o na coluna marcada para ver como ele alcança espaços que peças normais não alcançam.</string>
     <string name="interactive_onboarding_heavy_title">Pesado altera o tabuleiro de forma agressiva</string>
     <string name="interactive_onboarding_heavy_body">Blocos Pesados remodelam a área após pousarem. Faça a queda guiada e depois continue a partida normalmente a partir daí.</string>
+    <string name="settings_color_palette">Paleta de cores</string>
+    <string name="block_style_electric">Elétrico</string>
+    <string name="block_style_flame">Chama</string>
+    <string name="block_style_gears">Engrenagens</string>
+    <string name="block_style_pixel">Píxel</string>
 </resources>

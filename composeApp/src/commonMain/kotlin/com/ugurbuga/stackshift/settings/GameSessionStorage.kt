@@ -1,11 +1,13 @@
 package com.ugurbuga.stackshift.settings
 
-import com.ugurbuga.stackshift.game.model.BoardCell
 import com.ugurbuga.stackshift.game.model.BoardMatrix
 import com.ugurbuga.stackshift.game.model.CellTone
+import com.ugurbuga.stackshift.game.model.ChallengeTask
+import com.ugurbuga.stackshift.game.model.ChallengeTaskType
 import com.ugurbuga.stackshift.game.model.ComboState
-import com.ugurbuga.stackshift.game.model.FloatingFeedback
+import com.ugurbuga.stackshift.game.model.DailyChallenge
 import com.ugurbuga.stackshift.game.model.GameConfig
+import com.ugurbuga.stackshift.game.model.GameMode
 import com.ugurbuga.stackshift.game.model.GameState
 import com.ugurbuga.stackshift.game.model.GameStatus
 import com.ugurbuga.stackshift.game.model.GameText
@@ -26,7 +28,7 @@ expect object GameSessionStorage {
 }
 
 internal object GameSessionCodec {
-    private const val Version = 2
+    private const val Version = 3
     private const val SectionSeparator = '|'
     private const val FieldSeparator = ','
     private const val ListSeparator = ';'
@@ -54,11 +56,16 @@ internal object GameSessionCodec {
         encodeSummaryState(state),
         encodeVisualState(state),
         encodeGameText(state.message),
+        encodeActivityState(state),
+        encodeChallenge(state.activeChallenge),
     ).joinToString(separator = SectionSeparator.toString())
 
     fun decode(value: String): GameState? {
-        val parts = value.split(SectionSeparator, limit = 18)
-        if (parts.size != 18 || parts[0].toIntOrNull() != Version) return null
+        val parts = value.split(SectionSeparator, limit = 20)
+        val version = parts.firstOrNull()?.toIntOrNull() ?: return null
+        if (version !in 2..Version) return null
+        val expectedPartCount = if (version >= 3) 20 else 18
+        if (parts.size != expectedPartCount) return null
 
         val config = decodeConfig(parts[1]) ?: return null
         val board = decodeBoard(parts[2]) ?: return null
@@ -77,9 +84,16 @@ internal object GameSessionCodec {
         val summary = decodeSummaryState(parts[15]) ?: return null
         val visual = decodeVisualState(parts[16]) ?: return null
         val message = decodeGameText(parts[17]) ?: GameText(GameTextKey.GameMessageSelectColumn)
+        val activity = if (version >= 3) {
+            decodeActivityState(parts[18]) ?: return null
+        } else {
+            ActivityState()
+        }
+        val activeChallenge = if (version >= 3) decodeChallenge(parts[19]) else null
 
         return GameState(
             config = config,
+            gameMode = progress.gameMode,
             board = board,
             activePiece = activePiece,
             nextQueue = nextQueue,
@@ -99,6 +113,7 @@ internal object GameSessionCodec {
             softLock = softLock,
             status = status,
             recentlyClearedRows = recentlyClearedRows,
+            recentlyClearedColumns = activity.recentlyClearedColumns,
             lastResolvedLines = summary.lastResolvedLines,
             lastChainDepth = summary.lastChainDepth,
             specialChainCount = summary.specialChainCount,
@@ -108,7 +123,10 @@ internal object GameSessionCodec {
             comboPopupToken = visual.comboPopupToken,
             floatingFeedback = null,
             feedbackToken = visual.feedbackToken,
+            rewardedReviveUsed = activity.rewardedReviveUsed,
+            remainingTimeMillis = progress.remainingTimeMillis,
             message = message,
+            activeChallenge = activeChallenge,
         )
     }
 
@@ -250,6 +268,8 @@ internal object GameSessionCodec {
         val level: Int,
         val difficultyStage: Int,
         val secondsUntilDifficultyIncrease: Int,
+        val gameMode: GameMode,
+        val remainingTimeMillis: Long?,
     )
 
     private fun encodeProgressState(state: GameState): String = listOf(
@@ -259,11 +279,13 @@ internal object GameSessionCodec {
         state.level,
         state.difficultyStage,
         state.secondsUntilDifficultyIncrease,
+        state.gameMode.ordinal,
+        state.remainingTimeMillis?.toString() ?: EmptyToken,
     ).joinToString(separator = FieldSeparator.toString())
 
     private fun decodeProgressState(value: String): ProgressState? {
         val parts = value.split(FieldSeparator)
-        if (parts.size != 6) return null
+        if (parts.size != 6 && parts.size != 8) return null
         return ProgressState(
             score = parts[0].toIntOrNull() ?: return null,
             lastMoveScore = parts[1].toIntOrNull() ?: return null,
@@ -271,6 +293,16 @@ internal object GameSessionCodec {
             level = parts[3].toIntOrNull() ?: return null,
             difficultyStage = parts[4].toIntOrNull() ?: return null,
             secondsUntilDifficultyIncrease = parts[5].toIntOrNull() ?: return null,
+            gameMode = if (parts.size >= 7) {
+                GameMode.entries.getOrNull(parts[6].toIntOrNull() ?: return null) ?: return null
+            } else {
+                GameMode.Classic
+            },
+            remainingTimeMillis = if (parts.size >= 8) {
+                parts[7].takeIf { it != EmptyToken }?.toLongOrNull()
+            } else {
+                null
+            },
         )
     }
 
@@ -414,6 +446,11 @@ internal object GameSessionCodec {
         val feedbackToken: Long,
     )
 
+    private data class ActivityState(
+        val recentlyClearedColumns: Set<Int> = emptySet(),
+        val rewardedReviveUsed: Boolean = false,
+    )
+
     private fun encodeVisualState(state: GameState): String = listOf(
         state.clearAnimationToken,
         state.screenShakeToken,
@@ -431,6 +468,59 @@ internal object GameSessionCodec {
             impactFlashToken = parts[2].toLongOrNull() ?: return null,
             comboPopupToken = parts[3].toLongOrNull() ?: return null,
             feedbackToken = parts[4].toLongOrNull() ?: return null,
+        )
+    }
+
+    private fun encodeActivityState(state: GameState): String = listOf(
+        encodeIntSet(state.recentlyClearedColumns),
+        state.rewardedReviveUsed,
+    ).joinToString(separator = FieldSeparator.toString())
+
+    private fun decodeActivityState(value: String): ActivityState? {
+        val parts = value.split(FieldSeparator)
+        if (parts.size != 2) return null
+        return ActivityState(
+            recentlyClearedColumns = decodeIntSet(parts[0]) ?: return null,
+            rewardedReviveUsed = parts[1].toBooleanStrictOrNull() ?: return null,
+        )
+    }
+
+    private fun encodeChallenge(challenge: DailyChallenge?): String {
+        if (challenge == null) return EmptyToken
+        val tasks = challenge.tasks.joinToString(separator = ListSeparator.toString()) { task ->
+            listOf(task.type.ordinal, task.target, task.current).joinToString(separator = PointSeparator.toString())
+        }
+        return listOf(
+            challenge.year,
+            challenge.month,
+            challenge.day,
+            tasks,
+        ).joinToString(separator = FieldSeparator.toString())
+    }
+
+    private fun decodeChallenge(value: String): DailyChallenge? {
+        if (value == EmptyToken || value.isBlank()) return null
+        val parts = value.split(FieldSeparator, limit = 4)
+        if (parts.size != 4) return null
+        val tasks = if (parts[3].isBlank()) {
+            emptyList()
+        } else {
+            parts[3].split(ListSeparator).map { token ->
+                val taskParts = token.split(PointSeparator)
+                if (taskParts.size != 3) return null
+                ChallengeTask(
+                    type = ChallengeTaskType.entries.getOrNull(taskParts[0].toIntOrNull() ?: return null)
+                        ?: return null,
+                    target = taskParts[1].toIntOrNull() ?: return null,
+                    current = taskParts[2].toIntOrNull() ?: return null,
+                )
+            }
+        }
+        return DailyChallenge(
+            year = parts[0].toIntOrNull() ?: return null,
+            month = parts[1].toIntOrNull() ?: return null,
+            day = parts[2].toIntOrNull() ?: return null,
+            tasks = tasks,
         )
     }
 
