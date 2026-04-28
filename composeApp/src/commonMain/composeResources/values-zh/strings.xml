@@ -77,13 +77,14 @@
     <string name="restart_confirm_body">当前进度将被重置。要继续吗？</string>
     <string name="restart_confirm">是，重新开始</string>
     <string name="restart_cancel">取消</string>
-    <string name="leave_session_confirm_title">Leave this session?</string>
-    <string name="leave_session_confirm_body">Your current progress will be lost. Are you sure you want to go back?</string>
-    <string name="leave_session_confirm">Yes, leave</string>
+    <string name="leave_session_confirm_title">离开此对局？</string>
+    <string name="leave_session_confirm_body">当前进度将丢失。您确定要返回吗？</string>
+    <string name="leave_session_confirm">是，离开</string>
     <string name="score">分数</string>
     <string name="high_score">最高分</string>
     <string name="high_score_new_record">新纪录</string>
     <string name="home_play_cta">开始</string>
+    <string name="home_classic_cta">经典</string>
     <string name="home_time_attack_cta">限时挑战</string>
     <string name="lines">行</string>
     <string name="time_remaining">剩余时间</string>

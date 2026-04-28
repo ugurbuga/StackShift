@@ -92,6 +92,7 @@
     <string name="high_score">Best</string>
     <string name="high_score_new_record">New Record</string>
     <string name="home_play_cta">Play</string>
+    <string name="home_classic_cta">Classic</string>
     <string name="home_time_attack_cta">Time Attack</string>
     <string name="lines">Line</string>
     <string name="time_remaining">Time Left</string>

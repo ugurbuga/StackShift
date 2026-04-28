@@ -67,13 +67,14 @@
     <string name="restart_confirm_body">Текущий прогресс будет сброшен. Продолжить?</string>
     <string name="restart_confirm">Да, перезапустить</string>
     <string name="restart_cancel">Отмена</string>
-    <string name="leave_session_confirm_title">Leave this session?</string>
-    <string name="leave_session_confirm_body">Your current progress will be lost. Are you sure you want to go back?</string>
-    <string name="leave_session_confirm">Yes, leave</string>
+    <string name="leave_session_confirm_title">Покинуть эту сессию?</string>
+    <string name="leave_session_confirm_body">Ваш текущий прогресс будет потерян. Вы уверены, что хотите вернуться?</string>
+    <string name="leave_session_confirm">Да, выйти</string>
     <string name="score">Счёт</string>
     <string name="high_score">Рекорд</string>
     <string name="high_score_new_record">Новый рекорд</string>
     <string name="home_play_cta">Играть</string>
+    <string name="home_classic_cta">Классика</string>
     <string name="home_time_attack_cta">На время</string>
     <string name="lines">Линии</string>
     <string name="time_remaining">Осталось времени</string>

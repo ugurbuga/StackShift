@@ -52,6 +52,7 @@ import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ugurbuga.stackshift.game.model.BlockColorPalette
@@ -2323,10 +2324,9 @@ private fun DrawScope.drawGearsPattern(
             val color: Color,
         )
         listOf(
-            GearSpec(Offset(0.29f, 0.69f), 0.150f, 0.026f, 20, -1f, -18f, toneColor),
-            GearSpec(Offset(0.61f, 0.68f), 0.124f, 0.024f, 17, 1f, 12f, tintColor(toneColor, 0.05f)),
-            GearSpec(Offset(0.44f, 0.45f), 0.108f, 0.021f, 15, 1f, -8f, shadeColor(toneColor, 0.04f)),
-            GearSpec(Offset(0.20f, 0.45f), 0.082f, 0.017f, 12, -1f, 20f, tintColor(toneColor, 0.12f)),
+            GearSpec(Offset(0.29f, 0.69f), 0.250f, 0.026f, 20, -1f, -18f, toneColor),
+            GearSpec(Offset(0.74f, 0.6f), 0.164f, 0.024f, 17, 1f, 12f, tintColor(toneColor, 0.12f)),
+            GearSpec(Offset(0.53f, 0.26f), 0.208f, 0.021f, 15, 1f, -8f, tintColor(toneColor, 0.05f)),
         ).forEach { gear ->
             drawGear(
                 center = Offset(
@@ -2342,6 +2342,20 @@ private fun DrawScope.drawGearsPattern(
             )
         }
     }
+}
+
+
+@Preview
+@Composable
+internal fun BlockCellPreviewPreview() {
+    BlockCellPreview(
+        baseColor = Color.Red,
+        style = BlockVisualStyle.Gears,
+        size = 100.dp,
+        modifier = Modifier,
+        alpha = 1f,
+        pulse = 0f,
+    )
 }
 
 private fun DrawScope.drawGear(

@@ -39,6 +39,7 @@ actual object AppSettingsStorage {
             unlockedBlockStyles = decodeEnumSet(prefs.getSafeString(KeyUnlockedBlockStyles, null), BlockVisualStyle.entries),
             challengeProgress = decodeChallengeProgress(prefs.getSafeString(KeyChallengeProgress, null)),
             lastAppOpenedAtEpochMillis = prefs.getLong(KeyLastAppOpenedAtEpochMillis, defaultSettings.lastAppOpenedAtEpochMillis),
+            isHighScoresClearedOnce = prefs.getBoolean(KeyIsHighScoresClearedOnce, defaultSettings.isHighScoresClearedOnce),
         ).sanitized()
     }
 
@@ -59,8 +60,10 @@ actual object AppSettingsStorage {
         prefs.put(KeyUnlockedBlockStyles, encodeEnumSet(sanitized.unlockedBlockStyles))
         prefs.put(KeyChallengeProgress, encodeChallengeProgress(sanitized.challengeProgress))
         prefs.putLong(KeyLastAppOpenedAtEpochMillis, sanitized.lastAppOpenedAtEpochMillis)
+        prefs.putBoolean(KeyIsHighScoresClearedOnce, sanitized.isHighScoresClearedOnce)
     }
 
+    private const val KeyIsHighScoresClearedOnce = "isHighScoresClearedOnce"
     private const val Namespace = "com.ugurbuga.stackshift.settings"
     private const val KeyLastAppOpenedAtEpochMillis = "lastAppOpenedAtEpochMillis"
     private const val KeyChallengeProgress = "challengeProgress"

@@ -78,7 +78,7 @@ import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
 import stackshift.composeapp.generated.resources.app_title
 import stackshift.composeapp.generated.resources.high_score
-import stackshift.composeapp.generated.resources.home_play_cta
+import stackshift.composeapp.generated.resources.home_classic_cta
 import stackshift.composeapp.generated.resources.home_time_attack_cta
 import stackshift.composeapp.generated.resources.settings_challenges
 import stackshift.composeapp.generated.resources.settings_language
@@ -160,16 +160,20 @@ fun HomeScreen(
                 )
             }
 
-            Column(
-                modifier = Modifier.align(Alignment.Center),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+            Row(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .fillMaxWidth(0.78f),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                HomePrimaryPlayButton(
-                    text = stringResource(Res.string.home_play_cta),
+                HomeQuickActionButton(
+                    text = stringResource(Res.string.home_classic_cta),
+                    icon = Icons.Filled.PlayArrow,
+                    tone = CellTone.Cyan,
                     settings = settings,
                     pulse = stylePulse,
-                    modifier = Modifier.size(120.dp),
+                    modifier = Modifier.weight(1f),
                     onClick = onPlay,
                 )
 
@@ -179,7 +183,7 @@ fun HomeScreen(
                     tone = CellTone.Amber,
                     settings = settings,
                     pulse = stylePulse,
-                    modifier = Modifier.fillMaxWidth(0.62f),
+                    modifier = Modifier.weight(1f),
                     onClick = onPlayTimeAttack,
                 )
             }
@@ -887,7 +891,7 @@ private fun HomeHighScoreCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 HomeHighScoreMetric(
-                    title = stringResource(Res.string.home_play_cta),
+                    title = stringResource(Res.string.home_classic_cta),
                     value = classicHighScore.toString(),
                 )
                 Box(
@@ -927,95 +931,6 @@ private fun HomeHighScoreMetric(
             color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Bold,
         )
-    }
-}
-
-@Composable
-private fun HomePrimaryPlayButton(
-    text: String,
-    settings: AppSettings,
-    pulse: Float,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val resolvedStyle = settings.blockVisualStyle
-    val density = LocalDensity.current
-    BoxWithConstraints(modifier = modifier.aspectRatio(1f)) {
-        val cellSize = maxWidth
-        val cellInset = boardCellInsetDp(cellSize)
-        val buttonShape = RoundedCornerShape(boardCellCornerRadiusDp(cellSize, resolvedStyle))
-        val effectivePulse = rememberBlockStylePulse(
-            style = resolvedStyle,
-            pulse = pulse,
-        )
-        val contentColor = blockStyleIconTint(style = resolvedStyle)
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer {
-                    val scale = 1f + (pulse * 0.05f)
-                    scaleX = scale
-                    scaleY = scale
-                }
-                .padding(cellInset),
-            contentAlignment = Alignment.Center,
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .stackShiftSurfaceShadow(
-                        shape = buttonShape,
-                        elevation = 0.dp,
-                    )
-                    .clip(buttonShape)
-                    .clickable(onClick = onClick),
-                contentAlignment = Alignment.Center,
-            ) {
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    val cornerRadiusPx = boardCellCornerRadiusPx(
-                        with(density) { cellSize.toPx() },
-                        resolvedStyle
-                    )
-                    drawCellBody(
-                        tone = CellTone.Cyan,
-                        palette = settings.blockColorPalette,
-                        style = resolvedStyle,
-                        topLeft = Offset.Zero,
-                        size = this.size,
-                        cornerRadius = CornerRadius(cornerRadiusPx, cornerRadiusPx),
-                        pulse = effectivePulse,
-                    )
-                }
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(StackShiftThemeTokens.uiColors.gameSurface.copy(alpha = 0.35f))
-                )
-
-                Column(
-                    modifier = Modifier.padding(12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.PlayArrow,
-                        contentDescription = null,
-                        tint = contentColor,
-                        modifier = Modifier.size(42.dp),
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = text,
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = contentColor,
-                        fontWeight = FontWeight.ExtraBold,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            }
-        }
     }
 }
 

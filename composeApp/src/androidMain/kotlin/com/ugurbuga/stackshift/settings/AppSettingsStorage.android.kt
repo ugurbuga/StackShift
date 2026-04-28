@@ -90,6 +90,10 @@ actual object AppSettingsStorage {
                 KeyLastAppOpenedAtEpochMillis,
                 defaultSettings.lastAppOpenedAtEpochMillis,
             ),
+            isHighScoresClearedOnce = prefs.getBoolean(
+                KeyIsHighScoresClearedOnce,
+                defaultSettings.isHighScoresClearedOnce
+            ),
         ).sanitized()
     }
 
@@ -119,9 +123,11 @@ actual object AppSettingsStorage {
             .putString(KeyUnlockedBlockStyles, encodeEnumSet(sanitized.unlockedBlockStyles))
             .putString(KeyChallengeProgress, encodeChallengeProgress(sanitized.challengeProgress))
             .putLong(KeyLastAppOpenedAtEpochMillis, sanitized.lastAppOpenedAtEpochMillis)
+            .putBoolean(KeyIsHighScoresClearedOnce, sanitized.isHighScoresClearedOnce)
             .apply()
     }
 
+    private const val KeyIsHighScoresClearedOnce = "isHighScoresClearedOnce"
     private const val KeyLastAppOpenedAtEpochMillis = "lastAppOpenedAtEpochMillis"
     private const val KeyChallengeProgress = "challengeProgress"
     private const val KeyTokenBalance = "tokenBalance"

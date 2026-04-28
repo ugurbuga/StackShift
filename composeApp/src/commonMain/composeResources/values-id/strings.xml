@@ -77,13 +77,14 @@
     <string name="restart_confirm_body">Progres saat ini akan direset. Apakah Anda ingin melanjutkan?</string>
     <string name="restart_confirm">Ya, mulai ulang</string>
     <string name="restart_cancel">Batal</string>
-    <string name="leave_session_confirm_title">Leave this session?</string>
-    <string name="leave_session_confirm_body">Your current progress will be lost. Are you sure you want to go back?</string>
-    <string name="leave_session_confirm">Yes, leave</string>
+    <string name="leave_session_confirm_title">Tinggalkan sesi ini?</string>
+    <string name="leave_session_confirm_body">Progres Anda saat ini akan hilang. Apakah Anda yakin ingin kembali?</string>
+    <string name="leave_session_confirm">Ya, keluar</string>
     <string name="score">Skor</string>
     <string name="high_score">Terbaik</string>
     <string name="high_score_new_record">Rekor baru</string>
     <string name="home_play_cta">Main</string>
+    <string name="home_classic_cta">Klasik</string>
     <string name="home_time_attack_cta">Serangan Waktu</string>
     <string name="lines">Baris</string>
     <string name="time_remaining">Sisa Waktu</string>

@@ -41,6 +41,7 @@ actual object AppSettingsStorage {
                 defaults.stringForKey(KeyLastAppOpenedAtEpochMillis)?.toLongOrNull()
                     ?: defaults.integerForKey(KeyLastAppOpenedAtEpochMillis).toLong()
             } ?: defaultSettings.lastAppOpenedAtEpochMillis,
+            isHighScoresClearedOnce = defaults.boolForKey(KeyIsHighScoresClearedOnce),
         ).sanitized()
     }
 
@@ -61,8 +62,10 @@ actual object AppSettingsStorage {
         defaults.setObject(encodeEnumSet(sanitized.unlockedBlockStyles), forKey = KeyUnlockedBlockStyles)
         defaults.setObject(encodeChallengeProgress(sanitized.challengeProgress), forKey = KeyChallengeProgress)
         defaults.setObject(sanitized.lastAppOpenedAtEpochMillis.toString(), forKey = KeyLastAppOpenedAtEpochMillis)
+        defaults.setBool(sanitized.isHighScoresClearedOnce, forKey = KeyIsHighScoresClearedOnce)
     }
 
+    private const val KeyIsHighScoresClearedOnce = "isHighScoresClearedOnce"
     private const val KeyLastAppOpenedAtEpochMillis = "lastAppOpenedAtEpochMillis"
     private const val KeyChallengeProgress = "challengeProgress"
     private const val KeyTokenBalance = "tokenBalance"

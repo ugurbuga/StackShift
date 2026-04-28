@@ -77,13 +77,14 @@
     <string name="restart_confirm_body">O progresso atual será redefinido. Quer continuar?</string>
     <string name="restart_confirm">Sim, reiniciar</string>
     <string name="restart_cancel">Cancelar</string>
-    <string name="leave_session_confirm_title">Leave this session?</string>
-    <string name="leave_session_confirm_body">Your current progress will be lost. Are you sure you want to go back?</string>
-    <string name="leave_session_confirm">Yes, leave</string>
+    <string name="leave_session_confirm_title">Sair desta sessão?</string>
+    <string name="leave_session_confirm_body">O progresso atual será perdido. Tem certeza de que deseja voltar?</string>
+    <string name="leave_session_confirm">Sim, sair</string>
     <string name="score">Pontuação</string>
     <string name="high_score">Melhor</string>
     <string name="high_score_new_record">Novo recorde</string>
     <string name="home_play_cta">Jogar</string>
+    <string name="home_classic_cta">Clássico</string>
     <string name="home_time_attack_cta">Ataque contra o tempo</string>
     <string name="lines">Linha</string>
     <string name="time_remaining">Tempo restante</string>

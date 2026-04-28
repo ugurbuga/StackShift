@@ -30,9 +30,9 @@ import com.ugurbuga.stackshift.game.model.GameStatus
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
 import com.ugurbuga.stackshift.localization.AppEnvironment
 import com.ugurbuga.stackshift.localization.currentDeviceLocaleTag
+import com.ugurbuga.stackshift.platform.currentEpochMillis
 import com.ugurbuga.stackshift.platform.feedback.GameSound
 import com.ugurbuga.stackshift.platform.feedback.rememberSoundEffectPlayer
-import com.ugurbuga.stackshift.platform.currentEpochMillis
 import com.ugurbuga.stackshift.platform.getCurrentDate
 import com.ugurbuga.stackshift.platform.rememberNotificationManager
 import com.ugurbuga.stackshift.presentation.game.GameViewModel
@@ -428,6 +428,13 @@ fun StackShiftAppHost(
     }
 
     LaunchedEffect(initialBootstrapResult, telemetry) {
+        if (!settings.isHighScoresClearedOnce) {
+            HighScoreStorage.save(0, GameMode.Classic)
+            HighScoreStorage.save(0, GameMode.TimeAttack)
+            GameSessionStorage.clear()
+            persistSettings(settings.copy(isHighScoresClearedOnce = true))
+        }
+
         logLanguageBootstrapDecision(
             source = bootstrapLogSource,
             result = initialBootstrapResult,
