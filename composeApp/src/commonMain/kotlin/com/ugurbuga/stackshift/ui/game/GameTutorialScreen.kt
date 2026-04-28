@@ -89,6 +89,7 @@ import com.ugurbuga.stackshift.game.model.GameConfig
 import com.ugurbuga.stackshift.game.model.GameState
 import com.ugurbuga.stackshift.game.model.GameStatus
 import com.ugurbuga.stackshift.game.model.GameTextKey
+import com.ugurbuga.stackshift.game.model.GameplayStyle
 import com.ugurbuga.stackshift.game.model.GridPoint
 import com.ugurbuga.stackshift.game.model.Piece
 import com.ugurbuga.stackshift.game.model.PieceKind
@@ -136,6 +137,16 @@ import stackshift.composeapp.generated.resources.tutorial_ready_body
 import stackshift.composeapp.generated.resources.tutorial_ready_settings_hint
 import stackshift.composeapp.generated.resources.tutorial_ready_title
 import stackshift.composeapp.generated.resources.tutorial_ready_tutorial_hint
+import stackshift.composeapp.generated.resources.tutorial_stackshift_intro_body
+import stackshift.composeapp.generated.resources.tutorial_stackshift_intro_title
+import stackshift.composeapp.generated.resources.tutorial_stackshift_ready_body
+import stackshift.composeapp.generated.resources.tutorial_stackshift_ready_settings_hint
+import stackshift.composeapp.generated.resources.tutorial_stackshift_ready_title
+import stackshift.composeapp.generated.resources.tutorial_stackshift_ready_tutorial_hint
+import stackshift.composeapp.generated.resources.tutorial_stackshift_specials_body
+import stackshift.composeapp.generated.resources.tutorial_stackshift_specials_title
+import stackshift.composeapp.generated.resources.tutorial_stackshift_systems_body
+import stackshift.composeapp.generated.resources.tutorial_stackshift_systems_title
 import stackshift.composeapp.generated.resources.tutorial_specials_body
 import stackshift.composeapp.generated.resources.tutorial_specials_title
 import stackshift.composeapp.generated.resources.tutorial_step_counter
@@ -184,6 +195,51 @@ private val TutorialNextPiece = Piece(
     height = 3,
     special = SpecialBlockType.Ghost,
 )
+private val TutorialBlockWisePrimaryPiece = Piece(
+    id = -301,
+    kind = PieceKind.TriL,
+    tone = CellTone.Cyan,
+    cells = listOf(
+        GridPoint(column = 0, row = 0),
+        GridPoint(column = 1, row = 0),
+        GridPoint(column = 0, row = 1),
+    ),
+    width = 2,
+    height = 2,
+)
+private val TutorialBlockWiseSecondaryPiece = Piece(
+    id = -302,
+    kind = PieceKind.Domino,
+    tone = CellTone.Gold,
+    cells = listOf(
+        GridPoint(column = 0, row = 0),
+        GridPoint(column = 1, row = 0),
+    ),
+    width = 2,
+    height = 1,
+)
+private val TutorialBlockWiseTertiaryPiece = Piece(
+    id = -303,
+    kind = PieceKind.Square,
+    tone = CellTone.Violet,
+    cells = listOf(
+        GridPoint(column = 0, row = 0),
+        GridPoint(column = 1, row = 0),
+        GridPoint(column = 0, row = 1),
+        GridPoint(column = 1, row = 1),
+    ),
+    width = 2,
+    height = 2,
+)
+private val TutorialBlockWiseTargetOrigin = GridPoint(column = 2, row = 1)
+
+private enum class TutorialPage {
+    StackShiftIntro,
+    StackShiftSystems,
+    StackShiftSpecials,
+    StackShiftReady,
+    BlockWiseDrag,
+}
 
 private data class TutorialDemoScene(
     val gameState: GameState,
@@ -362,14 +418,27 @@ fun GameTutorialScreen(
     modifier: Modifier = Modifier,
     telemetry: AppTelemetry = NoOpAppTelemetry,
     adController: GameAdController = NoOpGameAdController,
+    gameplayStyle: GameplayStyle = GameplayStyle.StackShift,
     initialPage: Int = 0,
     onBack: () -> Unit,
     onFinish: () -> Unit,
 ) {
     LogScreen(telemetry, TelemetryScreenNames.Tutorial)
-    val totalSteps = 4
+    val tutorialPages = remember(gameplayStyle) {
+        when (gameplayStyle) {
+            GameplayStyle.StackShift -> listOf(
+                TutorialPage.StackShiftIntro,
+                TutorialPage.StackShiftSystems,
+                TutorialPage.StackShiftSpecials,
+                TutorialPage.StackShiftReady,
+            )
+
+            GameplayStyle.BlockWise -> listOf(TutorialPage.BlockWiseDrag)
+        }
+    }
+    val totalSteps = tutorialPages.size
     val uiColors = StackShiftThemeTokens.uiColors
-    val pagerState = rememberPagerState(initialPage = initialPage) { totalSteps }
+    val pagerState = rememberPagerState(initialPage = initialPage.coerceIn(0, (totalSteps - 1).coerceAtLeast(0))) { totalSteps }
     val coroutineScope = rememberCoroutineScope()
     val currentStep = pagerState.currentPage
     val isLastStep = (currentStep == (totalSteps - 1))
@@ -450,11 +519,12 @@ fun GameTutorialScreen(
                         verticalAlignment = Alignment.Top,
                     ) { page ->
                         TutorialScrollablePage {
-                            when (page) {
-                                0 -> TutorialIntroStep()
-                                1 -> TutorialSystemsStep()
-                                2 -> TutorialSpecialsStep()
-                                3 -> TutorialReadyStep()
+                            when (tutorialPages[page]) {
+                                TutorialPage.StackShiftIntro -> TutorialIntroStep()
+                                TutorialPage.StackShiftSystems -> TutorialSystemsStep()
+                                TutorialPage.StackShiftSpecials -> TutorialSpecialsStep()
+                                TutorialPage.StackShiftReady -> TutorialReadyStep()
+                                TutorialPage.BlockWiseDrag -> TutorialBlockWiseDragStep()
                             }
                         }
                     }
@@ -638,8 +708,8 @@ private fun TutorialMiniBoardShell(
 @Composable
 private fun TutorialIntroStep(launchPreviewColumn: Int? = null) {
     TutorialSection(
-        title = stringResource(Res.string.tutorial_intro_title),
-        body = stringResource(Res.string.tutorial_intro_body),
+        title = stringResource(Res.string.tutorial_stackshift_intro_title),
+        body = stringResource(Res.string.tutorial_stackshift_intro_body),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -667,8 +737,8 @@ private fun TutorialIntroStep(launchPreviewColumn: Int? = null) {
 @Composable
 private fun TutorialSystemsStep() {
     TutorialSection(
-        title = stringResource(Res.string.tutorial_systems_title),
-        body = stringResource(Res.string.tutorial_systems_body),
+        title = stringResource(Res.string.tutorial_stackshift_systems_title),
+        body = stringResource(Res.string.tutorial_stackshift_systems_body),
     ) {
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
@@ -707,8 +777,8 @@ private fun TutorialSystemsStep() {
 @Composable
 private fun TutorialSpecialsStep(previewColumns: Map<SpecialBlockType, Int> = emptyMap()) {
     TutorialSection(
-        title = stringResource(Res.string.tutorial_specials_title),
-        body = stringResource(Res.string.tutorial_specials_body),
+        title = stringResource(Res.string.tutorial_stackshift_specials_title),
+        body = stringResource(Res.string.tutorial_stackshift_specials_body),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             TutorialAnimatedSpecialsShowcase(previewColumns = previewColumns)
@@ -743,11 +813,208 @@ private fun TutorialSpecialsStep(previewColumns: Map<SpecialBlockType, Int> = em
 @Composable
 private fun TutorialReadyStep() {
     TutorialSection(
-        title = stringResource(Res.string.tutorial_ready_title),
-        body = stringResource(Res.string.tutorial_ready_body),
+        title = stringResource(Res.string.tutorial_stackshift_ready_title),
+        body = stringResource(Res.string.tutorial_stackshift_ready_body),
     ) {
-        TutorialHintCard(text = stringResource(Res.string.tutorial_ready_tutorial_hint))
-        TutorialHintCard(text = stringResource(Res.string.tutorial_ready_settings_hint))
+        TutorialHintCard(text = stringResource(Res.string.tutorial_stackshift_ready_tutorial_hint))
+        TutorialHintCard(text = stringResource(Res.string.tutorial_stackshift_ready_settings_hint))
+    }
+}
+
+@Composable
+private fun TutorialBlockWiseDragStep() {
+    TutorialSection(
+        title = stringResource(Res.string.tutorial_intro_title),
+        body = stringResource(Res.string.tutorial_intro_body),
+    ) {
+        TutorialBlockWisePlacementDemo()
+        TutorialHintCard(text = stringResource(Res.string.launch_drag_hint))
+    }
+}
+
+@Composable
+private fun TutorialBlockWisePlacementDemo() {
+    val settings = LocalAppSettings.current
+    val density = LocalDensity.current
+    val boardStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
+    val gameLogic = remember { GameLogic() }
+    val initialState = remember {
+        GameState(
+            config = GameConfig(columns = TutorialCompactColumns, rows = TutorialCompactRows),
+            gameplayStyle = GameplayStyle.BlockWise,
+            board = BoardMatrix.empty(columns = TutorialCompactColumns, rows = TutorialCompactRows)
+                .fill(
+                    points = listOf(
+                        GridPoint(0, 2),
+                        GridPoint(1, 2),
+                        GridPoint(4, 1),
+                        GridPoint(3, 3),
+                        GridPoint(4, 3),
+                        GridPoint(1, 4),
+                    ),
+                    tone = CellTone.Blue,
+                )
+                .fill(
+                    points = listOf(
+                        GridPoint(0, 4),
+                        GridPoint(2, 4),
+                    ),
+                    tone = CellTone.Gold,
+                ),
+            activePiece = TutorialBlockWisePrimaryPiece,
+            nextQueue = listOf(TutorialBlockWiseSecondaryPiece, TutorialBlockWiseTertiaryPiece),
+            canHold = false,
+            score = 0,
+            linesCleared = 0,
+            level = 1,
+            difficultyStage = 0,
+            secondsUntilDifficultyIncrease = 0,
+            status = GameStatus.Running,
+            message = gameText(GameTextKey.LaunchDragHint),
+        )
+    }
+    val primaryPiece = initialState.activePiece ?: return
+    val placementPreview = remember(initialState) {
+        gameLogic.previewPlacement(initialState, primaryPiece.id, TutorialBlockWiseTargetOrigin)
+    }
+    val previewImpactPoints = remember(initialState, placementPreview) {
+        gameLogic.previewImpactPoints(initialState, placementPreview)
+    }
+    val placedState = remember(initialState) {
+        gameLogic.placePiece(initialState, primaryPiece.id, TutorialBlockWiseTargetOrigin).state
+    }
+    var hostRectInRoot by remember { mutableStateOf(Rect.Zero) }
+    var boardRectInRoot by remember { mutableStateOf(Rect.Zero) }
+    var primaryTrayPieceRectInRoot by remember { mutableStateOf(Rect.Zero) }
+    val animationTransition = rememberInfiniteTransition(label = "tutorialBlockWisePlacement")
+    val animationPhase by animationTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 3600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "tutorialBlockWisePlacementPhase",
+    )
+    val boardRect = boardRectInRoot.toLocalRect(hostRectInRoot)
+    val trayPieceRect = primaryTrayPieceRectInRoot.toLocalRect(hostRectInRoot)
+    val cellSizePx = if (boardRect != Rect.Zero) boardRect.width / initialState.config.columns else 0f
+    val pieceCellDp = with(density) { cellSizePx.coerceAtLeast(1f).toDp() }
+    val launchCellCornerRadius = boardCellCornerRadiusDp(
+        cellSize = pieceCellDp,
+        style = boardStyle,
+    )
+    val moveProgress = tutorialProgress(animationPhase, start = 0.18f, end = 0.58f)
+    val startTopLeft = remember(trayPieceRect, boardRect, cellSizePx) {
+        if (trayPieceRect == Rect.Zero || boardRect == Rect.Zero || cellSizePx <= 0f) {
+            null
+        } else {
+            Offset(
+                x = trayPieceRect.center.x - ((primaryPiece.width * cellSizePx) / 2f),
+                y = trayPieceRect.center.y - ((primaryPiece.height * cellSizePx) / 2f),
+            )
+        }
+    }
+    val targetTopLeft = remember(boardRect, cellSizePx) {
+        if (boardRect == Rect.Zero || cellSizePx <= 0f) {
+            null
+        } else {
+            TutorialBlockWiseTargetOrigin.toLocalTopLeft(boardRect, cellSizePx)
+        }
+    }
+    val overlayTopLeft = when {
+        startTopLeft == null || targetTopLeft == null -> null
+        animationPhase < 0.18f -> startTopLeft
+        animationPhase < 0.58f -> lerpOffset(startTopLeft, targetTopLeft, moveProgress)
+        animationPhase < 0.78f -> targetTopLeft
+        else -> null
+    }
+    val showPlacedState = animationPhase in 0.58f..0.78f
+    val boardState = if (showPlacedState) placedState else initialState
+    val boardPreview = if (showPlacedState) null else placementPreview
+    val selectedTrayPieceHidden = animationPhase < 0.78f
+    val handAlpha = if (animationPhase < 0.58f && overlayTopLeft != null) 1f else 0f
+
+    TutorialMiniBoardShell {
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxWidth()
+                .onGloballyPositioned { coordinates ->
+                    hostRectInRoot = coordinates.boundsInRoot()
+                },
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                BoardGrid(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(boardState.config.columns.toFloat() / boardState.config.rows.toFloat())
+                        .onGloballyPositioned { coordinates ->
+                            boardRectInRoot = coordinates.boundsInRoot()
+                        },
+                    gameState = boardState,
+                    preview = boardPreview,
+                    impactedPreviewCells = if (showPlacedState) emptySet() else previewImpactPoints,
+                    activeColumn = boardPreview?.selectedColumn,
+                    activePiece = if (showPlacedState) null else primaryPiece,
+                    isDragging = overlayTopLeft != null,
+                )
+
+                TutorialMiniBottomDock(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(TutorialMiniDockHeight),
+                    onTrayPositioned = {},
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        TutorialTrayPieceChip(
+                            piece = TutorialBlockWisePrimaryPiece,
+                            hidden = selectedTrayPieceHidden,
+                            modifier = Modifier.weight(1f),
+                            onPositioned = { primaryTrayPieceRectInRoot = it },
+                        )
+                        TutorialTrayPieceChip(
+                            piece = TutorialBlockWiseSecondaryPiece,
+                            hidden = false,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TutorialTrayPieceChip(
+                            piece = TutorialBlockWiseTertiaryPiece,
+                            hidden = false,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+            }
+
+            if (overlayTopLeft != null && cellSizePx > 0f) {
+                PieceBlocks(
+                    piece = primaryPiece,
+                    cellSize = pieceCellDp,
+                    cellCornerRadius = launchCellCornerRadius,
+                    modifier = Modifier.graphicsLayer(
+                        translationX = overlayTopLeft.x,
+                        translationY = overlayTopLeft.y,
+                        transformOrigin = TransformOrigin(0f, 0f),
+                    ),
+                )
+
+                TutorialDemoHand(
+                    x = with(density) { overlayTopLeft.x.toDp() },
+                    y = with(density) { overlayTopLeft.y.toDp() },
+                    pieceWidth = primaryPiece.width,
+                    pieceHeight = primaryPiece.height,
+                    cellSize = pieceCellDp,
+                    alpha = handAlpha,
+                )
+            }
+        }
     }
 }
 
@@ -1221,6 +1488,7 @@ private fun TutorialDemoHand(
 private fun TutorialMiniBottomDock(
     onTrayPositioned: (Rect) -> Unit,
     modifier: Modifier = Modifier,
+    trayContent: @Composable BoxScope.() -> Unit = {},
 ) {
     val uiColors = StackShiftThemeTokens.uiColors
     Card(
@@ -1275,7 +1543,44 @@ private fun TutorialMiniBottomDock(
                             shape = RoundedCornerShape(GameUiShapeTokens.chipCorner),
                         ),
                 )
+
+                trayContent()
             }
+        }
+    }
+}
+
+@Composable
+private fun TutorialTrayPieceChip(
+    piece: Piece,
+    hidden: Boolean,
+    modifier: Modifier = Modifier,
+    onPositioned: ((Rect) -> Unit)? = null,
+) {
+    val uiColors = StackShiftThemeTokens.uiColors
+    Card(
+        modifier = modifier
+            .fillMaxHeight()
+            .graphicsLayer { alpha = if (hidden) 0f else 1f }
+            .then(
+                if (onPositioned != null) {
+                    Modifier.onGloballyPositioned { coordinates ->
+                        onPositioned(coordinates.boundsInRoot())
+                    }
+                } else {
+                    Modifier
+                }
+            ),
+        shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
+        colors = CardDefaults.cardColors(containerColor = uiColors.metricCard.copy(alpha = 0.84f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.7f)),
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            PieceBlocks(piece = piece, cellSize = 16.dp)
         }
     }
 }
@@ -1496,6 +1801,21 @@ private fun GridPoint.toLocalTopLeft(
 ): Offset = Offset(
     x = boardRect.left + (column * cellSizePx),
     y = boardRect.top + (row * cellSizePx),
+)
+
+private fun tutorialProgress(
+    phase: Float,
+    start: Float,
+    end: Float,
+): Float = ((phase - start) / (end - start)).coerceIn(0f, 1f)
+
+private fun lerpOffset(
+    start: Offset,
+    end: Offset,
+    progress: Float,
+): Offset = Offset(
+    x = androidx.compose.ui.util.lerp(start.x, end.x, progress.coerceIn(0f, 1f)),
+    y = androidx.compose.ui.util.lerp(start.y, end.y, progress.coerceIn(0f, 1f)),
 )
 
 @Preview(name = "Tutorial - Intro", widthDp = 412, heightDp = 915)

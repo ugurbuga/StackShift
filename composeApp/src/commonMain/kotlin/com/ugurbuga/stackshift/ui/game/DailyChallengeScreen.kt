@@ -67,6 +67,7 @@ import com.ugurbuga.stackshift.game.model.ChallengeProgress
 import com.ugurbuga.stackshift.game.model.ChallengeTask
 import com.ugurbuga.stackshift.game.model.ChallengeTaskType
 import com.ugurbuga.stackshift.game.model.DailyChallenge
+import com.ugurbuga.stackshift.game.model.GameplayStyle
 import com.ugurbuga.stackshift.game.model.resolveBoardBlockStyle
 import com.ugurbuga.stackshift.localization.LocalAppSettings
 import com.ugurbuga.stackshift.ui.theme.GameUiShapeTokens
@@ -77,15 +78,34 @@ import com.ugurbuga.stackshift.ui.theme.stackShiftSurfaceShadow
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
+import stackshift.composeapp.generated.resources.calendar_month_year_format
 import stackshift.composeapp.generated.resources.challenge_info_chain_reaction
+import stackshift.composeapp.generated.resources.challenge_info_chain_reaction_title
 import stackshift.composeapp.generated.resources.challenge_info_clear_blocks
+import stackshift.composeapp.generated.resources.challenge_info_clear_blocks_title
+import stackshift.composeapp.generated.resources.challenge_info_clear_both_directions
+import stackshift.composeapp.generated.resources.challenge_info_clear_both_directions_title
+import stackshift.composeapp.generated.resources.challenge_info_clear_columns
+import stackshift.composeapp.generated.resources.challenge_info_clear_columns_title
+import stackshift.composeapp.generated.resources.challenge_info_clear_rows
+import stackshift.composeapp.generated.resources.challenge_info_clear_rows_title
 import stackshift.composeapp.generated.resources.challenge_info_perfect_placement
+import stackshift.composeapp.generated.resources.challenge_info_perfect_placement_title
+import stackshift.composeapp.generated.resources.challenge_info_place_pieces
+import stackshift.composeapp.generated.resources.challenge_info_place_pieces_title
 import stackshift.composeapp.generated.resources.challenge_info_reach_score
+import stackshift.composeapp.generated.resources.challenge_info_reach_score_title
 import stackshift.composeapp.generated.resources.challenge_info_title
 import stackshift.composeapp.generated.resources.challenge_info_trigger_special
+import stackshift.composeapp.generated.resources.challenge_info_trigger_special_title
+import stackshift.composeapp.generated.resources.challenge_progress_value
 import stackshift.composeapp.generated.resources.challenge_task_chain_reaction
 import stackshift.composeapp.generated.resources.challenge_task_clear_blocks
+import stackshift.composeapp.generated.resources.challenge_task_clear_both_directions
+import stackshift.composeapp.generated.resources.challenge_task_clear_columns
+import stackshift.composeapp.generated.resources.challenge_task_clear_rows
 import stackshift.composeapp.generated.resources.challenge_task_perfect_placement
+import stackshift.composeapp.generated.resources.challenge_task_place_pieces
 import stackshift.composeapp.generated.resources.challenge_task_reach_score
 import stackshift.composeapp.generated.resources.challenge_task_trigger_special
 import stackshift.composeapp.generated.resources.challenge_tasks_title
@@ -122,6 +142,7 @@ fun DailyChallengeScreen(
     currentYear: Int,
     currentMonth: Int,
     currentDay: Int,
+    gameplayStyle: GameplayStyle,
     progress: ChallengeProgress,
     onBack: () -> Unit,
     onPlayChallenge: (DailyChallenge) -> Unit,
@@ -140,7 +161,12 @@ fun DailyChallengeScreen(
 
     val selectedChallenge = remember(currentMonthYear, selectedDay, progress) {
         val base =
-            ChallengeGenerator.generate(currentMonthYear.year, currentMonthYear.month, selectedDay)
+            ChallengeGenerator.generate(
+                year = currentMonthYear.year,
+                month = currentMonthYear.month,
+                day = selectedDay,
+                gameplayStyle = gameplayStyle,
+            )
         val key = "${currentMonthYear.year}-${currentMonthYear.month.toString().padStart(2, '0')}"
         val isCompleted = progress.completedDays[key]?.contains(selectedDay) == true
         if (isCompleted) {
@@ -231,7 +257,11 @@ fun DailyChallengeScreen(
                 }
 
                 Text(
-                    text = "${monthName(currentMonthYear.month)} ${currentMonthYear.year}",
+                    text = stringResource(
+                        Res.string.calendar_month_year_format,
+                        monthName(currentMonthYear.month),
+                        currentMonthYear.year,
+                    ),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -287,6 +317,7 @@ fun DailyChallengeScreen(
 
         if (showInfoDialog) {
             ChallengeInfoDialog(
+                gameplayStyle = gameplayStyle,
                 stylePulse = stylePulse,
                 onDismiss = { showInfoDialog = false }
             )
@@ -558,8 +589,8 @@ fun ChallengeTasksDock(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier.fillMaxHeight(),
-        verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         challenge.tasks.forEach { task ->
             ChallengeTaskItem(task = task, compact = true)
@@ -610,7 +641,7 @@ fun ChallengeTaskItem(
         )
 
         Text(
-            text = "${task.current}/${task.target}",
+            text = stringResource(Res.string.challenge_progress_value, task.current, task.target),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (compact) 0.4f else 0.5f),
             fontSize = if (compact) 9.sp else 11.sp
@@ -622,16 +653,21 @@ fun ChallengeTaskItem(
 fun taskDescription(task: ChallengeTask): String {
     val res = when (task.type) {
         ChallengeTaskType.ClearBlocks -> Res.string.challenge_task_clear_blocks
-        ChallengeTaskType.ReachScore -> Res.string.challenge_task_reach_score
         ChallengeTaskType.TriggerSpecial -> Res.string.challenge_task_trigger_special
         ChallengeTaskType.PerfectPlacement -> Res.string.challenge_task_perfect_placement
         ChallengeTaskType.ChainReaction -> Res.string.challenge_task_chain_reaction
+        ChallengeTaskType.ClearRows -> Res.string.challenge_task_clear_rows
+        ChallengeTaskType.ReachScore -> Res.string.challenge_task_reach_score
+        ChallengeTaskType.ClearColumns -> Res.string.challenge_task_clear_columns
+        ChallengeTaskType.PlacePieces -> Res.string.challenge_task_place_pieces
+        ChallengeTaskType.ClearBothDirections -> Res.string.challenge_task_clear_both_directions
     }
     return stringResource(res, task.target)
 }
 
 @Composable
 fun ChallengeInfoDialog(
+    gameplayStyle: GameplayStyle,
     stylePulse: Float,
     onDismiss: () -> Unit
 ) {
@@ -658,26 +694,12 @@ fun ChallengeInfoDialog(
                 )
 
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    ChallengeInfoItem(
-                        title = stringResource(Res.string.challenge_tasks_title),
-                        description = stringResource(Res.string.challenge_info_clear_blocks)
-                    )
-                    ChallengeInfoItem(
-                        title = stringResource(Res.string.score),
-                        description = stringResource(Res.string.challenge_info_reach_score)
-                    )
-                    ChallengeInfoItem(
-                        title = stringResource(Res.string.piece_properties_special),
-                        description = stringResource(Res.string.challenge_info_trigger_special)
-                    )
-                    ChallengeInfoItem(
-                        title = stringResource(Res.string.game_message_perfect_drop, "").trim(),
-                        description = stringResource(Res.string.challenge_info_perfect_placement)
-                    )
-                    ChallengeInfoItem(
-                        title = stringResource(Res.string.feedback_chain, "", "").trim(),
-                        description = stringResource(Res.string.challenge_info_chain_reaction)
-                    )
+                    ChallengeTaskType.forStyle(gameplayStyle).forEach { taskType ->
+                        ChallengeInfoItem(
+                            title = challengeInfoTitle(taskType),
+                            description = challengeInfoDescription(taskType),
+                        )
+                    }
                 }
 
                 BlockStyleActionButton(
@@ -690,6 +712,38 @@ fun ChallengeInfoDialog(
             }
         }
     }
+}
+
+@Composable
+private fun challengeInfoTitle(taskType: ChallengeTaskType): String {
+    val res = when (taskType) {
+        ChallengeTaskType.ClearBlocks -> Res.string.challenge_info_clear_blocks_title
+        ChallengeTaskType.ReachScore -> Res.string.challenge_info_reach_score_title
+        ChallengeTaskType.TriggerSpecial -> Res.string.challenge_info_trigger_special_title
+        ChallengeTaskType.PerfectPlacement -> Res.string.challenge_info_perfect_placement_title
+        ChallengeTaskType.ChainReaction -> Res.string.challenge_info_chain_reaction_title
+        ChallengeTaskType.ClearRows -> Res.string.challenge_info_clear_rows_title
+        ChallengeTaskType.ClearColumns -> Res.string.challenge_info_clear_columns_title
+        ChallengeTaskType.PlacePieces -> Res.string.challenge_info_place_pieces_title
+        ChallengeTaskType.ClearBothDirections -> Res.string.challenge_info_clear_both_directions_title
+    }
+    return stringResource(res)
+}
+
+@Composable
+private fun challengeInfoDescription(taskType: ChallengeTaskType): String {
+    val res = when (taskType) {
+        ChallengeTaskType.ClearBlocks -> Res.string.challenge_info_clear_blocks
+        ChallengeTaskType.ReachScore -> Res.string.challenge_info_reach_score
+        ChallengeTaskType.TriggerSpecial -> Res.string.challenge_info_trigger_special
+        ChallengeTaskType.PerfectPlacement -> Res.string.challenge_info_perfect_placement
+        ChallengeTaskType.ChainReaction -> Res.string.challenge_info_chain_reaction
+        ChallengeTaskType.ClearRows -> Res.string.challenge_info_clear_rows
+        ChallengeTaskType.ClearColumns -> Res.string.challenge_info_clear_columns
+        ChallengeTaskType.PlacePieces -> Res.string.challenge_info_place_pieces
+        ChallengeTaskType.ClearBothDirections -> Res.string.challenge_info_clear_both_directions
+    }
+    return stringResource(res)
 }
 
 @Composable
@@ -770,6 +824,7 @@ fun DailyChallengeScreenPreview() {
             currentYear = 2025,
             currentMonth = 12,
             currentDay = 8,
+            gameplayStyle = GameplayStyle.StackShift,
             progress = ChallengeProgress(),
             onBack = {},
             onPlayChallenge = {}
@@ -790,6 +845,7 @@ fun DailyChallengeScreenWithProgressPreview() {
             currentYear = 2025,
             currentMonth = 12,
             currentDay = 8,
+            gameplayStyle = GameplayStyle.StackShift,
             progress = ChallengeProgress(
                 completedDays = mapOf(
                     "2025-12" to setOf(1, 2, 3, 5, 7),
@@ -815,6 +871,7 @@ fun DailyChallengeScreenLightPreview() {
             currentYear = 2025,
             currentMonth = 12,
             currentDay = 8,
+            gameplayStyle = GameplayStyle.StackShift,
             progress = ChallengeProgress(),
             onBack = {},
             onPlayChallenge = {}

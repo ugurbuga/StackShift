@@ -10,7 +10,7 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.ugurbuga.stackshift.settings.AppContextHolder
 import java.util.UUID
 
-private const val TelemetryNamespace = "com.ugurbuga.stackshift.telemetry"
+private const val TelemetryNamespace = "com.ugurbuga.blockgames.telemetry"
 private const val DeviceInfoPrefix = "device_"
 private const val CrashlyticsHighScoreMessage = "High score reached"
 

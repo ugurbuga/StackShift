@@ -27,6 +27,7 @@ import com.ugurbuga.stackshift.game.model.GameConfig
 import com.ugurbuga.stackshift.game.model.GameMode
 import com.ugurbuga.stackshift.game.model.GameState
 import com.ugurbuga.stackshift.game.model.GameStatus
+import com.ugurbuga.stackshift.game.model.GameplayStyle
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
 import com.ugurbuga.stackshift.localization.AppEnvironment
 import com.ugurbuga.stackshift.localization.currentDeviceLocaleTag
@@ -39,6 +40,7 @@ import com.ugurbuga.stackshift.presentation.game.GameViewModel
 import com.ugurbuga.stackshift.settings.AppSettings
 import com.ugurbuga.stackshift.settings.AppSettingsStorage
 import com.ugurbuga.stackshift.settings.FirstRunGameOnboardingStateFactory
+import com.ugurbuga.stackshift.settings.GameSessionSlot
 import com.ugurbuga.stackshift.settings.GameSessionStorage
 import com.ugurbuga.stackshift.settings.HighScoreStorage
 import com.ugurbuga.stackshift.settings.RewardedTokenAdReward
@@ -49,6 +51,8 @@ import com.ugurbuga.stackshift.settings.initializeAppSettingsForFirstLaunch
 import com.ugurbuga.stackshift.settings.logLanguageBootstrapDecision
 import com.ugurbuga.stackshift.settings.recordAppOpened
 import com.ugurbuga.stackshift.settings.sanitized
+import com.ugurbuga.stackshift.settings.sessionSlot
+import com.ugurbuga.stackshift.settings.sessionSlotFor
 import com.ugurbuga.stackshift.telemetry.AppTelemetry
 import com.ugurbuga.stackshift.telemetry.TelemetryActionNames
 import com.ugurbuga.stackshift.telemetry.TelemetryUserPropertyNames
@@ -124,11 +128,12 @@ fun StackShiftRoot(
     currentRoute: AppRoute,
     classicHighScore: Int,
     timeAttackHighScore: Int,
+    gameplayStyle: GameplayStyle,
     rewardFeedback: RewardFeedbackState,
     onRewardFeedbackDismiss: () -> Unit,
     onPlayRequested: () -> Unit,
     onTimeAttackRequested: () -> Unit,
-    onNavigateToInteractiveOnboarding: () -> Unit,
+    onPlayChallengeRequested: (com.ugurbuga.stackshift.game.model.DailyChallenge) -> Unit,
     onNavigateToTheme: () -> Unit,
     onNavigateToLanguage: () -> Unit,
     onNavigateToTutorial: () -> Unit,
@@ -182,10 +187,10 @@ fun StackShiftRoot(
                                     settings = settings,
                                     classicHighScore = classicHighScore,
                                     timeAttackHighScore = timeAttackHighScore,
+                                    gameplayStyle = gameplayStyle,
                                     telemetry = telemetry,
                                     onPlay = onPlayRequested,
                                     onPlayTimeAttack = onTimeAttackRequested,
-                                    onOpenInteractiveGuide = onNavigateToInteractiveOnboarding,
                                     onOpenTutorial = {
                                         telemetry.logUserAction(TelemetryActionNames.OpenTutorial)
                                         onNavigateToTutorial()
@@ -211,12 +216,10 @@ fun StackShiftRoot(
                                     currentYear = date.year,
                                     currentMonth = date.month,
                                     currentDay = date.day,
+                                    gameplayStyle = gameplayStyle,
                                     progress = settings.challengeProgress,
                                     onBack = onNavigateBack,
-                                    onPlayChallenge = { challenge ->
-                                        gameViewModel.restart(GameConfig(), challenge, GameMode.Classic)
-                                        onPlayRequested()
-                                    }
+                                    onPlayChallenge = onPlayChallengeRequested,
                                 )
                             }
 
@@ -246,6 +249,7 @@ fun StackShiftRoot(
                                 GameTutorialScreen(
                                     modifier = Modifier.fillMaxSize(),
                                     telemetry = telemetry,
+                                    gameplayStyle = gameplayStyle,
                                     onBack = onNavigateBack,
                                     onFinish = onTutorialFinishRequested,
                                     adController = adController,
@@ -308,6 +312,7 @@ fun App() {
 @Composable
 fun StackShiftAppHost(
     bootstrapLogSource: String,
+    gameplayStyle: GameplayStyle = GameplayStyle.StackShift,
     beforeRoot: @Composable (settings: AppSettings, canNavigateBack: Boolean, onRequestBack: () -> Unit) -> Unit = { _, _, _ -> },
 ) {
     val telemetry = rememberAppTelemetry()
@@ -346,9 +351,43 @@ fun StackShiftAppHost(
         },
     )
 
-    val gameViewModelState =
-        remember { mutableStateOf(createGameViewModel(GameSessionStorage.load())) }
+    fun isUsableSavedSession(
+        state: GameState,
+        slot: GameSessionSlot,
+    ): Boolean {
+        if (state.config.columns <= 0 || state.config.rows <= 0) return false
+        if (slot == GameSessionSlot.DailyChallenge && state.activeChallenge == null) return false
+        if (state.status != GameStatus.Running) return true
+        return when (state.gameplayStyle) {
+            GameplayStyle.BlockWise -> state.trayPieces.isNotEmpty()
+            GameplayStyle.StackShift -> state.activePiece != null
+        }
+    }
+
+    fun loadSavedSession(slot: GameSessionSlot): GameState? {
+        val savedState = GameSessionStorage.load(slot) ?: return null
+        if (savedState.gameplayStyle != gameplayStyle || !isUsableSavedSession(savedState, slot)) {
+            GameSessionStorage.clear(slot)
+            return null
+        }
+        return savedState
+    }
+
+    val gameViewModelState = remember { mutableStateOf(createGameViewModel(initialState = null)) }
     var gameViewModel by gameViewModelState
+
+    fun restoreOrRestartSession(
+        slot: GameSessionSlot,
+        fallback: () -> Unit,
+    ) {
+        persistActiveSession.value = true
+        val savedState = loadSavedSession(slot)
+        if (savedState != null) {
+            gameViewModel.replaceState(savedState)
+        } else {
+            fallback()
+        }
+    }
 
     val currentRoute = routeStack.lastOrNull() ?: AppRoute.Home
     val canNavigateBack = routeStack.size > 1
@@ -373,7 +412,7 @@ fun StackShiftAppHost(
         if (leavingRoute == AppRoute.InteractiveOnboarding) {
             persistActiveSession.value = true
             pendingSessionState = null
-            gameViewModel = createGameViewModel(GameSessionStorage.load())
+            gameViewModel = createGameViewModel(loadSavedSession(GameSessionSlot.Classic))
         }
     }
 
@@ -397,26 +436,26 @@ fun StackShiftAppHost(
         gameViewModel = createGameViewModel(FirstRunGameOnboardingStateFactory.initialState())
     }
 
-    fun startPlayFlow(mode: GameMode = GameMode.Classic) {
-        if (mode == GameMode.Classic && !settings.hasShownInteractiveOnboarding) {
+    fun startPlayFlow(
+        mode: GameMode = GameMode.Classic,
+    ) {
+        val sessionSlot = sessionSlotFor(mode = mode)
+        if (gameplayStyle == GameplayStyle.StackShift && mode == GameMode.Classic && !settings.hasShownInteractiveOnboarding) {
             prepareInteractiveOnboarding()
             navigateTo(AppRoute.InteractiveOnboarding)
         } else {
-            persistActiveSession.value = true
-            gameViewModel.restart(mode = mode)
+            restoreOrRestartSession(slot = sessionSlot) {
+                gameViewModel.restart(mode = mode, gameplayStyle = gameplayStyle)
+            }
             navigateTo(AppRoute.Game)
         }
     }
 
-    fun openInteractiveOnboarding() {
-        prepareInteractiveOnboarding()
-        navigateTo(AppRoute.InteractiveOnboarding)
-    }
 
     fun completeInteractiveOnboarding(finalState: GameState, returnHome: Boolean) {
         persistActiveSession.value = true
         pendingSessionState = finalState
-        GameSessionStorage.save(finalState)
+        GameSessionStorage.save(finalState.sessionSlot(), finalState)
         if (!settings.hasShownInteractiveOnboarding) {
             persistSettings(settings.copy(hasShownInteractiveOnboarding = true))
         }
@@ -429,8 +468,10 @@ fun StackShiftAppHost(
 
     LaunchedEffect(initialBootstrapResult, telemetry) {
         if (!settings.isHighScoresClearedOnce) {
-            HighScoreStorage.save(0, GameMode.Classic)
-            HighScoreStorage.save(0, GameMode.TimeAttack)
+            GameplayStyle.entries.forEach { gameplayStyle ->
+                HighScoreStorage.save(0, GameMode.Classic, gameplayStyle)
+                HighScoreStorage.save(0, GameMode.TimeAttack, gameplayStyle)
+            }
             GameSessionStorage.clear()
             persistSettings(settings.copy(isHighScoresClearedOnce = true))
         }
@@ -449,7 +490,7 @@ fun StackShiftAppHost(
         if (!persistActiveSession.value) return@LaunchedEffect
         delay(350.milliseconds)
         if (persistActiveSession.value && (pendingSessionState == state)) {
-            GameSessionStorage.save(state)
+            GameSessionStorage.save(state.sessionSlot(), state)
         }
     }
     androidx.compose.runtime.DisposableEffect(gameViewModel) {
@@ -463,8 +504,9 @@ fun StackShiftAppHost(
         telemetry = telemetry,
         gameViewModel = gameViewModel,
         currentRoute = currentRoute,
-        classicHighScore = HighScoreStorage.load(GameMode.Classic),
-        timeAttackHighScore = HighScoreStorage.load(GameMode.TimeAttack),
+        classicHighScore = HighScoreStorage.load(GameMode.Classic, gameplayStyle),
+        timeAttackHighScore = HighScoreStorage.load(GameMode.TimeAttack, gameplayStyle),
+        gameplayStyle = gameplayStyle,
         rewardFeedback = rewardFeedback,
         onRewardFeedbackDismiss = { rewardFeedback = rewardFeedback.copy(visible = false) },
         onPlayRequested = {
@@ -475,11 +517,30 @@ fun StackShiftAppHost(
             telemetry.logUserAction("start_time_attack_from_home")
             startPlayFlow(GameMode.TimeAttack)
         },
-        onNavigateToInteractiveOnboarding = {
-            telemetry.logUserAction(TelemetryActionNames.OpenInteractiveOnboarding)
-            openInteractiveOnboarding()
-        },
         onNavigateToTheme = { navigateTo(AppRoute.Settings) },
+        onPlayChallengeRequested = { challenge ->
+            restoreOrRestartSession(slot = GameSessionSlot.DailyChallenge) {
+                gameViewModel.restart(
+                    config = GameConfig(),
+                    challenge = challenge,
+                    mode = GameMode.Classic,
+                    gameplayStyle = gameplayStyle,
+                )
+            }
+            val restoredChallenge = gameViewModel.snapshotState().activeChallenge
+            val isMatchingChallenge = restoredChallenge?.let {
+                it.year == challenge.year && it.month == challenge.month && it.day == challenge.day
+            } == true
+            if (!isMatchingChallenge) {
+                gameViewModel.restart(
+                    config = GameConfig(),
+                    challenge = challenge,
+                    mode = GameMode.Classic,
+                    gameplayStyle = gameplayStyle,
+                )
+            }
+            navigateTo(AppRoute.Game)
+        },
         onNavigateToLanguage = { navigateTo(AppRoute.Language) },
         onNavigateToTutorial = { navigateTo(AppRoute.Tutorial) },
         onNavigateToChallenges = { navigateTo(AppRoute.DailyChallenges) },
@@ -518,9 +579,15 @@ fun StackShiftAppHost(
             if (!settings.hasSeenTutorial) {
                 persistSettings(settings.copy(hasSeenTutorial = true))
             }
-            telemetry.logUserAction(TelemetryActionNames.OpenInteractiveOnboarding)
-            prepareInteractiveOnboarding()
-            replaceTop(AppRoute.InteractiveOnboarding)
+            if (gameplayStyle == GameplayStyle.StackShift) {
+                telemetry.logUserAction(TelemetryActionNames.OpenInteractiveOnboarding)
+                prepareInteractiveOnboarding()
+                replaceTop(AppRoute.InteractiveOnboarding)
+            } else {
+                telemetry.logUserAction(TelemetryActionNames.StartGameFromHome)
+                gameViewModel.restart(mode = GameMode.Classic, gameplayStyle = gameplayStyle)
+                replaceTop(AppRoute.Game)
+            }
         },
         onInteractiveOnboardingFinished = { finalState ->
             completeInteractiveOnboarding(finalState = finalState, returnHome = false)

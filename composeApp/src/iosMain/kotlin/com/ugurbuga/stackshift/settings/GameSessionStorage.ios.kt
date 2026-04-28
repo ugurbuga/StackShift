@@ -6,20 +6,30 @@ import platform.Foundation.NSUserDefaults
 actual object GameSessionStorage {
     private val defaults = NSUserDefaults.standardUserDefaults
 
-    actual fun load(): GameState? {
-        val serialized = defaults.stringForKey(KeyGameState) ?: return null
+    actual fun load(slot: GameSessionSlot): GameState? {
+        val serialized = defaults.stringForKey(keyFor(slot)) ?: return null
         return runCatching { GameSessionCodec.decode(serialized) }
             .getOrNull()
-            .also { if (it == null) clear() }
+            .also { if (it == null) clear(slot) }
     }
 
-    actual fun save(state: GameState) {
-        defaults.setObject(GameSessionCodec.encode(state), forKey = KeyGameState)
+    actual fun save(slot: GameSessionSlot, state: GameState) {
+        defaults.setObject(GameSessionCodec.encode(state), forKey = keyFor(slot))
+    }
+
+    actual fun clear(slot: GameSessionSlot) {
+        defaults.removeObjectForKey(keyFor(slot))
     }
 
     actual fun clear() {
-        defaults.removeObjectForKey(KeyGameState)
+        GameSessionSlot.entries.forEach { slot ->
+            defaults.removeObjectForKey(keyFor(slot))
+        }
     }
 
-    private const val KeyGameState = "gameState"
+    private fun keyFor(slot: GameSessionSlot): String = when (slot) {
+        GameSessionSlot.Classic -> "gameState_classic"
+        GameSessionSlot.TimeAttack -> "gameState_time_attack"
+        GameSessionSlot.DailyChallenge -> "gameState_daily_challenge"
+    }
 }

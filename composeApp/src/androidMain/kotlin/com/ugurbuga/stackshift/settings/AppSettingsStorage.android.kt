@@ -11,7 +11,7 @@ import com.ugurbuga.stackshift.game.model.BoardBlockStyleMode
 import com.ugurbuga.stackshift.game.model.resolveUnifiedThemePalette
 
 actual object AppSettingsStorage {
-    private const val Namespace = "com.ugurbuga.stackshift.settings"
+    private const val Namespace = "com.ugurbuga.blockgames.settings"
     private const val KeyLanguage = "language"
     private const val KeyThemeMode = "themeMode"
 

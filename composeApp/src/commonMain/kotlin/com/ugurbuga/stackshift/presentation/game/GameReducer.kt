@@ -2,40 +2,57 @@ package com.ugurbuga.stackshift.presentation.game
 
 import com.ugurbuga.stackshift.game.logic.GameEvent
 import com.ugurbuga.stackshift.game.logic.GameLogic
+import com.ugurbuga.stackshift.game.logic.StackShiftGameLogic
+import com.ugurbuga.stackshift.game.model.DailyChallenge
 import com.ugurbuga.stackshift.game.model.GameConfig
 import com.ugurbuga.stackshift.game.model.GameMode
 import com.ugurbuga.stackshift.game.model.GameState
 import com.ugurbuga.stackshift.game.model.GameStatus
+import com.ugurbuga.stackshift.game.model.GameplayStyle
+import com.ugurbuga.stackshift.game.model.GridPoint
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
-import com.ugurbuga.stackshift.game.model.DailyChallenge
 
 internal class GameReducer(
-    private val gameLogic: GameLogic,
+    private val blockWiseGameLogic: GameLogic,
+    private val stackShiftGameLogic: StackShiftGameLogic,
 ) {
     fun reduce(
         state: GameState,
         action: GameAction,
     ): ReduceResult = when (action) {
-        is GameAction.LaunchColumn -> {
-            val result = gameLogic.placePiece(state = state, approximateColumn = action.column)
+        is GameAction.PlacePiece -> {
+            val result = when (state.gameplayStyle) {
+                GameplayStyle.BlockWise -> blockWiseGameLogic.placePiece(
+                    state = state,
+                    pieceId = action.pieceId,
+                    origin = action.origin,
+                )
+                GameplayStyle.StackShift -> stackShiftGameLogic.placePiece(
+                    state = state,
+                    approximateColumn = action.origin.column,
+                )
+            }
+            val effects = when (state.gameplayStyle) {
+                GameplayStyle.BlockWise -> emptyList()
+                GameplayStyle.StackShift -> result.state.softLock?.let { softLock ->
+                    listOf(
+                        GameEffect.CancelSoftLockTimer,
+                        GameEffect.StartSoftLockTimer(
+                            revision = softLock.revision,
+                            delayMillis = softLock.remainingMillis,
+                        ),
+                    )
+                } ?: emptyList()
+            }
             ReduceResult(
                 state = result.state,
                 events = result.events,
-                effects = buildList {
-                    result.state.softLock?.let { softLock ->
-                        add(
-                            GameEffect.StartSoftLockTimer(
-                                revision = softLock.revision,
-                                delayMillis = softLock.remainingMillis
-                            )
-                        )
-                    }
-                },
+                effects = effects,
             )
         }
 
         GameAction.CommitSoftLock -> {
-            val result = gameLogic.commitSoftLock(state)
+            val result = logicFor(state).commitSoftLock(state)
             ReduceResult(
                 state = result.state,
                 events = result.events,
@@ -44,7 +61,7 @@ internal class GameReducer(
         }
 
         GameAction.HoldPiece -> {
-            val result = gameLogic.holdPiece(state)
+            val result = logicFor(state).holdPiece(state)
             ReduceResult(
                 state = result.state,
                 events = result.events,
@@ -53,7 +70,7 @@ internal class GameReducer(
         }
 
         GameAction.ReviveFromReward -> {
-            val result = gameLogic.reviveFromReward(state)
+            val result = logicFor(state).reviveFromReward(state)
             ReduceResult(
                 state = result.state,
                 events = result.events,
@@ -62,7 +79,7 @@ internal class GameReducer(
         }
 
         is GameAction.ReplaceActivePiece -> {
-            val result = gameLogic.replaceActivePiece(state, action.specialType)
+            val result = logicFor(state).replaceActivePiece(state, action.specialType)
             ReduceResult(
                 state = result.state,
                 events = result.events,
@@ -71,7 +88,10 @@ internal class GameReducer(
         }
 
         is GameAction.Restart -> ReduceResult(
-            state = gameLogic.newGame(action.config, action.challenge, action.mode),
+            state = when (action.gameplayStyle) {
+                GameplayStyle.BlockWise -> blockWiseGameLogic.newGame(action.config, action.challenge, action.mode, action.gameplayStyle)
+                GameplayStyle.StackShift -> stackShiftGameLogic.newGame(action.config, action.challenge, action.mode)
+            },
             events = setOf(GameEvent.Restarted),
             effects = listOf(GameEffect.CancelSoftLockTimer),
         )
@@ -86,7 +106,7 @@ internal class GameReducer(
         }
 
         GameAction.Tick -> {
-            val nextState = gameLogic.tick(state)
+            val nextState = logicFor(state).tick(state)
             ReduceResult(
                 state = nextState,
                 events = buildSet {
@@ -98,10 +118,15 @@ internal class GameReducer(
             )
         }
     }
+
+    private fun logicFor(state: GameState): AnyGameLogic = when (state.gameplayStyle) {
+        GameplayStyle.BlockWise -> BlockWiseLogicAdapter(blockWiseGameLogic)
+        GameplayStyle.StackShift -> StackShiftLogicAdapter(stackShiftGameLogic)
+    }
 }
 
 sealed interface GameIntent {
-    data class LaunchColumn(val column: Int) : GameIntent
+    data class PlacePiece(val pieceId: Long, val origin: GridPoint) : GameIntent
     data object CommitSoftLock : GameIntent
     data object HoldPiece : GameIntent
     data object ReviveFromReward : GameIntent
@@ -109,13 +134,14 @@ sealed interface GameIntent {
         val config: GameConfig,
         val challenge: DailyChallenge? = null,
         val mode: GameMode = GameMode.Classic,
+        val gameplayStyle: GameplayStyle = GameplayStyle.BlockWise,
     ) : GameIntent
     data class ReplaceActivePiece(val specialType: SpecialBlockType) : GameIntent
     data object TogglePause : GameIntent
 }
 
 internal sealed interface GameAction {
-    data class LaunchColumn(val column: Int) : GameAction
+    data class PlacePiece(val pieceId: Long, val origin: GridPoint) : GameAction
     data object CommitSoftLock : GameAction
     data object HoldPiece : GameAction
     data object ReviveFromReward : GameAction
@@ -123,6 +149,7 @@ internal sealed interface GameAction {
         val config: GameConfig,
         val challenge: DailyChallenge? = null,
         val mode: GameMode = GameMode.Classic,
+        val gameplayStyle: GameplayStyle = GameplayStyle.BlockWise,
     ) : GameAction
     data object Tick : GameAction
     data class ReplaceActivePiece(val specialType: SpecialBlockType) : GameAction
@@ -145,13 +172,41 @@ internal data class ReduceResult(
 )
 
 internal fun GameIntent.toAction(): GameAction = when (this) {
-    is GameIntent.LaunchColumn -> GameAction.LaunchColumn(column)
+    is GameIntent.PlacePiece -> GameAction.PlacePiece(pieceId, origin)
     GameIntent.CommitSoftLock -> GameAction.CommitSoftLock
     GameIntent.HoldPiece -> GameAction.HoldPiece
     GameIntent.ReviveFromReward -> GameAction.ReviveFromReward
-    is GameIntent.Restart -> GameAction.Restart(config, challenge, mode)
+    is GameIntent.Restart -> GameAction.Restart(config, challenge, mode, gameplayStyle)
     is GameIntent.ReplaceActivePiece -> GameAction.ReplaceActivePiece(specialType)
     GameIntent.TogglePause -> GameAction.TogglePause
+}
+
+private sealed interface AnyGameLogic {
+    fun commitSoftLock(state: GameState): com.ugurbuga.stackshift.game.logic.GameMoveResult
+    fun holdPiece(state: GameState): com.ugurbuga.stackshift.game.logic.GameMoveResult
+    fun reviveFromReward(state: GameState): com.ugurbuga.stackshift.game.logic.GameMoveResult
+    fun replaceActivePiece(state: GameState, specialType: SpecialBlockType): com.ugurbuga.stackshift.game.logic.GameMoveResult
+    fun tick(state: GameState): GameState
+}
+
+private class BlockWiseLogicAdapter(
+    private val logic: GameLogic,
+) : AnyGameLogic {
+    override fun commitSoftLock(state: GameState) = logic.commitSoftLock(state)
+    override fun holdPiece(state: GameState) = logic.holdPiece(state)
+    override fun reviveFromReward(state: GameState) = logic.reviveFromReward(state)
+    override fun replaceActivePiece(state: GameState, specialType: SpecialBlockType) = logic.replaceActivePiece(state, specialType)
+    override fun tick(state: GameState): GameState = logic.tick(state)
+}
+
+private class StackShiftLogicAdapter(
+    private val logic: StackShiftGameLogic,
+) : AnyGameLogic {
+    override fun commitSoftLock(state: GameState) = logic.commitSoftLock(state)
+    override fun holdPiece(state: GameState) = logic.holdPiece(state)
+    override fun reviveFromReward(state: GameState) = logic.reviveFromReward(state)
+    override fun replaceActivePiece(state: GameState, specialType: SpecialBlockType) = logic.replaceActivePiece(state, specialType)
+    override fun tick(state: GameState): GameState = logic.tick(state)
 }
 
 

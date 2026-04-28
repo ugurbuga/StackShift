@@ -1,6 +1,29 @@
 # Copy this file to `google.properties` and fill in your local Firebase values.
 # The real `google.properties` is gitignored.
+#
+# Android now supports per-flavor Firebase configuration:
+# - stackshift  -> applicationId com.ugurbuga.stackshift
+# - blockwise   -> applicationId com.ugurbuga.blockwise
+#
+# Legacy non-flavor android keys are still accepted for stackshift only.
 
+firebase.stackshift.projectNumber=
+firebase.stackshift.gcmSenderId=
+firebase.stackshift.projectId=
+firebase.stackshift.storageBucket=
+firebase.stackshift.android.appId=
+firebase.stackshift.android.apiKey=
+firebase.stackshift.android.packageName=com.ugurbuga.stackshift
+
+firebase.blockwise.projectNumber=
+firebase.blockwise.gcmSenderId=
+firebase.blockwise.projectId=
+firebase.blockwise.storageBucket=
+firebase.blockwise.android.appId=
+firebase.blockwise.android.apiKey=
+firebase.blockwise.android.packageName=com.ugurbuga.blockwise
+
+# Legacy fallback keys for the stackshift flavor only.
 firebase.projectNumber=
 firebase.gcmSenderId=
 firebase.projectId=

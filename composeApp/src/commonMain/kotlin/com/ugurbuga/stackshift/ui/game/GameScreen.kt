@@ -103,6 +103,7 @@ import com.ugurbuga.stackshift.game.model.GameState
 import com.ugurbuga.stackshift.game.model.GameStatus
 import com.ugurbuga.stackshift.game.model.GameText
 import com.ugurbuga.stackshift.game.model.GameTextKey
+import com.ugurbuga.stackshift.game.model.GameplayStyle
 import com.ugurbuga.stackshift.game.model.GridPoint
 import com.ugurbuga.stackshift.game.model.Piece
 import com.ugurbuga.stackshift.game.model.PieceKind
@@ -119,10 +120,8 @@ import com.ugurbuga.stackshift.platform.feedback.NoOpGameHaptics
 import com.ugurbuga.stackshift.platform.feedback.NoOpSoundEffectPlayer
 import com.ugurbuga.stackshift.platform.feedback.SoundEffectPlayer
 import com.ugurbuga.stackshift.presentation.game.GameDispatchResult
-import com.ugurbuga.stackshift.presentation.game.GameIntent
 import com.ugurbuga.stackshift.presentation.game.GameViewModel
 import com.ugurbuga.stackshift.presentation.game.InteractionFeedback
-import com.ugurbuga.stackshift.presentation.game.mergeWith
 import com.ugurbuga.stackshift.settings.AppSettings
 import com.ugurbuga.stackshift.settings.FirstRunGameOnboardingStateFactory
 import com.ugurbuga.stackshift.settings.FirstRunOnboardingScene
@@ -188,10 +187,12 @@ import stackshift.composeapp.generated.resources.high_score_new_record
 import stackshift.composeapp.generated.resources.hold
 import stackshift.composeapp.generated.resources.launch_bar
 import stackshift.composeapp.generated.resources.launch_boost_active
+import stackshift.composeapp.generated.resources.launch_boost_turns_remaining_format
 import stackshift.composeapp.generated.resources.launch_chain_message
 import stackshift.composeapp.generated.resources.launch_drag_hint
 import stackshift.composeapp.generated.resources.launch_game_over
 import stackshift.composeapp.generated.resources.launch_label
+import stackshift.composeapp.generated.resources.launch_progress_percent_format
 import stackshift.composeapp.generated.resources.launch_soft_lock_message
 import stackshift.composeapp.generated.resources.launch_special_chance
 import stackshift.composeapp.generated.resources.lines
@@ -211,6 +212,7 @@ import stackshift.composeapp.generated.resources.special_column_clearer
 import stackshift.composeapp.generated.resources.special_ghost
 import stackshift.composeapp.generated.resources.special_heavy
 import stackshift.composeapp.generated.resources.special_row_clearer
+import stackshift.composeapp.generated.resources.time_minutes_seconds_format
 import stackshift.composeapp.generated.resources.time_remaining
 import stackshift.composeapp.generated.resources.tutorial_back
 import stackshift.composeapp.generated.resources.tutorial_finish
@@ -276,6 +278,15 @@ private data class InteractiveOnboardingAdvanceRequest(
     val completedStage: FirstRunOnboardingStage,
     val nextStage: FirstRunOnboardingStage?,
 )
+
+private fun nextInteractiveOnboardingStage(
+    currentStage: FirstRunOnboardingStage,
+    stages: List<FirstRunOnboardingStage>,
+): FirstRunOnboardingStage? {
+    val currentIndex = stages.indexOf(currentStage)
+    if (currentIndex < 0) return null
+    return stages.getOrNull(currentIndex + 1)
+}
 
 private data class GameLayoutSpec(
     val cellSize: androidx.compose.ui.unit.Dp,
@@ -438,18 +449,48 @@ fun StackShiftGameApp(
         onboardingAdvanceRequest = null
     }
 
-    var highestScore by remember(uiState.gameState.gameMode) {
-        mutableIntStateOf(HighScoreStorage.load(uiState.gameState.gameMode))
+    LaunchedEffect(
+        interactiveOnboardingEnabled,
+        onboardingScene?.stage,
+        onboardingAwaitingCommit,
+        onboardingAdvanceRequest,
+        uiState.gameState.softLock,
+        uiState.gameState.board,
+        uiState.gameState.activePiece?.id,
+        uiState.gameState.score,
+        uiState.gameState.linesCleared,
+    ) {
+        val scene = onboardingScene ?: return@LaunchedEffect
+        if (!interactiveOnboardingEnabled || !onboardingAwaitingCommit || onboardingAdvanceRequest != null) {
+            return@LaunchedEffect
+        }
+
+        val placementCommitted = uiState.gameState.softLock == null && (
+            uiState.gameState.board != scene.gameState.board ||
+                uiState.gameState.activePiece?.id != scene.gameState.activePiece?.id ||
+                uiState.gameState.score != scene.gameState.score ||
+                uiState.gameState.linesCleared != scene.gameState.linesCleared
+            )
+        if (!placementCommitted) return@LaunchedEffect
+
+        onboardingAdvanceRequest = InteractiveOnboardingAdvanceRequest(
+            completedStage = scene.stage,
+            nextStage = nextInteractiveOnboardingStage(scene.stage, onboardingStages),
+        )
     }
-    var newHighScoreReached by remember(uiState.gameState.gameMode) { mutableStateOf(value = false) }
-    LaunchedEffect(uiState.gameState.score, uiState.gameState.gameMode) {
+
+    var highestScore by remember(uiState.gameState.gameMode, uiState.gameState.gameplayStyle) {
+        mutableIntStateOf(HighScoreStorage.load(uiState.gameState.gameMode, uiState.gameState.gameplayStyle))
+    }
+    var newHighScoreReached by remember(uiState.gameState.gameMode, uiState.gameState.gameplayStyle) { mutableStateOf(value = false) }
+    LaunchedEffect(uiState.gameState.score, uiState.gameState.gameMode, uiState.gameState.gameplayStyle) {
         if (uiState.gameState.score > highestScore) {
             telemetry.logHighScoreReached(
                 newScore = uiState.gameState.score,
                 previousHighScore = highestScore,
             )
             highestScore = uiState.gameState.score
-            HighScoreStorage.save(highestScore, uiState.gameState.gameMode)
+            HighScoreStorage.save(highestScore, uiState.gameState.gameMode, uiState.gameState.gameplayStyle)
             newHighScoreReached = true
         }
     }
@@ -464,97 +505,105 @@ fun StackShiftGameApp(
     }
 
     LogScreen(telemetry, TelemetryScreenNames.Game)
-    GameScreenWithLaunchOverlay(
-        modifier = modifier,
-        gameState = displayGameState,
-        onRequestPreview = viewModel::previewPlacement,
-        onResolvePreviewImpact = viewModel::previewImpactPoints,
-        onPlacePiece = { column ->
-            if (interactiveOnboardingEnabled && onboardingScene != null) {
-                onboardingAwaitingCommit = true
-                onboardingAdvanceRequest = null
-            }
-            val result = viewModel.placePieceResult(column)
-            if (interactiveOnboardingEnabled && onboardingScene != null) {
-                val currentIndex = onboardingStages.indexOf(onboardingScene.stage)
-                val nextStage = onboardingStages.getOrNull(currentIndex + 1)
-                when {
-                    GameEvent.SoftLockStarted in result.events || GameEvent.SoftLockAdjusted in result.events -> {
-                        val commitResult = viewModel.dispatchResult(GameIntent.CommitSoftLock)
-                        if (GameEvent.PlacementAccepted in commitResult.events) {
-                            onboardingAwaitingCommit = true
+    when (displayGameState.gameplayStyle) {
+        GameplayStyle.BlockWise -> BWGameScreen(
+            modifier = modifier,
+            gameState = displayGameState,
+            onRequestPreview = { pieceId, origin -> viewModel.previewPlacement(pieceId, origin) },
+            onResolvePreviewImpact = viewModel::previewImpactPoints,
+            onPlacePiece = { pieceId, origin ->
+                telemetry.logUserAction("place_piece_free")
+                val result = viewModel.placePieceResult(pieceId, origin)
+                dispatchFeedback(result.feedback, soundPlayer, haptics)
+            },
+            onRestart = {
+                telemetry.logUserAction(TelemetryActionNames.RestartGame)
+                dispatchFeedback(
+                    viewModel.restart(
+                        config = uiState.gameState.config,
+                        gameplayStyle = GameplayStyle.BlockWise,
+                    ),
+                    soundPlayer,
+                    haptics,
+                )
+            },
+            onRewardedRevive = {
+                telemetry.logUserAction("rewarded_revive")
+                dispatchFeedback(viewModel.reviveFromReward(), soundPlayer, haptics)
+            },
+            onBack = onBack,
+            highestScore = highestScore,
+            showNewHighScoreMessage = newHighScoreReached,
+            adController = adController,
+            telemetry = telemetry,
+        )
+
+        GameplayStyle.StackShift -> SSGameScreen(
+            modifier = modifier,
+            gameState = displayGameState,
+            onRequestPreview = viewModel::previewPlacement,
+            onResolvePreviewImpact = viewModel::previewImpactPoints,
+            onPlacePiece = { column ->
+                telemetry.logUserAction("place_piece_stackshift")
+                viewModel.placePieceResult(column).also { result ->
+                    if (!interactiveOnboardingEnabled || onboardingScene == null) return@also
+
+                    when {
+                        GameEvent.PlacementAccepted in result.events -> {
+                            onboardingAwaitingCommit = false
                             onboardingAdvanceRequest = InteractiveOnboardingAdvanceRequest(
                                 completedStage = onboardingScene.stage,
-                                nextStage = nextStage,
+                                nextStage = nextInteractiveOnboardingStage(onboardingScene.stage, onboardingStages),
                             )
-                        } else {
-                            onboardingAwaitingCommit = false
-                            onboardingAdvanceRequest = null
                         }
 
-                        result.mergeWith(commitResult)
-                    }
-
-                    else -> {
-                        onboardingAwaitingCommit = false
-                        onboardingAdvanceRequest = null
-                        result
+                        GameEvent.SoftLockStarted in result.events || GameEvent.SoftLockAdjusted in result.events -> {
+                            onboardingAwaitingCommit = true
+                            onboardingAdvanceRequest = null
+                        }
                     }
                 }
-            } else {
-                result
-            }
-        },
-        onHoldPiece = {
-            telemetry.logUserAction(TelemetryActionNames.HoldPiece)
-            viewModel.holdPiece()
-        },
-        onReplaceActivePiece = { specialType ->
-            onReplaceActivePieceRewarded(specialType)
-            InteractionFeedback.None
-        },
-        onRestart = {
-            telemetry.logUserAction(TelemetryActionNames.RestartGame)
-            viewModel.restart(uiState.gameState.config)
-        },
-        onOpenSettings = onOpenSettings,
-        onOpenTutorial = onOpenTutorial,
-        onRewardedRevive = {
-            telemetry.logUserAction("rewarded_revive")
-            viewModel.reviveFromReward()
-        },
-        onBack = onBack,
-        telemetry = telemetry,
-        adController = adController,
-        soundPlayer = soundPlayer,
-        haptics = haptics,
-        highestScore = highestScore,
-        showLaunchOverlayInitially = shouldShowLaunchOverlay,
-        onLaunchOverlayFinished = { shouldShowLaunchOverlay = false },
-        showNewHighScoreMessage = newHighScoreReached,
-        interactiveOnboardingScene = if (showOnboardingCompletionDialog) null else onboardingScene,
-        interactiveOnboardingCurrentStep = onboardingScene?.stage?.let { onboardingStages.indexOf(it) + 1 }
-            ?: 0,
-        interactiveOnboardingTotalSteps = onboardingStages.size,
-        interactiveOnboardingAwaitingCommit = onboardingAwaitingCommit,
-        interactiveOnboardingCompletionDialogVisible = showOnboardingCompletionDialog,
-        onInteractiveOnboardingStartGame = {
-            val cleanState = pendingOnboardingCompletionState
-                ?: FirstRunGameOnboardingStateFactory.cleanGameState()
-            viewModel.replaceState(cleanState)
-            showOnboardingCompletionDialog = false
-            pendingOnboardingCompletionState = null
-            onInteractiveOnboardingFinished(cleanState)
-        },
-        onInteractiveOnboardingReturnHome = {
-            val cleanState = pendingOnboardingCompletionState
-                ?: FirstRunGameOnboardingStateFactory.cleanGameState()
-            viewModel.replaceState(cleanState)
-            showOnboardingCompletionDialog = false
-            pendingOnboardingCompletionState = null
-            onInteractiveOnboardingReturnHome(cleanState)
-        },
-    )
+            },
+            onHoldPiece = viewModel::holdPiece,
+            onReplaceActivePiece = { specialType ->
+                onReplaceActivePieceRewarded(specialType)
+                InteractionFeedback.None
+            },
+            onRestart = {
+                telemetry.logUserAction(TelemetryActionNames.RestartGame)
+                viewModel.restart(
+                    config = uiState.gameState.config,
+                    gameplayStyle = GameplayStyle.StackShift,
+                )
+            },
+            onRewardedRevive = {
+                telemetry.logUserAction("rewarded_revive")
+                viewModel.reviveFromReward()
+            },
+            onBack = onBack,
+            onOpenSettings = onOpenSettings,
+            onOpenTutorial = onOpenTutorial,
+            telemetry = telemetry,
+            adController = adController,
+            soundPlayer = soundPlayer,
+            haptics = haptics,
+            highestScore = highestScore,
+            showLaunchOverlayInitially = shouldShowLaunchOverlay,
+            onLaunchOverlayFinished = { shouldShowLaunchOverlay = false },
+            showNewHighScoreMessage = newHighScoreReached,
+            interactiveOnboardingScene = onboardingScene,
+            interactiveOnboardingCurrentStep = onboardingStages.indexOf(onboardingStage).takeIf { it >= 0 }?.plus(1) ?: 0,
+            interactiveOnboardingTotalSteps = onboardingStages.size,
+            interactiveOnboardingAwaitingCommit = onboardingAwaitingCommit,
+            interactiveOnboardingCompletionDialogVisible = showOnboardingCompletionDialog,
+            onInteractiveOnboardingStartGame = {
+                pendingOnboardingCompletionState?.let(onInteractiveOnboardingFinished)
+            },
+            onInteractiveOnboardingReturnHome = {
+                pendingOnboardingCompletionState?.let(onInteractiveOnboardingReturnHome)
+            },
+        )
+    }
 }
 
 @Composable
@@ -1052,16 +1101,16 @@ fun GameScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(appBackgroundBrush(uiColors))
-                .graphicsLayer {
-                    translationX = screenShakeX.value
-                    translationY = screenShakeY.value
-                }
                 .statusBarsPadding()
                 .padding(horizontal = 12.dp, vertical = 10.dp),
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .graphicsLayer {
+                        translationX = screenShakeX.value
+                        translationY = screenShakeY.value
+                    }
                     .onGloballyPositioned { coordinates ->
                         val newBounds = coordinates.boundsInRoot()
                         if (overlayHostRectInRoot != newBounds) {
@@ -1692,7 +1741,7 @@ private fun ActivePieceOverlay(
 }
 
 @Composable
-private fun MinimalTopBar(
+internal fun MinimalTopBar(
     gameState: GameState,
     scoreHighlightStrengthProvider: () -> Float,
     scoreHighlightScaleProvider: () -> Float,
@@ -1772,11 +1821,16 @@ private fun MinimalTopBar(
     }
 }
 
+@Composable
 private fun formatRemainingTime(remainingTimeMillis: Long): String {
     val totalSeconds = (remainingTimeMillis.coerceAtLeast(0L) + 999L) / 1_000L
     val minutes = totalSeconds / 60L
     val seconds = totalSeconds % 60L
-    return "${minutes}:${seconds.toString().padStart(2, '0')}"
+    return stringResource(
+        Res.string.time_minutes_seconds_format,
+        minutes,
+        seconds.toString().padStart(2, '0'),
+    )
 }
 
 @Composable
@@ -2662,7 +2716,14 @@ private fun LaunchBarView(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = if (isBoostActive) "x${gameState.launchBar.boostTurnsRemaining}" else "%$progressPercent",
+                    text = if (isBoostActive) {
+                        stringResource(
+                            Res.string.launch_boost_turns_remaining_format,
+                            gameState.launchBar.boostTurnsRemaining,
+                        )
+                    } else {
+                        stringResource(Res.string.launch_progress_percent_format, progressPercent)
+                    },
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.SemiBold,
@@ -3088,7 +3149,7 @@ fun InteractiveOnboardingCompletionDialog(
 }
 
 @Composable
-private fun resolveGameText(text: GameText): String {
+internal fun resolveGameText(text: GameText): String {
     return stringResource(text.key.stringResourceId(), *text.args.toTypedArray())
 }
 
@@ -3102,7 +3163,7 @@ private fun SpecialBlockType.shortLabel(): GameText {
     }
 }
 
-fun GameTextKey.stringResourceId(): StringResource {
+internal fun GameTextKey.stringResourceId(): StringResource {
     return when (this) {
         GameTextKey.AppTitle -> Res.string.app_title
         GameTextKey.Hold -> Res.string.hold

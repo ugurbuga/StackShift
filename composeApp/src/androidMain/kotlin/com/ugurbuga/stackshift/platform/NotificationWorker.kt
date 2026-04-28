@@ -13,17 +13,20 @@ import androidx.core.app.NotificationCompat
 import androidx.core.graphics.toColorInt
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.ugurbuga.stackshift.R
+import com.ugurbuga.blockgames.R
 import com.ugurbuga.stackshift.settings.AppSettingsStorage
 import com.ugurbuga.stackshift.settings.shouldSendDailyChallengeReminder
 import com.ugurbuga.stackshift.settings.shouldSendMissYouReminder
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
 import stackshift.composeapp.generated.resources.Res
+import stackshift.composeapp.generated.resources.app_title
 import stackshift.composeapp.generated.resources.notification_daily_challenge_body
 import stackshift.composeapp.generated.resources.notification_daily_challenge_title
 import stackshift.composeapp.generated.resources.notification_miss_you_body
 import stackshift.composeapp.generated.resources.notification_miss_you_title
 import stackshift.composeapp.generated.resources.notification_reminders_channel_name
+import stackshift.composeapp.generated.resources.notification_test_body
 import java.util.Locale
 
 class NotificationWorker(
@@ -33,7 +36,6 @@ class NotificationWorker(
 
     companion object {
         private const val CHANNEL_ID = "stackshift_notification_channel_v2"
-        private const val CHANNEL_NAME_DEFAULT = "Reminders"
 
         const val TAG_MISS_YOU = "miss_you_notification"
         const val TAG_DAILY_CHALLENGE = "daily_challenge_notification"
@@ -66,39 +68,26 @@ class NotificationWorker(
         val originalLocale = Locale.getDefault()
         Locale.setDefault(appLocale)
 
-        val title = try {
-            if (type == TYPE_DAILY_CHALLENGE) {
-                getString(Res.string.notification_daily_challenge_title)
-            } else {
-                getString(Res.string.notification_miss_you_title)
-            }
-        } catch (_: Exception) {
-            "StackShift"
+        suspend fun localized(resource: StringResource): String =
+            runCatching { getString(resource) }.getOrDefault("")
+
+        val appName = applicationContext.applicationInfo
+            .loadLabel(applicationContext.packageManager)
+            .toString()
+
+        val title = when (type) {
+            TYPE_DAILY_CHALLENGE -> localized(Res.string.notification_daily_challenge_title)
+            TYPE_TEST -> localized(Res.string.app_title)
+            else -> localized(Res.string.notification_miss_you_title)
+        }.ifBlank { appName }
+
+        val message = when (type) {
+            TYPE_DAILY_CHALLENGE -> localized(Res.string.notification_daily_challenge_body)
+            TYPE_TEST -> localized(Res.string.notification_test_body)
+            else -> localized(Res.string.notification_miss_you_body)
         }
 
-        val message = try {
-            if (type == TYPE_DAILY_CHALLENGE) {
-                getString(Res.string.notification_daily_challenge_body)
-            } else if (type == TYPE_TEST) {
-                "This is a test notification."
-            } else {
-                getString(Res.string.notification_miss_you_body)
-            }
-        } catch (_: Exception) {
-            if (type == TYPE_DAILY_CHALLENGE) {
-                "Have you completed today's daily challenge tasks yet?"
-            } else if (type == TYPE_TEST) {
-                "This is a test notification."
-            } else {
-                "We missed you! Come back and play some more."
-            }
-        }
-
-        val channelName = try {
-            getString(Res.string.notification_reminders_channel_name)
-        } catch (_: Exception) {
-            CHANNEL_NAME_DEFAULT
-        }
+        val channelName = localized(Res.string.notification_reminders_channel_name).ifBlank { appName }
 
         Locale.setDefault(originalLocale)
 

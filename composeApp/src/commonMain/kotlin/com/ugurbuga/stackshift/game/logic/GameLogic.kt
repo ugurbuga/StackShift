@@ -2,7 +2,6 @@ package com.ugurbuga.stackshift.game.logic
 
 import com.ugurbuga.stackshift.game.model.BoardMatrix
 import com.ugurbuga.stackshift.game.model.ChallengeTaskType
-import com.ugurbuga.stackshift.game.model.ColumnPressure
 import com.ugurbuga.stackshift.game.model.ComboState
 import com.ugurbuga.stackshift.game.model.DailyChallenge
 import com.ugurbuga.stackshift.game.model.FeedbackEmphasis
@@ -12,13 +11,12 @@ import com.ugurbuga.stackshift.game.model.GameMode
 import com.ugurbuga.stackshift.game.model.GameState
 import com.ugurbuga.stackshift.game.model.GameStatus
 import com.ugurbuga.stackshift.game.model.GameTextKey
+import com.ugurbuga.stackshift.game.model.GameplayStyle
 import com.ugurbuga.stackshift.game.model.GridPoint
 import com.ugurbuga.stackshift.game.model.LaunchBarState
 import com.ugurbuga.stackshift.game.model.Piece
 import com.ugurbuga.stackshift.game.model.PieceKind
 import com.ugurbuga.stackshift.game.model.PlacementPreview
-import com.ugurbuga.stackshift.game.model.PressureLevel
-import com.ugurbuga.stackshift.game.model.SoftLockState
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
 import com.ugurbuga.stackshift.game.model.gameText
 import com.ugurbuga.stackshift.settings.GameSessionCodec
@@ -34,10 +32,9 @@ class GameLogic(
         const val DefaultTimeAttackDurationMillis = 120_000L
         const val TimeAttackBonusPerClearedBlockMillis = 400L
         const val TimeAttackReviveBonusMillis = 15_000L
-        private const val QueueSize = 3
-        private const val SoftLockMillis = 260L
-        private const val RewardedReviveRowCount = 6
-        private const val PlayablePieceGenerationAttempts = 16
+        private const val TraySize = 3
+        private const val RewardedReviveRowCount = 4
+        private const val PlayablePieceGenerationAttempts = 24
     }
 
     fun restoreGame(state: GameState): GameState {
@@ -49,48 +46,49 @@ class GameLogic(
         config: GameConfig = GameConfig(),
         challenge: DailyChallenge? = null,
         mode: GameMode = GameMode.Classic,
+        gameplayStyle: GameplayStyle = GameplayStyle.BlockWise,
     ): GameState {
-        val level = 1
         val board = BoardMatrix.empty(columns = config.columns, rows = config.rows)
-        val openingBag = List(QueueSize + 1) { createPiece(level = level, launchBar = LaunchBarState()) }
-        val activePiece = openingBag.first()
-        val nextQueue = openingBag.drop(1)
+        val tray = List(TraySize) { createPiece(level = 1) }
         val state = GameState(
             config = config,
             gameMode = mode,
+            gameplayStyle = gameplayStyle,
             board = board,
-            activePiece = activePiece,
-            nextQueue = nextQueue,
+            activePiece = tray.firstOrNull(),
+            nextQueue = tray.drop(1),
             holdPiece = null,
-            canHold = true,
+            canHold = false,
             lastPlacementColumn = null,
             score = 0,
             lastMoveScore = 0,
             linesCleared = 0,
-            level = level,
+            level = 1,
             difficultyStage = 0,
             secondsUntilDifficultyIncrease = config.difficultyIntervalSeconds,
             combo = ComboState(),
             perfectDropStreak = 0,
             launchBar = LaunchBarState(),
-            columnPressure = computeColumnPressure(board, config),
+            columnPressure = emptyList(),
             softLock = null,
             status = GameStatus.Running,
             recentlyClearedRows = emptySet(),
             recentlyClearedColumns = emptySet(),
             lastResolvedLines = 0,
             lastChainDepth = 0,
+            specialChainCount = 0,
             clearAnimationToken = 0L,
+            screenShakeToken = 0L,
+            impactFlashToken = 0L,
+            comboPopupToken = 0L,
             floatingFeedback = null,
             feedbackToken = 0L,
+            rewardedReviveUsed = false,
             remainingTimeMillis = if (mode == GameMode.TimeAttack) DefaultTimeAttackDurationMillis else null,
             message = gameText(GameTextKey.GameMessageSelectColumn),
-            activeChallenge = challenge?.let { c ->
-                c.copy(tasks = c.tasks.map { it.copy(current = 0) })
-            },
+            activeChallenge = challenge?.copy(tasks = challenge.tasks.map { it.copy(current = 0) }),
         )
-
-        return if (hasAnyValidPlacement(state.board, activePiece, state.config)) {
+        return if (hasAnyValidPlacement(state.board, state.trayPieces, state.config)) {
             state
         } else {
             state.copy(
@@ -108,288 +106,179 @@ class GameLogic(
 
     fun previewPlacement(
         state: GameState,
+        pieceId: Long,
+        origin: GridPoint,
+    ): PlacementPreview? {
+        val piece = state.trayPieces.firstOrNull { it.id == pieceId } ?: return null
+        if (state.status != GameStatus.Running) return null
+        if (!isValidPlacement(state.board, piece, origin)) return null
+
+        val occupiedCells = piece.cellsAt(origin)
+        val placedBoard = state.board.fill(points = occupiedCells, tone = piece.tone)
+        val clearedRows = placedBoard.fullRows().toSet()
+        val clearedColumns = placedBoard.fullColumns().toSet()
+        return PlacementPreview(
+            selectedColumn = origin.column,
+            entryAnchor = origin,
+            landingAnchor = origin,
+            occupiedCells = occupiedCells,
+            coveredColumns = origin.column..(origin.column + piece.width - 1),
+            isPerfectDrop = false,
+            clearedRows = clearedRows,
+            clearedColumns = clearedColumns,
+        )
+    }
+
+    fun previewPlacement(
+        state: GameState,
         approximateColumn: Int,
     ): PlacementPreview? {
         val piece = state.activePiece ?: return null
-        if (state.status != GameStatus.Running) return null
-
-        val maxColumn = state.config.columns - piece.width
-        val selectedColumn = normalizeColumn(approximateColumn = approximateColumn, maxColumn = maxColumn)
-            ?: return null
-
-        return previewForColumn(
+        val origin = findFirstValidOrigin(
             board = state.board,
             piece = piece,
             config = state.config,
-            selectedColumn = selectedColumn,
-        )
+            preferredColumn = approximateColumn,
+        ) ?: return null
+        return previewPlacement(state = state, pieceId = piece.id, origin = origin)
     }
 
     fun previewImpactPoints(
         state: GameState,
         preview: PlacementPreview?,
     ): Set<GridPoint> {
-        val piece = state.activePiece ?: return emptySet()
         val resolvedPreview = preview ?: return emptySet()
         if (state.status != GameStatus.Running) return emptySet()
-
-        val originalOccupiedPoints = state.board.occupiedPoints().toSet()
-        if (originalOccupiedPoints.isEmpty()) return emptySet()
-
-        val specialResult = applyPlacementAndSpecial(
-            board = state.board,
-            piece = piece,
-            preview = resolvedPreview,
-        )
-        val directSpecialImpact = collectPreviewImpactPoints(
-            board = state.board,
-            piece = piece,
-            preview = resolvedPreview,
-        )
-        val burstImpact = collectPreviewBurstImpact(
-            board = specialResult.board,
-            pendingTriggers = specialResult.initialTriggeredSpecials,
-            originalOccupiedPoints = originalOccupiedPoints,
-        )
-        val firstWaveFullRows = burstImpact.board.fullRows().toSet()
-        val rowClearImpact = if (firstWaveFullRows.isEmpty()) {
-            emptySet()
-        } else {
-            burstImpact.board.occupiedPointsInRows(firstWaveFullRows)
-                .filter(originalOccupiedPoints::contains)
-                .toSet()
-        }
-
         return buildSet {
-            addAll(directSpecialImpact)
-            addAll(burstImpact.impactedPoints)
-            addAll(rowClearImpact)
+            addAll(state.board.occupiedPointsInRows(resolvedPreview.clearedRows))
+            addAll(state.board.occupiedPointsInColumns(resolvedPreview.clearedColumns))
         }
     }
 
     fun placePiece(
         state: GameState,
-        approximateColumn: Int,
+        pieceId: Long,
+        origin: GridPoint,
     ): GameMoveResult {
-        val piece = state.activePiece ?: return invalidMove(state)
+        val piece = state.trayPieces.firstOrNull { it.id == pieceId } ?: return invalidMove(state)
         if (state.status != GameStatus.Running) return invalidMove(state)
 
-        val preview = previewPlacement(state = state, approximateColumn = approximateColumn)
-            ?: return invalidMove(state)
-
-        val nextRevision = (state.softLock?.revision ?: 0L) + 1L
-        val nextToken = state.feedbackToken + 1L
-        val wasAdjustingSoftLock = state.softLock?.pieceId == piece.id
-        val feedback = when {
-            preview.isPerfectDrop -> FloatingFeedback(
-                text = gameText(GameTextKey.FeedbackPerfectLane, state.perfectDropStreak + 1),
-                emphasis = FeedbackEmphasis.Bonus,
-                token = nextToken,
-            )
-            wasAdjustingSoftLock -> FloatingFeedback(
-                text = gameText(GameTextKey.FeedbackMicroAdjust),
-                emphasis = FeedbackEmphasis.Info,
-                token = nextToken,
-            )
-            else -> FloatingFeedback(
-                text = gameText(GameTextKey.FeedbackSoftLock),
-                emphasis = FeedbackEmphasis.Info,
-                token = nextToken,
-            )
+        val preview = previewPlacement(state = state, pieceId = pieceId, origin = origin) ?: return invalidMove(state)
+        val placedBoard = state.board.fill(points = preview.occupiedCells, tone = piece.tone)
+        val clearedRows = placedBoard.fullRows().toSet()
+        val clearedColumns = placedBoard.fullColumns().toSet()
+        val clearedPoints = buildSet {
+            addAll(placedBoard.occupiedPointsInRows(clearedRows))
+            addAll(placedBoard.occupiedPointsInColumns(clearedColumns))
         }
-
-        return GameMoveResult(
-            state = state.copy(
-                softLock = SoftLockState(
-                    pieceId = piece.id,
-                    preview = preview,
-                    remainingMillis = SoftLockMillis,
-                    revision = nextRevision,
-                ),
-                lastPlacementColumn = preview.selectedColumn,
-                floatingFeedback = feedback,
-                feedbackToken = nextToken,
-                message = gameText(GameTextKey.GameMessageSoftLock),
-            ),
-            preview = preview,
-            events = buildSet {
-                add(if (wasAdjustingSoftLock) GameEvent.SoftLockAdjusted else GameEvent.SoftLockStarted)
-                if (preview.isPerfectDrop) add(GameEvent.PerfectDrop)
-            },
-        )
-    }
-
-    fun commitSoftLock(state: GameState): GameMoveResult {
-        val piece = state.activePiece ?: return invalidMove(state)
-        val softLock = state.softLock ?: return invalidMove(state)
-        if (softLock.pieceId != piece.id) return invalidMove(state)
-
-        val preview = softLock.preview
-        val specialResult = applyPlacementAndSpecial(
-            board = state.board,
-            piece = piece,
-            preview = preview,
-        )
-        val resolution = resolveBoard(
-            board = specialResult.board,
-            specialTriggered = specialResult.specialTriggered,
-            initialTriggeredSpecials = specialResult.initialTriggeredSpecials,
-            initiallyClearedRows = specialResult.clearedRows,
-            initiallyClearedColumns = specialResult.clearedColumns,
-            initiallyBlocksCleared = specialResult.blocksCleared,
-        )
-        val perfectDrop = preview.isPerfectDrop
-        val nextPerfectStreak = if (perfectDrop) state.perfectDropStreak + 1 else 0
-        val nextComboChain = if (resolution.totalLinesCleared == 0) 0 else state.combo.chain + 1
+        val resolvedBoard = placedBoard.clearLines(rowsToClear = clearedRows, columnsToClear = clearedColumns)
+        val totalLinesCleared = clearedRows.size + clearedColumns.size
+        val nextComboChain = if (totalLinesCleared == 0) 0 else state.combo.chain + 1
         val comboState = ComboState(
             chain = nextComboChain,
             best = maxOf(state.combo.best, nextComboChain),
         )
-        val nextLaunchBar = advanceLaunchBar(
-            current = state.launchBar,
-            clearedRows = resolution.totalLinesCleared,
-            perfectDrop = perfectDrop,
-        )
-        val totalLines = state.linesCleared + resolution.totalLinesCleared
-        val nextLevel = computeLevel(
-            difficultyStage = state.difficultyStage,
-            clearedLines = totalLines,
-            config = state.config,
-        )
-        val queueAdvance = promoteQueue(
-            queue = state.nextQueue,
-            level = nextLevel,
-            launchBar = nextLaunchBar,
-        )
-        val nextActivePiece = queueAdvance.activePiece
-        val nextQueue = queueAdvance.nextQueue
-        val nextPressure = computeColumnPressure(resolution.board, state.config)
-
-        val events = linkedSetOf(GameEvent.PlacementAccepted)
-        if (resolution.specialTriggered) events += GameEvent.SpecialTriggered
-        if (resolution.totalLinesCleared > 0) events += GameEvent.LineClear
-        if (resolution.chainDepth > 1) events += GameEvent.ChainReaction
-        if (nextComboChain > 1) events += GameEvent.Combo
-        if (perfectDrop) events += GameEvent.PerfectDrop
-        if (nextLaunchBar.boostTurnsRemaining > state.launchBar.boostTurnsRemaining) events += GameEvent.LaunchBoostCharged
-        if (nextPressure.any { it.level == PressureLevel.Critical || it.level == PressureLevel.Overflow }) {
-            events += GameEvent.PressureCritical
-        }
-
-        val overflowed = nextPressure.any { it.level == PressureLevel.Overflow }
-        val nextStatus = if (!overflowed && hasAnyValidPlacement(resolution.board, nextActivePiece, state.config)) {
-            GameStatus.Running
-        } else {
-            events += GameEvent.GameOver
-            GameStatus.GameOver
-        }
-
+        val totalClearedBlocks = clearedPoints.size
         val boardSize = state.config.columns * state.config.rows
-        val fillRatio = maxOf(
-            state.board.occupiedCount.toFloat() / boardSize.toFloat(),
-            specialResult.board.occupiedCount.toFloat() / boardSize.toFloat(),
-        )
-
-        // "Hard placement" (köşe veya kenar yerleşimi) kontrolü
-        val isHardPlacement = preview.landingAnchor.column == 0 || 
-                             preview.landingAnchor.column == state.config.columns - piece.width ||
-                             preview.landingAnchor.row == 0 ||
-                             preview.landingAnchor.row == state.config.rows - piece.height
-
         val nextScore = state.score + scoreCalculator.calculateScore(
             ScoreCalculator.ScoreParams(
                 tilesPlaced = piece.cells.size,
-                linesCleared = resolution.totalLinesCleared,
+                linesCleared = totalLinesCleared,
                 currentStreak = nextComboChain,
-                specialBlocksTriggered = specialResult.initialTriggeredSpecials.map { it.special },
-                areaTilesCleared = resolution.specialBlocksCleared,
-                isBoardCleared = resolution.board.isEmpty(),
-                isPerfectPlacement = perfectDrop,
-                isHardPlacement = isHardPlacement,
+                specialBlocksTriggered = emptyList(),
+                areaTilesCleared = 0,
+                isBoardCleared = resolvedBoard.isEmpty(),
+                isPerfectPlacement = false,
+                isHardPlacement = false,
                 moveDurationMillis = null,
-                boardFillRatio = fillRatio,
-                chainReactionCount = (resolution.chainDepth - 1).coerceAtLeast(0),
-            )
+                boardFillRatio = if (boardSize == 0) 0f else placedBoard.occupiedCount.toFloat() / boardSize.toFloat(),
+                chainReactionCount = if (clearedRows.isNotEmpty() && clearedColumns.isNotEmpty()) 1 else 0,
+            ),
         )
         val lastMoveScore = nextScore - state.score
-        val awardedTimeMillis = if (state.gameMode == GameMode.TimeAttack) {
-            resolution.totalBlocksCleared * TimeAttackBonusPerClearedBlockMillis
-        } else {
-            0L
-        }
-        val nextRemainingTimeMillis = state.remainingTimeMillis?.plus(awardedTimeMillis)
-        val nextToken = state.feedbackToken + 1L
-        val floatingFeedback = buildFloatingFeedback(
-            state = state,
-            lastMoveScore = lastMoveScore,
-            resolution = resolution,
-            perfectDrop = perfectDrop,
-            nextPerfectStreak = nextPerfectStreak,
-            token = nextToken,
-        )
-        val message = when {
-            overflowed -> gameText(GameTextKey.GameMessageOverflow)
-            resolution.triggeredSpecialCells > 1 -> gameText(GameTextKey.GameMessageSpecialChainBoard, resolution.triggeredSpecialCells)
-            nextStatus == GameStatus.GameOver -> gameText(GameTextKey.GameMessagePressureGameOver)
-            resolution.specialTriggered && resolution.totalLinesCleared > 0 ->
-                gameText(GameTextKey.GameMessageSpecialLines, resolution.totalLinesCleared)
-            resolution.specialTriggered -> gameText(GameTextKey.GameMessageSpecialTriggered, resolution.totalBlocksCleared)
-            perfectDrop && nextPerfectStreak > 1 -> gameText(GameTextKey.GameMessagePerfectDrop, nextPerfectStreak)
-            resolution.totalLinesCleared > 0 && resolution.chainDepth > 1 ->
-                gameText(GameTextKey.GameMessageChainLines, resolution.chainDepth, resolution.totalLinesCleared)
-            resolution.totalLinesCleared > 0 -> gameText(GameTextKey.GameMessageLinesCleared, resolution.totalLinesCleared)
-            else -> gameText(GameTextKey.GameMessageGoodShot)
-        }
-
         val updatedChallenge = updateChallengeProgress(
             challenge = state.activeChallenge,
-            resolution = resolution,
+            rowsCleared = clearedRows.size,
+            columnsCleared = clearedColumns.size,
             scoreGain = lastMoveScore,
-            perfectDrop = perfectDrop,
         )
+        val trayAfterPlacement = replenishTray(
+            remainingPieces = state.trayPieces.filterNot { it.id == pieceId },
+            level = computeLevel(state.linesCleared + totalLinesCleared, state.config),
+        )
+        val nextActivePiece = trayAfterPlacement.firstOrNull()
+        val nextQueue = trayAfterPlacement.drop(1)
+        val hasAnyMove = hasAnyValidPlacement(resolvedBoard, trayAfterPlacement, state.config)
+        val challengeCompleted = updatedChallenge?.isCompleted == true
+        val nextStatus = when {
+            challengeCompleted -> GameStatus.GameOver
+            hasAnyMove -> GameStatus.Running
+            else -> GameStatus.GameOver
+        }
+        val events = linkedSetOf(GameEvent.PlacementAccepted)
+        if (totalLinesCleared > 0) events += GameEvent.LineClear
+        if (nextComboChain > 1) events += GameEvent.Combo
+        if (clearedRows.isNotEmpty() && clearedColumns.isNotEmpty()) events += GameEvent.ChainReaction
+        if (nextStatus == GameStatus.GameOver) events += GameEvent.GameOver
+        if (challengeCompleted) events += GameEvent.ChallengeCompleted
 
-        val challengeWin = updatedChallenge?.isCompleted == true
-        val finalStatus = if (challengeWin) GameStatus.GameOver else nextStatus
-        if (challengeWin) events += GameEvent.ChallengeCompleted
+        val nextToken = state.feedbackToken + 1L
+        val floatingFeedback = when {
+            totalLinesCleared > 0 -> FloatingFeedback(
+                text = gameText(GameTextKey.FeedbackClear, lastMoveScore),
+                emphasis = FeedbackEmphasis.Bonus,
+                token = nextToken,
+            )
+            lastMoveScore > 0 -> FloatingFeedback(
+                text = gameText(GameTextKey.FeedbackScoreOnly, lastMoveScore),
+                emphasis = FeedbackEmphasis.Info,
+                token = nextToken,
+            )
+            else -> null
+        }
 
         return GameMoveResult(
             state = state.copy(
-                board = resolution.board,
+                board = resolvedBoard,
                 activePiece = nextActivePiece,
                 nextQueue = nextQueue,
-                canHold = true,
-                lastPlacementColumn = preview.selectedColumn,
+                holdPiece = null,
+                canHold = false,
+                lastPlacementColumn = origin.column,
                 score = nextScore,
                 lastMoveScore = lastMoveScore,
-                linesCleared = totalLines,
-                level = nextLevel,
+                linesCleared = state.linesCleared + totalLinesCleared,
+                level = computeLevel(state.linesCleared + totalLinesCleared, state.config),
+                difficultyStage = 0,
+                secondsUntilDifficultyIncrease = state.config.difficultyIntervalSeconds,
                 combo = comboState,
-                perfectDropStreak = nextPerfectStreak,
-                launchBar = nextLaunchBar,
-                columnPressure = nextPressure,
+                perfectDropStreak = 0,
+                launchBar = LaunchBarState(),
+                columnPressure = emptyList(),
                 softLock = null,
-                status = finalStatus,
-                recentlyClearedRows = resolution.firstClearedRows,
-                recentlyClearedColumns = resolution.firstClearedColumns,
-                lastResolvedLines = resolution.totalLinesCleared,
-                lastChainDepth = resolution.chainDepth,
-                specialChainCount = resolution.triggeredSpecialCells,
-                clearAnimationToken = if (resolution.totalLinesCleared == 0 && resolution.triggeredSpecialCells == 0 && resolution.firstClearedRows.isEmpty() && resolution.firstClearedColumns.isEmpty()) {
-                    state.clearAnimationToken
-                } else {
-                    state.clearAnimationToken + 1L
+                status = nextStatus,
+                recentlyClearedRows = clearedRows,
+                recentlyClearedColumns = clearedColumns,
+                lastResolvedLines = totalLinesCleared,
+                lastChainDepth = when {
+                    clearedRows.isNotEmpty() && clearedColumns.isNotEmpty() -> 2
+                    totalLinesCleared > 0 -> 1
+                    else -> 0
                 },
-                screenShakeToken = if (finalStatus == GameStatus.GameOver || resolution.totalLinesCleared > 0 || resolution.triggeredSpecialCells > 0 || resolution.firstClearedRows.isNotEmpty() || resolution.firstClearedColumns.isNotEmpty()) {
-                    state.screenShakeToken + 1L
-                } else {
-                    state.screenShakeToken
-                },
-                impactFlashToken = if (piece.special != SpecialBlockType.None || resolution.totalLinesCleared > 0 || resolution.triggeredSpecialCells > 0) state.impactFlashToken + 1L else state.impactFlashToken,
-                comboPopupToken = if (nextComboChain > 1 || perfectDrop || resolution.triggeredSpecialCells > 0) state.comboPopupToken + 1L else state.comboPopupToken,
+                specialChainCount = 0,
+                clearAnimationToken = if (totalLinesCleared > 0) state.clearAnimationToken + 1L else state.clearAnimationToken,
+                screenShakeToken = if (totalLinesCleared > 0 || nextStatus == GameStatus.GameOver) state.screenShakeToken + 1L else state.screenShakeToken,
+                impactFlashToken = if (totalLinesCleared > 0) state.impactFlashToken + 1L else state.impactFlashToken,
+                comboPopupToken = if (nextComboChain > 1 || totalLinesCleared > 0) state.comboPopupToken + 1L else state.comboPopupToken,
                 floatingFeedback = floatingFeedback,
                 feedbackToken = nextToken,
-                remainingTimeMillis = nextRemainingTimeMillis,
-                message = message,
+                rewardedReviveUsed = state.rewardedReviveUsed,
+                remainingTimeMillis = state.remainingTimeMillis?.plus(totalClearedBlocks * TimeAttackBonusPerClearedBlockMillis),
+                message = when {
+                    nextStatus == GameStatus.GameOver -> gameText(GameTextKey.GameMessageNoOpening)
+                    totalLinesCleared > 0 -> gameText(GameTextKey.GameMessageLinesCleared, totalLinesCleared)
+                    else -> gameText(GameTextKey.GameMessageGoodShot)
+                },
                 activeChallenge = updatedChallenge,
             ),
             preview = preview,
@@ -397,127 +286,71 @@ class GameLogic(
         )
     }
 
-    private fun updateChallengeProgress(
-        challenge: DailyChallenge?,
-        resolution: ResolutionResult,
-        scoreGain: Int,
-        perfectDrop: Boolean,
-    ): DailyChallenge? {
-        if (challenge == null) return null
-
-        val updatedTasks = challenge.tasks.map { task ->
-            val progressGain = when (task.type) {
-                ChallengeTaskType.ClearBlocks -> resolution.totalBlocksCleared
-                ChallengeTaskType.ReachScore -> scoreGain
-                ChallengeTaskType.TriggerSpecial -> resolution.triggeredSpecialCells
-                ChallengeTaskType.PerfectPlacement -> if (perfectDrop) 1 else 0
-                ChallengeTaskType.ChainReaction -> (resolution.chainDepth - 1).coerceAtLeast(0)
-            }
-            task.copy(current = task.current + progressGain)
-        }
-
-        return challenge.copy(tasks = updatedTasks)
-    }
-
-    fun holdPiece(state: GameState): GameMoveResult {
-        val activePiece = state.activePiece ?: return invalidMove(state)
-        if (state.status != GameStatus.Running || state.softLock != null || !state.canHold) {
-            return invalidMove(state)
-        }
-
-        val queueAdvance = if (state.holdPiece == null) {
-            promoteQueue(queue = state.nextQueue, level = state.level, launchBar = state.launchBar)
-        } else {
-            QueueAdvance(activePiece = state.holdPiece, nextQueue = state.nextQueue)
-        }
-        val heldPiece = activePiece.copy(id = activePiece.id)
-        val swappedPiece = queueAdvance.activePiece
-        val nextToken = state.feedbackToken + 1L
-        val nextState = state.copy(
-            activePiece = swappedPiece,
-            nextQueue = queueAdvance.nextQueue,
-            holdPiece = heldPiece,
-            canHold = false,
-            softLock = null,
-            floatingFeedback = FloatingFeedback(
-                text = if (state.holdPiece == null) gameText(GameTextKey.FeedbackHoldArmed) else gameText(GameTextKey.FeedbackSwap),
-                emphasis = FeedbackEmphasis.Info,
-                token = nextToken,
-            ),
-            feedbackToken = nextToken,
-            message = gameText(GameTextKey.GameMessageHoldUpdated),
+    fun placePiece(
+        state: GameState,
+        approximateColumn: Int,
+    ): GameMoveResult {
+        val piece = state.activePiece ?: return invalidMove(state)
+        val preview = previewPlacement(state = state, approximateColumn = approximateColumn) ?: return invalidMove(state)
+        return placePiece(
+            state = state,
+            pieceId = piece.id,
+            origin = preview.landingAnchor,
         )
-        return GameMoveResult(state = nextState, events = setOf(GameEvent.HoldUsed))
     }
+
+    fun holdPiece(state: GameState): GameMoveResult = invalidMove(state)
 
     fun replaceActivePiece(state: GameState, specialType: SpecialBlockType): GameMoveResult {
-        val activePiece = state.activePiece ?: return invalidMove(state)
-        if (state.status != GameStatus.Running) return invalidMove(state)
-
-        val nextToken = state.feedbackToken + 1L
-        val nextState = state.copy(
-            activePiece = activePiece.copy(special = specialType),
-            softLock = null,
-            floatingFeedback = FloatingFeedback(
-                text = gameText(GameTextKey.FeedbackSpecial, "0", 0),
-                emphasis = FeedbackEmphasis.Bonus,
-                token = nextToken,
-            ),
-            feedbackToken = nextToken,
-        )
-        return GameMoveResult(state = nextState, events = setOf(GameEvent.SpecialTriggered))
+        specialType.hashCode()
+        return invalidMove(state)
     }
+
+    fun commitSoftLock(state: GameState): GameMoveResult = invalidMove(state)
 
     fun reviveFromReward(state: GameState): GameMoveResult {
         if (state.status != GameStatus.GameOver || state.rewardedReviveUsed) {
             return invalidMove(state)
         }
 
-        val revivedRows = selectRewardRows(
-            board = state.board,
-            totalRows = state.config.rows,
-            maxRowsToClear = RewardedReviveRowCount,
-        )
-        val revivedBoard = state.board.clearRows(revivedRows)
-        val queueAdvance = ensurePlayableQueueAfterRevive(
+        val rowsToClear = selectRewardRows(state.board, RewardedReviveRowCount)
+        val revivedBoard = state.board.clearLines(rowsToClear = rowsToClear, columnsToClear = emptySet())
+        val revivedTray = ensurePlayableTrayAfterRevive(
             board = revivedBoard,
-            activePiece = state.activePiece,
-            nextQueue = state.nextQueue,
+            trayPieces = state.trayPieces.ifEmpty { listOfNotNull(state.activePiece) },
             level = state.level,
-            launchBar = state.launchBar,
             config = state.config,
         )
-        val nextPressure = computeColumnPressure(revivedBoard, state.config)
         val nextToken = state.feedbackToken + 1L
-
         return GameMoveResult(
             state = state.copy(
                 board = revivedBoard,
-                gameMode = state.gameMode,
-                activePiece = queueAdvance.activePiece,
-                nextQueue = queueAdvance.nextQueue,
+                activePiece = revivedTray.firstOrNull(),
+                nextQueue = revivedTray.drop(1),
                 lastMoveScore = 0,
-                columnPressure = nextPressure,
+                combo = ComboState(),
+                launchBar = LaunchBarState(),
+                columnPressure = emptyList(),
                 softLock = null,
                 status = GameStatus.Running,
-                recentlyClearedRows = revivedRows,
+                recentlyClearedRows = rowsToClear,
                 recentlyClearedColumns = emptySet(),
-                lastResolvedLines = revivedRows.size,
-                lastChainDepth = if (revivedRows.isEmpty()) 0 else 1,
+                lastResolvedLines = rowsToClear.size,
+                lastChainDepth = if (rowsToClear.isEmpty()) 0 else 1,
                 specialChainCount = 0,
                 clearAnimationToken = state.clearAnimationToken + 1L,
                 screenShakeToken = state.screenShakeToken + 1L,
                 impactFlashToken = state.impactFlashToken + 1L,
                 comboPopupToken = state.comboPopupToken + 1L,
                 floatingFeedback = FloatingFeedback(
-                    text = gameText(GameTextKey.FeedbackExtraLife, revivedRows.size),
+                    text = gameText(GameTextKey.FeedbackExtraLife, rowsToClear.size),
                     emphasis = FeedbackEmphasis.Bonus,
                     token = nextToken,
                 ),
                 feedbackToken = nextToken,
                 rewardedReviveUsed = true,
                 remainingTimeMillis = state.remainingTimeMillis?.plus(TimeAttackReviveBonusMillis),
-                message = gameText(GameTextKey.GameMessageExtraLifeUsed, revivedRows.size),
+                message = gameText(GameTextKey.GameMessageExtraLifeUsed, rowsToClear.size),
             ),
             events = setOf(GameEvent.Revived),
         )
@@ -535,35 +368,15 @@ class GameLogic(
             )
         }
 
-        val nextSeconds = state.secondsUntilDifficultyIncrease - 1
-        if (nextSeconds > 0) {
-            return state.copy(
-                secondsUntilDifficultyIncrease = nextSeconds,
-                columnPressure = computeColumnPressure(state.board, state.config),
+        return if (hasAnyValidPlacement(state.board, state.trayPieces, state.config)) {
+            state.copy(remainingTimeMillis = nextRemainingTimeMillis)
+        } else {
+            state.copy(
                 remainingTimeMillis = nextRemainingTimeMillis,
+                status = GameStatus.GameOver,
+                message = gameText(GameTextKey.GameMessageNoOpening),
             )
         }
-
-        val nextDifficultyStage = state.difficultyStage + 1
-        val nextLevel = computeLevel(
-            difficultyStage = nextDifficultyStage,
-            clearedLines = state.linesCleared,
-            config = state.config,
-        )
-        val pressure = computeColumnPressure(state.board, state.config)
-        return state.copy(
-            difficultyStage = nextDifficultyStage,
-            level = nextLevel,
-            secondsUntilDifficultyIncrease = state.config.difficultyIntervalSeconds,
-            columnPressure = pressure,
-            remainingTimeMillis = nextRemainingTimeMillis,
-            status = if (pressure.any { it.level == PressureLevel.Overflow }) GameStatus.GameOver else state.status,
-            message = if (pressure.any { it.level == PressureLevel.Critical || it.level == PressureLevel.Overflow }) {
-                gameText(GameTextKey.GameMessageTempoCritical)
-            } else {
-                gameText(GameTextKey.GameMessageTempoUp)
-            },
-        )
     }
 
     fun hasAnyValidPlacement(
@@ -571,437 +384,96 @@ class GameLogic(
         piece: Piece,
         config: GameConfig,
     ): Boolean {
-        val maxColumn = config.columns - piece.width
-        if (maxColumn < 0 || config.rows - piece.height < 0) return false
-
-        for (column in 0..maxColumn) {
-            if (
-                previewForColumn(
-                    board = board,
-                    piece = piece,
-                    config = config,
-                    selectedColumn = column,
-                ) != null
-            ) {
-                return true
+        if (piece.width > config.columns || piece.height > config.rows) return false
+        for (row in 0..(config.rows - piece.height)) {
+            for (column in 0..(config.columns - piece.width)) {
+                if (isValidPlacement(board, piece, GridPoint(column = column, row = row))) {
+                    return true
+                }
             }
         }
         return false
     }
 
-    private fun previewForColumn(
+    fun hasAnyValidPlacement(
         board: BoardMatrix,
-        piece: Piece,
+        pieces: List<Piece>,
         config: GameConfig,
-        selectedColumn: Int,
-    ): PlacementPreview? {
-        val maxColumn = config.columns - piece.width
-        val entryRow = config.rows - piece.height
-        if (maxColumn < 0 || entryRow < 0) return null
-        if (selectedColumn !in 0..maxColumn) return null
+    ): Boolean = pieces.any { piece -> hasAnyValidPlacement(board, piece, config) }
 
-        var ghostPassesRemaining = if (piece.special == SpecialBlockType.Ghost) 1 else 0
-        val entryAnchor = GridPoint(column = selectedColumn, row = entryRow)
-        if (!isValidPlacement(board, piece, entryAnchor)) {
-            if (ghostPassesRemaining == 0 || !canGhostPass(board, piece, entryAnchor)) return null
-            ghostPassesRemaining -= 1
-        }
-
-        var landingRow = entryRow
-        while (landingRow > 0) {
-            val candidate = GridPoint(column = selectedColumn, row = landingRow - 1)
-            when {
-                isValidPlacement(board, piece, candidate) -> landingRow -= 1
-                ghostPassesRemaining > 0 && canGhostPass(board, piece, candidate) -> {
-                    landingRow -= 1
-                    ghostPassesRemaining -= 1
-                }
-                else -> break
+    private fun updateChallengeProgress(
+        challenge: DailyChallenge?,
+        rowsCleared: Int,
+        columnsCleared: Int,
+        scoreGain: Int,
+    ): DailyChallenge? {
+        if (challenge == null) return null
+        val updatedTasks = challenge.tasks.map { task ->
+            val progressGain = when (task.type) {
+                ChallengeTaskType.ClearBlocks -> 0
+                ChallengeTaskType.ClearRows -> rowsCleared
+                ChallengeTaskType.ReachScore -> scoreGain
+                ChallengeTaskType.TriggerSpecial -> 0
+                ChallengeTaskType.PerfectPlacement -> 0
+                ChallengeTaskType.ChainReaction -> 0
+                ChallengeTaskType.ClearColumns -> columnsCleared
+                ChallengeTaskType.PlacePieces -> 1
+                ChallengeTaskType.ClearBothDirections -> if (rowsCleared > 0 && columnsCleared > 0) 1 else 0
             }
+            task.copy(current = task.current + progressGain)
         }
-
-        val landingAnchor = GridPoint(column = selectedColumn, row = landingRow)
-        val coveredColumns = selectedColumn..(selectedColumn + piece.width - 1)
-        val basePreview = PlacementPreview(
-            selectedColumn = selectedColumn,
-            entryAnchor = entryAnchor,
-            landingAnchor = landingAnchor,
-            occupiedCells = piece.cellsAt(landingAnchor),
-            coveredColumns = coveredColumns,
-            isPerfectDrop = coveredColumns.all(board::isColumnEmpty),
-        )
-
-        val specialResult = applyPlacementAndSpecial(
-            board = board,
-            piece = piece,
-            preview = basePreview,
-        )
-
-        val resolution = resolveBoard(
-            board = specialResult.board,
-            specialTriggered = specialResult.specialTriggered,
-            initialTriggeredSpecials = specialResult.initialTriggeredSpecials,
-            initiallyClearedRows = specialResult.clearedRows,
-            initiallyClearedColumns = specialResult.clearedColumns,
-            initiallyBlocksCleared = specialResult.blocksCleared,
-        )
-
-        return basePreview.copy(
-            clearedRows = resolution.firstClearedRows,
-            clearedColumns = resolution.firstClearedColumns,
-        )
+        return challenge.copy(tasks = updatedTasks)
     }
 
-    private fun resolveBoard(
-        board: BoardMatrix,
-        specialTriggered: Boolean,
-        initialTriggeredSpecials: List<TriggeredSpecial>,
-        initiallyClearedRows: Set<Int> = emptySet(),
-        initiallyClearedColumns: Set<Int> = emptySet(),
-        initiallyBlocksCleared: Int = 0,
-    ): ResolutionResult {
-        var resolvedBoard = board
-        var firstWaveRows = initiallyClearedRows
-        var firstWaveColumns = initiallyClearedColumns
-        var totalLinesCleared = 0
-        var totalBlocksCleared = initiallyBlocksCleared
-        var specialBlocksCleared = initiallyBlocksCleared
-        var chainDepth = 0
-        var triggeredSpecialCells = 0
-        var pendingTriggers = initialTriggeredSpecials
-        var didTriggerSpecial = specialTriggered
+    private fun computeLevel(
+        clearedLines: Int,
+        config: GameConfig,
+    ): Int = 1 + (clearedLines / config.linesPerLevel.coerceAtLeast(1))
 
-        while (true) {
-            if (pendingTriggers.isNotEmpty()) {
-                val burstResult = applyTriggeredSpecialBursts(
-                    board = resolvedBoard,
-                    pendingTriggers = pendingTriggers,
-                )
-                resolvedBoard = burstResult.board
-                triggeredSpecialCells += burstResult.triggeredCount
-                specialBlocksCleared += burstResult.blocksCleared
-                totalBlocksCleared += burstResult.blocksCleared
-                didTriggerSpecial = didTriggerSpecial || burstResult.triggeredCount > 0
-
-                if (firstWaveRows.isEmpty() && firstWaveColumns.isEmpty()) {
-                    pendingTriggers.forEach { trigger ->
-                        when (trigger.special) {
-                            SpecialBlockType.RowClearer -> firstWaveRows = firstWaveRows + trigger.point.row
-                            SpecialBlockType.ColumnClearer -> firstWaveColumns = firstWaveColumns + trigger.point.column
-                            else -> {}
-                        }
-                    }
-                }
-                pendingTriggers = emptyList()
-            }
-
-            val fullRows = resolvedBoard.fullRows()
-            if (fullRows.isEmpty()) break
-
-            if (firstWaveRows.isEmpty()) {
-                firstWaveRows = fullRows.toSet()
-            }
-
-            pendingTriggers = collectTriggeredSpecialsFromRows(
-                board = resolvedBoard,
-                rows = fullRows.toSet(),
-            )
-            totalLinesCleared += fullRows.size
-            totalBlocksCleared += fullRows.size * resolvedBoard.columns
-            chainDepth += 1
-            resolvedBoard = resolvedBoard.clearRows(fullRows.toSet())
-        }
-
-        return ResolutionResult(
-            board = resolvedBoard,
-            firstClearedRows = firstWaveRows,
-            firstClearedColumns = firstWaveColumns,
-            totalLinesCleared = totalLinesCleared,
-            totalBlocksCleared = totalBlocksCleared,
-            specialBlocksCleared = specialBlocksCleared,
-            chainDepth = chainDepth,
-            triggeredSpecialCells = triggeredSpecialCells,
-            specialTriggered = didTriggerSpecial,
-        )
-    }
-
-    private fun applyPlacementAndSpecial(
-        board: BoardMatrix,
-        piece: Piece,
-        preview: PlacementPreview,
-    ): SpecialResolution {
-        val placedBoard = board.fill(points = preview.occupiedCells, tone = piece.tone, special = piece.special)
-        val protectedPoints = preview.occupiedCells.toSet()
-        val initialTriggeredSpecials = when (piece.special) {
-            SpecialBlockType.ColumnClearer -> collectTriggeredSpecialsFromPoints(
-                board = placedBoard,
-                points = placedBoard.occupiedPointsInColumns(preview.coveredColumns.toSet()).filterNot(protectedPoints::contains),
-            )
-            SpecialBlockType.RowClearer -> collectTriggeredSpecialsFromPoints(
-                board = placedBoard,
-                points = placedBoard.occupiedPointsInRows(preview.occupiedCells.map(GridPoint::row).toSet()).filterNot(protectedPoints::contains),
-            )
-            else -> emptyList()
-        }
-        val clearedRows = if (piece.special == SpecialBlockType.RowClearer) {
-            preview.occupiedCells.map(GridPoint::row).toSet()
-        } else {
-            emptySet()
-        }
-        val clearedColumns = if (piece.special == SpecialBlockType.ColumnClearer) {
-            preview.coveredColumns.toSet()
-        } else {
-            emptySet()
-        }
-        val blocksClearedBefore = placedBoard.occupiedCount
-        val resolvedBoard = when (piece.special) {
-            SpecialBlockType.None,
-            SpecialBlockType.Ghost,
-            -> placedBoard
-            SpecialBlockType.ColumnClearer -> placedBoard.clearColumns(clearedColumns)
-            SpecialBlockType.RowClearer -> placedBoard.clearRows(clearedRows)
-            SpecialBlockType.Heavy -> placedBoard.pushColumnsDown(
-                columnsToPush = preview.coveredColumns.toSet(),
-                protectedPoints = preview.occupiedCells.toSet(),
-            )
-        }
-        val directBlocksCleared = blocksClearedBefore - resolvedBoard.occupiedCount
-
-        return SpecialResolution(
-            board = resolvedBoard,
-            specialTriggered = piece.special != SpecialBlockType.None,
-            initialTriggeredSpecials = initialTriggeredSpecials,
-            clearedRows = clearedRows,
-            clearedColumns = clearedColumns,
-            blocksCleared = directBlocksCleared,
-        )
-    }
-
-    private fun collectTriggeredSpecialsFromRows(
-        board: BoardMatrix,
-        rows: Set<Int>,
-    ): List<TriggeredSpecial> = collectTriggeredSpecialsFromPoints(
-        board = board,
-        points = board.occupiedPointsInRows(rows),
-    )
-
-    private fun collectTriggeredSpecialsFromPoints(
-        board: BoardMatrix,
-        points: List<GridPoint>,
-    ): List<TriggeredSpecial> = points.mapNotNull { point ->
-        board.specialAt(point.column, point.row)
-            ?.takeIf { it != SpecialBlockType.None }
-            ?.let { special -> TriggeredSpecial(point = point, special = special) }
-    }
-
-    private fun applyTriggeredSpecialBursts(
-        board: BoardMatrix,
-        pendingTriggers: List<TriggeredSpecial>,
-    ): TriggerBurstResult {
-        var resolvedBoard = board
-        var triggeredCount = 0
-        var blocksCleared = 0
-        val visited = mutableSetOf<GridPoint>()
-        val queue = ArrayDeque(pendingTriggers)
-
-        while (queue.isNotEmpty()) {
-            val trigger = queue.removeFirst()
-            if (!visited.add(trigger.point)) continue
-
-            val effect = buildTriggeredEffect(resolvedBoard, trigger)
-            val nextTriggers = collectTriggeredSpecialsForEffect(
-                board = resolvedBoard,
-                effect = effect,
-            )
-            val countBefore = resolvedBoard.occupiedCount
-            resolvedBoard = applyTriggeredEffect(resolvedBoard, effect)
-            blocksCleared += (countBefore - resolvedBoard.occupiedCount)
-            triggeredCount += 1
-            nextTriggers.filterNot { it.point in visited }.forEach(queue::addLast)
-        }
-
-        return TriggerBurstResult(
-            board = resolvedBoard,
-            triggeredCount = triggeredCount,
-            blocksCleared = blocksCleared,
-        )
-    }
-
-    private fun collectPreviewImpactPoints(
-        board: BoardMatrix,
-        piece: Piece,
-        preview: PlacementPreview,
-    ): Set<GridPoint> {
-        val protectedPoints = preview.occupiedCells.toSet()
-        return when (piece.special) {
-            SpecialBlockType.None,
-            SpecialBlockType.Ghost,
-            SpecialBlockType.Heavy,
-            -> emptySet()
-            SpecialBlockType.ColumnClearer -> board.occupiedPointsInColumns(preview.coveredColumns.toSet())
-                .filterNot(protectedPoints::contains)
-                .toSet()
-            SpecialBlockType.RowClearer -> board.occupiedPointsInRows(preview.occupiedCells.map(GridPoint::row).toSet())
-                .filterNot(protectedPoints::contains)
-                .toSet()
-        }
-    }
-
-    private fun collectPreviewBurstImpact(
-        board: BoardMatrix,
-        pendingTriggers: List<TriggeredSpecial>,
-        originalOccupiedPoints: Set<GridPoint>,
-    ): PreviewImpactResult {
-        var resolvedBoard = board
-        val impactedPoints = mutableSetOf<GridPoint>()
-        val visited = mutableSetOf<GridPoint>()
-        val queue = ArrayDeque(pendingTriggers)
-
-        while (queue.isNotEmpty()) {
-            val trigger = queue.removeFirst()
-            if (!visited.add(trigger.point)) continue
-
-            val effect = buildTriggeredEffect(resolvedBoard, trigger)
-            impactedPoints += previewImpactPointsForEffect(
-                board = resolvedBoard,
-                effect = effect,
-            ).filter(originalOccupiedPoints::contains)
-            val nextTriggers = collectTriggeredSpecialsForEffect(
-                board = resolvedBoard,
-                effect = effect,
-            )
-            resolvedBoard = applyTriggeredEffect(resolvedBoard, effect)
-            nextTriggers.filterNot { it.point in visited }.forEach(queue::addLast)
-        }
-
-        return PreviewImpactResult(
-            board = resolvedBoard,
-            impactedPoints = impactedPoints,
-        )
-    }
-
-    private fun buildTriggeredEffect(
-        board: BoardMatrix,
-        trigger: TriggeredSpecial,
-    ): TriggeredEffect = when (trigger.special) {
-        SpecialBlockType.None -> TriggeredEffect()
-        SpecialBlockType.ColumnClearer -> TriggeredEffect(
-            clearedColumns = setOf(trigger.point.column),
-        )
-        SpecialBlockType.RowClearer -> TriggeredEffect(
-            clearedRows = setOf(trigger.point.row - 1, trigger.point.row + 1).filter { it in 0 until board.rows }.toSet(),
-        )
-        SpecialBlockType.Ghost -> TriggeredEffect(
-            clearedPoints = board.occupiedNeighborPoints(trigger.point, radius = 1).toSet(),
-        )
-        SpecialBlockType.Heavy -> TriggeredEffect(
-            pushedColumns = setOf(trigger.point.column - 1, trigger.point.column, trigger.point.column + 1)
-                .filter { it in 0 until board.columns }
-                .toSet(),
-        )
-    }
-
-    private fun collectTriggeredSpecialsForEffect(
-        board: BoardMatrix,
-        effect: TriggeredEffect,
-    ): List<TriggeredSpecial> {
-        val pointsToScan = buildList {
-            addAll(board.occupiedPointsInRows(effect.clearedRows))
-            addAll(board.occupiedPointsInColumns(effect.clearedColumns))
-            addAll(effect.clearedPoints)
-        }.distinct()
-        return collectTriggeredSpecialsFromPoints(board = board, points = pointsToScan)
-    }
-
-    private fun previewImpactPointsForEffect(
-        board: BoardMatrix,
-        effect: TriggeredEffect,
-    ): Set<GridPoint> = buildSet {
-        addAll(board.occupiedPointsInRows(effect.clearedRows))
-        addAll(board.occupiedPointsInColumns(effect.clearedColumns))
-        addAll(effect.clearedPoints.filter { point -> board.isOccupied(point.column, point.row) })
-    }
-
-    private fun applyTriggeredEffect(
-        board: BoardMatrix,
-        effect: TriggeredEffect,
-    ): BoardMatrix {
-        var nextBoard = board
-        if (effect.clearedRows.isNotEmpty()) {
-            nextBoard = nextBoard.clearRows(effect.clearedRows)
-        }
-        if (effect.clearedColumns.isNotEmpty()) {
-            nextBoard = nextBoard.clearColumns(effect.clearedColumns)
-        }
-        if (effect.clearedPoints.isNotEmpty()) {
-            nextBoard = nextBoard.clearPoints(effect.clearedPoints)
-        }
-        if (effect.pushedColumns.isNotEmpty()) {
-            nextBoard = nextBoard.pushColumnsDown(effect.pushedColumns)
-        }
-        return nextBoard
-    }
-
-    private fun BoardMatrix.occupiedPoints(): List<GridPoint> = buildList {
-        for (row in 0 until rows) {
-            for (column in 0 until columns) {
-                if (isOccupied(column, row)) {
-                    add(GridPoint(column = column, row = row))
-                }
-            }
-        }
-    }
-
-    private fun ensurePlayableQueueAfterRevive(
-        board: BoardMatrix,
-        activePiece: Piece?,
-        nextQueue: List<Piece>,
+    private fun replenishTray(
+        remainingPieces: List<Piece>,
         level: Int,
-        launchBar: LaunchBarState,
+    ): List<Piece> {
+        val tray = remainingPieces.toMutableList()
+        while (tray.size < TraySize) {
+            tray += createPiece(level = level)
+        }
+        return tray.toList()
+    }
+
+    private fun ensurePlayableTrayAfterRevive(
+        board: BoardMatrix,
+        trayPieces: List<Piece>,
+        level: Int,
         config: GameConfig,
-    ): QueueAdvance {
-        activePiece
-            ?.takeIf { hasAnyValidPlacement(board = board, piece = it, config = config) }
-            ?.let { return QueueAdvance(activePiece = it, nextQueue = nextQueue) }
-
-        val nextPlayableIndex = nextQueue.indexOfFirst { piece ->
-            hasAnyValidPlacement(board = board, piece = piece, config = config)
+    ): List<Piece> {
+        val playableExisting = trayPieces.filter { hasAnyValidPlacement(board, it, config) }
+        if (playableExisting.isNotEmpty()) {
+            return replenishTray(playableExisting.take(TraySize), level)
         }
-        if (nextPlayableIndex >= 0) {
-            val nextActivePiece = nextQueue[nextPlayableIndex]
-            val reorderedQueue = nextQueue.toMutableList().apply { removeAt(nextPlayableIndex) }
-            return QueueAdvance(
-                activePiece = nextActivePiece,
-                nextQueue = refillQueue(
-                    queue = reorderedQueue,
-                    level = level,
-                    launchBar = launchBar,
-                ),
-            )
-        }
-
         repeat(PlayablePieceGenerationAttempts) {
-            val candidate = createPiece(level = level, launchBar = launchBar)
-            if (hasAnyValidPlacement(board = board, piece = candidate, config = config)) {
-                return QueueAdvance(
-                    activePiece = candidate,
-                    nextQueue = refillQueue(
-                        queue = nextQueue,
-                        level = level,
-                        launchBar = launchBar,
-                    ),
-                )
+            val candidate = createPiece(level = level)
+            if (hasAnyValidPlacement(board, candidate, config)) {
+                return replenishTray(listOf(candidate), level)
             }
         }
+        return replenishTray(listOf(createFallbackPlayablePiece(board, config)), level)
+    }
 
-        return QueueAdvance(
-            activePiece = createFallbackPlayablePiece(board = board, config = config),
-            nextQueue = refillQueue(
-                queue = nextQueue,
-                level = level,
-                launchBar = launchBar,
-            ),
-        )
+    private fun selectRewardRows(
+        board: BoardMatrix,
+        maxRowsToClear: Int,
+    ): Set<Int> {
+        if (maxRowsToClear <= 0) return emptySet()
+        return (0 until board.rows)
+            .map { row ->
+                row to (0 until board.columns).count { column -> board.isOccupied(column, row) }
+            }
+            .sortedByDescending { it.second }
+            .take(maxRowsToClear)
+            .filter { it.second > 0 }
+            .map { it.first }
+            .toSet()
     }
 
     private fun createFallbackPlayablePiece(
@@ -1038,59 +510,11 @@ class GameLogic(
         )
     }
 
-    private fun selectRewardRows(
-        board: BoardMatrix,
-        totalRows: Int,
-        maxRowsToClear: Int,
-    ): Set<Int> {
-        if (totalRows <= 0 || maxRowsToClear <= 0) return emptySet()
-
-        val allRows = (0 until totalRows).toList()
-        val occupiedRows = allRows.filter { row ->
-            (0 until board.columns).any { column -> board.isOccupied(column, row) }
-        }.shuffled(random)
-        val emptyRows = allRows.filterNot(occupiedRows::contains).shuffled(random)
-
-        return (occupiedRows + emptyRows)
-            .take(maxRowsToClear.coerceAtMost(totalRows))
-            .toSet()
-    }
-
-    private fun promoteQueue(
-        queue: List<Piece>,
-        level: Int,
-        launchBar: LaunchBarState,
-    ): QueueAdvance {
-        val nextActive = queue.firstOrNull() ?: createPiece(level = level, launchBar = launchBar)
-        val replenishedQueue = refillQueue(
-            queue = queue.drop(1),
-            level = level,
-            launchBar = launchBar,
-        )
-        return QueueAdvance(activePiece = nextActive, nextQueue = replenishedQueue)
-    }
-
-    private fun refillQueue(
-        queue: List<Piece>,
-        level: Int,
-        launchBar: LaunchBarState,
-    ): List<Piece> {
-        val next = queue.toMutableList()
-        while (next.size < QueueSize) {
-            next += createPiece(level = level, launchBar = launchBar)
-        }
-        return next.toList()
-    }
-
-    private fun createPiece(
-        level: Int,
-        launchBar: LaunchBarState,
-    ): Piece {
+    private fun createPiece(level: Int): Piece {
         val availableKinds = PieceKind.entries.filter { it.unlockLevel <= level }
         val kind = availableKinds.random(random)
         val rotationCount = if (kind == PieceKind.Square || kind == PieceKind.Plus) 0 else random.nextInt(4)
         val rotatedCells = rotateAndNormalize(kind.template, rotationCount)
-        val special = rollSpecialBlock(level = level, launchBar = launchBar)
         return Piece(
             id = nextPieceId++,
             kind = kind,
@@ -1098,25 +522,8 @@ class GameLogic(
             cells = rotatedCells,
             width = rotatedCells.maxOf { it.column } + 1,
             height = rotatedCells.maxOf { it.row } + 1,
-            special = special,
+            special = SpecialBlockType.None,
         )
-    }
-
-    private fun rollSpecialBlock(
-        level: Int,
-        launchBar: LaunchBarState,
-    ): SpecialBlockType {
-        val baseChance = 0.06f + (launchBar.progress * 0.18f) + if (launchBar.boostTurnsRemaining > 0) 0.18f else 0f
-        val levelBonus = (level - 1).coerceAtMost(5) * 0.012f
-        if (random.nextFloat() > (baseChance + levelBonus).coerceAtMost(0.55f)) {
-            return SpecialBlockType.None
-        }
-        return listOf(
-            SpecialBlockType.ColumnClearer,
-            SpecialBlockType.RowClearer,
-            SpecialBlockType.Ghost,
-            SpecialBlockType.Heavy,
-        ).random(random)
     }
 
     private fun rotateAndNormalize(
@@ -1148,9 +555,9 @@ class GameLogic(
     private fun isValidPlacement(
         board: BoardMatrix,
         piece: Piece,
-        anchor: GridPoint,
+        origin: GridPoint,
     ): Boolean {
-        for (point in piece.cellsAt(anchor)) {
+        for (point in piece.cellsAt(origin)) {
             if (point.column !in 0 until board.columns || point.row !in 0 until board.rows) {
                 return false
             }
@@ -1161,103 +568,32 @@ class GameLogic(
         return true
     }
 
-    private fun canGhostPass(
+    private fun findFirstValidOrigin(
         board: BoardMatrix,
         piece: Piece,
-        anchor: GridPoint,
-    ): Boolean {
-        var collisionCount = 0
-        for (point in piece.cellsAt(anchor)) {
-            if (point.column !in 0 until board.columns || point.row !in 0 until board.rows) return false
-            if (board.isOccupied(point.column, point.row)) collisionCount += 1
-        }
-        return collisionCount > 0
-    }
-
-    private fun computeColumnPressure(
-        board: BoardMatrix,
         config: GameConfig,
-    ): List<ColumnPressure> = buildList {
-        for (column in 0 until config.columns) {
-            val filledCells = board.filledCellCount(column)
-            val ratio = if (config.rows == 0) 0f else filledCells / config.rows.toFloat()
-            val level = when {
-                filledCells >= config.rows -> PressureLevel.Overflow
-                ratio >= 0.82f -> PressureLevel.Critical
-                ratio >= 0.6f -> PressureLevel.Warning
-                else -> PressureLevel.Calm
+        preferredColumn: Int? = null,
+    ): GridPoint? {
+        if (piece.width > config.columns || piece.height > config.rows) return null
+        val maxColumn = config.columns - piece.width
+        val maxRow = config.rows - piece.height
+        val columns = buildList {
+            preferredColumn?.coerceIn(0, maxColumn)?.let(::add)
+            addAll((0..maxColumn).filterNot { it == preferredColumn })
+        }
+        columns.forEach { column ->
+            for (row in maxRow downTo 0) {
+                val origin = GridPoint(column = column, row = row)
+                if (isValidPlacement(board, piece, origin)) return origin
             }
-            add(
-                ColumnPressure(
-                    column = column,
-                    filledCells = filledCells,
-                    fillRatio = ratio,
-                    level = level,
-                )
-            )
         }
+        return null
     }
-
-    private fun advanceLaunchBar(
-        current: LaunchBarState,
-        clearedRows: Int,
-        perfectDrop: Boolean,
-    ): LaunchBarState {
-        val gain = (0.18f + (clearedRows * 0.08f) + if (perfectDrop) 0.14f else 0f).coerceAtMost(0.55f)
-        var progress = current.progress + gain
-        var boostTurnsRemaining = (current.boostTurnsRemaining - 1).coerceAtLeast(0)
-        if (progress >= 1f) {
-            progress -= 1f
-            boostTurnsRemaining = maxOf(boostTurnsRemaining, 2)
-        }
-        return LaunchBarState(
-            progress = progress.coerceIn(0f, 1f),
-            boostTurnsRemaining = boostTurnsRemaining,
-            lastGain = gain,
-        )
-    }
-
-    private fun computeLevel(
-        difficultyStage: Int,
-        clearedLines: Int,
-        config: GameConfig,
-    ): Int = 1 + difficultyStage + (clearedLines / config.linesPerLevel)
-
-    private fun buildFloatingFeedback(
-        state: GameState,
-        lastMoveScore: Int,
-        resolution: ResolutionResult,
-        perfectDrop: Boolean,
-        nextPerfectStreak: Int,
-        token: Long,
-    ): FloatingFeedback? {
-        val text = when {
-            resolution.specialTriggered && resolution.totalLinesCleared > 0 -> gameText(GameTextKey.FeedbackSpecialChain, lastMoveScore, resolution.totalBlocksCleared)
-            resolution.specialTriggered -> gameText(GameTextKey.FeedbackSpecial, lastMoveScore, resolution.totalBlocksCleared)
-            perfectDrop -> gameText(GameTextKey.FeedbackPerfect, nextPerfectStreak, lastMoveScore)
-            resolution.chainDepth > 1 -> gameText(GameTextKey.FeedbackChain, resolution.chainDepth, lastMoveScore)
-            resolution.totalLinesCleared > 0 -> gameText(GameTextKey.FeedbackClear, lastMoveScore)
-            lastMoveScore > 0 -> gameText(GameTextKey.FeedbackScoreOnly, lastMoveScore)
-            else -> state.floatingFeedback?.text
-        } ?: return null
-        val emphasis = when {
-            resolution.specialTriggered || perfectDrop || resolution.chainDepth > 1 -> FeedbackEmphasis.Bonus
-            resolution.totalLinesCleared > 0 -> FeedbackEmphasis.Info
-            else -> FeedbackEmphasis.Info
-        }
-        return FloatingFeedback(text = text, emphasis = emphasis, token = token)
-    }
-
-    private fun normalizeColumn(
-        approximateColumn: Int,
-        maxColumn: Int,
-    ): Int? = if (maxColumn < 0) null else approximateColumn.coerceIn(0, maxColumn)
 
     private fun invalidMove(state: GameState): GameMoveResult = GameMoveResult(
         state = state,
         events = setOf(GameEvent.InvalidDrop),
     )
-
 }
 
 enum class GameEvent {
@@ -1280,55 +616,6 @@ enum class GameEvent {
     Paused,
     Resumed,
 }
-
-private data class ResolutionResult(
-    val board: BoardMatrix,
-    val firstClearedRows: Set<Int>,
-    val firstClearedColumns: Set<Int>,
-    val totalLinesCleared: Int,
-    val totalBlocksCleared: Int,
-    val specialBlocksCleared: Int,
-    val chainDepth: Int,
-    val triggeredSpecialCells: Int,
-    val specialTriggered: Boolean,
-)
-
-private data class QueueAdvance(
-    val activePiece: Piece,
-    val nextQueue: List<Piece>,
-)
-
-private data class SpecialResolution(
-    val board: BoardMatrix,
-    val specialTriggered: Boolean,
-    val initialTriggeredSpecials: List<TriggeredSpecial>,
-    val clearedRows: Set<Int>,
-    val clearedColumns: Set<Int>,
-    val blocksCleared: Int,
-)
-
-private data class TriggeredSpecial(
-    val point: GridPoint,
-    val special: SpecialBlockType,
-)
-
-private data class TriggeredEffect(
-    val clearedRows: Set<Int> = emptySet(),
-    val clearedColumns: Set<Int> = emptySet(),
-    val clearedPoints: Set<GridPoint> = emptySet(),
-    val pushedColumns: Set<Int> = emptySet(),
-)
-
-private data class TriggerBurstResult(
-    val board: BoardMatrix,
-    val triggeredCount: Int,
-    val blocksCleared: Int,
-)
-
-private data class PreviewImpactResult(
-    val board: BoardMatrix,
-    val impactedPoints: Set<GridPoint>,
-)
 
 data class GameMoveResult(
     val state: GameState,

@@ -42,6 +42,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,6 +64,7 @@ import com.ugurbuga.stackshift.game.model.AppColorPalette
 import com.ugurbuga.stackshift.game.model.AppThemeMode
 import com.ugurbuga.stackshift.game.model.BlockVisualStyle
 import com.ugurbuga.stackshift.game.model.CellTone
+import com.ugurbuga.stackshift.game.model.GameplayStyle
 import com.ugurbuga.stackshift.platform.NotificationManager
 import com.ugurbuga.stackshift.platform.rememberNotificationManager
 import com.ugurbuga.stackshift.settings.AppSettings
@@ -77,6 +79,10 @@ import com.ugurbuga.stackshift.ui.theme.stackShiftSurfaceShadow
 import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
 import stackshift.composeapp.generated.resources.app_title
+import stackshift.composeapp.generated.resources.app_title_banner_blockwise_bottom
+import stackshift.composeapp.generated.resources.app_title_banner_blockwise_top
+import stackshift.composeapp.generated.resources.app_title_banner_stackshift_bottom
+import stackshift.composeapp.generated.resources.app_title_banner_stackshift_top
 import stackshift.composeapp.generated.resources.high_score
 import stackshift.composeapp.generated.resources.home_classic_cta
 import stackshift.composeapp.generated.resources.home_time_attack_cta
@@ -94,10 +100,10 @@ fun HomeScreen(
     settings: AppSettings,
     classicHighScore: Int,
     timeAttackHighScore: Int,
+    gameplayStyle: GameplayStyle,
     telemetry: AppTelemetry,
     onPlay: () -> Unit,
     onPlayTimeAttack: () -> Unit,
-    onOpenInteractiveGuide: () -> Unit,
     onOpenTutorial: () -> Unit,
     onOpenTheme: () -> Unit,
     onOpenLanguage: () -> Unit,
@@ -155,6 +161,7 @@ fun HomeScreen(
                 )
                 HomeTitleBanner(
                     settings = settings,
+                    gameplayStyle = gameplayStyle,
                     pulse = stylePulse,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -167,25 +174,37 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                HomeQuickActionButton(
-                    text = stringResource(Res.string.home_classic_cta),
-                    icon = Icons.Filled.PlayArrow,
-                    tone = CellTone.Cyan,
-                    settings = settings,
-                    pulse = stylePulse,
-                    modifier = Modifier.weight(1f),
-                    onClick = onPlay,
-                )
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        HomeQuickActionButton(
+                            text = stringResource(Res.string.home_classic_cta),
+                            icon = Icons.Filled.PlayArrow,
+                            tone = CellTone.Cyan,
+                            settings = settings,
+                            pulse = stylePulse,
+                            modifier = Modifier.weight(1f),
+                            onClick = onPlay,
+                        )
 
-                HomeQuickActionButton(
-                    text = stringResource(Res.string.home_time_attack_cta),
-                    icon = Icons.Filled.Timer,
-                    tone = CellTone.Amber,
-                    settings = settings,
-                    pulse = stylePulse,
-                    modifier = Modifier.weight(1f),
-                    onClick = onPlayTimeAttack,
-                )
+                        HomeQuickActionButton(
+                            text = stringResource(Res.string.home_time_attack_cta),
+                            icon = Icons.Filled.Timer,
+                            tone = CellTone.Amber,
+                            settings = settings,
+                            pulse = stylePulse,
+                            modifier = Modifier.weight(1f),
+                            onClick = onPlayTimeAttack,
+                        )
+                    }
+                }
             }
 
             Column(
@@ -252,6 +271,7 @@ fun HomeScreen(
 @Composable
 private fun HomeTitleBanner(
     settings: AppSettings,
+    gameplayStyle: GameplayStyle,
     pulse: Float,
     modifier: Modifier = Modifier,
 ) {
@@ -267,6 +287,7 @@ private fun HomeTitleBanner(
         label = "homeTitleBannerSequenceClock",
     )
     val sequencePhase = normalizedPhase(sequenceClock)
+    val isBlockWiseBanner = gameplayStyle == GameplayStyle.BlockWise
 
     // Lower piece cycle
     val lowerDrift = segmentProgress(sequencePhase, 0.00f, 0.10f)
@@ -291,13 +312,26 @@ private fun HomeTitleBanner(
     // STACK launch
     val stackAlign = segmentProgress(sequencePhase, 0.68f, 0.74f)
     val stackLaunch = segmentProgress(sequencePhase, 0.74f, 0.82f)
+    val blockWordTravel = segmentProgress(sequencePhase, 0.68f, 0.82f)
 
     // SHIFT launch
     val shiftAlign = segmentProgress(sequencePhase, 0.82f, 0.88f)
     val shiftLaunch = segmentProgress(sequencePhase, 0.88f, 0.96f)
+    val wiseWordTravel = segmentProgress(sequencePhase, 0.82f, 0.96f)
 
-    val topRow = rememberHomeTitleRow(word = "STACK", startColumn = 0)
-    val bottomRow = rememberHomeTitleRow(word = "SHIFT", startColumn = 1)
+    val topRow = rememberHomeTitleRow(word = homeTitleBannerTopWord(gameplayStyle), startColumn = 0)
+    val bottomRow = rememberHomeTitleRow(
+        word = homeTitleBannerBottomWord(gameplayStyle),
+        startColumn = if (isBlockWiseBanner) 2 else 1,
+    )
+    val animatedTopWordCells = if (isBlockWiseBanner) topRow else topRow.filterNotNull()
+    val animatedBottomWordCells = if (isBlockWiseBanner) bottomRow else bottomRow.filterNotNull()
+    val blockWiseBottomGapCells = remember {
+        listOf(
+            HomeTitleCell(tone = CellTone.Blue),
+            HomeTitleCell(tone = CellTone.Lime),
+        )
+    }
     val lowerLaunchTone = CellTone.Gold
     val upperLaunchTone = CellTone.Violet
     Card(
@@ -333,13 +367,15 @@ private fun HomeTitleBanner(
             val dockHeight = maxHeight - dockTop
             val dockCellSize = boardCellHeight
             val dockSingleStartX = (maxWidth - dockCellSize) / 2f
+            val dockDoubleStartX = (maxWidth - (dockCellSize * 2f)) / 2f
             val dockSingleLeftX = maxWidth * 0.12f
             val dockSingleRightX = maxWidth - dockCellSize - (maxWidth * 0.12f)
             val dockWordStartX = (maxWidth - (dockCellSize * 5f)) / 2f
+            val dockBlockwiseBottomWordStartX = (maxWidth - (dockCellSize * HomeTitleBannerColumns)) / 2f
             val dockPieceY = dockTop + ((dockHeight - dockCellSize) / 2f)
             val topTargetX = 0.dp
             val topGapTargetX = cellWidth * 5f
-            val bottomTargetX = cellWidth
+            val bottomTargetX = if (isBlockWiseBanner) 0.dp else cellWidth
             val bottomGapTargetX = 0.dp
             val topRowAlpha = titleTopRowAlpha(
                 phase = sequencePhase,
@@ -364,18 +400,17 @@ private fun HomeTitleBanner(
                                 .height(boardCellHeight)
                                 .fillMaxWidth(),
                         ) {
-                            topRow.forEachIndexed { column, cell ->
-                                if (column == 5) {
+                            topRow.forEach { cell ->
+                                if (cell == null) {
                                     HomeTitleEmptyCell(
                                         settings = settings,
                                         pulse = pulse,
                                         modifier = Modifier.weight(1f).fillMaxHeight(),
                                     )
                                 } else {
-                                    val resolvedCell = cell ?: HomeTitleCell(tone = CellTone.Cyan)
                                     HomeTitleAnimatedCell(
-                                        letter = resolvedCell.letter,
-                                        tone = resolvedCell.tone,
+                                        letter = cell.letter,
+                                        tone = cell.tone,
                                         settings = settings,
                                         pulse = pulse,
                                         alpha = topRowAlpha,
@@ -389,18 +424,17 @@ private fun HomeTitleBanner(
                                 .height(boardCellHeight)
                                 .fillMaxWidth(),
                         ) {
-                            bottomRow.forEachIndexed { column, cell ->
-                                if (column == 0) {
+                            bottomRow.forEach { cell ->
+                                if (cell == null) {
                                     HomeTitleEmptyCell(
                                         settings = settings,
                                         pulse = pulse,
                                         modifier = Modifier.weight(1f).fillMaxHeight(),
                                     )
                                 } else {
-                                    val resolvedCell = cell ?: HomeTitleCell(tone = CellTone.Cyan)
                                     HomeTitleAnimatedCell(
-                                        letter = resolvedCell.letter,
-                                        tone = resolvedCell.tone,
+                                        letter = cell.letter,
+                                        tone = cell.tone,
                                         settings = settings,
                                         pulse = pulse,
                                         alpha = bottomRowAlpha,
@@ -439,7 +473,26 @@ private fun HomeTitleBanner(
             }
 
             when {
-                sequencePhase < 0.15f -> HomeTitleAnimatedPiece(
+                isBlockWiseBanner && sequencePhase < 0.20f -> HomeTitleAnimatedPiece(
+                    cells = blockWiseBottomGapCells,
+                    settings = settings,
+                    pulse = pulse,
+                    cellSize = dockCellSize,
+                    modifier = Modifier.offset(
+                        x = lerpDp(
+                            dockDoubleStartX,
+                            bottomGapTargetX,
+                            segmentProgress(sequencePhase, 0.00f, 0.20f),
+                        ),
+                        y = lerpDp(
+                            dockPieceY,
+                            boardCellHeight,
+                            segmentProgress(sequencePhase, 0.00f, 0.20f),
+                        ),
+                    ),
+                )
+
+                !isBlockWiseBanner && sequencePhase < 0.15f -> HomeTitleAnimatedPiece(
                     cells = listOf(HomeTitleCell(tone = lowerLaunchTone)),
                     settings = settings,
                     pulse = pulse,
@@ -457,18 +510,22 @@ private fun HomeTitleBanner(
                 )
 
                 sequencePhase < 0.25f -> HomeTitleAnimatedPiece(
-                    cells = listOf(HomeTitleCell(tone = lowerLaunchTone)),
+                    cells = if (isBlockWiseBanner) blockWiseBottomGapCells else listOf(HomeTitleCell(tone = lowerLaunchTone)),
                     settings = settings,
                     pulse = pulse,
                     cellSize = dockCellSize,
                     modifier = Modifier.offset(
                         x = bottomGapTargetX,
-                        y = lerpDp(dockPieceY, boardCellHeight, lowerLaunch),
+                        y = if (isBlockWiseBanner) {
+                            boardCellHeight
+                        } else {
+                            lerpDp(dockPieceY, boardCellHeight, lowerLaunch)
+                        },
                     ),
                 )
 
                 sequencePhase < 0.32f -> HomeTitleAnimatedPiece(
-                    cells = listOf(HomeTitleCell(tone = lowerLaunchTone)),
+                    cells = if (isBlockWiseBanner) blockWiseBottomGapCells else listOf(HomeTitleCell(tone = lowerLaunchTone)),
                     settings = settings,
                     pulse = pulse,
                     cellSize = dockCellSize,
@@ -477,7 +534,26 @@ private fun HomeTitleBanner(
                         .graphicsLayer { alpha = 1f - lowerExplode },
                 )
 
-                sequencePhase < 0.49f -> HomeTitleAnimatedPiece(
+                isBlockWiseBanner && sequencePhase < 0.54f -> HomeTitleAnimatedPiece(
+                    cells = listOf(HomeTitleCell(tone = upperLaunchTone)),
+                    settings = settings,
+                    pulse = pulse,
+                    cellSize = dockCellSize,
+                    modifier = Modifier.offset(
+                        x = lerpDp(
+                            dockSingleStartX,
+                            topGapTargetX,
+                            segmentProgress(sequencePhase, 0.34f, 0.54f),
+                        ),
+                        y = lerpDp(
+                            dockPieceY,
+                            0.dp,
+                            segmentProgress(sequencePhase, 0.34f, 0.54f),
+                        ),
+                    ),
+                )
+
+                !isBlockWiseBanner && sequencePhase < 0.49f -> HomeTitleAnimatedPiece(
                     cells = listOf(HomeTitleCell(tone = upperLaunchTone)),
                     settings = settings,
                     pulse = pulse,
@@ -497,7 +573,11 @@ private fun HomeTitleBanner(
                     cellSize = dockCellSize,
                     modifier = Modifier.offset(
                         x = topGapTargetX,
-                        y = lerpDp(dockPieceY, 0.dp, upperLaunch),
+                        y = if (isBlockWiseBanner) {
+                            0.dp
+                        } else {
+                            lerpDp(dockPieceY, 0.dp, upperLaunch)
+                        },
                     ),
                 )
 
@@ -512,31 +592,50 @@ private fun HomeTitleBanner(
                 )
 
                 sequencePhase < 0.82f -> HomeTitleAnimatedPiece(
-                    cells = topRow.filterNotNull(),
+                    cells = if (isBlockWiseBanner) animatedTopWordCells else topRow.filterNotNull(),
                     settings = settings,
                     pulse = pulse,
                     cellSize = dockCellSize,
                     modifier = Modifier.offset(
-                        x = lerpDp(dockWordStartX, topTargetX, stackAlign),
-                        y = lerpDp(dockPieceY, 0.dp, stackLaunch),
+                        x = lerpDp(
+                            dockWordStartX,
+                            topTargetX,
+                            if (isBlockWiseBanner) blockWordTravel else stackAlign,
+                        ),
+                        y = lerpDp(
+                            dockPieceY,
+                            0.dp,
+                            if (isBlockWiseBanner) blockWordTravel else stackLaunch,
+                        ),
                     ),
                 )
 
                 sequencePhase < 0.96f -> HomeTitleAnimatedPiece(
-                    cells = bottomRow.filterNotNull(),
+                    cells = if (isBlockWiseBanner) animatedBottomWordCells else bottomRow.filterNotNull(),
                     settings = settings,
                     pulse = pulse,
                     cellSize = dockCellSize,
                     modifier = Modifier.offset(
-                        x = lerpDp(dockWordStartX, bottomTargetX, shiftAlign),
-                        y = lerpDp(dockPieceY, boardCellHeight, shiftLaunch),
+                        x = lerpDp(
+                            if (isBlockWiseBanner) dockBlockwiseBottomWordStartX else dockWordStartX,
+                            bottomTargetX,
+                            if (isBlockWiseBanner) wiseWordTravel else shiftAlign,
+                        ),
+                        y = lerpDp(
+                            dockPieceY,
+                            boardCellHeight,
+                            if (isBlockWiseBanner) wiseWordTravel else shiftLaunch,
+                        ),
                     ),
                 )
             }
 
             val handAlpha = when {
-                sequencePhase < 0.15f -> 1f
-                sequencePhase in 0.34f..0.49f -> 1f
+                isBlockWiseBanner && sequencePhase < 0.20f -> 1f
+                isBlockWiseBanner && sequencePhase >= 0.34f && sequencePhase < 0.54f -> 1f
+                isBlockWiseBanner && sequencePhase >= 0.68f && sequencePhase < 0.96f -> 1f
+                !isBlockWiseBanner && sequencePhase < 0.15f -> 1f
+                !isBlockWiseBanner && sequencePhase in 0.34f..0.49f -> 1f
                 sequencePhase in 0.68f..0.74f -> 1f
                 sequencePhase in 0.82f..0.88f -> 1f
                 else -> 0f
@@ -546,6 +645,26 @@ private fun HomeTitleBanner(
                 val isDark = isStackShiftDarkTheme(settings)
                 val handColor = if (isDark) Color.White else Color.Black.copy(alpha = 0.85f)
                 val handX = when {
+                    isBlockWiseBanner && sequencePhase < 0.20f -> lerpDp(
+                        dockDoubleStartX,
+                        bottomGapTargetX,
+                        segmentProgress(sequencePhase, 0.00f, 0.20f),
+                    ) + homeTitleOccupiedCenterOffset(blockWiseBottomGapCells, dockCellSize)
+                    isBlockWiseBanner && sequencePhase < 0.54f -> lerpDp(
+                        dockSingleStartX,
+                        topGapTargetX,
+                        segmentProgress(sequencePhase, 0.34f, 0.54f),
+                    )
+                    isBlockWiseBanner && sequencePhase < 0.82f -> lerpDp(
+                        dockWordStartX,
+                        topTargetX,
+                        blockWordTravel,
+                    ) + homeTitleOccupiedCenterOffset(animatedTopWordCells, dockCellSize)
+                    isBlockWiseBanner && sequencePhase < 0.96f -> lerpDp(
+                        dockBlockwiseBottomWordStartX,
+                        bottomTargetX,
+                        wiseWordTravel,
+                    ) + homeTitleOccupiedCenterOffset(animatedBottomWordCells, dockCellSize)
                     sequencePhase < 0.15f -> lerpDp(dockSingleStartX, dockSingleLeftX, lowerDrift).let { x ->
                         if (sequencePhase > 0.10f) lerpDp(x, bottomGapTargetX, lowerAlign) else x
                     }
@@ -556,10 +675,33 @@ private fun HomeTitleBanner(
                     sequencePhase < 0.74f -> lerpDp(dockWordStartX, topTargetX, stackAlign) + (dockCellSize * 2f)
                     else -> lerpDp(dockWordStartX, bottomTargetX, shiftAlign) + (dockCellSize * 2f)
                 }
+                val handY = when {
+                    isBlockWiseBanner && sequencePhase < 0.20f -> lerpDp(
+                        dockPieceY,
+                        boardCellHeight,
+                        segmentProgress(sequencePhase, 0.00f, 0.20f),
+                    )
+                    isBlockWiseBanner && sequencePhase < 0.54f -> lerpDp(
+                        dockPieceY,
+                        0.dp,
+                        segmentProgress(sequencePhase, 0.34f, 0.54f),
+                    )
+                    isBlockWiseBanner && sequencePhase < 0.82f -> lerpDp(
+                        dockPieceY,
+                        0.dp,
+                        blockWordTravel,
+                    )
+                    isBlockWiseBanner && sequencePhase < 0.96f -> lerpDp(
+                        dockPieceY,
+                        boardCellHeight,
+                        wiseWordTravel,
+                    )
+                    else -> dockPieceY
+                }
 
                 HomeTitleDemoHand(
                     x = handX,
-                    y = dockPieceY,
+                    y = handY,
                     size = dockCellSize,
                     alpha = handAlpha,
                     color = handColor,
@@ -568,6 +710,22 @@ private fun HomeTitleBanner(
         }
     }
 }
+
+@Composable
+private fun homeTitleBannerTopWord(gameplayStyle: GameplayStyle): String = stringResource(
+    when (gameplayStyle) {
+        GameplayStyle.StackShift -> Res.string.app_title_banner_stackshift_top
+        GameplayStyle.BlockWise -> Res.string.app_title_banner_blockwise_top
+    }
+)
+
+@Composable
+private fun homeTitleBannerBottomWord(gameplayStyle: GameplayStyle): String = stringResource(
+    when (gameplayStyle) {
+        GameplayStyle.StackShift -> Res.string.app_title_banner_stackshift_bottom
+        GameplayStyle.BlockWise -> Res.string.app_title_banner_blockwise_bottom
+    }
+)
 
 @Composable
 private fun HomeTitleDemoHand(
@@ -803,7 +961,7 @@ private fun HomeTitleMiniDock(
 
 @Composable
 private fun HomeTitleAnimatedPiece(
-    cells: List<HomeTitleCell>,
+    cells: List<HomeTitleCell?>,
     settings: AppSettings,
     pulse: Float,
     cellSize: androidx.compose.ui.unit.Dp,
@@ -812,16 +970,30 @@ private fun HomeTitleAnimatedPiece(
     if (cells.isEmpty()) return
     Row(modifier = modifier) {
         cells.forEach { cell ->
-            HomeTitleAnimatedCell(
-                letter = cell.letter,
-                tone = cell.tone,
-                settings = settings,
-                pulse = pulse,
-                alpha = 1f,
-                modifier = Modifier.size(cellSize),
-            )
+            if (cell == null) {
+                Spacer(modifier = Modifier.size(cellSize))
+            } else {
+                HomeTitleAnimatedCell(
+                    letter = cell.letter,
+                    tone = cell.tone,
+                    settings = settings,
+                    pulse = pulse,
+                    alpha = 1f,
+                    modifier = Modifier.size(cellSize),
+                )
+            }
         }
     }
+}
+
+private fun homeTitleOccupiedCenterOffset(
+    cells: List<HomeTitleCell?>,
+    cellSize: androidx.compose.ui.unit.Dp,
+): androidx.compose.ui.unit.Dp {
+    val occupiedIndices = cells.mapIndexedNotNull { index, cell -> index.takeIf { cell != null } }
+    if (occupiedIndices.isEmpty()) return 0.dp
+    val centerIndex = occupiedIndices.average().toFloat()
+    return cellSize * centerIndex
 }
 
 @Composable
@@ -1038,10 +1210,10 @@ fun HomeScreenLightPreview() {
             settings = settings,
             classicHighScore = 1250,
             timeAttackHighScore = 860,
+            gameplayStyle = GameplayStyle.StackShift,
             telemetry = NoOpAppTelemetry,
             onPlay = {},
             onPlayTimeAttack = {},
-            onOpenInteractiveGuide = {},
             onOpenTutorial = {},
             onOpenTheme = {},
             onOpenLanguage = {},
@@ -1064,10 +1236,10 @@ fun HomeScreenDarkPreview() {
             settings = settings,
             classicHighScore = 1250,
             timeAttackHighScore = 860,
+            gameplayStyle = GameplayStyle.StackShift,
             telemetry = NoOpAppTelemetry,
             onPlay = {},
             onPlayTimeAttack = {},
-            onOpenInteractiveGuide = {},
             onOpenTutorial = {},
             onOpenTheme = {},
             onOpenLanguage = {},

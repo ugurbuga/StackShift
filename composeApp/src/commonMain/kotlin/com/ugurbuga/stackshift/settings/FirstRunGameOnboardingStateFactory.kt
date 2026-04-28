@@ -1,7 +1,7 @@
 package com.ugurbuga.stackshift.settings
 
 import androidx.compose.runtime.Immutable
-import com.ugurbuga.stackshift.game.logic.GameLogic
+import com.ugurbuga.stackshift.game.logic.StackShiftGameLogic
 import com.ugurbuga.stackshift.game.model.BoardMatrix
 import com.ugurbuga.stackshift.game.model.CellTone
 import com.ugurbuga.stackshift.game.model.GameConfig
@@ -39,10 +39,10 @@ data class FirstRunOnboardingScene(
 )
 
 object FirstRunGameOnboardingStateFactory {
-    private val guideLogic = GameLogic()
+    private val guideLogic = StackShiftGameLogic()
     private val config = GameConfig(
         columns = 10,
-        rows = 6,
+        rows = 10,
         difficultyIntervalSeconds = 9_999,
         linesPerLevel = 9_999,
     )
@@ -61,7 +61,7 @@ object FirstRunGameOnboardingStateFactory {
 
     fun initialState(): GameState = scene(stages.first()).gameState
 
-    fun cleanGameState(): GameState = GameLogic().newGame()
+    fun cleanGameState(): GameState = StackShiftGameLogic().newGame(config)
 
     fun scene(stage: FirstRunOnboardingStage): FirstRunOnboardingScene = sceneCache.getValue(stage)
 
@@ -317,7 +317,7 @@ object FirstRunGameOnboardingStateFactory {
             ),
             guideColumn = null,
             acceptedColumns = emptySet(),
-        ).withGuidance(preferredColumns = listOf(6, 5, 4), lockGuideColumn = true)
+        ).withGuidance(preferredColumns = listOf(5, 4, 6), lockGuideColumn = true)
     }
 
     private fun FirstRunOnboardingScene.withGuidance(
@@ -368,7 +368,7 @@ object FirstRunGameOnboardingStateFactory {
         nextQueue: List<Piece>,
         lastPlacementColumn: Int,
     ): GameState {
-        val baseState = GameLogic().newGame(config)
+        val baseState = StackShiftGameLogic().newGame(config)
         return baseState.copy(
             board = board,
             activePiece = activePiece,

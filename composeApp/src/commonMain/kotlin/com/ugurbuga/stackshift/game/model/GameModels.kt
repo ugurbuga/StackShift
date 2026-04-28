@@ -238,7 +238,7 @@ data class GridPoint(
 @Immutable
 data class GameConfig(
     val columns: Int = 10,
-    val rows: Int = 12,
+    val rows: Int = 10,
     val difficultyIntervalSeconds: Int = 18,
     val linesPerLevel: Int = 6,
 )
@@ -246,6 +246,11 @@ data class GameConfig(
 enum class GameMode {
     Classic,
     TimeAttack,
+}
+
+enum class GameplayStyle {
+    StackShift,
+    BlockWise,
 }
 
 enum class GameStatus {
@@ -678,6 +683,40 @@ class BoardMatrix private constructor(
         }
     }
 
+    fun fullColumns(): List<Int> = buildList {
+        for (column in 0 until columns) {
+            var isFull = true
+            for (row in 0 until rows) {
+                if (cells[indexOf(column, row)] == EMPTY_CELL) {
+                    isFull = false
+                    break
+                }
+            }
+            if (isFull) add(column)
+        }
+    }
+
+    fun clearLines(
+        rowsToClear: Set<Int>,
+        columnsToClear: Set<Int>,
+    ): BoardMatrix {
+        if (rowsToClear.isEmpty() && columnsToClear.isEmpty()) return this
+        val next = cells.copyOf()
+        rowsToClear.forEach { row ->
+            if (row !in 0 until rows) return@forEach
+            for (column in 0 until columns) {
+                next[indexOf(column, row)] = EMPTY_CELL
+            }
+        }
+        columnsToClear.forEach { column ->
+            if (column !in 0 until columns) return@forEach
+            for (row in 0 until rows) {
+                next[indexOf(column, row)] = EMPTY_CELL
+            }
+        }
+        return BoardMatrix(columns = columns, rows = rows, cells = next)
+    }
+
     fun clearRows(rowsToClear: Set<Int>): BoardMatrix {
         if (rowsToClear.isEmpty()) return this
 
@@ -756,6 +795,7 @@ data class PlacementPreview(
 data class GameState(
     val config: GameConfig,
     val gameMode: GameMode = GameMode.Classic,
+    val gameplayStyle: GameplayStyle = GameplayStyle.BlockWise,
     val board: BoardMatrix,
     val activePiece: Piece?,
     val nextQueue: List<Piece>,
@@ -793,6 +833,12 @@ data class GameState(
 ) {
     val nextPiece: Piece?
         get() = nextQueue.firstOrNull()
+
+    val trayPieces: List<Piece>
+        get() = buildList {
+            activePiece?.let(::add)
+            addAll(nextQueue.take(2))
+        }
 
     val isSoftLockActive: Boolean
         get() = softLock != null

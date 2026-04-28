@@ -2,6 +2,7 @@ package com.ugurbuga.stackshift
 
 import com.ugurbuga.stackshift.game.logic.GameEvent
 import com.ugurbuga.stackshift.game.logic.GameLogic
+import com.ugurbuga.stackshift.game.logic.StackShiftGameLogic
 import com.ugurbuga.stackshift.game.model.BoardMatrix
 import com.ugurbuga.stackshift.game.model.CellTone
 import com.ugurbuga.stackshift.game.model.GameConfig
@@ -30,7 +31,8 @@ import kotlin.test.assertTrue
 class GameReducerCommonTest {
 
     private val logic = GameLogic(random = Random(7))
-    private val reducer = GameReducer(logic)
+    private val stackShiftLogic = StackShiftGameLogic(random = Random(7))
+    private val reducer = GameReducer(logic, stackShiftLogic)
 
     @Test
     fun board_fill_persistsCellLevelSpecialMetadata() {
@@ -48,57 +50,100 @@ class GameReducerCommonTest {
     }
 
     @Test
-    fun reducer_launchColumn_emitsSoftLockTimerEffect() {
+    fun reducer_placePiece_acceptsValidPlacementImmediately() {
         val state = testState()
 
         val result = reducer.reduce(
             state = state,
-            action = GameAction.LaunchColumn(column = 1),
+            action = GameAction.PlacePiece(pieceId = 1, origin = GridPoint(2, 1)),
+        )
+
+        assertTrue(GameEvent.PlacementAccepted in result.events)
+        assertTrue(result.state.board.isOccupied(2, 1))
+        assertTrue(result.state.board.isOccupied(3, 1))
+        assertTrue(result.effects.isEmpty())
+    }
+
+    @Test
+    fun reducer_placePiece_clearsLine_andAdvancesTray() {
+        val placed = reducer.reduce(
+            state = testState(activePiece = heavyDomino(id = 1)),
+            action = GameAction.PlacePiece(pieceId = 1, origin = GridPoint(2, 0)),
+        )
+
+        assertTrue(GameEvent.PlacementAccepted in placed.events)
+        assertTrue(GameEvent.LineClear in placed.events)
+        assertEquals(1, placed.state.linesCleared)
+        assertEquals(1, placed.state.combo.chain)
+        assertFalse(placed.state.board.isOccupied(0, 0))
+        assertFalse(placed.state.board.isOccupied(1, 0))
+        assertFalse(placed.state.board.isOccupied(2, 0))
+        assertFalse(placed.state.board.isOccupied(3, 0))
+        assertNotNull(placed.state.activePiece)
+    }
+
+    @Test
+    fun reducer_placePiece_startsSoftLockTimerForStackShift() {
+        val state = stackShiftLogic.newGame(GameConfig(columns = 6, rows = 8))
+        val preview = stackShiftLogic.previewPlacement(state = state, approximateColumn = state.config.columns / 2)
+
+        assertNotNull(preview)
+
+        val result = reducer.reduce(
+            state = state,
+            action = GameAction.PlacePiece(
+                pieceId = state.activePiece?.id ?: -1L,
+                origin = GridPoint(preview.selectedColumn, 0),
+            ),
         )
 
         assertNotNull(result.state.softLock)
-        assertTrue(GameEvent.SoftLockStarted in result.events)
+        assertTrue(GameEvent.SoftLockStarted in result.events || GameEvent.SoftLockAdjusted in result.events)
+        assertTrue(result.effects.any { it is GameEffect.CancelSoftLockTimer })
         assertTrue(result.effects.any { it is GameEffect.StartSoftLockTimer })
     }
 
     @Test
-    fun reducer_commitSoftLock_cancelsTimerAndPlacesEncodedSpecialCells() {
-        val launched = reducer.reduce(
-            state = testState(activePiece = heavyDomino(id = 1)),
-            action = GameAction.LaunchColumn(column = 1),
+    fun reducer_commitSoftLock_placesStackShiftPieceAndAdvancesQueue() {
+        val state = stackShiftLogic.newGame(GameConfig(columns = 6, rows = 8))
+        val preview = stackShiftLogic.previewPlacement(state = state, approximateColumn = state.config.columns / 2)
+
+        assertNotNull(preview)
+
+        val placed = reducer.reduce(
+            state = state,
+            action = GameAction.PlacePiece(
+                pieceId = state.activePiece?.id ?: -1L,
+                origin = GridPoint(preview.selectedColumn, 0),
+            ),
         )
+        val softLockedPieceId = placed.state.activePiece?.id
 
         val committed = reducer.reduce(
-            state = launched.state,
+            state = placed.state,
             action = GameAction.CommitSoftLock,
         )
 
-        assertTrue(GameEffect.CancelSoftLockTimer in committed.effects)
         assertTrue(GameEvent.PlacementAccepted in committed.events)
-        val occupiedSpecials = buildList {
-            for (row in 0 until committed.state.config.rows) {
-                for (column in 0 until committed.state.config.columns) {
-                    committed.state.board.cellAt(column, row)
-                        ?.takeIf { it.special == SpecialBlockType.Heavy }
-                        ?.let { add(it) }
-                }
-            }
-        }
-        assertTrue(occupiedSpecials.isNotEmpty())
+        assertEquals(null, committed.state.softLock)
+        assertTrue(committed.effects.any { it is GameEffect.CancelSoftLockTimer })
+        assertTrue(committed.state.board.occupiedCount > state.board.occupiedCount)
+        assertNotNull(committed.state.activePiece)
+        assertTrue(committed.state.activePiece.id != softLockedPieceId)
     }
 
     @Test
     fun store_dispatch_updatesUiStateThroughReducer() {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
-        val store = GameStore(gameLogic = logic, scope = scope)
+        val store = GameStore(blockWiseGameLogic = logic, stackShiftGameLogic = stackShiftLogic, scope = scope)
 
         try {
             store.replaceState(testState())
 
-            val events = store.dispatch(GameIntent.LaunchColumn(column = 1))
+            val events = store.dispatch(GameIntent.PlacePiece(pieceId = 1, origin = GridPoint(2, 1)))
 
-            assertTrue(GameEvent.SoftLockStarted in events)
-            assertNotNull(store.uiState.value.gameState.softLock)
+            assertTrue(GameEvent.PlacementAccepted in events)
+            assertTrue(store.uiState.value.gameState.board.isOccupied(2, 1))
         } finally {
             store.dispose()
             scope.cancel()
@@ -108,7 +153,7 @@ class GameReducerCommonTest {
     @Test
     fun feedbackMapper_mapsPauseResumeAndGameOverSignals() {
         val feedback = GameFeedbackMapper().map(
-            setOf(GameEvent.SoftLockStarted, GameEvent.Restarted, GameEvent.GameOver),
+            setOf(GameEvent.PlacementAccepted, GameEvent.Restarted, GameEvent.GameOver),
         )
 
         assertTrue(feedback.sounds.isNotEmpty())
@@ -119,7 +164,10 @@ class GameReducerCommonTest {
     private fun testState(
         activePiece: Piece = dominoPiece(id = 1),
     ) = logic.newGame(GameConfig(columns = 4, rows = 4)).copy(
-        board = BoardMatrix.empty(columns = 4, rows = 4),
+        board = BoardMatrix.empty(columns = 4, rows = 4).fill(
+            points = listOf(GridPoint(0, 0), GridPoint(1, 0)),
+            tone = CellTone.Blue,
+        ),
         activePiece = activePiece,
         nextQueue = listOf(dominoPiece(id = 2), dominoPiece(id = 3), dominoPiece(id = 4)),
         launchBar = LaunchBarState(),

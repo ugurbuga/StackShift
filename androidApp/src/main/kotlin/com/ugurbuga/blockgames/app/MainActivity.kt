@@ -1,4 +1,4 @@
-package com.ugurbuga.stackshift.app
+package com.ugurbuga.blockgames.app
 
 import android.content.res.Configuration
 import android.os.Bundle

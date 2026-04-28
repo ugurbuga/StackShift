@@ -1,0 +1,726 @@
+package com.ugurbuga.stackshift.ui.game
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import com.ugurbuga.stackshift.ads.GameAdController
+import com.ugurbuga.stackshift.ads.NoOpGameAdController
+import com.ugurbuga.stackshift.game.model.GameConfig
+import com.ugurbuga.stackshift.game.model.GameState
+import com.ugurbuga.stackshift.game.model.GameStatus
+import com.ugurbuga.stackshift.game.model.GridPoint
+import com.ugurbuga.stackshift.game.model.Piece
+import com.ugurbuga.stackshift.game.model.PlacementPreview
+import com.ugurbuga.stackshift.telemetry.AppTelemetry
+import com.ugurbuga.stackshift.telemetry.NoOpAppTelemetry
+import com.ugurbuga.stackshift.ui.theme.GameUiShapeTokens
+import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
+import com.ugurbuga.stackshift.ui.theme.appBackgroundBrush
+import com.ugurbuga.stackshift.ui.theme.stackShiftSurfaceShadow
+import org.jetbrains.compose.resources.stringResource
+import stackshift.composeapp.generated.resources.Res
+import stackshift.composeapp.generated.resources.stat_label_value_format
+import stackshift.composeapp.generated.resources.time_remaining
+
+private const val FreePlacementDragLiftPx = 100f
+private val FreePlacementTrayCardHeight = 104.dp
+private val FreePlacementCompactTrayCardHeight = 72.dp
+private val FreePlacementTrayPieceCellSize = 18.dp
+private val FreePlacementCompactTrayPieceCellSize = 14.dp
+
+@Composable
+fun FreePlacementGameScreen(
+    gameState: GameState,
+    onRequestPreview: (Long, GridPoint) -> PlacementPreview?,
+    onResolvePreviewImpact: (PlacementPreview?) -> Set<GridPoint>,
+    onPlacePiece: (Long, GridPoint) -> Unit,
+    onRestart: () -> Unit,
+    onRewardedRevive: () -> Unit,
+    onBack: () -> Unit,
+    highestScore: Int,
+    showNewHighScoreMessage: Boolean,
+    adController: GameAdController = NoOpGameAdController,
+    telemetry: AppTelemetry = NoOpAppTelemetry,
+    modifier: Modifier = Modifier,
+) {
+    telemetry.hashCode()
+    val uiColors = StackShiftThemeTokens.uiColors
+    var hostRectInRoot by remember { mutableStateOf(Rect.Zero) }
+    var boardRectInRoot by remember { mutableStateOf(Rect.Zero) }
+    val trayPieceRectsInRoot = remember { mutableStateMapOf<Long, Rect>() }
+    var draggedPieceId by remember { mutableStateOf<Long?>(null) }
+    var dragPointerInHost by remember { mutableStateOf<Offset?>(null) }
+    var showRestartDialog by remember { mutableStateOf(false) }
+
+    val trayPieces = gameState.trayPieces
+    val draggedPiece = trayPieces.firstOrNull { it.id == draggedPieceId }
+    val density = LocalDensity.current
+    val hasActiveChallenge = gameState.activeChallenge != null
+    val trayCardHeight = if (hasActiveChallenge) {
+        FreePlacementCompactTrayCardHeight
+    } else {
+        FreePlacementTrayCardHeight
+    }
+    val trayPieceCellSize = if (hasActiveChallenge) {
+        FreePlacementCompactTrayPieceCellSize
+    } else {
+        FreePlacementTrayPieceCellSize
+    }
+    val boardRect by remember(boardRectInRoot, hostRectInRoot) {
+        derivedStateOf { boardRectInRoot.toLocalRect(hostRectInRoot) }
+    }
+    val cellSizePx by remember(boardRect, gameState.config.columns) {
+        derivedStateOf {
+            if (boardRect == Rect.Zero) 0f else boardRect.width / gameState.config.columns.toFloat()
+        }
+    }
+    val overlayTopLeft by remember(dragPointerInHost, draggedPiece, cellSizePx) {
+        derivedStateOf {
+            val pointer = dragPointerInHost ?: return@derivedStateOf null
+            val piece = draggedPiece ?: return@derivedStateOf null
+            freePlacementDragTopLeft(
+                pointerInHost = pointer,
+                piece = piece,
+                cellSizePx = cellSizePx,
+            )
+        }
+    }
+    val placementPreview by remember(
+        draggedPieceId,
+        draggedPiece,
+        overlayTopLeft,
+        dragPointerInHost,
+        trayPieces,
+        gameState.board,
+        gameState.status,
+        boardRect,
+        cellSizePx,
+    ) {
+        derivedStateOf {
+            val pieceId = draggedPieceId ?: return@derivedStateOf null
+            if (gameState.status != GameStatus.Running) return@derivedStateOf null
+            resolveNearestFreePlacementPreview(
+                pieceId = pieceId,
+                piece = draggedPiece,
+                overlayTopLeft = overlayTopLeft,
+                boardRect = boardRect,
+                cellSizePx = cellSizePx,
+                config = gameState.config,
+                requestPreview = onRequestPreview,
+            )
+        }
+    }
+    val impactedPreviewCells by remember(placementPreview, gameState.board) {
+        derivedStateOf { onResolvePreviewImpact(placementPreview) }
+    }
+
+    LaunchedEffect(gameState.activePiece?.id, gameState.status) {
+        if (gameState.status != GameStatus.Running) {
+            draggedPieceId = null
+            dragPointerInHost = null
+        }
+    }
+
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(appBackgroundBrush(uiColors))
+                .onGloballyPositioned { hostRectInRoot = it.boundsInRoot() }
+                .statusBarsPadding()
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                MinimalTopBar(
+                    gameState = gameState,
+                    scoreHighlightStrengthProvider = { if (showNewHighScoreMessage) 1f else 0f },
+                    scoreHighlightScaleProvider = { if (showNewHighScoreMessage) 1.04f else 1f },
+                    remainingTimeLabel = stringResource(Res.string.time_remaining),
+                    onBack = onBack,
+                    onRestart = { showRestartDialog = true },
+                    stylePulse = 0f,
+                )
+
+                StatusCard(text = resolveGameText(gameState.message))
+
+                BoxWithConstraints(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    val boardAspectRatio = gameState.config.columns.toFloat() / gameState.config.rows.toFloat()
+                    val boardWidth = minOf(maxWidth, maxHeight * boardAspectRatio)
+                    val boardHeight = boardWidth / boardAspectRatio
+                    Box(
+                        modifier = Modifier
+                            .size(width = boardWidth, height = boardHeight)
+                            .stackShiftSurfaceShadow(
+                                shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
+                                elevation = 10.dp,
+                            ),
+                    ) {
+                        BoardGrid(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .onGloballyPositioned { boardRectInRoot = it.boundsInRoot() },
+                            gameState = gameState,
+                            preview = placementPreview,
+                            impactedPreviewCells = impactedPreviewCells,
+                            activeColumn = placementPreview?.selectedColumn,
+                            activePiece = draggedPiece,
+                            isDragging = draggedPiece != null,
+                        )
+                    }
+                }
+
+                TrayDock(
+                    pieces = trayPieces,
+                    challenge = gameState.activeChallenge,
+                    activeDragPieceId = draggedPieceId,
+                    onPieceRectChanged = { pieceId, rect -> trayPieceRectsInRoot[pieceId] = rect },
+                    onStartDrag = { piece, dragStartOffset ->
+                        val rect = trayPieceRectsInRoot[piece.id] ?: return@TrayDock
+                        draggedPieceId = piece.id
+                        dragPointerInHost = initialDragPointerPosition(
+                            pieceRectInRoot = rect,
+                            pointerOffsetInPieceCard = dragStartOffset,
+                            hostRectInRoot = hostRectInRoot,
+                        )
+                    },
+                    onDrag = { dragAmount ->
+                        val current = dragPointerInHost ?: return@TrayDock
+                        dragPointerInHost = current + dragAmount
+                    },
+                    onCancelDrag = {
+                        draggedPieceId = null
+                        dragPointerInHost = null
+                    },
+                    onEndDrag = {
+                        val pieceId = draggedPieceId
+                        val preview = placementPreview
+                        if (pieceId != null && preview != null) {
+                            onPlacePiece(pieceId, preview.landingAnchor)
+                        }
+                        draggedPieceId = null
+                        dragPointerInHost = null
+                    },
+                    pieceCardHeight = trayCardHeight,
+                    pieceCellSize = trayPieceCellSize,
+                )
+            }
+
+            val dragOverlayTopLeft = overlayTopLeft
+            val dragOverlayPiece = draggedPiece
+            if (dragOverlayPiece != null && dragOverlayTopLeft != null && cellSizePx > 0f) {
+                val boardCellSize = with(density) { cellSizePx.toDp() }
+                val overlayTranslationX = dragOverlayTopLeft.x
+                val overlayTranslationY = dragOverlayTopLeft.y
+                PieceBlocks(
+                    piece = dragOverlayPiece,
+                    cellSize = boardCellSize,
+                    modifier = Modifier
+                        .graphicsLayer(
+                            translationX = overlayTranslationX,
+                            translationY = overlayTranslationY,
+                            transformOrigin = TransformOrigin(0f, 0f),
+                        ),
+                )
+            }
+        }
+    }
+
+    if (showRestartDialog) {
+        ConfirmDialog(
+            title = resolveGameText(com.ugurbuga.stackshift.game.model.gameText(com.ugurbuga.stackshift.game.model.GameTextKey.RestartConfirmTitle)),
+            body = resolveGameText(com.ugurbuga.stackshift.game.model.gameText(com.ugurbuga.stackshift.game.model.GameTextKey.RestartConfirmBody)),
+            confirmLabel = resolveGameText(com.ugurbuga.stackshift.game.model.gameText(com.ugurbuga.stackshift.game.model.GameTextKey.RestartConfirm)),
+            dismissLabel = resolveGameText(com.ugurbuga.stackshift.game.model.gameText(com.ugurbuga.stackshift.game.model.GameTextKey.RestartCancel)),
+            onConfirm = {
+                showRestartDialog = false
+                onRestart()
+            },
+            onDismiss = { showRestartDialog = false },
+        )
+    }
+
+    if (gameState.status == GameStatus.GameOver) {
+        val showExtraLife = (adController !== NoOpGameAdController) && !gameState.rewardedReviveUsed && gameState.activeChallenge?.isCompleted != true
+        AlertDialog(
+            onDismissRequest = {},
+            title = {
+                Text(
+                    text = resolveGameText(com.ugurbuga.stackshift.game.model.gameText(com.ugurbuga.stackshift.game.model.GameTextKey.GameOverTitle)),
+                    fontWeight = FontWeight.Bold,
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(
+                            Res.string.stat_label_value_format,
+                            resolveGameText(com.ugurbuga.stackshift.game.model.gameText(com.ugurbuga.stackshift.game.model.GameTextKey.Score)),
+                            gameState.score.toString(),
+                        )
+                    )
+                    Text(
+                        text = stringResource(
+                            Res.string.stat_label_value_format,
+                            resolveGameText(com.ugurbuga.stackshift.game.model.gameText(com.ugurbuga.stackshift.game.model.GameTextKey.HighScore)),
+                            highestScore.toString(),
+                        )
+                    )
+                    if (showNewHighScoreMessage) {
+                        Text(
+                            text = resolveGameText(com.ugurbuga.stackshift.game.model.gameText(com.ugurbuga.stackshift.game.model.GameTextKey.GameOverNewHighScore)),
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (showExtraLife) {
+                        TextButton(onClick = onRewardedRevive) {
+                            Text(resolveGameText(com.ugurbuga.stackshift.game.model.gameText(com.ugurbuga.stackshift.game.model.GameTextKey.GameOverExtraLife)))
+                        }
+                    }
+                    TextButton(onClick = onRestart) {
+                        Text(resolveGameText(com.ugurbuga.stackshift.game.model.gameText(com.ugurbuga.stackshift.game.model.GameTextKey.PlayAgain)))
+                    }
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun FreePlacementHeader(
+    score: Int,
+    highestScore: Int,
+    showNewHighScoreMessage: Boolean,
+    onBack: () -> Unit,
+    onRestart: () -> Unit,
+) {
+    val uiColors = StackShiftThemeTokens.uiColors
+    Card(
+        shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
+        colors = CardDefaults.cardColors(containerColor = uiColors.gameSurface.copy(alpha = 0.92f)),
+        border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.72f)),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+            }
+            ScoreChip(label = resolveGameText(com.ugurbuga.stackshift.game.model.gameText(com.ugurbuga.stackshift.game.model.GameTextKey.Score)), value = score.toString(), modifier = Modifier.weight(1f))
+            ScoreChip(
+                label = resolveGameText(com.ugurbuga.stackshift.game.model.gameText(com.ugurbuga.stackshift.game.model.GameTextKey.HighScore)),
+                value = highestScore.toString(),
+                modifier = Modifier.weight(1f),
+                highlight = showNewHighScoreMessage,
+            )
+            IconButton(onClick = onRestart) {
+                Icon(Icons.Filled.Refresh, contentDescription = null)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ScoreChip(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    highlight: Boolean = false,
+) {
+    val uiColors = StackShiftThemeTokens.uiColors
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(GameUiShapeTokens.chipCorner),
+        colors = CardDefaults.cardColors(
+            containerColor = if (highlight) uiColors.actionButton.copy(alpha = 0.22f) else uiColors.metricCard.copy(alpha = 0.92f),
+        ),
+        border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.7f)),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(text = label, style = MaterialTheme.typography.labelMedium)
+            Text(text = value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+private fun StatusCard(text: String) {
+    val uiColors = StackShiftThemeTokens.uiColors
+    Card(
+        shape = RoundedCornerShape(GameUiShapeTokens.hintCorner),
+        colors = CardDefaults.cardColors(containerColor = uiColors.metricCard.copy(alpha = 0.88f)),
+        border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.66f)),
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun TrayDock(
+    pieces: List<Piece>,
+    challenge: com.ugurbuga.stackshift.game.model.DailyChallenge?,
+    activeDragPieceId: Long?,
+    onPieceRectChanged: (Long, Rect) -> Unit,
+    onStartDrag: (Piece, Offset) -> Unit,
+    onDrag: (Offset) -> Unit,
+    onEndDrag: () -> Unit,
+    onCancelDrag: () -> Unit,
+    pieceCardHeight: androidx.compose.ui.unit.Dp,
+    pieceCellSize: androidx.compose.ui.unit.Dp,
+) {
+    val uiColors = StackShiftThemeTokens.uiColors
+    Card(
+        shape = RoundedCornerShape(GameUiShapeTokens.dockCorner),
+        colors = CardDefaults.cardColors(containerColor = uiColors.panel.copy(alpha = 0.92f)),
+        border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.72f)),
+        modifier = Modifier.stackShiftSurfaceShadow(
+            shape = RoundedCornerShape(GameUiShapeTokens.dockCorner),
+            elevation = 10.dp,
+        ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            uiColors.panelHighlight.copy(alpha = 0.16f),
+                            uiColors.launchGlow.copy(alpha = 0.08f),
+                            androidx.compose.ui.graphics.Color.Transparent,
+                        ),
+                    ),
+                )
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(if (challenge != null) 8.dp else 10.dp),
+        ) {
+            if (challenge != null) {
+                ChallengeTasksDock(
+                    challenge = challenge,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            } else {
+                Text(
+                    text = resolveGameText(com.ugurbuga.stackshift.game.model.gameText(com.ugurbuga.stackshift.game.model.GameTextKey.LaunchDragHint)),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                pieces.forEach { piece ->
+                    TrayPieceCard(
+                        piece = piece,
+                        hidden = activeDragPieceId == piece.id,
+                        cardHeight = pieceCardHeight,
+                        pieceCellSize = pieceCellSize,
+                        modifier = Modifier.weight(1f),
+                        onRectChanged = { rect -> onPieceRectChanged(piece.id, rect) },
+                        onStartDrag = { offset -> onStartDrag(piece, offset) },
+                        onDrag = onDrag,
+                        onEndDrag = onEndDrag,
+                        onCancelDrag = onCancelDrag,
+                    )
+                }
+                repeat((3 - pieces.size).coerceAtLeast(0)) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TrayPieceCard(
+    piece: Piece,
+    hidden: Boolean,
+    cardHeight: androidx.compose.ui.unit.Dp,
+    pieceCellSize: androidx.compose.ui.unit.Dp,
+    onRectChanged: (Rect) -> Unit,
+    onStartDrag: (Offset) -> Unit,
+    onDrag: (Offset) -> Unit,
+    onEndDrag: () -> Unit,
+    onCancelDrag: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val uiColors = StackShiftThemeTokens.uiColors
+    Card(
+        modifier = modifier
+            .height(cardHeight)
+            .onGloballyPositioned { onRectChanged(it.boundsInRoot()) }
+            .graphicsLayer { alpha = if (hidden) 0f else 1f }
+            .pointerInput(piece.id) {
+                detectDragGestures(
+                    onDragStart = onStartDrag,
+                    onDragEnd = onEndDrag,
+                    onDragCancel = onCancelDrag,
+                    onDrag = { change, dragAmount ->
+                        change.consume()
+                        onDrag(dragAmount)
+                    },
+                )
+            },
+        shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
+        colors = CardDefaults.cardColors(containerColor = uiColors.metricCard.copy(alpha = 0.88f)),
+        border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.7f)),
+    ) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            PieceBlocks(piece = piece, cellSize = pieceCellSize)
+        }
+    }
+}
+
+@Composable
+private fun ConfirmDialog(
+    title: String,
+    body: String,
+    confirmLabel: String,
+    dismissLabel: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title, fontWeight = FontWeight.Bold) },
+        text = { Text(body) },
+        confirmButton = { TextButton(onClick = onConfirm) { Text(confirmLabel) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(dismissLabel) } },
+    )
+}
+
+internal fun freePlacementDragTopLeft(
+    pointerInHost: Offset,
+    piece: Piece,
+    cellSizePx: Float,
+    liftPx: Float = FreePlacementDragLiftPx,
+): Offset? {
+    if (cellSizePx <= 0f) return null
+    val pieceWidthPx = piece.width * cellSizePx
+    val pieceHeightPx = piece.height * cellSizePx
+    return Offset(
+        x = pointerInHost.x - (pieceWidthPx / 2f),
+        y = pointerInHost.y - (pieceHeightPx / 2f) - liftPx,
+    )
+}
+
+internal fun resolveNearestFreePlacementPreview(
+    pieceId: Long,
+    piece: Piece?,
+    overlayTopLeft: Offset?,
+    boardRect: Rect,
+    cellSizePx: Float,
+    config: GameConfig,
+    requestPreview: (Long, GridPoint) -> PlacementPreview?,
+): PlacementPreview? {
+    val resolvedPiece = piece ?: return null
+    val resolvedOverlayTopLeft = overlayTopLeft ?: return null
+    if (boardRect == Rect.Zero || cellSizePx <= 0f) return null
+    val maxColumn = config.columns - resolvedPiece.width
+    val maxRow = config.rows - resolvedPiece.height
+    if (maxColumn < 0 || maxRow < 0) return null
+    val overlayCellRects = resolvedPiece.cellRects(
+        topLeft = resolvedOverlayTopLeft,
+        cellSizePx = cellSizePx,
+    )
+    if (overlayCellRects.none { overlapArea(it, boardRect) > 0f }) {
+        return null
+    }
+    return buildList {
+        for (row in 0..maxRow) {
+            for (column in 0..maxColumn) {
+                val origin = GridPoint(column = column, row = row)
+                requestPreview(pieceId, origin)?.let(::add)
+            }
+        }
+    }.mapNotNull { preview ->
+        val candidateTopLeft = preview.landingAnchor.toFreePlacementTopLeft(boardRect, cellSizePx)
+        val candidateCellRects = resolvedPiece.cellRects(
+            topLeft = candidateTopLeft,
+            cellSizePx = cellSizePx,
+        )
+        val overlap = overlapArea(
+            first = overlayCellRects,
+            second = candidateCellRects,
+        )
+        if (overlap <= 0f) {
+            null
+        } else {
+            FreePlacementPreviewCandidate(
+                preview = preview,
+                overlapBlockCount = overlapBlockCount(
+                    overlayCellRects = overlayCellRects,
+                    candidateCellRects = candidateCellRects,
+                ),
+                overlapArea = overlap,
+                proximityScore = -squaredDistance(candidateTopLeft, resolvedOverlayTopLeft),
+            )
+        }
+    }.maxWithOrNull(
+        compareBy<FreePlacementPreviewCandidate> { it.overlapBlockCount }
+            .thenBy { it.overlapArea }
+            .thenBy { it.proximityScore }
+    )?.preview
+}
+
+private fun initialDragPointerPosition(
+    pieceRectInRoot: Rect,
+    pointerOffsetInPieceCard: Offset,
+    hostRectInRoot: Rect,
+): Offset? {
+    if (hostRectInRoot == Rect.Zero || pieceRectInRoot == Rect.Zero) {
+        return null
+    }
+    return Offset(
+        x = pieceRectInRoot.left + pointerOffsetInPieceCard.x - hostRectInRoot.left,
+        y = pieceRectInRoot.top + pointerOffsetInPieceCard.y - hostRectInRoot.top,
+    )
+}
+
+internal fun GridPoint.toFreePlacementTopLeft(
+    boardRect: Rect,
+    cellSizePx: Float,
+): Offset = Offset(
+    x = boardRect.left + (column * cellSizePx),
+    y = boardRect.top + (row * cellSizePx),
+)
+
+private fun overlapArea(
+    first: Rect,
+    second: Rect,
+): Float {
+    val overlapWidth = (minOf(first.right, second.right) - maxOf(first.left, second.left)).coerceAtLeast(0f)
+    val overlapHeight = (minOf(first.bottom, second.bottom) - maxOf(first.top, second.top)).coerceAtLeast(0f)
+    return overlapWidth * overlapHeight
+}
+
+private fun overlapArea(
+    first: List<Rect>,
+    second: List<Rect>,
+): Float = first.sumOf { firstRect ->
+    second.sumOf { secondRect ->
+        overlapArea(firstRect, secondRect).toDouble()
+    }
+}.toFloat()
+
+private fun overlapBlockCount(
+    overlayCellRects: List<Rect>,
+    candidateCellRects: List<Rect>,
+): Int = overlayCellRects.count { overlayRect ->
+    candidateCellRects.any { candidateRect -> overlapArea(overlayRect, candidateRect) > 0f }
+}
+
+private fun squaredDistance(
+    first: Offset,
+    second: Offset,
+): Float {
+    val dx = first.x - second.x
+    val dy = first.y - second.y
+    return (dx * dx) + (dy * dy)
+}
+
+private fun Rect.toLocalRect(hostRect: Rect): Rect {
+    if (this == Rect.Zero || hostRect == Rect.Zero) return Rect.Zero
+    return Rect(
+        left = left - hostRect.left,
+        top = top - hostRect.top,
+        right = right - hostRect.left,
+        bottom = bottom - hostRect.top,
+    )
+}
+
+private fun Piece.cellRects(
+    topLeft: Offset,
+    cellSizePx: Float,
+): List<Rect> = cells.map { cell ->
+    Rect(
+        left = topLeft.x + (cell.column * cellSizePx),
+        top = topLeft.y + (cell.row * cellSizePx),
+        right = topLeft.x + ((cell.column + 1) * cellSizePx),
+        bottom = topLeft.y + ((cell.row + 1) * cellSizePx),
+    )
+}
+
+private data class FreePlacementPreviewCandidate(
+    val preview: PlacementPreview,
+    val overlapBlockCount: Int,
+    val overlapArea: Float,
+    val proximityScore: Float,
+)
+
+
+

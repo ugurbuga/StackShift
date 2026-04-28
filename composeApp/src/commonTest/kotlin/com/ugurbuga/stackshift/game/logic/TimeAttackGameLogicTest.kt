@@ -42,8 +42,11 @@ class TimeAttackGameLogicTest {
             remainingTimeMillis = GameLogic.DefaultTimeAttackDurationMillis,
         )
 
-        val launched = logic.placePiece(state = state, approximateColumn = 2).state
-        val committed = logic.commitSoftLock(launched).state
+        val committed = logic.placePiece(
+            state = state,
+            pieceId = 1,
+            origin = GridPoint(column = 2, row = 0),
+        ).state
 
         assertEquals(1, committed.linesCleared)
         assertEquals(
