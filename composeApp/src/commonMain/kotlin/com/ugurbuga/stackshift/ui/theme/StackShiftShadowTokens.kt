@@ -11,12 +11,12 @@ import androidx.compose.ui.unit.dp
 import com.ugurbuga.stackshift.localization.LocalAppSettings
 
 @Composable
-fun Modifier.stackShiftSurfaceShadow(
+fun Modifier.blockGamesSurfaceShadow(
     shape: Shape,
     elevation: Dp = 9.dp,
 ): Modifier {
     val settings = LocalAppSettings.current
-    val isDark = isStackShiftDarkTheme(settings)
+    val isDark = isBlockGamesDarkTheme(settings)
     val colorScheme = MaterialTheme.colorScheme
     
     val ambientColor = if (isDark) {

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_title">StackShift</string>
+    <string name="app_title_stackshift">StackShift</string>
     <string name="app_title_banner_stackshift_top">STACK</string>
     <string name="app_title_banner_stackshift_bottom">SHIFT</string>
     <string name="app_title_banner_blockwise_top">BLOCK</string>
@@ -97,8 +97,8 @@
     <string name="danger_none">-</string>
     <string name="launch_label">प्रक्षेपण</string>
     <string name="launch_bar">लॉन्च बार</string>
-    <string name="launch_boost_active">नई तिकड़ी तैयार है</string>
-    <string name="launch_special_chance">हर तिकड़ी को जहाँ जगह हो वहाँ खींचा जा सकता है</string>
+    <string name="launch_boost_active">बूस्ट सक्रिय • %1$s टर्न</string>
+    <string name="launch_special_chance">विशेष ब्लॉक संभावना +%1$s%%</string>
     <string name="launch_soft_lock_message">सॉफ्ट लॉक सक्रिय • सूक्ष्म समायोजन सक्षम</string>
     <string name="launch_chain_message">पंक्ति + कॉलम • +%2$s</string>
     <string name="launch_paused">रुका हुआ</string>
@@ -203,8 +203,6 @@
     <string name="feedback_extra_life">अतिरिक्त जीवन! %1$s पंक्तियाँ</string>
     <string name="challenge_progress_value">%1$d/%2$d</string>
     <string name="stat_label_value_format">%1$s: %2$s</string>
-    <string name="launch_boost_turns_remaining_format">x%1$d</string>
-    <string name="launch_progress_percent_format">%%%1$d</string>
     <string name="time_minutes_seconds_format">%1$d:%2$s</string>
     <string name="special_column_clearer">कॉलम</string>
     <string name="special_row_clearer">पंक्ति</string>

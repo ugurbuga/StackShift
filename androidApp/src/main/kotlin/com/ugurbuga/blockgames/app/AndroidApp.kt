@@ -5,17 +5,20 @@ import androidx.compose.runtime.Composable
 import com.ugurbuga.stackshift.AndroidSystemBarsEffect
 import com.ugurbuga.stackshift.StackShiftAppHost
 import com.ugurbuga.stackshift.game.model.GameplayStyle
-import com.ugurbuga.stackshift.ui.theme.isStackShiftDarkTheme
-import com.ugurbuga.stackshift.ui.theme.stackShiftThemeSpec
+import com.ugurbuga.stackshift.platform.GlobalPlatformConfig
+import com.ugurbuga.stackshift.ui.theme.blockGamesThemeSpec
+import com.ugurbuga.stackshift.ui.theme.isBlockGamesDarkTheme
 
 @Composable
 fun AndroidApp() {
+    val gameplayStyle = resolveGameplayStyle()
+    GlobalPlatformConfig.gameplayStyle = gameplayStyle
     StackShiftAppHost(
         bootstrapLogSource = "android_app_${BuildConfig.APP_VARIANT_NAME}",
-        gameplayStyle = resolveGameplayStyle(),
+        gameplayStyle = gameplayStyle,
     ) { settings, canNavigateBack, onRequestBack ->
-        val darkTheme = isStackShiftDarkTheme(settings)
-        val themeSpec = stackShiftThemeSpec(
+        val darkTheme = isBlockGamesDarkTheme(settings)
+        val themeSpec = blockGamesThemeSpec(
             settings = settings,
             darkTheme = darkTheme,
         )

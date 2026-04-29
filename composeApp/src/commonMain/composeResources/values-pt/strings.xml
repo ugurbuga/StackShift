@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_title">StackShift</string>
+    <string name="app_title_stackshift">StackShift</string>
     <string name="app_title_banner_stackshift_top">STACK</string>
     <string name="app_title_banner_stackshift_bottom">SHIFT</string>
     <string name="app_title_banner_blockwise_top">BLOCK</string>
@@ -97,8 +97,8 @@
     <string name="danger_none">-</string>
     <string name="launch_label">Lançar</string>
     <string name="launch_bar">Barra de lançamento</string>
-    <string name="launch_boost_active">Novo trio pronto</string>
-    <string name="launch_special_chance">Cada trio pode ser arrastado para qualquer lugar em que caiba</string>
+    <string name="launch_boost_active">Impulso ativo • %1$s turnos</string>
+    <string name="launch_special_chance">Chance de bloco especial +%1$s%%</string>
     <string name="launch_soft_lock_message">Travamento suave ativo • microajuste ativado</string>
     <string name="launch_chain_message">Linha + Coluna • +%2$s</string>
     <string name="launch_paused">Pausado</string>
@@ -203,8 +203,6 @@
     <string name="feedback_extra_life">Vida extra! %1$s linhas</string>
     <string name="challenge_progress_value">%1$d/%2$d</string>
     <string name="stat_label_value_format">%1$s: %2$s</string>
-    <string name="launch_boost_turns_remaining_format">x%1$d</string>
-    <string name="launch_progress_percent_format">%%%1$d</string>
     <string name="time_minutes_seconds_format">%1$d:%2$s</string>
     <string name="special_column_clearer">COLUNA</string>
     <string name="special_row_clearer">LINHA</string>

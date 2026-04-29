@@ -13,10 +13,6 @@ private val adsPropertiesFileName = "ads.properties"
 private val flavorDimensionName = "game"
 
 private val keystorePropertiesFileName = "keystore.properties"
-private val keystoreStoreFileProperty = "keystore.storeFile"
-private val keystoreStorePasswordProperty = "keystore.storePassword"
-private val keystoreKeyAliasProperty = "keystore.keyAlias"
-private val keystoreKeyPasswordProperty = "keystore.keyPassword"
 
 private val googlePropertiesFileName = "google.properties"
 
@@ -34,27 +30,36 @@ private val keystoreProperties = Properties().apply {
     }
 }
 
-private fun keystoreProperty(name: String): String = keystoreProperties.getProperty(name).orEmpty()
+private fun keystoreProperty(flavorName: String, suffix: String): String {
+    val flavorScopedProperty = "keystore.$flavorName.$suffix"
+    val legacyProperty = "keystore.$suffix"
+    return (
+        trimmedProperty(keystoreProperties, flavorScopedProperty)
+            ?: if (flavorName == "stackshift") trimmedProperty(keystoreProperties, legacyProperty) else null
+        ) ?: ""
+}
 
 private data class AndroidFlavorConfig(
-    val flavorName: String,
-    val displayName: String,
+    val name: String,
     val applicationId: String,
-    val gameplayStyle: String,
-)
+    val versionCode: Int,
+    val versionName: String,
+) {
+    val flavorName: String get() = name.lowercase()
+}
 
 private val androidFlavorConfigs = listOf(
     AndroidFlavorConfig(
-        flavorName = "stackshift",
-        displayName = "StackShift",
+        name = "StackShift",
         applicationId = "com.ugurbuga.stackshift",
-        gameplayStyle = "StackShift",
+        versionCode = 5,
+        versionName = "1.0.4",
     ),
     AndroidFlavorConfig(
-        flavorName = "blockwise",
-        displayName = "BlockWise",
+        name = "BlockWise",
         applicationId = "com.ugurbuga.blockwise",
-        gameplayStyle = "BlockWise",
+        versionCode = 1,
+        versionName = "1.0.0",
     ),
 )
 
@@ -203,14 +208,16 @@ android {
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     signingConfigs {
-        create("release") {
-            storeFile = keystoreProperty(keystoreStoreFileProperty)
-                .takeIf(String::isNotBlank)
-                ?.let(rootProject::file)
-                ?: rootProject.file("keystore/StackShift.jks")
-            storePassword = keystoreProperty(keystoreStorePasswordProperty)
-            keyAlias = keystoreProperty(keystoreKeyAliasProperty)
-            keyPassword = keystoreProperty(keystoreKeyPasswordProperty)
+        androidFlavorConfigs.forEach { flavor ->
+            create(flavor.flavorName) {
+                storeFile = keystoreProperty(flavor.flavorName, "storeFile")
+                    .takeIf(String::isNotBlank)
+                    ?.let(rootProject::file)
+                    ?: rootProject.file("keystore/${flavor.name}.jks")
+                storePassword = keystoreProperty(flavor.flavorName, "storePassword")
+                keyAlias = keystoreProperty(flavor.flavorName, "keyAlias")
+                keyPassword = keystoreProperty(flavor.flavorName, "keyPassword")
+            }
         }
     }
 
@@ -222,8 +229,6 @@ android {
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 4
-        versionName = "1.0.3"
     }
     flavorDimensions += flavorDimensionName
     productFlavors {
@@ -231,13 +236,16 @@ android {
             create(flavor.flavorName) {
                 dimension = flavorDimensionName
                 applicationId = flavor.applicationId
-                resValue("string", "app_name", flavor.displayName)
+                versionCode = flavor.versionCode
+                versionName = flavor.versionName
+                resValue("string", "app_name", flavor.name)
+                signingConfig = signingConfigs.getByName(flavor.flavorName)
                 manifestPlaceholders["adsApplicationId"] = adsProperty(flavor.flavorName, "applicationId")
                 buildConfigField("String", "ADS_BANNER_UNIT_ID", "\"${adsProperty(flavor.flavorName, "bannerUnitId")}\"")
                 buildConfigField("String", "ADS_INTERSTITIAL_UNIT_ID", "\"${adsProperty(flavor.flavorName, "interstitialUnitId")}\"")
                 buildConfigField("String", "ADS_REWARDED_UNIT_ID", "\"${adsProperty(flavor.flavorName, "rewardedUnitId")}\"")
                 buildConfigField("String", "ADS_REWARDED_SPECIAL_UNIT_ID", "\"${adsProperty(flavor.flavorName, "rewardedSpecialUnitId")}\"")
-                buildConfigField("String", "GAMEPLAY_STYLE", "\"${flavor.gameplayStyle}\"")
+                buildConfigField("String", "GAMEPLAY_STYLE", "\"${flavor.name}\"")
                 buildConfigField("String", "APP_VARIANT_NAME", "\"${flavor.flavorName}\"")
             }
         }
@@ -250,7 +258,6 @@ android {
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("release")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }

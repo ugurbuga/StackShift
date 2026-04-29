@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.ugurbuga.stackshift.platform.GlobalPlatformConfig
 import org.jetbrains.compose.resources.StringResource
 import stackshift.composeapp.generated.resources.Res
 import stackshift.composeapp.generated.resources.app_language_arabic
@@ -238,7 +239,7 @@ data class GridPoint(
 @Immutable
 data class GameConfig(
     val columns: Int = 10,
-    val rows: Int = 10,
+    val rows: Int = 12,
     val difficultyIntervalSeconds: Int = 18,
     val linesPerLevel: Int = 6,
 )
@@ -795,7 +796,7 @@ data class PlacementPreview(
 data class GameState(
     val config: GameConfig,
     val gameMode: GameMode = GameMode.Classic,
-    val gameplayStyle: GameplayStyle = GameplayStyle.BlockWise,
+    val gameplayStyle: GameplayStyle = GlobalPlatformConfig.gameplayStyle,
     val board: BoardMatrix,
     val activePiece: Piece?,
     val nextQueue: List<Piece>,
@@ -826,6 +827,7 @@ data class GameState(
     val floatingFeedback: FloatingFeedback? = null,
     val feedbackToken: Long = 0L,
     val rewardedReviveUsed: Boolean = false,
+    val nextPieceId: Long = 1L,
     val lastActionTime: Long = 0L,
     val remainingTimeMillis: Long? = null,
     val message: GameText = GameText(GameTextKey.GameMessageSelectColumn),

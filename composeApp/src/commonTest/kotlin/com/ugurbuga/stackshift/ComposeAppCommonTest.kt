@@ -1,7 +1,7 @@
 package com.ugurbuga.stackshift
 
-import com.ugurbuga.stackshift.game.logic.GameEvent
 import com.ugurbuga.stackshift.game.logic.GameLogic
+import com.ugurbuga.stackshift.game.logic.GameEvent
 import com.ugurbuga.stackshift.game.model.BoardMatrix
 import com.ugurbuga.stackshift.game.model.CellTone
 import com.ugurbuga.stackshift.game.model.GameConfig
@@ -21,7 +21,7 @@ import kotlin.test.assertTrue
 
 class ComposeAppCommonTest {
 
-    private val logic = GameLogic(random = Random(42))
+    private val logic = GameLogic.create(random = Random(42))
 
     @Test
     fun previewPlacement_returnsRequestedOrigin_forValidFreePlacement() {
@@ -68,7 +68,7 @@ class ComposeAppCommonTest {
             nextQueue = listOf(dominoPiece(id = 2), squarePiece(id = 3)),
         )
 
-        val preview = logic.previewPlacement(state = state, approximateColumn = 1)
+        val preview = logic.previewPlacement(state = state, column = 1)
 
         assertNotNull(preview)
         assertEquals(GridPoint(1, 3), preview.landingAnchor)

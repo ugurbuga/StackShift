@@ -25,41 +25,42 @@ import com.ugurbuga.stackshift.game.model.gameText
 import com.ugurbuga.stackshift.settings.GameSessionCodec
 import kotlin.random.Random
 
-class StackShiftGameLogic(
+internal class StackShiftGameLogic(
     private val random: Random = Random.Default,
     private val scoreCalculator: ScoreCalculator = ScoreCalculator(),
-) {
-    private var nextPieceId: Long = 1L
+) : GameLogic {
 
     companion object {
-        const val DefaultTimeAttackDurationMillis = 120_000L
-        const val TimeAttackBonusPerClearedBlockMillis = 400L
-        const val TimeAttackReviveBonusMillis = 15_000L
-        private const val QueueSize = 3
-        private const val SoftLockMillis = 260L
-        private const val RewardedReviveRowCount = 6
-        private const val PlayablePieceGenerationAttempts = 16
+        private const val QUEUE_SIZE = 3
+        private const val SOFT_LOCK_MILLIS = 260L
+        private const val REWARDED_REVIVE_ROW_COUNT = 6
+        private const val PLAYABLE_PIECE_GENERATION_ATTEMPTS = 16
     }
 
-    fun restoreGame(state: GameState): GameState {
-        nextPieceId = maxOf(nextPieceId, GameSessionCodec.maxPieceId(state) + 1L)
-        return state
+    override fun restoreGame(state: GameState): GameState {
+        return state.copy(nextPieceId = maxOf(state.nextPieceId, GameSessionCodec.maxPieceId(state) + 1L))
     }
 
-    fun newGame(
-        config: GameConfig = GameConfig(),
-        challenge: DailyChallenge? = null,
-        mode: GameMode = GameMode.Classic,
+    override fun newGame(
+        config: GameConfig,
+        challenge: DailyChallenge?,
+        mode: GameMode,
+        gameplayStyle: GameplayStyle,
     ): GameState {
         val level = 1
         val board = BoardMatrix.empty(columns = config.columns, rows = config.rows)
-        val openingBag = List(QueueSize + 1) { createPiece(level = level, launchBar = LaunchBarState()) }
+        var currentNextId = 1L
+        val openingBag = List(QUEUE_SIZE + 1) {
+            val (piece, nextId) = createPiece(level = level, launchBar = LaunchBarState(), nextPieceId = currentNextId)
+            currentNextId = nextId
+            piece
+        }
         val activePiece = openingBag.first()
         val nextQueue = openingBag.drop(1)
         val state = GameState(
             config = config,
             gameMode = mode,
-            gameplayStyle = GameplayStyle.StackShift,
+            gameplayStyle = gameplayStyle,
             board = board,
             activePiece = activePiece,
             nextQueue = nextQueue,
@@ -85,7 +86,8 @@ class StackShiftGameLogic(
             clearAnimationToken = 0L,
             floatingFeedback = null,
             feedbackToken = 0L,
-            remainingTimeMillis = if (mode == GameMode.TimeAttack) DefaultTimeAttackDurationMillis else null,
+            nextPieceId = currentNextId,
+            remainingTimeMillis = if (mode == GameMode.TimeAttack) GameLogic.DEFAULT_TIME_ATTACK_DURATION_MILLIS else null,
             message = gameText(GameTextKey.GameMessageSelectColumn),
             activeChallenge = challenge?.let { c ->
                 c.copy(tasks = c.tasks.map { it.copy(current = 0) })
@@ -108,15 +110,15 @@ class StackShiftGameLogic(
         }
     }
 
-    fun previewPlacement(
+    override fun previewPlacement(
         state: GameState,
-        approximateColumn: Int,
+        column: Int,
     ): PlacementPreview? {
         val piece = state.activePiece ?: return null
         if (state.status != GameStatus.Running) return null
 
         val maxColumn = state.config.columns - piece.width
-        val selectedColumn = normalizeColumn(approximateColumn = approximateColumn, maxColumn = maxColumn)
+        val selectedColumn = normalizeColumn(approximateColumn = column, maxColumn = maxColumn)
             ?: return null
 
         return previewForColumn(
@@ -127,7 +129,15 @@ class StackShiftGameLogic(
         )
     }
 
-    fun previewImpactPoints(
+    override fun previewPlacement(
+        state: GameState,
+        pieceId: Long,
+        origin: GridPoint,
+    ): PlacementPreview? {
+        return previewPlacement(state, origin.column)
+    }
+
+    override fun previewImpactPoints(
         state: GameState,
         preview: PlacementPreview?,
     ): Set<GridPoint> {
@@ -169,14 +179,14 @@ class StackShiftGameLogic(
         }
     }
 
-    fun placePiece(
+    override fun placePiece(
         state: GameState,
-        approximateColumn: Int,
+        column: Int,
     ): GameMoveResult {
         val piece = state.activePiece ?: return invalidMove(state)
         if (state.status != GameStatus.Running) return invalidMove(state)
 
-        val preview = previewPlacement(state = state, approximateColumn = approximateColumn)
+        val preview = previewPlacement(state = state, column = column)
             ?: return invalidMove(state)
 
         val nextRevision = (state.softLock?.revision ?: 0L) + 1L
@@ -205,7 +215,7 @@ class StackShiftGameLogic(
                 softLock = SoftLockState(
                     pieceId = piece.id,
                     preview = preview,
-                    remainingMillis = SoftLockMillis,
+                    remainingMillis = SOFT_LOCK_MILLIS,
                     revision = nextRevision,
                 ),
                 lastPlacementColumn = preview.selectedColumn,
@@ -221,7 +231,15 @@ class StackShiftGameLogic(
         )
     }
 
-    fun commitSoftLock(state: GameState): GameMoveResult {
+    override fun placePiece(
+        state: GameState,
+        pieceId: Long,
+        origin: GridPoint,
+    ): GameMoveResult {
+        return placePiece(state, origin.column)
+    }
+
+    override fun commitSoftLock(state: GameState): GameMoveResult {
         val piece = state.activePiece ?: return invalidMove(state)
         val softLock = state.softLock ?: return invalidMove(state)
         if (softLock.pieceId != piece.id) return invalidMove(state)
@@ -258,10 +276,11 @@ class StackShiftGameLogic(
             clearedLines = totalLines,
             config = state.config,
         )
-        val queueAdvance = promoteQueue(
+        val (queueAdvance, nextPieceId) = promoteQueue(
             queue = state.nextQueue,
             level = nextLevel,
             launchBar = nextLaunchBar,
+            nextPieceId = state.nextPieceId,
         )
         val nextActivePiece = queueAdvance.activePiece
         val nextQueue = queueAdvance.nextQueue
@@ -292,8 +311,8 @@ class StackShiftGameLogic(
             specialResult.board.occupiedCount.toFloat() / boardSize.toFloat(),
         )
 
-        // "Hard placement" (köşe veya kenar yerleşimi) kontrolü
-        val isHardPlacement = preview.landingAnchor.column == 0 || 
+        // \"Hard placement\" (köşe veya kenar yerleşimi) kontrolü
+        val isHardPlacement = preview.landingAnchor.column == 0 ||
                              preview.landingAnchor.column == state.config.columns - piece.width ||
                              preview.landingAnchor.row == 0 ||
                              preview.landingAnchor.row == state.config.rows - piece.height
@@ -315,7 +334,7 @@ class StackShiftGameLogic(
         )
         val lastMoveScore = nextScore - state.score
         val awardedTimeMillis = if (state.gameMode == GameMode.TimeAttack) {
-            resolution.totalBlocksCleared * TimeAttackBonusPerClearedBlockMillis
+            resolution.totalBlocksCleared * GameLogic.TIME_ATTACK_BONUS_PER_CLEARED_BLOCK_MILLIS
         } else {
             0L
         }
@@ -390,6 +409,7 @@ class StackShiftGameLogic(
                 comboPopupToken = if (nextComboChain > 1 || perfectDrop || resolution.triggeredSpecialCells > 0) state.comboPopupToken + 1L else state.comboPopupToken,
                 floatingFeedback = floatingFeedback,
                 feedbackToken = nextToken,
+                nextPieceId = nextPieceId,
                 remainingTimeMillis = nextRemainingTimeMillis,
                 message = message,
                 activeChallenge = updatedChallenge,
@@ -425,16 +445,16 @@ class StackShiftGameLogic(
         return challenge.copy(tasks = updatedTasks)
     }
 
-    fun holdPiece(state: GameState): GameMoveResult {
+    override fun holdPiece(state: GameState): GameMoveResult {
         val activePiece = state.activePiece ?: return invalidMove(state)
         if (state.status != GameStatus.Running || state.softLock != null || !state.canHold) {
             return invalidMove(state)
         }
 
-        val queueAdvance = if (state.holdPiece == null) {
-            promoteQueue(queue = state.nextQueue, level = state.level, launchBar = state.launchBar)
+        val (queueAdvance, nextPieceId) = if (state.holdPiece == null) {
+            promoteQueue(queue = state.nextQueue, level = state.level, launchBar = state.launchBar, nextPieceId = state.nextPieceId)
         } else {
-            QueueAdvance(activePiece = state.holdPiece, nextQueue = state.nextQueue)
+            QueueAdvance(activePiece = state.holdPiece, nextQueue = state.nextQueue) to state.nextPieceId
         }
         val heldPiece = activePiece.copy(id = activePiece.id)
         val swappedPiece = queueAdvance.activePiece
@@ -445,6 +465,7 @@ class StackShiftGameLogic(
             holdPiece = heldPiece,
             canHold = false,
             softLock = null,
+            nextPieceId = nextPieceId,
             floatingFeedback = FloatingFeedback(
                 text = if (state.holdPiece == null) gameText(GameTextKey.FeedbackHoldArmed) else gameText(GameTextKey.FeedbackSwap),
                 emphasis = FeedbackEmphasis.Info,
@@ -456,7 +477,7 @@ class StackShiftGameLogic(
         return GameMoveResult(state = nextState, events = setOf(GameEvent.HoldUsed))
     }
 
-    fun replaceActivePiece(state: GameState, specialType: SpecialBlockType): GameMoveResult {
+    override fun replaceActivePiece(state: GameState, specialType: SpecialBlockType): GameMoveResult {
         val activePiece = state.activePiece ?: return invalidMove(state)
         if (state.status != GameStatus.Running) return invalidMove(state)
 
@@ -474,7 +495,7 @@ class StackShiftGameLogic(
         return GameMoveResult(state = nextState, events = setOf(GameEvent.SpecialTriggered))
     }
 
-    fun reviveFromReward(state: GameState): GameMoveResult {
+    override fun reviveFromReward(state: GameState): GameMoveResult {
         if (state.status != GameStatus.GameOver || state.rewardedReviveUsed) {
             return invalidMove(state)
         }
@@ -482,16 +503,17 @@ class StackShiftGameLogic(
         val revivedRows = selectRewardRows(
             board = state.board,
             totalRows = state.config.rows,
-            maxRowsToClear = RewardedReviveRowCount,
+            maxRowsToClear = REWARDED_REVIVE_ROW_COUNT,
         )
         val revivedBoard = state.board.clearRows(revivedRows)
-        val queueAdvance = ensurePlayableQueueAfterRevive(
+        val (queueAdvance, nextPieceId) = ensurePlayableQueueAfterRevive(
             board = revivedBoard,
             activePiece = state.activePiece,
             nextQueue = state.nextQueue,
             level = state.level,
             launchBar = state.launchBar,
             config = state.config,
+            nextPieceId = state.nextPieceId,
         )
         val nextPressure = computeColumnPressure(revivedBoard, state.config)
         val nextToken = state.feedbackToken + 1L
@@ -522,14 +544,15 @@ class StackShiftGameLogic(
                 ),
                 feedbackToken = nextToken,
                 rewardedReviveUsed = true,
-                remainingTimeMillis = state.remainingTimeMillis?.plus(TimeAttackReviveBonusMillis),
+                nextPieceId = nextPieceId,
+                remainingTimeMillis = state.remainingTimeMillis?.plus(GameLogic.TIME_ATTACK_REVIVE_BONUS_MILLIS),
                 message = gameText(GameTextKey.GameMessageExtraLifeUsed, revivedRows.size),
             ),
             events = setOf(GameEvent.Revived),
         )
     }
 
-    fun tick(state: GameState): GameState {
+    override fun tick(state: GameState): GameState {
         if (state.status != GameStatus.Running) return state
 
         val nextRemainingTimeMillis = state.remainingTimeMillis?.minus(1_000L)
@@ -627,7 +650,7 @@ class StackShiftGameLogic(
         }
 
         val landingAnchor = GridPoint(column = selectedColumn, row = landingRow)
-        val coveredColumns = selectedColumn..(selectedColumn + piece.width - 1)
+        val coveredColumns = selectedColumn..<(selectedColumn + piece.width)
         val basePreview = PlacementPreview(
             selectedColumn = selectedColumn,
             entryAnchor = entryAnchor,
@@ -965,10 +988,11 @@ class StackShiftGameLogic(
         level: Int,
         launchBar: LaunchBarState,
         config: GameConfig,
-    ): QueueAdvance {
+        nextPieceId: Long,
+    ): Pair<QueueAdvance, Long> {
         activePiece
             ?.takeIf { hasAnyValidPlacement(board = board, piece = it, config = config) }
-            ?.let { return QueueAdvance(activePiece = it, nextQueue = nextQueue) }
+            ?.let { return QueueAdvance(activePiece = it, nextQueue = nextQueue) to nextPieceId }
 
         val nextPlayableIndex = nextQueue.indexOfFirst { piece ->
             hasAnyValidPlacement(board = board, piece = piece, config = config)
@@ -976,50 +1000,58 @@ class StackShiftGameLogic(
         if (nextPlayableIndex >= 0) {
             val nextActivePiece = nextQueue[nextPlayableIndex]
             val reorderedQueue = nextQueue.toMutableList().apply { removeAt(nextPlayableIndex) }
+            val (replenished, finalNextId) = refillQueue(
+                queue = reorderedQueue,
+                level = level,
+                launchBar = launchBar,
+                nextPieceId = nextPieceId,
+            )
             return QueueAdvance(
                 activePiece = nextActivePiece,
-                nextQueue = refillQueue(
-                    queue = reorderedQueue,
-                    level = level,
-                    launchBar = launchBar,
-                ),
-            )
+                nextQueue = replenished,
+            ) to finalNextId
         }
 
-        repeat(PlayablePieceGenerationAttempts) {
-            val candidate = createPiece(level = level, launchBar = launchBar)
+        repeat(PLAYABLE_PIECE_GENERATION_ATTEMPTS) {
+            val (candidate, nextId) = createPiece(level = level, launchBar = launchBar, nextPieceId = nextPieceId)
             if (hasAnyValidPlacement(board = board, piece = candidate, config = config)) {
+                val (replenished, finalNextId) = refillQueue(
+                    queue = nextQueue,
+                    level = level,
+                    launchBar = launchBar,
+                    nextPieceId = nextId,
+                )
                 return QueueAdvance(
                     activePiece = candidate,
-                    nextQueue = refillQueue(
-                        queue = nextQueue,
-                        level = level,
-                        launchBar = launchBar,
-                    ),
-                )
+                    nextQueue = replenished,
+                ) to finalNextId
             }
         }
 
-        return QueueAdvance(
-            activePiece = createFallbackPlayablePiece(board = board, config = config),
-            nextQueue = refillQueue(
-                queue = nextQueue,
-                level = level,
-                launchBar = launchBar,
-            ),
+        val (fallback, nextId) = createFallbackPlayablePiece(board = board, config = config, nextPieceId = nextPieceId)
+        val (replenished, finalNextId) = refillQueue(
+            queue = nextQueue,
+            level = level,
+            launchBar = launchBar,
+            nextPieceId = nextId,
         )
+        return QueueAdvance(
+            activePiece = fallback,
+            nextQueue = replenished,
+        ) to finalNextId
     }
 
     private fun createFallbackPlayablePiece(
         board: BoardMatrix,
         config: GameConfig,
-    ): Piece {
+        nextPieceId: Long,
+    ): Pair<Piece, Long> {
         val candidateKinds = listOf(PieceKind.Domino, PieceKind.TriL, PieceKind.Square, PieceKind.T, PieceKind.I)
         candidateKinds.forEach { kind ->
             repeat(4) { rotation ->
                 val rotatedCells = rotateAndNormalize(kind.template, rotation)
                 val candidate = Piece(
-                    id = nextPieceId++,
+                    id = nextPieceId,
                     kind = kind,
                     tone = kind.tone,
                     cells = rotatedCells,
@@ -1028,20 +1060,20 @@ class StackShiftGameLogic(
                     special = SpecialBlockType.None,
                 )
                 if (hasAnyValidPlacement(board = board, piece = candidate, config = config)) {
-                    return candidate
+                    return candidate to (nextPieceId + 1L)
                 }
             }
         }
 
         return Piece(
-            id = nextPieceId++,
+            id = nextPieceId,
             kind = PieceKind.Domino,
             tone = PieceKind.Domino.tone,
             cells = listOf(GridPoint(0, 0), GridPoint(1, 0)),
             width = 2,
             height = 1,
             special = SpecialBlockType.None,
-        )
+        ) to (nextPieceId + 1L)
     }
 
     private fun selectRewardRows(
@@ -1066,46 +1098,54 @@ class StackShiftGameLogic(
         queue: List<Piece>,
         level: Int,
         launchBar: LaunchBarState,
-    ): QueueAdvance {
-        val nextActive = queue.firstOrNull() ?: createPiece(level = level, launchBar = launchBar)
-        val replenishedQueue = refillQueue(
+        nextPieceId: Long,
+    ): Pair<QueueAdvance, Long> {
+        val (nextActive, nextId) = queue.firstOrNull()?.let { it to nextPieceId }
+            ?: createPiece(level = level, launchBar = launchBar, nextPieceId = nextPieceId)
+        val (replenishedQueue, finalNextId) = refillQueue(
             queue = queue.drop(1),
             level = level,
             launchBar = launchBar,
+            nextPieceId = nextId,
         )
-        return QueueAdvance(activePiece = nextActive, nextQueue = replenishedQueue)
+        return QueueAdvance(activePiece = nextActive, nextQueue = replenishedQueue) to finalNextId
     }
 
     private fun refillQueue(
         queue: List<Piece>,
         level: Int,
         launchBar: LaunchBarState,
-    ): List<Piece> {
+        nextPieceId: Long,
+    ): Pair<List<Piece>, Long> {
         val next = queue.toMutableList()
-        while (next.size < QueueSize) {
-            next += createPiece(level = level, launchBar = launchBar)
+        var currentNextId = nextPieceId
+        while (next.size < QUEUE_SIZE) {
+            val (piece, nextId) = createPiece(level = level, launchBar = launchBar, nextPieceId = currentNextId)
+            next += piece
+            currentNextId = nextId
         }
-        return next.toList()
+        return next.toList() to currentNextId
     }
 
     private fun createPiece(
         level: Int,
         launchBar: LaunchBarState,
-    ): Piece {
+        nextPieceId: Long,
+    ): Pair<Piece, Long> {
         val availableKinds = PieceKind.entries.filter { it.unlockLevel <= level }
         val kind = availableKinds.random(random)
         val rotationCount = if (kind == PieceKind.Square || kind == PieceKind.Plus) 0 else random.nextInt(4)
         val rotatedCells = rotateAndNormalize(kind.template, rotationCount)
         val special = rollSpecialBlock(level = level, launchBar = launchBar)
         return Piece(
-            id = nextPieceId++,
+            id = nextPieceId,
             kind = kind,
             tone = kind.tone,
             cells = rotatedCells,
             width = rotatedCells.maxOf { it.column } + 1,
             height = rotatedCells.maxOf { it.row } + 1,
             special = special,
-        )
+        ) to (nextPieceId + 1L)
     }
 
     private fun rollSpecialBlock(
@@ -1314,4 +1354,3 @@ private data class PreviewImpactResult(
     val board: BoardMatrix,
     val impactedPoints: Set<GridPoint>,
 )
-

@@ -2,10 +2,10 @@ package com.ugurbuga.stackshift
 
 import com.ugurbuga.stackshift.game.logic.GameEvent
 import com.ugurbuga.stackshift.game.logic.GameLogic
-import com.ugurbuga.stackshift.game.logic.StackShiftGameLogic
 import com.ugurbuga.stackshift.game.model.BoardMatrix
 import com.ugurbuga.stackshift.game.model.CellTone
 import com.ugurbuga.stackshift.game.model.GameConfig
+import com.ugurbuga.stackshift.game.model.GameplayStyle
 import com.ugurbuga.stackshift.game.model.GridPoint
 import com.ugurbuga.stackshift.game.model.LaunchBarState
 import com.ugurbuga.stackshift.game.model.Piece
@@ -30,9 +30,8 @@ import kotlin.test.assertTrue
 
 class GameReducerCommonTest {
 
-    private val logic = GameLogic(random = Random(7))
-    private val stackShiftLogic = StackShiftGameLogic(random = Random(7))
-    private val reducer = GameReducer(logic, stackShiftLogic)
+    private val logic = GameLogic.create(random = Random(7))
+    private val reducer = GameReducer(logic)
 
     @Test
     fun board_fill_persistsCellLevelSpecialMetadata() {
@@ -84,8 +83,8 @@ class GameReducerCommonTest {
 
     @Test
     fun reducer_placePiece_startsSoftLockTimerForStackShift() {
-        val state = stackShiftLogic.newGame(GameConfig(columns = 6, rows = 8))
-        val preview = stackShiftLogic.previewPlacement(state = state, approximateColumn = state.config.columns / 2)
+        val state = logic.newGame(GameConfig(columns = 6, rows = 8), gameplayStyle = GameplayStyle.StackShift)
+        val preview = logic.previewPlacement(state = state, column = state.config.columns / 2)
 
         assertNotNull(preview)
 
@@ -105,8 +104,8 @@ class GameReducerCommonTest {
 
     @Test
     fun reducer_commitSoftLock_placesStackShiftPieceAndAdvancesQueue() {
-        val state = stackShiftLogic.newGame(GameConfig(columns = 6, rows = 8))
-        val preview = stackShiftLogic.previewPlacement(state = state, approximateColumn = state.config.columns / 2)
+        val state = logic.newGame(GameConfig(columns = 6, rows = 8), gameplayStyle = GameplayStyle.StackShift)
+        val preview = logic.previewPlacement(state = state, column = state.config.columns / 2)
 
         assertNotNull(preview)
 
@@ -135,7 +134,7 @@ class GameReducerCommonTest {
     @Test
     fun store_dispatch_updatesUiStateThroughReducer() {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
-        val store = GameStore(blockWiseGameLogic = logic, stackShiftGameLogic = stackShiftLogic, scope = scope)
+        val store = GameStore(gameLogic = logic, scope = scope)
 
         try {
             store.replaceState(testState())

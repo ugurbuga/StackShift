@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_title">StackShift</string>
+    <string name="app_title_stackshift">StackShift</string>
     <string name="app_title_banner_stackshift_top">STACK</string>
     <string name="app_title_banner_stackshift_bottom">SHIFT</string>
     <string name="app_title_banner_blockwise_top">BLOCK</string>
@@ -98,8 +98,8 @@
     <string name="danger_none">-</string>
     <string name="launch_label">إطلاق</string>
     <string name="launch_bar">شريط الإطلاق</string>
-    <string name="launch_boost_active">الثلاثية الجديدة جاهزة</string>
-    <string name="launch_special_chance">يمكن سحب كل ثلاثية إلى أي مكان يناسبها</string>
+    <string name="launch_boost_active">التعزيز نشط • %1$s دورات</string>
+    <string name="launch_special_chance">احتمال الكتلة الخاصة +%1$s%%</string>
     <string name="launch_soft_lock_message">القفل الناعم نشط • تمكين الضبط الدقيق</string>
     <string name="launch_chain_message">صف + عمود • +%2$s</string>
     <string name="launch_paused">متوقف مؤقتًا</string>
@@ -204,8 +204,6 @@
     <string name="feedback_extra_life">حياة إضافية! %1$s صفوف</string>
     <string name="challenge_progress_value">%1$d/%2$d</string>
     <string name="stat_label_value_format">%1$s: %2$s</string>
-    <string name="launch_boost_turns_remaining_format">x%1$d</string>
-    <string name="launch_progress_percent_format">%%%1$d</string>
     <string name="time_minutes_seconds_format">%1$d:%2$s</string>
     <string name="special_column_clearer">عمود</string>
     <string name="special_row_clearer">صف</string>

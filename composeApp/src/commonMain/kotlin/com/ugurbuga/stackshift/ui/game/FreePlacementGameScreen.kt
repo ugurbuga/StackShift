@@ -1,5 +1,8 @@
 package com.ugurbuga.stackshift.ui.game
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -15,11 +18,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -27,7 +30,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -35,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,18 +61,20 @@ import com.ugurbuga.stackshift.game.model.GameStatus
 import com.ugurbuga.stackshift.game.model.GridPoint
 import com.ugurbuga.stackshift.game.model.Piece
 import com.ugurbuga.stackshift.game.model.PlacementPreview
+import com.ugurbuga.stackshift.game.model.gameText
+import com.ugurbuga.stackshift.game.model.GameTextKey
 import com.ugurbuga.stackshift.telemetry.AppTelemetry
 import com.ugurbuga.stackshift.telemetry.NoOpAppTelemetry
+import com.ugurbuga.stackshift.ui.theme.BlockGamesThemeTokens
 import com.ugurbuga.stackshift.ui.theme.GameUiShapeTokens
-import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
 import com.ugurbuga.stackshift.ui.theme.appBackgroundBrush
-import com.ugurbuga.stackshift.ui.theme.stackShiftSurfaceShadow
+import com.ugurbuga.stackshift.ui.theme.blockGamesSurfaceShadow
 import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
 import stackshift.composeapp.generated.resources.stat_label_value_format
 import stackshift.composeapp.generated.resources.time_remaining
 
-private const val FreePlacementDragLiftPx = 100f
+private const val FreePlacementDragLiftPx = 400f
 private val FreePlacementTrayCardHeight = 104.dp
 private val FreePlacementCompactTrayCardHeight = 72.dp
 private val FreePlacementTrayPieceCellSize = 18.dp
@@ -90,17 +95,42 @@ fun FreePlacementGameScreen(
     telemetry: AppTelemetry = NoOpAppTelemetry,
     modifier: Modifier = Modifier,
 ) {
+    val currentGameState by rememberUpdatedState(gameState)
+    val currentOnRequestPreview by rememberUpdatedState(onRequestPreview)
+    val currentOnResolvePreviewImpact by rememberUpdatedState(onResolvePreviewImpact)
+    val currentOnPlacePiece by rememberUpdatedState(onPlacePiece)
+
     telemetry.hashCode()
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     var hostRectInRoot by remember { mutableStateOf(Rect.Zero) }
     var boardRectInRoot by remember { mutableStateOf(Rect.Zero) }
     val trayPieceRectsInRoot = remember { mutableStateMapOf<Long, Rect>() }
     var draggedPieceId by remember { mutableStateOf<Long?>(null) }
     var dragPointerInHost by remember { mutableStateOf<Offset?>(null) }
     var showRestartDialog by remember { mutableStateOf(false) }
+    var rewardedReviveLoading by remember { mutableStateOf(false) }
+    val gameOverDialogRevealProgress = remember { Animatable(0f) }
 
-    val trayPieces = gameState.trayPieces
-    val draggedPiece = trayPieces.firstOrNull { it.id == draggedPieceId }
+    LaunchedEffect(gameState.status) {
+        if (gameState.status == GameStatus.GameOver) {
+            gameOverDialogRevealProgress.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(
+                    durationMillis = 260,
+                    easing = FastOutSlowInEasing,
+                ),
+            )
+        } else {
+            gameOverDialogRevealProgress.snapTo(0f)
+        }
+    }
+
+    val trayPieces by remember {
+        derivedStateOf { currentGameState.trayPieces }
+    }
+    val draggedPiece by remember {
+        derivedStateOf { trayPieces.firstOrNull { it.id == draggedPieceId } }
+    }
     val density = LocalDensity.current
     val hasActiveChallenge = gameState.activeChallenge != null
     val trayCardHeight = if (hasActiveChallenge) {
@@ -113,15 +143,20 @@ fun FreePlacementGameScreen(
     } else {
         FreePlacementTrayPieceCellSize
     }
-    val boardRect by remember(boardRectInRoot, hostRectInRoot) {
-        derivedStateOf { boardRectInRoot.toLocalRect(hostRectInRoot) }
-    }
-    val cellSizePx by remember(boardRect, gameState.config.columns) {
+    val boardRect by remember {
         derivedStateOf {
-            if (boardRect == Rect.Zero) 0f else boardRect.width / gameState.config.columns.toFloat()
+            val insetPx = with(density) { 1.dp.toPx() }
+            boardRectInRoot
+                .toLocalRect(hostRectInRoot)
+                .deflate(insetPx)
         }
     }
-    val overlayTopLeft by remember(dragPointerInHost, draggedPiece, cellSizePx) {
+    val cellSizePx by remember {
+        derivedStateOf {
+            if (boardRect == Rect.Zero) 0f else boardRect.width / currentGameState.config.columns.toFloat()
+        }
+    }
+    val overlayTopLeft by remember {
         derivedStateOf {
             val pointer = dragPointerInHost ?: return@derivedStateOf null
             val piece = draggedPiece ?: return@derivedStateOf null
@@ -132,33 +167,23 @@ fun FreePlacementGameScreen(
             )
         }
     }
-    val placementPreview by remember(
-        draggedPieceId,
-        draggedPiece,
-        overlayTopLeft,
-        dragPointerInHost,
-        trayPieces,
-        gameState.board,
-        gameState.status,
-        boardRect,
-        cellSizePx,
-    ) {
+    val placementPreview by remember {
         derivedStateOf {
             val pieceId = draggedPieceId ?: return@derivedStateOf null
-            if (gameState.status != GameStatus.Running) return@derivedStateOf null
+            if (currentGameState.status != GameStatus.Running) return@derivedStateOf null
             resolveNearestFreePlacementPreview(
                 pieceId = pieceId,
                 piece = draggedPiece,
                 overlayTopLeft = overlayTopLeft,
                 boardRect = boardRect,
                 cellSizePx = cellSizePx,
-                config = gameState.config,
-                requestPreview = onRequestPreview,
+                config = currentGameState.config,
+                requestPreview = currentOnRequestPreview,
             )
         }
     }
-    val impactedPreviewCells by remember(placementPreview, gameState.board) {
-        derivedStateOf { onResolvePreviewImpact(placementPreview) }
+    val impactedPreviewCells by remember {
+        derivedStateOf { currentOnResolvePreviewImpact(placementPreview) }
     }
 
     LaunchedEffect(gameState.activePiece?.id, gameState.status) {
@@ -176,9 +201,9 @@ fun FreePlacementGameScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(appBackgroundBrush(uiColors))
-                .onGloballyPositioned { hostRectInRoot = it.boundsInRoot() }
                 .statusBarsPadding()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .padding(horizontal = 14.dp, vertical = 12.dp)
+                .onGloballyPositioned { hostRectInRoot = it.boundsInRoot() },
         ) {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -208,7 +233,7 @@ fun FreePlacementGameScreen(
                     Box(
                         modifier = Modifier
                             .size(width = boardWidth, height = boardHeight)
-                            .stackShiftSurfaceShadow(
+                            .blockGamesSurfaceShadow(
                                 shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
                                 elevation = 10.dp,
                             ),
@@ -253,7 +278,7 @@ fun FreePlacementGameScreen(
                         val pieceId = draggedPieceId
                         val preview = placementPreview
                         if (pieceId != null && preview != null) {
-                            onPlacePiece(pieceId, preview.landingAnchor)
+                            currentOnPlacePiece(pieceId, preview.landingAnchor)
                         }
                         draggedPieceId = null
                         dragPointerInHost = null
@@ -284,137 +309,56 @@ fun FreePlacementGameScreen(
     }
 
     if (showRestartDialog) {
-        ConfirmDialog(
-            title = resolveGameText(com.ugurbuga.stackshift.game.model.gameText(com.ugurbuga.stackshift.game.model.GameTextKey.RestartConfirmTitle)),
-            body = resolveGameText(com.ugurbuga.stackshift.game.model.gameText(com.ugurbuga.stackshift.game.model.GameTextKey.RestartConfirmBody)),
-            confirmLabel = resolveGameText(com.ugurbuga.stackshift.game.model.gameText(com.ugurbuga.stackshift.game.model.GameTextKey.RestartConfirm)),
-            dismissLabel = resolveGameText(com.ugurbuga.stackshift.game.model.gameText(com.ugurbuga.stackshift.game.model.GameTextKey.RestartCancel)),
+        RestartConfirmDialog(
+            onDismissRequest = { showRestartDialog = false },
+            title = resolveGameText(gameText(GameTextKey.RestartConfirmTitle)),
+            message = resolveGameText(gameText(GameTextKey.RestartConfirmBody)),
+            confirmLabel = resolveGameText(gameText(GameTextKey.RestartConfirm)),
+            dismissLabel = resolveGameText(gameText(GameTextKey.RestartCancel)),
             onConfirm = {
                 showRestartDialog = false
-                onRestart()
+                adController.showRestartInterstitial {
+                    onRestart()
+                }
             },
-            onDismiss = { showRestartDialog = false },
         )
     }
 
     if (gameState.status == GameStatus.GameOver) {
-        val showExtraLife = (adController !== NoOpGameAdController) && !gameState.rewardedReviveUsed && gameState.activeChallenge?.isCompleted != true
-        AlertDialog(
-            onDismissRequest = {},
-            title = {
-                Text(
-                    text = resolveGameText(com.ugurbuga.stackshift.game.model.gameText(com.ugurbuga.stackshift.game.model.GameTextKey.GameOverTitle)),
-                    fontWeight = FontWeight.Bold,
-                )
-            },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = stringResource(
-                            Res.string.stat_label_value_format,
-                            resolveGameText(com.ugurbuga.stackshift.game.model.gameText(com.ugurbuga.stackshift.game.model.GameTextKey.Score)),
-                            gameState.score.toString(),
-                        )
-                    )
-                    Text(
-                        text = stringResource(
-                            Res.string.stat_label_value_format,
-                            resolveGameText(com.ugurbuga.stackshift.game.model.gameText(com.ugurbuga.stackshift.game.model.GameTextKey.HighScore)),
-                            highestScore.toString(),
-                        )
-                    )
-                    if (showNewHighScoreMessage) {
-                        Text(
-                            text = resolveGameText(com.ugurbuga.stackshift.game.model.gameText(com.ugurbuga.stackshift.game.model.GameTextKey.GameOverNewHighScore)),
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.SemiBold,
-                        )
+        GameOverDialog(
+            gameState = gameState,
+            highestScore = highestScore,
+            showNewHighScoreMessage = showNewHighScoreMessage,
+            revealProgressProvider = { gameOverDialogRevealProgress.value },
+            canUseExtraLife = !gameState.rewardedReviveUsed,
+            isExtraLifeLoading = rewardedReviveLoading,
+            showExtraLifeButton = adController !== NoOpGameAdController && gameState.activeChallenge?.isCompleted != true,
+            onPlayAgain = {
+                if (gameState.activeChallenge?.isCompleted == true) {
+                    onBack()
+                } else {
+                    adController.showRestartInterstitial {
+                        onRestart()
                     }
                 }
             },
-            confirmButton = {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (showExtraLife) {
-                        TextButton(onClick = onRewardedRevive) {
-                            Text(resolveGameText(com.ugurbuga.stackshift.game.model.gameText(com.ugurbuga.stackshift.game.model.GameTextKey.GameOverExtraLife)))
-                        }
-                    }
-                    TextButton(onClick = onRestart) {
-                        Text(resolveGameText(com.ugurbuga.stackshift.game.model.gameText(com.ugurbuga.stackshift.game.model.GameTextKey.PlayAgain)))
+            onUseExtraLife = {
+                if (rewardedReviveLoading || gameState.rewardedReviveUsed) return@GameOverDialog
+                rewardedReviveLoading = true
+                adController.showRewardedRevive { rewarded ->
+                    rewardedReviveLoading = false
+                    if (rewarded) {
+                        onRewardedRevive()
                     }
                 }
             },
         )
-    }
-}
-
-@Composable
-private fun FreePlacementHeader(
-    score: Int,
-    highestScore: Int,
-    showNewHighScoreMessage: Boolean,
-    onBack: () -> Unit,
-    onRestart: () -> Unit,
-) {
-    val uiColors = StackShiftThemeTokens.uiColors
-    Card(
-        shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
-        colors = CardDefaults.cardColors(containerColor = uiColors.gameSurface.copy(alpha = 0.92f)),
-        border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.72f)),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-            }
-            ScoreChip(label = resolveGameText(com.ugurbuga.stackshift.game.model.gameText(com.ugurbuga.stackshift.game.model.GameTextKey.Score)), value = score.toString(), modifier = Modifier.weight(1f))
-            ScoreChip(
-                label = resolveGameText(com.ugurbuga.stackshift.game.model.gameText(com.ugurbuga.stackshift.game.model.GameTextKey.HighScore)),
-                value = highestScore.toString(),
-                modifier = Modifier.weight(1f),
-                highlight = showNewHighScoreMessage,
-            )
-            IconButton(onClick = onRestart) {
-                Icon(Icons.Filled.Refresh, contentDescription = null)
-            }
-        }
-    }
-}
-
-@Composable
-private fun ScoreChip(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier,
-    highlight: Boolean = false,
-) {
-    val uiColors = StackShiftThemeTokens.uiColors
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(GameUiShapeTokens.chipCorner),
-        colors = CardDefaults.cardColors(
-            containerColor = if (highlight) uiColors.actionButton.copy(alpha = 0.22f) else uiColors.metricCard.copy(alpha = 0.92f),
-        ),
-        border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.7f)),
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(text = label, style = MaterialTheme.typography.labelMedium)
-            Text(text = value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        }
     }
 }
 
 @Composable
 private fun StatusCard(text: String) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     Card(
         shape = RoundedCornerShape(GameUiShapeTokens.hintCorner),
         colors = CardDefaults.cardColors(containerColor = uiColors.metricCard.copy(alpha = 0.88f)),
@@ -442,12 +386,12 @@ private fun TrayDock(
     pieceCardHeight: androidx.compose.ui.unit.Dp,
     pieceCellSize: androidx.compose.ui.unit.Dp,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     Card(
         shape = RoundedCornerShape(GameUiShapeTokens.dockCorner),
         colors = CardDefaults.cardColors(containerColor = uiColors.panel.copy(alpha = 0.92f)),
         border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.72f)),
-        modifier = Modifier.stackShiftSurfaceShadow(
+        modifier = Modifier.blockGamesSurfaceShadow(
             shape = RoundedCornerShape(GameUiShapeTokens.dockCorner),
             elevation = 10.dp,
         ),
@@ -518,7 +462,12 @@ private fun TrayPieceCard(
     onCancelDrag: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val currentOnStartDrag by rememberUpdatedState(onStartDrag)
+    val currentOnDrag by rememberUpdatedState(onDrag)
+    val currentOnEndDrag by rememberUpdatedState(onEndDrag)
+    val currentOnCancelDrag by rememberUpdatedState(onCancelDrag)
+
+    val uiColors = BlockGamesThemeTokens.uiColors
     Card(
         modifier = modifier
             .height(cardHeight)
@@ -526,12 +475,12 @@ private fun TrayPieceCard(
             .graphicsLayer { alpha = if (hidden) 0f else 1f }
             .pointerInput(piece.id) {
                 detectDragGestures(
-                    onDragStart = onStartDrag,
-                    onDragEnd = onEndDrag,
-                    onDragCancel = onCancelDrag,
+                    onDragStart = { offset -> currentOnStartDrag(offset) },
+                    onDragEnd = { currentOnEndDrag() },
+                    onDragCancel = { currentOnCancelDrag() },
                     onDrag = { change, dragAmount ->
                         change.consume()
-                        onDrag(dragAmount)
+                        currentOnDrag(dragAmount)
                     },
                 )
             },
@@ -545,24 +494,6 @@ private fun TrayPieceCard(
     }
 }
 
-@Composable
-private fun ConfirmDialog(
-    title: String,
-    body: String,
-    confirmLabel: String,
-    dismissLabel: String,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title, fontWeight = FontWeight.Bold) },
-        text = { Text(body) },
-        confirmButton = { TextButton(onClick = onConfirm) { Text(confirmLabel) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(dismissLabel) } },
-    )
-}
-
 internal fun freePlacementDragTopLeft(
     pointerInHost: Offset,
     piece: Piece,
@@ -571,10 +502,9 @@ internal fun freePlacementDragTopLeft(
 ): Offset? {
     if (cellSizePx <= 0f) return null
     val pieceWidthPx = piece.width * cellSizePx
-    val pieceHeightPx = piece.height * cellSizePx
     return Offset(
         x = pointerInHost.x - (pieceWidthPx / 2f),
-        y = pointerInHost.y - (pieceHeightPx / 2f) - liftPx,
+        y = pointerInHost.y - liftPx,
     )
 }
 
@@ -600,7 +530,7 @@ internal fun resolveNearestFreePlacementPreview(
     if (overlayCellRects.none { overlapArea(it, boardRect) > 0f }) {
         return null
     }
-    return buildList {
+    val candidates = buildList {
         for (row in 0..maxRow) {
             for (column in 0..maxColumn) {
                 val origin = GridPoint(column = column, row = row)
@@ -630,11 +560,20 @@ internal fun resolveNearestFreePlacementPreview(
                 proximityScore = -squaredDistance(candidateTopLeft, resolvedOverlayTopLeft),
             )
         }
-    }.maxWithOrNull(
+    }
+
+    val bestCandidate = candidates.maxWithOrNull(
         compareBy<FreePlacementPreviewCandidate> { it.overlapBlockCount }
             .thenBy { it.overlapArea }
             .thenBy { it.proximityScore }
-    )?.preview
+    ) ?: return null
+
+    val totalPieceArea = resolvedPiece.cells.size * cellSizePx * cellSizePx
+    return if (bestCandidate.overlapArea >= totalPieceArea * 0.5f) {
+        bestCandidate.preview
+    } else {
+        null
+    }
 }
 
 private fun initialDragPointerPosition(

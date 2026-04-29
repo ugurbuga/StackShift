@@ -13,7 +13,7 @@ import com.ugurbuga.stackshift.game.model.AppColorPalette
 import com.ugurbuga.stackshift.settings.AppSettings
 
 @Immutable
-data class StackShiftUiColors(
+data class BlockGamesUiColors(
 	val screenGradientTop: Color,
 	val screenGradientMiddle: Color,
 	val screenGradientBottom: Color,
@@ -55,27 +55,27 @@ data class StackShiftUiColors(
 )
 
 @Immutable
-data class StackShiftThemeSpec(
+data class BlockGamesThemeSpec(
 	val colorScheme: ColorScheme,
-	val uiColors: StackShiftUiColors,
+	val uiColors: BlockGamesUiColors,
 )
 
-val LocalStackShiftUiColors = staticCompositionLocalOf {
-	stackShiftThemeSpec(
+val LocalBlockGamesUiColors = staticCompositionLocalOf {
+	blockGamesThemeSpec(
 		palette = AppColorPalette.Classic,
 		darkTheme = true,
 	).uiColors
 }
 
-object StackShiftThemeTokens {
-	val uiColors: StackShiftUiColors
-		@Composable get() = LocalStackShiftUiColors.current
+object BlockGamesThemeTokens {
+	val uiColors: BlockGamesUiColors
+		@Composable get() = LocalBlockGamesUiColors.current
 }
 
 @Composable
-fun isStackShiftDarkTheme(settings: AppSettings): Boolean = settings.themeMode.isDark ?: isSystemInDarkTheme()
+fun isBlockGamesDarkTheme(settings: AppSettings): Boolean = settings.themeMode.isDark ?: isSystemInDarkTheme()
 
-fun appBackgroundBrush(uiColors: StackShiftUiColors): Brush = Brush.verticalGradient(
+fun appBackgroundBrush(uiColors: BlockGamesUiColors): Brush = Brush.verticalGradient(
     colors = listOf(
         uiColors.screenGradientTop,
         uiColors.screenGradientMiddle,
@@ -83,18 +83,18 @@ fun appBackgroundBrush(uiColors: StackShiftUiColors): Brush = Brush.verticalGrad
     ),
 )
 
-fun stackShiftThemeSpec(
+fun blockGamesThemeSpec(
 	settings: AppSettings,
 	darkTheme: Boolean,
-): StackShiftThemeSpec = stackShiftThemeSpec(
+): BlockGamesThemeSpec = blockGamesThemeSpec(
 	palette = settings.themeColorPalette,
 	darkTheme = darkTheme,
 )
 
-fun stackShiftThemeSpec(
+fun blockGamesThemeSpec(
 	palette: AppColorPalette,
 	darkTheme: Boolean,
-): StackShiftThemeSpec {
+): BlockGamesThemeSpec {
 	val colorScheme = when (palette) {
 		AppColorPalette.Classic -> classicColorScheme(darkTheme)
 		AppColorPalette.Aurora -> auroraColorScheme(darkTheme)
@@ -108,9 +108,9 @@ fun stackShiftThemeSpec(
 	val boardSignature = boardSignatureColors(palette = palette, darkTheme = darkTheme)
 	val guideAccent = guideAccentColor(palette = palette, darkTheme = darkTheme)
 
-	return StackShiftThemeSpec(
+	return BlockGamesThemeSpec(
 		colorScheme = colorScheme,
-		uiColors = StackShiftUiColors(
+		uiColors = BlockGamesUiColors(
 			screenGradientTop = gradients.screenTop,
 			screenGradientMiddle = gradients.screenMiddle,
 			screenGradientBottom = gradients.screenBottom,
@@ -694,4 +694,3 @@ private fun mixColors(
 		alpha = first.alpha + ((second.alpha - first.alpha) * t),
 	)
 }
-

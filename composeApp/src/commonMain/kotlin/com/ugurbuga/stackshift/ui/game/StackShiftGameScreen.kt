@@ -17,7 +17,7 @@ import com.ugurbuga.stackshift.telemetry.AppTelemetry
 import com.ugurbuga.stackshift.telemetry.NoOpAppTelemetry
 
 @Composable
-fun SSGameScreen(
+fun StackShiftGameScreen(
     gameState: GameState,
     onRequestPreview: (Int) -> PlacementPreview?,
     onResolvePreviewImpact: (PlacementPreview?) -> Set<GridPoint>,

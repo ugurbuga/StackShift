@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_title">StackShift</string>
+    <string name="app_title_stackshift">StackShift</string>
     <string name="app_title_banner_stackshift_top">STACK</string>
     <string name="app_title_banner_stackshift_bottom">SHIFT</string>
     <string name="app_title_banner_blockwise_top">BLOCK</string>
@@ -95,7 +95,7 @@
     <string name="score">Skor</string>
     <string name="high_score">Rekor</string>
     <string name="high_score_new_record">Yeni Rekor</string>
-    <string name="home_play_cta">Başlat</string>
+    <string name="home_play_cta">Klasik</string>
     <string name="home_classic_cta">Klasik</string>
     <string name="home_time_attack_cta">Zamana Karşı</string>
     <string name="lines">Satır</string>
@@ -103,15 +103,15 @@
     <string name="boost">Hız</string>
     <string name="danger">Tehlike</string>
     <string name="danger_none">-</string>
-    <string name="launch_label">Tray</string>
-    <string name="launch_bar">Parça tray'i</string>
-    <string name="launch_boost_active">Yeni üçlü hazır</string>
-    <string name="launch_special_chance">Her üçlü uygun olduğu her yere sürüklenebilir</string>
+    <string name="launch_label">Fırlatma</string>
+    <string name="launch_bar">Fırlatma barı</string>
+    <string name="launch_boost_active">Hız aktif • %1$s tur</string>
+    <string name="launch_special_chance">Özel blok şansı +%1$s%</string>
     <string name="launch_soft_lock_message">Hedefi önizle, sonra bırakıp yerleştir</string>
     <string name="launch_chain_message">Satır + Sütun • +%2$s</string>
     <string name="launch_paused">Duraklatıldı</string>
     <string name="launch_game_over">Yeni tur için yeniden başlat</string>
-    <string name="launch_drag_hint">Bir şekli sürükleyip tahtaya bırak</string>
+    <string name="launch_drag_hint">Yatay sürükle → bırak</string>
     <string name="queue_hold">Beklet</string>
     <string name="queue_next_short">Sıradaki</string>
     <string name="queue_empty">—</string>
@@ -211,8 +211,6 @@
     <string name="feedback_extra_life">Ekstra can! %1$s satır</string>
     <string name="challenge_progress_value">%1$d/%2$d</string>
     <string name="stat_label_value_format">%1$s: %2$s</string>
-    <string name="launch_boost_turns_remaining_format">x%1$d</string>
-    <string name="launch_progress_percent_format">%%%1$d</string>
     <string name="time_minutes_seconds_format">%1$d:%2$s</string>
     <string name="special_column_clearer">SÜTUN</string>
     <string name="special_row_clearer">SATIR</string>

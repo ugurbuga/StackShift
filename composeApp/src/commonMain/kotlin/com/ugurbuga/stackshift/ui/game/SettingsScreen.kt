@@ -90,12 +90,12 @@ import com.ugurbuga.stackshift.telemetry.AppTelemetry
 import com.ugurbuga.stackshift.telemetry.LogScreen
 import com.ugurbuga.stackshift.telemetry.NoOpAppTelemetry
 import com.ugurbuga.stackshift.telemetry.TelemetryScreenNames
+import com.ugurbuga.stackshift.ui.theme.BlockGamesThemeTokens
 import com.ugurbuga.stackshift.ui.theme.GameUiShapeTokens
-import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
 import com.ugurbuga.stackshift.ui.theme.appBackgroundBrush
-import com.ugurbuga.stackshift.ui.theme.isStackShiftDarkTheme
-import com.ugurbuga.stackshift.ui.theme.stackShiftSurfaceShadow
-import com.ugurbuga.stackshift.ui.theme.stackShiftThemeSpec
+import com.ugurbuga.stackshift.ui.theme.blockGamesSurfaceShadow
+import com.ugurbuga.stackshift.ui.theme.blockGamesThemeSpec
+import com.ugurbuga.stackshift.ui.theme.isBlockGamesDarkTheme
 import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
 import stackshift.composeapp.generated.resources.app_theme_dark
@@ -166,10 +166,10 @@ fun AppSettingsScreen(
 ) {
     LogScreen(telemetry, TelemetryScreenNames.Theme)
     val scrollState = rememberScrollState()
-    val uiColors = StackShiftThemeTokens.uiColors
-    val darkTheme = isStackShiftDarkTheme(settings)
+    val uiColors = BlockGamesThemeTokens.uiColors
+    val darkTheme = isBlockGamesDarkTheme(settings)
     val selectedBlockStyle = settings.blockVisualStyle
-    var selectedTabIndex by rememberSaveable { mutableIntStateOf(1) }
+    var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
     var pendingUnlockRequest by remember { mutableStateOf<UnlockRequest?>(null) }
     val transition = rememberInfiniteTransition(label = "settingsStylePulse")
     val stylePulse by transition.animateFloat(
@@ -376,7 +376,7 @@ fun AppLanguageScreen(
 ) {
     LogScreen(telemetry, TelemetryScreenNames.Language)
     val scrollState = rememberScrollState()
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -449,13 +449,13 @@ private fun SettingsSectionCard(
     trailingContent: (@Composable (() -> Unit))? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     val optionShape = RoundedCornerShape(GameUiShapeTokens.chipCorner)
     val panelShape = RoundedCornerShape(GameUiShapeTokens.panelCorner)
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .stackShiftSurfaceShadow(
+            .blockGamesSurfaceShadow(
                 shape = panelShape,
                 elevation = 5.dp,
             )
@@ -488,7 +488,7 @@ private fun SectionHeader(
     icon: ImageVector,
     trailingContent: (@Composable (() -> Unit))? = null,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     val surfaceShape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner)
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -498,7 +498,7 @@ private fun SectionHeader(
         Surface(
             modifier = Modifier
                 .size(40.dp)
-                .stackShiftSurfaceShadow(
+                .blockGamesSurfaceShadow(
                     shape = surfaceShape,
                     elevation = 5.dp,
                 ),
@@ -541,7 +541,7 @@ private fun <T> SettingsGroup(
     onSelected: (T) -> Unit,
     onLockedSelected: (SettingsOption<T>) -> Unit = {},
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     val optionShape = RoundedCornerShape(GameUiShapeTokens.chipCorner)
     Column(
         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -561,7 +561,7 @@ private fun <T> SettingsGroup(
             options.forEach { option ->
                 val selected = option.value == selectedValue
                 FilterChip(
-                    modifier = Modifier.stackShiftSurfaceShadow(
+                    modifier = Modifier.blockGamesSurfaceShadow(
                         elevation = if (selected) 5.dp else 0.dp,
                         shape = RoundedCornerShape(GameUiShapeTokens.chipCorner),
                     ),
@@ -660,7 +660,7 @@ private fun BlockStyleSettingsGroup(
     onSelected: (BlockVisualStyle) -> Unit,
     onLockedSelected: (SettingsOption<BlockVisualStyle>) -> Unit = {},
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     val optionShape = RoundedCornerShape(GameUiShapeTokens.chipCorner)
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -682,7 +682,7 @@ private fun BlockStyleSettingsGroup(
                 Card(
                     modifier = Modifier
                         .width(104.dp)
-                        .stackShiftSurfaceShadow(
+                        .blockGamesSurfaceShadow(
                             elevation = if (selected) 5.dp else 0.dp,
                             shape = optionShape,
                         )
@@ -749,14 +749,14 @@ private fun TokenBalanceCard(
     adController: GameAdController? = null,
     modifier: Modifier = Modifier,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     val surfaceShape = RoundedCornerShape(GameUiShapeTokens.panelCorner)
     var adLoading by remember { mutableStateOf(false) }
 
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .stackShiftSurfaceShadow(
+            .blockGamesSurfaceShadow(
                 shape = surfaceShape,
                 elevation = 4.dp,
             )
@@ -1014,7 +1014,7 @@ private fun ThemePalettePreview(
     palette: AppColorPalette,
     darkTheme: Boolean,
 ) {
-    val scheme = stackShiftThemeSpec(palette = palette, darkTheme = darkTheme).colorScheme
+    val scheme = blockGamesThemeSpec(palette = palette, darkTheme = darkTheme).colorScheme
     val colors = listOf(
         scheme.primary,
         scheme.secondary,
@@ -1081,7 +1081,7 @@ private fun LanguagePreview(
     language: AppLanguage,
     selected: Boolean,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     Box(
         modifier = Modifier
             .background(
@@ -1122,7 +1122,7 @@ private fun BoxPreview(
     icon: ImageVector? = null,
     size: Dp = 10.dp,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     Row(
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalAlignment = Alignment.CenterVertically,

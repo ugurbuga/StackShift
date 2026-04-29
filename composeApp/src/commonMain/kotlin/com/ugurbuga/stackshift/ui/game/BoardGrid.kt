@@ -73,8 +73,8 @@ import com.ugurbuga.stackshift.game.model.normalizeBlockVisualStyle
 import com.ugurbuga.stackshift.game.model.paletteColor
 import com.ugurbuga.stackshift.game.model.resolveBoardBlockStyle
 import com.ugurbuga.stackshift.localization.LocalAppSettings
-import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
-import com.ugurbuga.stackshift.ui.theme.isStackShiftDarkTheme
+import com.ugurbuga.stackshift.ui.theme.BlockGamesThemeTokens
+import com.ugurbuga.stackshift.ui.theme.isBlockGamesDarkTheme
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -104,12 +104,12 @@ fun BoardGrid(
 ) {
     val settings = LocalAppSettings.current
     val colorScheme = MaterialTheme.colorScheme
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     val boardBlockStyle = resolveBoardBlockStyle(
         selectedStyle = settings.blockVisualStyle,
         mode = settings.boardBlockStyleMode,
     )
-    val isDarkTheme = isStackShiftDarkTheme(settings)
+    val isDarkTheme = isBlockGamesDarkTheme(settings)
     val showDangerDecorations = gameState.status != GameStatus.GameOver
     val hasDangerPulse = showDangerDecorations && (
             gameState.criticalColumns.isNotEmpty() ||
@@ -941,7 +941,7 @@ private fun DrawScope.drawClearEffectBand(
 
 @Composable
 private fun BoardGridBackgroundLayer(
-    uiColors: com.ugurbuga.stackshift.ui.theme.StackShiftUiColors,
+    uiColors: com.ugurbuga.stackshift.ui.theme.BlockGamesUiColors,
     boardDecorAlphaProvider: () -> Float,
     boardCornerRadiusPx: Float,
     modifier: Modifier = Modifier,
@@ -1009,7 +1009,7 @@ private fun BoardGridSlotLayer(
     cellWidthPx: Float,
     cellHeightPx: Float,
     slotVisual: BoardCellVisual,
-    uiColors: com.ugurbuga.stackshift.ui.theme.StackShiftUiColors,
+    uiColors: com.ugurbuga.stackshift.ui.theme.BlockGamesUiColors,
     modifier: Modifier = Modifier,
 ) {
     Canvas(modifier = modifier) {
@@ -1040,7 +1040,7 @@ private fun DrawScope.drawFlatBoardEmptySlot(
     topLeft: Offset,
     cellSize: Size,
     slotVisual: BoardCellVisual,
-    uiColors: com.ugurbuga.stackshift.ui.theme.StackShiftUiColors,
+    uiColors: com.ugurbuga.stackshift.ui.theme.BlockGamesUiColors,
     alpha: Float = 1f,
 ) {
     val slotInset = slotVisual.fillInsetPx * 0.72f
@@ -1093,7 +1093,7 @@ private fun BoardSpecialIconOverlay(
         contentAlignment = Alignment.Center,
     ) {
         val settings = LocalAppSettings.current
-        val isDarkTheme = isStackShiftDarkTheme(settings)
+        val isDarkTheme = isBlockGamesDarkTheme(settings)
         val resolvedBoardStyle = resolveBoardBlockStyle(
             selectedStyle = settings.blockVisualStyle,
             mode = settings.boardBlockStyleMode,
@@ -1195,7 +1195,7 @@ internal fun blockStyleIconTint(
     val settings = LocalAppSettings.current
     return specialBlockIconTint(
         style = style,
-        isDarkTheme = isStackShiftDarkTheme(settings),
+        isDarkTheme = isBlockGamesDarkTheme(settings),
         palette = settings.blockColorPalette,
     ).copy(alpha = if (enabled) 1f else 0.58f)
 }
@@ -1332,7 +1332,7 @@ internal fun BlockCellPreview(
     pulse: Float = 0f,
 ) {
     val settings = LocalAppSettings.current
-    val isDarkTheme = isStackShiftDarkTheme(settings)
+    val isDarkTheme = isBlockGamesDarkTheme(settings)
     val density = LocalDensity.current
     val cellInset = boardCellInsetDp(size)
     val cellCornerRadius = boardCellCornerRadiusDp(size, style)
@@ -1428,7 +1428,7 @@ fun PieceBlocks(
             selectedStyle = settings.blockVisualStyle,
             mode = settings.boardBlockStyleMode,
         )
-        val isDarkTheme = isStackShiftDarkTheme(settings)
+        val isDarkTheme = isBlockGamesDarkTheme(settings)
         val resolvedCellInset = cellInset ?: boardCellInsetDp(cellSize)
         val resolvedCellCornerRadius =
             cellCornerRadius ?: boardCellCornerRadiusDp(cellSize, visualStyle)

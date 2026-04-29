@@ -97,7 +97,8 @@ fun AppSettings.sanitized(): AppSettings {
         unlockedBlockStyles = sanitizedUnlockedBlockStyles,
         tokenBalance = this.tokenBalance.coerceAtLeast(0),
         lastAppOpenedAtEpochMillis = this.lastAppOpenedAtEpochMillis.coerceAtLeast(0L),
-        soundEnabled = false,
+        soundEnabled = this.soundEnabled,
+        isHighScoresClearedOnce = this.isHighScoresClearedOnce,
     )
 }
 

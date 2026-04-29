@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_title">StackShift</string>
+    <string name="app_title_stackshift">StackShift</string>
     <string name="app_title_banner_stackshift_top">STACK</string>
     <string name="app_title_banner_stackshift_bottom">SHIFT</string>
     <string name="app_title_banner_blockwise_top">BLOCK</string>
@@ -87,8 +87,8 @@
     <string name="danger_none">-</string>
     <string name="launch_label">Запуск</string>
     <string name="launch_bar">Шкала запуска</string>
-    <string name="launch_boost_active">Новое трио готово</string>
-    <string name="launch_special_chance">Любое трио можно перетащить в любое подходящее место</string>
+    <string name="launch_boost_active">Ускорение активно • %1$s ходов</string>
+    <string name="launch_special_chance">Шанс специального блока +%1$s%%</string>
     <string name="launch_soft_lock_message">Мягкая блокировка активна • микронастройка включена</string>
     <string name="launch_chain_message">Ряд + колонка • +%2$s</string>
     <string name="launch_paused">Пауза</string>
@@ -193,8 +193,6 @@
     <string name="feedback_extra_life">Доп. жизнь! %1$s рядов</string>
     <string name="challenge_progress_value">%1$d/%2$d</string>
     <string name="stat_label_value_format">%1$s: %2$s</string>
-    <string name="launch_boost_turns_remaining_format">x%1$d</string>
-    <string name="launch_progress_percent_format">%%%1$d</string>
     <string name="time_minutes_seconds_format">%1$d:%2$s</string>
     <string name="special_column_clearer">КОЛОНКА</string>
     <string name="special_row_clearer">СТРОКА</string>

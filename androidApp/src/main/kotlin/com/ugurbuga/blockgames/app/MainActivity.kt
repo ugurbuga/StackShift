@@ -13,7 +13,7 @@ import com.ugurbuga.stackshift.ads.AndroidAdMobIds
 import com.ugurbuga.stackshift.platform.GlobalPlatformConfig
 import com.ugurbuga.stackshift.settings.AppContextHolder
 import com.ugurbuga.stackshift.settings.AppSettingsStorage
-import com.ugurbuga.stackshift.ui.theme.stackShiftThemeSpec
+import com.ugurbuga.stackshift.ui.theme.blockGamesThemeSpec
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,7 +26,7 @@ class MainActivity : ComponentActivity() {
 
         val initialSettings = AppSettingsStorage.load()
         val initialDarkTheme = initialSettings.themeMode.isDark ?: isSystemDarkTheme()
-        val initialThemeSpec = stackShiftThemeSpec(
+        val initialThemeSpec = blockGamesThemeSpec(
             settings = initialSettings,
             darkTheme = initialDarkTheme,
         )

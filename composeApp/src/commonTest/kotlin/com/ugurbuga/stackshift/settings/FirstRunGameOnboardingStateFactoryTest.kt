@@ -1,14 +1,14 @@
 package com.ugurbuga.stackshift.settings
 
 import com.ugurbuga.stackshift.game.logic.GameEvent
-import com.ugurbuga.stackshift.game.logic.StackShiftGameLogic
+import com.ugurbuga.stackshift.game.logic.GameLogic
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class FirstRunGameOnboardingStateFactoryTest {
-    private val logic = StackShiftGameLogic()
+    private val logic = GameLogic.create()
     private val onboardingStages = FirstRunGameOnboardingStateFactory.stages
 
     @Test

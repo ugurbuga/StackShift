@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -57,7 +56,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ugurbuga.stackshift.StackShiftTheme
+import com.ugurbuga.stackshift.BlockGamesTheme
 import com.ugurbuga.stackshift.game.logic.ChallengeGenerator
 import com.ugurbuga.stackshift.game.model.AppColorPalette
 import com.ugurbuga.stackshift.game.model.AppThemeMode
@@ -70,11 +69,12 @@ import com.ugurbuga.stackshift.game.model.DailyChallenge
 import com.ugurbuga.stackshift.game.model.GameplayStyle
 import com.ugurbuga.stackshift.game.model.resolveBoardBlockStyle
 import com.ugurbuga.stackshift.localization.LocalAppSettings
+import com.ugurbuga.stackshift.platform.GlobalPlatformConfig
+import com.ugurbuga.stackshift.ui.theme.BlockGamesThemeTokens
 import com.ugurbuga.stackshift.ui.theme.GameUiShapeTokens
-import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
 import com.ugurbuga.stackshift.ui.theme.appBackgroundBrush
-import com.ugurbuga.stackshift.ui.theme.isStackShiftDarkTheme
-import com.ugurbuga.stackshift.ui.theme.stackShiftSurfaceShadow
+import com.ugurbuga.stackshift.ui.theme.blockGamesSurfaceShadow
+import com.ugurbuga.stackshift.ui.theme.isBlockGamesDarkTheme
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
@@ -117,8 +117,6 @@ import stackshift.composeapp.generated.resources.day_sunday_short
 import stackshift.composeapp.generated.resources.day_thursday_short
 import stackshift.composeapp.generated.resources.day_tuesday_short
 import stackshift.composeapp.generated.resources.day_wednesday_short
-import stackshift.composeapp.generated.resources.feedback_chain
-import stackshift.composeapp.generated.resources.game_message_perfect_drop
 import stackshift.composeapp.generated.resources.home_play_cta
 import stackshift.composeapp.generated.resources.month_april
 import stackshift.composeapp.generated.resources.month_august
@@ -132,8 +130,6 @@ import stackshift.composeapp.generated.resources.month_may
 import stackshift.composeapp.generated.resources.month_november
 import stackshift.composeapp.generated.resources.month_october
 import stackshift.composeapp.generated.resources.month_september
-import stackshift.composeapp.generated.resources.piece_properties_special
-import stackshift.composeapp.generated.resources.score
 import stackshift.composeapp.generated.resources.settings_challenges
 import stackshift.composeapp.generated.resources.tutorial_back
 
@@ -142,13 +138,13 @@ fun DailyChallengeScreen(
     currentYear: Int,
     currentMonth: Int,
     currentDay: Int,
-    gameplayStyle: GameplayStyle,
     progress: ChallengeProgress,
     onBack: () -> Unit,
     onPlayChallenge: (DailyChallenge) -> Unit,
+    gameplayStyle: GameplayStyle = GlobalPlatformConfig.gameplayStyle,
     modifier: Modifier = Modifier
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     val months = remember(currentYear, currentMonth) {
         getPreviousMonths(currentYear, currentMonth, 6)
     }
@@ -226,12 +222,12 @@ fun DailyChallengeScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(140.dp), // Reduced from 200.dp
+                    .height(70.dp), // Reduced from 200.dp
                 contentAlignment = Alignment.Center
             ) {
                 TrophyIcon(
                     fillProgress = monthProgress,
-                    modifier = Modifier.size(110.dp) // Reduced from 150.dp
+                    modifier = Modifier.size(70.dp) // Reduced from 150.dp
                 )
             }
 
@@ -284,9 +280,7 @@ fun DailyChallengeScreen(
             // Calendar Pager
             HorizontalPager(
                 state = pagerState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
+                modifier = Modifier.fillMaxWidth()
             ) { page ->
                 val monthYear = months[page]
                 CalendarGrid(
@@ -302,6 +296,8 @@ fun DailyChallengeScreen(
                     onDayClick = { selectedDay = it }
                 )
             }
+
+            Spacer(modifier = Modifier.weight(1f))
 
             // Selected Day Tasks
             ChallengeTasksCard(
@@ -332,7 +328,7 @@ fun TrophyIcon(
 ) {
     val settings = LocalAppSettings.current
     val palette = settings.blockColorPalette
-    val isDark = isStackShiftDarkTheme(settings)
+    val isDark = isBlockGamesDarkTheme(settings)
 
     val baseColor = CellTone.Gold.paletteColor(palette)
     val emptyColor =
@@ -472,7 +468,7 @@ fun DayCell(
     isEnabled: Boolean,
     onClick: () -> Unit
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     val settings = LocalAppSettings.current
     val palette = settings.blockColorPalette
 
@@ -526,10 +522,10 @@ fun ChallengeTasksCard(
     stylePulse: Float,
     modifier: Modifier = Modifier
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
 
     Card(
-        modifier = modifier.stackShiftSurfaceShadow(
+        modifier = modifier.blockGamesSurfaceShadow(
             shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
             elevation = 8.dp
         ),
@@ -604,7 +600,7 @@ fun ChallengeTaskItem(
     modifier: Modifier = Modifier,
     compact: Boolean = false
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     val isCompleted = task.isCompleted
 
     Row(
@@ -671,7 +667,7 @@ fun ChallengeInfoDialog(
     stylePulse: Float,
     onDismiss: () -> Unit
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
 
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -819,7 +815,7 @@ fun DailyChallengeScreenPreview() {
         blockVisualStyle = BlockVisualStyle.Flat,
         themeColorPalette = AppColorPalette.Classic
     )
-    StackShiftTheme(settings = settings) {
+    BlockGamesTheme(settings = settings) {
         DailyChallengeScreen(
             currentYear = 2025,
             currentMonth = 12,
@@ -840,7 +836,7 @@ fun DailyChallengeScreenWithProgressPreview() {
         blockVisualStyle = BlockVisualStyle.DynamicLiquid,
         themeColorPalette = AppColorPalette.ModernNeon
     )
-    StackShiftTheme(settings = settings) {
+    BlockGamesTheme(settings = settings) {
         DailyChallengeScreen(
             currentYear = 2025,
             currentMonth = 12,
@@ -866,7 +862,7 @@ fun DailyChallengeScreenLightPreview() {
         blockVisualStyle = BlockVisualStyle.Bubble,
         themeColorPalette = AppColorPalette.SoftPastel
     )
-    StackShiftTheme(settings = settings) {
+    BlockGamesTheme(settings = settings) {
         DailyChallengeScreen(
             currentYear = 2025,
             currentMonth = 12,

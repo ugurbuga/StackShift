@@ -57,6 +57,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -79,7 +80,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.ugurbuga.stackshift.StackShiftTheme
+import com.ugurbuga.stackshift.BlockGamesTheme
 import com.ugurbuga.stackshift.ads.GameAdController
 import com.ugurbuga.stackshift.ads.NoOpGameAdController
 import com.ugurbuga.stackshift.game.logic.GameLogic
@@ -97,16 +98,18 @@ import com.ugurbuga.stackshift.game.model.SpecialBlockType
 import com.ugurbuga.stackshift.game.model.gameText
 import com.ugurbuga.stackshift.game.model.resolveBoardBlockStyle
 import com.ugurbuga.stackshift.localization.LocalAppSettings
+import com.ugurbuga.stackshift.platform.GlobalPlatformConfig
 import com.ugurbuga.stackshift.settings.AppSettings
 import com.ugurbuga.stackshift.telemetry.AppTelemetry
 import com.ugurbuga.stackshift.telemetry.LogScreen
 import com.ugurbuga.stackshift.telemetry.NoOpAppTelemetry
 import com.ugurbuga.stackshift.telemetry.TelemetryScreenNames
+import com.ugurbuga.stackshift.ui.theme.BlockGamesThemeTokens
+import com.ugurbuga.stackshift.ui.theme.BlockGamesThemeTokens.uiColors
 import com.ugurbuga.stackshift.ui.theme.GameUiShapeTokens
-import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
 import com.ugurbuga.stackshift.ui.theme.appBackgroundBrush
-import com.ugurbuga.stackshift.ui.theme.isStackShiftDarkTheme
-import com.ugurbuga.stackshift.ui.theme.stackShiftSurfaceShadow
+import com.ugurbuga.stackshift.ui.theme.blockGamesSurfaceShadow
+import com.ugurbuga.stackshift.ui.theme.isBlockGamesDarkTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -120,6 +123,10 @@ import stackshift.composeapp.generated.resources.block_properties_heavy_desc
 import stackshift.composeapp.generated.resources.block_properties_heavy_title
 import stackshift.composeapp.generated.resources.block_properties_row_clearer_desc
 import stackshift.composeapp.generated.resources.block_properties_row_clearer_title
+import stackshift.composeapp.generated.resources.game_message_special_chain_board
+import stackshift.composeapp.generated.resources.game_message_tempo_up
+import stackshift.composeapp.generated.resources.interactive_onboarding_drag_title
+import stackshift.composeapp.generated.resources.interactive_onboarding_drag_to_board
 import stackshift.composeapp.generated.resources.launch_drag_hint
 import stackshift.composeapp.generated.resources.piece_properties_active
 import stackshift.composeapp.generated.resources.queue_next_short
@@ -128,6 +135,7 @@ import stackshift.composeapp.generated.resources.settings_challenges
 import stackshift.composeapp.generated.resources.settings_language
 import stackshift.composeapp.generated.resources.settings_theme
 import stackshift.composeapp.generated.resources.settings_tutorial
+import stackshift.composeapp.generated.resources.settings_tutorial_replay
 import stackshift.composeapp.generated.resources.tutorial_back
 import stackshift.composeapp.generated.resources.tutorial_finish
 import stackshift.composeapp.generated.resources.tutorial_intro_body
@@ -137,6 +145,8 @@ import stackshift.composeapp.generated.resources.tutorial_ready_body
 import stackshift.composeapp.generated.resources.tutorial_ready_settings_hint
 import stackshift.composeapp.generated.resources.tutorial_ready_title
 import stackshift.composeapp.generated.resources.tutorial_ready_tutorial_hint
+import stackshift.composeapp.generated.resources.tutorial_specials_body
+import stackshift.composeapp.generated.resources.tutorial_specials_title
 import stackshift.composeapp.generated.resources.tutorial_stackshift_intro_body
 import stackshift.composeapp.generated.resources.tutorial_stackshift_intro_title
 import stackshift.composeapp.generated.resources.tutorial_stackshift_ready_body
@@ -147,8 +157,6 @@ import stackshift.composeapp.generated.resources.tutorial_stackshift_specials_bo
 import stackshift.composeapp.generated.resources.tutorial_stackshift_specials_title
 import stackshift.composeapp.generated.resources.tutorial_stackshift_systems_body
 import stackshift.composeapp.generated.resources.tutorial_stackshift_systems_title
-import stackshift.composeapp.generated.resources.tutorial_specials_body
-import stackshift.composeapp.generated.resources.tutorial_specials_title
 import stackshift.composeapp.generated.resources.tutorial_step_counter
 import stackshift.composeapp.generated.resources.tutorial_systems_body
 import stackshift.composeapp.generated.resources.tutorial_systems_title
@@ -238,7 +246,11 @@ private enum class TutorialPage {
     StackShiftSystems,
     StackShiftSpecials,
     StackShiftReady,
-    BlockWiseDrag,
+    BlockWiseIntro,
+    BlockWiseSystems,
+    BlockWiseSpecials,
+    BlockWisePractice,
+    BlockWiseReady,
 }
 
 private data class TutorialDemoScene(
@@ -418,7 +430,7 @@ fun GameTutorialScreen(
     modifier: Modifier = Modifier,
     telemetry: AppTelemetry = NoOpAppTelemetry,
     adController: GameAdController = NoOpGameAdController,
-    gameplayStyle: GameplayStyle = GameplayStyle.StackShift,
+    gameplayStyle: GameplayStyle = GlobalPlatformConfig.gameplayStyle,
     initialPage: Int = 0,
     onBack: () -> Unit,
     onFinish: () -> Unit,
@@ -433,15 +445,30 @@ fun GameTutorialScreen(
                 TutorialPage.StackShiftReady,
             )
 
-            GameplayStyle.BlockWise -> listOf(TutorialPage.BlockWiseDrag)
+            GameplayStyle.BlockWise -> listOf(
+                TutorialPage.BlockWiseIntro,
+                TutorialPage.BlockWiseSystems,
+                TutorialPage.BlockWiseSpecials,
+                TutorialPage.BlockWisePractice,
+                TutorialPage.BlockWiseReady,
+            )
         }
     }
     val totalSteps = tutorialPages.size
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     val pagerState = rememberPagerState(initialPage = initialPage.coerceIn(0, (totalSteps - 1).coerceAtLeast(0))) { totalSteps }
     val coroutineScope = rememberCoroutineScope()
     val currentStep = pagerState.currentPage
     val isLastStep = (currentStep == (totalSteps - 1))
+    
+    var showBlockWiseFinishDialog by remember { mutableStateOf(false) }
+
+    if (showBlockWiseFinishDialog) {
+        InteractiveOnboardingCompletionDialog(
+            onStartGame = onFinish,
+            onReturnHome = onBack,
+        )
+    }
     
     val transition = rememberInfiniteTransition(label = "tutorialStylePulse")
     val stylePulse by transition.animateFloat(
@@ -524,7 +551,11 @@ fun GameTutorialScreen(
                                 TutorialPage.StackShiftSystems -> TutorialSystemsStep()
                                 TutorialPage.StackShiftSpecials -> TutorialSpecialsStep()
                                 TutorialPage.StackShiftReady -> TutorialReadyStep()
-                                TutorialPage.BlockWiseDrag -> TutorialBlockWiseDragStep()
+                                TutorialPage.BlockWiseIntro -> TutorialBlockWiseIntroStep()
+                                TutorialPage.BlockWiseSystems -> TutorialBlockWiseSystemsStep()
+                                TutorialPage.BlockWiseSpecials -> TutorialBlockWiseSpecialsStep()
+                                TutorialPage.BlockWisePractice -> TutorialBlockWisePracticeStep()
+                                TutorialPage.BlockWiseReady -> TutorialBlockWiseReadyStep()
                             }
                         }
                     }
@@ -560,7 +591,11 @@ fun GameTutorialScreen(
                         icon = if (isLastStep) Icons.Filled.PlayArrow else Icons.AutoMirrored.Filled.ArrowForward,
                         onClick = {
                             if (isLastStep) {
-                                onFinish()
+                                if (gameplayStyle == GameplayStyle.BlockWise) {
+                                    showBlockWiseFinishDialog = true
+                                } else {
+                                    onFinish()
+                                }
                             } else {
                                 coroutineScope.launch {
                                     pagerState.animateScrollToPage(currentStep + 1)
@@ -583,9 +618,9 @@ fun GameTutorialScreen(
 
 @Composable
 private fun TutorialStepChip(currentStep: Int, totalSteps: Int) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     Card(
-        modifier = Modifier.stackShiftSurfaceShadow(
+        modifier = Modifier.blockGamesSurfaceShadow(
             shape = RoundedCornerShape(GameUiShapeTokens.chipCorner),
             elevation = 5.dp,
         ),
@@ -608,7 +643,7 @@ private fun TutorialStepChip(currentStep: Int, totalSteps: Int) {
 private fun TutorialScrollablePage(
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     val scrollState = rememberScrollState()
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -674,11 +709,11 @@ private fun TutorialMiniBoardShell(
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     val settings = LocalAppSettings.current
     val boardStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
     Card(
-        modifier = modifier.stackShiftSurfaceShadow(
+        modifier = modifier.blockGamesSurfaceShadow(
             shape = RoundedCornerShape(boardFrameCornerRadiusDp(boardStyle)),
             elevation = 10.dp,
         ),
@@ -822,7 +857,7 @@ private fun TutorialReadyStep() {
 }
 
 @Composable
-private fun TutorialBlockWiseDragStep() {
+private fun TutorialBlockWiseIntroStep() {
     TutorialSection(
         title = stringResource(Res.string.tutorial_intro_title),
         body = stringResource(Res.string.tutorial_intro_body),
@@ -833,11 +868,296 @@ private fun TutorialBlockWiseDragStep() {
 }
 
 @Composable
+private fun TutorialBlockWiseSystemsStep() {
+    TutorialSection(
+        title = stringResource(Res.string.tutorial_systems_title),
+        body = stringResource(Res.string.tutorial_systems_body),
+    ) {
+        TutorialMiniBoardShell {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    TutorialTrayPieceChip(
+                        piece = TutorialBlockWisePrimaryPiece,
+                        hidden = false,
+                        modifier = Modifier.weight(1f)
+                    )
+                    TutorialTrayPieceChip(
+                        piece = TutorialBlockWiseSecondaryPiece,
+                        hidden = false,
+                        modifier = Modifier.weight(1f)
+                    )
+                    TutorialTrayPieceChip(
+                        piece = TutorialBlockWiseTertiaryPiece,
+                        hidden = false,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+        TutorialHintCard(text = stringResource(Res.string.game_message_tempo_up))
+    }
+}
+
+@Composable
+private fun TutorialBlockWiseSpecialsStep() {
+    TutorialSection(
+        title = stringResource(Res.string.tutorial_specials_title),
+        body = stringResource(Res.string.tutorial_specials_body),
+    ) {
+        TutorialBlockWisePlacementDemo()
+        TutorialHintCard(text = stringResource(Res.string.game_message_special_chain_board, "1"))
+    }
+}
+
+@Composable
+private fun TutorialBlockWisePracticeStep() {
+    TutorialSection(
+        title = stringResource(Res.string.settings_tutorial_replay),
+        body = stringResource(Res.string.interactive_onboarding_drag_title),
+    ) {
+        TutorialBlockWisePracticeDemo()
+        TutorialHintCard(text = stringResource(Res.string.interactive_onboarding_drag_to_board))
+    }
+}
+
+@Composable
+private fun TutorialBlockWiseReadyStep() {
+    TutorialSection(
+        title = stringResource(Res.string.tutorial_ready_title),
+        body = stringResource(Res.string.tutorial_ready_body),
+    ) {
+        TutorialHintCard(text = stringResource(Res.string.tutorial_ready_tutorial_hint))
+        TutorialHintCard(text = stringResource(Res.string.tutorial_ready_settings_hint))
+    }
+}
+
+@Composable
+private fun TutorialBlockWisePracticeDemo() {
+    val settings = LocalAppSettings.current
+    val density = LocalDensity.current
+    val boardStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
+    val gameLogic = remember { GameLogic.create() }
+
+    var gameState by remember {
+        mutableStateOf(
+            gameLogic.newGame(
+                config = GameConfig(columns = TutorialCompactColumns, rows = TutorialCompactRows),
+                gameplayStyle = GameplayStyle.BlockWise,
+            ).copy(
+                activePiece = TutorialBlockWisePrimaryPiece.copy(id = 1),
+                nextQueue = listOf(
+                    TutorialBlockWiseSecondaryPiece.copy(id = 2),
+                    TutorialBlockWiseTertiaryPiece.copy(id = 3),
+                ),
+                message = gameText(GameTextKey.LaunchDragHint),
+            )
+        )
+    }
+
+    var hostRectInRoot by remember { mutableStateOf(Rect.Zero) }
+    var boardRectInRoot by remember { mutableStateOf(Rect.Zero) }
+    val trayPieceRectsInRoot = remember { mutableStateMapOf<Long, Rect>() }
+    var draggedPieceId by remember { mutableStateOf<Long?>(null) }
+    var dragPointerInHost by remember { mutableStateOf<Offset?>(null) }
+
+    val draggedPiece = remember(draggedPieceId, gameState.trayPieces) {
+        gameState.trayPieces.find { it.id == draggedPieceId }
+    }
+
+    val boardRect = remember(boardRectInRoot, hostRectInRoot) {
+        boardRectInRoot.toLocalRect(hostRectInRoot)
+    }
+
+    val cellSizePx = if (boardRect != Rect.Zero) boardRect.width / gameState.config.columns else 0f
+
+    val overlayTopLeft = remember(dragPointerInHost, draggedPiece, cellSizePx) {
+        val pointer = dragPointerInHost ?: return@remember null
+        val piece = draggedPiece ?: return@remember null
+        freePlacementDragTopLeft(pointer, piece, cellSizePx, liftPx = 150f)
+    }
+
+    val placementPreview =
+        remember(draggedPieceId, draggedPiece, overlayTopLeft, boardRect, cellSizePx, gameState) {
+            if (draggedPieceId == null || draggedPiece == null || overlayTopLeft == null || boardRect == Rect.Zero || cellSizePx <= 0f) {
+                null
+            } else {
+                resolveNearestFreePlacementPreview(
+                    pieceId = draggedPieceId!!,
+                    piece = draggedPiece,
+                    overlayTopLeft = overlayTopLeft,
+                    boardRect = boardRect,
+                    cellSizePx = cellSizePx,
+                    config = gameState.config,
+                    requestPreview = { id, origin -> gameLogic.previewPlacement(gameState, id, origin) }
+                )
+            }
+        }
+
+    val impactedPreviewCells = remember(gameState, placementPreview) {
+        if (placementPreview == null) emptySet() else gameLogic.previewImpactPoints(
+            gameState,
+            placementPreview
+        )
+    }
+
+    TutorialMiniBoardShell {
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxWidth()
+                .onGloballyPositioned { hostRectInRoot = it.boundsInRoot() },
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                BoardGrid(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(gameState.config.columns.toFloat() / gameState.config.rows.toFloat())
+                        .onGloballyPositioned { boardRectInRoot = it.boundsInRoot() },
+                    gameState = gameState,
+                    preview = placementPreview,
+                    impactedPreviewCells = impactedPreviewCells,
+                    activeColumn = placementPreview?.selectedColumn,
+                    activePiece = draggedPiece,
+                    isDragging = draggedPiece != null,
+                )
+
+                TutorialMiniBottomDock(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(TutorialMiniDockHeight),
+                    onTrayPositioned = {},
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        gameState.trayPieces.forEach { piece ->
+                            TutorialPracticeTrayPieceChip(
+                                piece = piece,
+                                hidden = draggedPieceId == piece.id,
+                                modifier = Modifier.weight(1f),
+                                onRectChanged = { trayPieceRectsInRoot[piece.id] = it },
+                                onStartDrag = { offset ->
+                                    val rect =
+                                        trayPieceRectsInRoot[piece.id] ?: return@TutorialPracticeTrayPieceChip
+                                    draggedPieceId = piece.id
+                                    dragPointerInHost = Offset(
+                                        x = rect.left + offset.x - hostRectInRoot.left,
+                                        y = rect.top + offset.y - hostRectInRoot.top,
+                                    )
+                                },
+                                onDrag = { dragAmount ->
+                                    dragPointerInHost =
+                                        (dragPointerInHost ?: Offset.Zero) + dragAmount
+                                },
+                                onEndDrag = {
+                                    val pid = draggedPieceId
+                                    val preview = placementPreview
+                                    if (pid != null && preview != null) {
+                                        val result =
+                                            gameLogic.placePiece(gameState, pid, preview.landingAnchor)
+                                        gameState = result.state
+                                        if (gameState.trayPieces.isEmpty()) {
+                                            gameState = gameState.copy(
+                                                activePiece = TutorialBlockWisePrimaryPiece.copy(id = 1),
+                                                nextQueue = listOf(
+                                                    TutorialBlockWiseSecondaryPiece.copy(id = 2),
+                                                    TutorialBlockWiseTertiaryPiece.copy(id = 3),
+                                                )
+                                            )
+                                        }
+                                    }
+                                    draggedPieceId = null
+                                    dragPointerInHost = null
+                                },
+                                onCancelDrag = {
+                                    draggedPieceId = null
+                                    dragPointerInHost = null
+                                }
+                            )
+                        }
+                        repeat((3 - gameState.trayPieces.size).coerceAtLeast(0)) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
+
+            if (draggedPiece != null && overlayTopLeft != null && cellSizePx > 0f) {
+                val pieceCellDp = with(density) { cellSizePx.toDp() }
+                PieceBlocks(
+                    piece = draggedPiece,
+                    cellSize = pieceCellDp,
+                    modifier = Modifier.graphicsLayer(
+                        translationX = overlayTopLeft.x,
+                        translationY = overlayTopLeft.y,
+                        transformOrigin = TransformOrigin(0f, 0f),
+                    ),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TutorialPracticeTrayPieceChip(
+    piece: Piece,
+    hidden: Boolean,
+    onRectChanged: (Rect) -> Unit,
+    onStartDrag: (Offset) -> Unit,
+    onDrag: (Offset) -> Unit,
+    onEndDrag: () -> Unit,
+    onCancelDrag: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val uiColors = BlockGamesThemeTokens.uiColors
+    Card(
+        modifier = modifier
+            .fillMaxHeight()
+            .onGloballyPositioned { onRectChanged(it.boundsInRoot()) }
+            .graphicsLayer { alpha = if (hidden) 0f else 1f }
+            .pointerInput(piece.id) {
+                detectDragGestures(
+                    onDragStart = onStartDrag,
+                    onDragEnd = onEndDrag,
+                    onDragCancel = onCancelDrag,
+                    onDrag = { change, dragAmount ->
+                        change.consume()
+                        onDrag(dragAmount)
+                    },
+                )
+            },
+        shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
+        colors = CardDefaults.cardColors(containerColor = uiColors.metricCard.copy(alpha = 0.84f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.7f)),
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            PieceBlocks(piece = piece, cellSize = 16.dp)
+        }
+    }
+}
+
+@Composable
 private fun TutorialBlockWisePlacementDemo() {
     val settings = LocalAppSettings.current
     val density = LocalDensity.current
     val boardStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
-    val gameLogic = remember { GameLogic() }
+    val gameLogic = remember { GameLogic.create() }
     val initialState = remember {
         GameState(
             config = GameConfig(columns = TutorialCompactColumns, rows = TutorialCompactRows),
@@ -1100,7 +1420,7 @@ private fun TutorialMiniGameDemo(
     val settings = LocalAppSettings.current
     val density = LocalDensity.current
     val boardStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
-    val gameLogic = remember { GameLogic() }
+    val gameLogic = remember { GameLogic.create() }
     var gameState by remember(scene, lockedColumn) { mutableStateOf(scene.gameState) }
     val activePiece = gameState.activePiece
     var hostRectInRoot by remember { mutableStateOf(Rect.Zero) }
@@ -1236,12 +1556,15 @@ private fun TutorialMiniGameDemo(
         }
     }
 
+    var isHandVisible by remember { mutableStateOf(true) }
+
     LaunchedEffect(scene, resolvedLockedColumn, boardRect, trayRect, cellSizePx, isDragging) {
         if (resolvedLockedColumn == null) return@LaunchedEffect
         if (boardRect == Rect.Zero || trayRect == Rect.Zero || cellSizePx <= 0f || isDragging) return@LaunchedEffect
 
         while (isActive && !isDragging) {
             gameState = scene.gameState
+            isHandVisible = true
             overlayTopLeft = pieceSpawnTopLeft(
                 piece = scene.gameState.activePiece,
                 trayRect = trayRect,
@@ -1267,6 +1590,7 @@ private fun TutorialMiniGameDemo(
                 continue
             }
 
+            isHandVisible = false
             overlayTopLeft = lockedPreview.entryAnchor.toLocalTopLeft(
                 boardRect = boardRect,
                 cellSizePx = cellSizePx
@@ -1436,7 +1760,7 @@ private fun TutorialMiniGameDemo(
                     pieceWidth = activePiece.width,
                     pieceHeight = activePiece.height,
                     cellSize = pieceCellDp,
-                    alpha = if (isDragging || resolvedLockedColumn != null) 1f else 0.75f,
+                    alpha = if ((isDragging || resolvedLockedColumn != null) && isHandVisible) 1f else 0.75f,
                 )
             }
         }
@@ -1452,7 +1776,7 @@ private fun TutorialDemoHand(
     cellSize: androidx.compose.ui.unit.Dp,
     alpha: Float,
 ) {
-    val isDark = isStackShiftDarkTheme(LocalAppSettings.current)
+    val isDark = isBlockGamesDarkTheme(LocalAppSettings.current)
     val handColor = if (isDark) Color.White else Color(0xFF101114)
     val handSize = cellSize * 1.5f
 
@@ -1490,9 +1814,9 @@ private fun TutorialMiniBottomDock(
     modifier: Modifier = Modifier,
     trayContent: @Composable BoxScope.() -> Unit = {},
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     Card(
-        modifier = modifier.stackShiftSurfaceShadow(
+        modifier = modifier.blockGamesSurfaceShadow(
             shape = RoundedCornerShape(GameUiShapeTokens.dockCorner),
             elevation = 10.dp,
         ),
@@ -1557,7 +1881,7 @@ private fun TutorialTrayPieceChip(
     modifier: Modifier = Modifier,
     onPositioned: ((Rect) -> Unit)? = null,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     Card(
         modifier = modifier
             .fillMaxHeight()
@@ -1591,9 +1915,9 @@ private fun TutorialSection(
     body: String,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     Card(
-        modifier = Modifier.stackShiftSurfaceShadow(
+        modifier = Modifier.blockGamesSurfaceShadow(
             shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
             elevation = 5.dp,
         ),
@@ -1631,9 +1955,9 @@ private fun TutorialPieceCard(
     alpha: Float,
     modifier: Modifier = Modifier,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     Card(
-        modifier = modifier.stackShiftSurfaceShadow(
+        modifier = modifier.blockGamesSurfaceShadow(
             shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
             elevation = 5.dp,
         ),
@@ -1701,7 +2025,7 @@ private fun TutorialActionTile(
         Text(
             text = title,
             style = MaterialTheme.typography.labelSmall,
-            color = iconTint,
+            color = uiColors.subtitle,
             textAlign = TextAlign.Center,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -1716,9 +2040,9 @@ private fun TutorialSpecialCard(
     title: String,
     body: String,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     Card(
-        modifier = Modifier.stackShiftSurfaceShadow(
+        modifier = Modifier.blockGamesSurfaceShadow(
             shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
             elevation = 5.dp,
         ),
@@ -1764,9 +2088,9 @@ private fun TutorialSpecialCard(
 
 @Composable
 private fun TutorialHintCard(text: String) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     Card(
-        modifier = Modifier.stackShiftSurfaceShadow(
+        modifier = Modifier.blockGamesSurfaceShadow(
             shape = RoundedCornerShape(GameUiShapeTokens.hintCorner),
             elevation = 5.dp,
         ),
@@ -1821,7 +2145,7 @@ private fun lerpOffset(
 @Preview(name = "Tutorial - Intro", widthDp = 412, heightDp = 915)
 @Composable
 private fun TutorialIntroStepPreview() {
-    StackShiftTheme(settings = AppSettings()) {
+    BlockGamesTheme(settings = AppSettings()) {
         GameTutorialScreen(
             initialPage = 0,
             onBack = {},
@@ -1833,7 +2157,7 @@ private fun TutorialIntroStepPreview() {
 @Preview(name = "Tutorial - Systems", widthDp = 412, heightDp = 915)
 @Composable
 private fun TutorialSystemsStepPreview() {
-    StackShiftTheme(settings = AppSettings()) {
+    BlockGamesTheme(settings = AppSettings()) {
         GameTutorialScreen(
             initialPage = 1,
             onBack = {},
@@ -1845,7 +2169,7 @@ private fun TutorialSystemsStepPreview() {
 @Preview(name = "Tutorial - Specials", widthDp = 412, heightDp = 915)
 @Composable
 private fun TutorialSpecialsStepPreview() {
-    StackShiftTheme(settings = AppSettings()) {
+    BlockGamesTheme(settings = AppSettings()) {
         GameTutorialScreen(
             initialPage = 2,
             onBack = {},
@@ -1857,7 +2181,7 @@ private fun TutorialSpecialsStepPreview() {
 @Preview(name = "Tutorial - Ready", widthDp = 412, heightDp = 915)
 @Composable
 private fun TutorialReadyStepPreview() {
-    StackShiftTheme(settings = AppSettings()) {
+    BlockGamesTheme(settings = AppSettings()) {
         GameTutorialScreen(
             initialPage = 3,
             onBack = {},
@@ -1869,7 +2193,7 @@ private fun TutorialReadyStepPreview() {
 @Preview(name = "Tutorial - Full Screen", widthDp = 412, heightDp = 915)
 @Composable
 private fun GameTutorialScreenPreview() {
-    StackShiftTheme(settings = AppSettings()) {
+    BlockGamesTheme(settings = AppSettings()) {
         GameTutorialScreen(
             onBack = {},
             onFinish = {},
@@ -1877,11 +2201,12 @@ private fun GameTutorialScreenPreview() {
     }
 }
 
-@Preview(name = "Tutorial - Full Screen (Start)", widthDp = 412, heightDp = 915)
+@Preview(name = "Tutorial - BlockWise", widthDp = 412, heightDp = 915)
 @Composable
 private fun GameTutorialScreenStartPreview() {
-    StackShiftTheme(settings = AppSettings()) {
+    BlockGamesTheme(settings = AppSettings()) {
         GameTutorialScreen(
+            gameplayStyle = GameplayStyle.BlockWise,
             onBack = {},
             onFinish = {},
         )

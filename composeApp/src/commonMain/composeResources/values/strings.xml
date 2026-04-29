@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_title">StackShift</string>
+    <string name="app_title_stackshift">StackShift</string>
+    <string name="app_title_blockwise">BlockWise</string>
     <string name="app_title_banner_stackshift_top">STACK</string>
     <string name="app_title_banner_stackshift_bottom">SHIFT</string>
     <string name="app_title_banner_blockwise_top">BLOCK</string>
@@ -103,15 +104,15 @@
     <string name="boost">Boost</string>
     <string name="danger">Danger</string>
     <string name="danger_none">-</string>
-    <string name="launch_label">Tray</string>
-    <string name="launch_bar">Piece tray</string>
-    <string name="launch_boost_active">Fresh trio ready</string>
-    <string name="launch_special_chance">Every trio can be dragged anywhere it fits</string>
+    <string name="launch_label">Launch</string>
+    <string name="launch_bar">Launch bar</string>
+    <string name="launch_boost_active">Boost active • %1$s turns</string>
+    <string name="launch_special_chance">Special block chance +%1$s%%</string>
     <string name="launch_soft_lock_message">Preview the target, then release to place</string>
     <string name="launch_chain_message">Row + Column • +%2$s</string>
     <string name="launch_paused">Paused</string>
     <string name="launch_game_over">Restart for a new run</string>
-    <string name="launch_drag_hint">Drag a block shape onto the board</string>
+    <string name="launch_drag_hint">Drag horizontally → release</string>
     <string name="queue_hold">Hold</string>
     <string name="queue_next_short">Next</string>
     <string name="queue_empty">—</string>
@@ -211,8 +212,6 @@
     <string name="feedback_extra_life">Extra life! %1$s rows</string>
     <string name="challenge_progress_value">%1$d/%2$d</string>
     <string name="stat_label_value_format">%1$s: %2$s</string>
-    <string name="launch_boost_turns_remaining_format">x%1$d</string>
-    <string name="launch_progress_percent_format">%%%1$d</string>
     <string name="time_minutes_seconds_format">%1$d:%2$s</string>
     <string name="special_column_clearer">COLUMN</string>
     <string name="special_row_clearer">ROW</string>

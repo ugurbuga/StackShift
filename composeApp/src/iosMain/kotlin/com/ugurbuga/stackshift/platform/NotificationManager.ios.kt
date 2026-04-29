@@ -22,7 +22,6 @@ import platform.Foundation.NSCalendarUnitYear
 import platform.Foundation.NSDate
 import platform.Foundation.NSDateComponents
 import platform.Foundation.NSUserDefaults
-import platform.Foundation.timeIntervalSince1970
 import platform.UserNotifications.UNAuthorizationOptionAlert
 import platform.UserNotifications.UNAuthorizationOptionBadge
 import platform.UserNotifications.UNAuthorizationOptionSound
@@ -33,7 +32,7 @@ import platform.UserNotifications.UNNotificationSound
 import platform.UserNotifications.UNTimeIntervalNotificationTrigger
 import platform.UserNotifications.UNUserNotificationCenter
 import stackshift.composeapp.generated.resources.Res
-import stackshift.composeapp.generated.resources.app_title
+import stackshift.composeapp.generated.resources.app_title_stackshift
 import stackshift.composeapp.generated.resources.notification_daily_challenge_body
 import stackshift.composeapp.generated.resources.notification_daily_challenge_title
 import stackshift.composeapp.generated.resources.notification_miss_you_body
@@ -228,7 +227,7 @@ class IosNotificationManager : NotificationManager {
     override fun sendTestNotification() {
         val localeTag = AppSettingsStorage.load().language.localeTag
         val content = UNMutableNotificationContent().apply {
-            setTitle(localizedText(localeTag, Res.string.app_title))
+            setTitle(localizedText(localeTag, Res.string.app_title_stackshift))
             setBody(localizedText(localeTag, Res.string.notification_test_body))
             setSound(UNNotificationSound.defaultSound)
         }

@@ -16,13 +16,14 @@ import java.awt.event.ComponentEvent
 import java.util.prefs.Preferences
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import com.ugurbuga.stackshift.localization.appStringResource
 import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
-import stackshift.composeapp.generated.resources.app_title
+import stackshift.composeapp.generated.resources.app_title_stackshift
 
 fun main() = application {
     val initialSnapshot = remember { DesktopWindowPrefs.load() }
-    val appTitle = stringResource(Res.string.app_title)
+    val appTitle = appStringResource(Res.string.app_title_stackshift)
     val windowState = rememberWindowState(
         size = DpSize(initialSnapshot.width.dp, initialSnapshot.height.dp),
         position = initialSnapshot.x?.let { x ->

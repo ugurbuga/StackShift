@@ -2,11 +2,11 @@ package com.ugurbuga.stackshift.presentation.game
 
 import com.ugurbuga.stackshift.game.logic.GameEvent
 import com.ugurbuga.stackshift.game.logic.GameLogic
-import com.ugurbuga.stackshift.game.logic.StackShiftGameLogic
 import com.ugurbuga.stackshift.game.model.GameState
 import com.ugurbuga.stackshift.game.model.GameplayStyle
 import com.ugurbuga.stackshift.game.model.GridPoint
 import com.ugurbuga.stackshift.game.model.PlacementPreview
+import com.ugurbuga.stackshift.platform.GlobalPlatformConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,17 +14,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 class GameStore(
-    private val blockWiseGameLogic: GameLogic,
-    private val stackShiftGameLogic: StackShiftGameLogic = StackShiftGameLogic(),
+    private val gameLogic: GameLogic,
     private val scope: CoroutineScope,
     initialState: GameState? = null,
     private val onStateChanged: (GameState) -> Unit = {},
     private val onEvents: (Set<GameEvent>) -> Unit = {},
 ) {
-    private val reducer = GameReducer(blockWiseGameLogic, stackShiftGameLogic)
+    private val reducer = GameReducer(gameLogic)
     private val _uiState = MutableStateFlow(
         GameUiState(
-            gameState = restoreState(initialState ?: blockWiseGameLogic.newGame()),
+            gameState = restoreState(
+                initialState ?: gameLogic.newGame(gameplayStyle = GlobalPlatformConfig.gameplayStyle)
+            ),
         ),
     )
     private val effectHandler = GameEffectHandler(
@@ -41,10 +42,7 @@ class GameStore(
 
     fun previewPlacement(column: Int): PlacementPreview? {
         val state = _uiState.value.gameState
-        return when (state.gameplayStyle) {
-            GameplayStyle.BlockWise -> blockWiseGameLogic.previewPlacement(state = state, approximateColumn = column)
-            GameplayStyle.StackShift -> stackShiftGameLogic.previewPlacement(state = state, approximateColumn = column)
-        }
+        return gameLogic.previewPlacement(state = state, column = column)
     }
 
     fun previewPlacement(
@@ -52,18 +50,12 @@ class GameStore(
         origin: GridPoint,
     ): PlacementPreview? {
         val state = _uiState.value.gameState
-        return when (state.gameplayStyle) {
-            GameplayStyle.BlockWise -> blockWiseGameLogic.previewPlacement(state = state, pieceId = pieceId, origin = origin)
-            GameplayStyle.StackShift -> stackShiftGameLogic.previewPlacement(state = state, approximateColumn = origin.column)
-        }
+        return gameLogic.previewPlacement(state = state, pieceId = pieceId, origin = origin)
     }
 
     fun previewImpactPoints(preview: PlacementPreview?): Set<GridPoint> {
         val state = _uiState.value.gameState
-        return when (state.gameplayStyle) {
-            GameplayStyle.BlockWise -> blockWiseGameLogic.previewImpactPoints(state = state, preview = preview)
-            GameplayStyle.StackShift -> stackShiftGameLogic.previewImpactPoints(state = state, preview = preview)
-        }
+        return gameLogic.previewImpactPoints(state = state, preview = preview)
     }
 
     fun dispatch(intent: GameIntent): Set<GameEvent> {
@@ -101,8 +93,5 @@ class GameStore(
         onStateChanged(state)
     }
 
-    private fun restoreState(state: GameState): GameState = when (state.gameplayStyle) {
-        GameplayStyle.BlockWise -> blockWiseGameLogic.restoreGame(state)
-        GameplayStyle.StackShift -> stackShiftGameLogic.restoreGame(state)
-    }
+    private fun restoreState(state: GameState): GameState = gameLogic.restoreGame(state)
 }

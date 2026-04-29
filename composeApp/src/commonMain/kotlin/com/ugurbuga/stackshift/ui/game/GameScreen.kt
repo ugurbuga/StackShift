@@ -13,7 +13,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,14 +31,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.TouchApp
@@ -73,7 +68,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -82,13 +76,10 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
-import com.ugurbuga.stackshift.StackShiftTheme
+import com.ugurbuga.stackshift.BlockGamesTheme
 import com.ugurbuga.stackshift.ads.GameAdController
 import com.ugurbuga.stackshift.ads.NoOpGameAdController
 import com.ugurbuga.stackshift.game.logic.GameEvent
@@ -101,7 +92,6 @@ import com.ugurbuga.stackshift.game.model.FeedbackEmphasis
 import com.ugurbuga.stackshift.game.model.GameConfig
 import com.ugurbuga.stackshift.game.model.GameState
 import com.ugurbuga.stackshift.game.model.GameStatus
-import com.ugurbuga.stackshift.game.model.GameText
 import com.ugurbuga.stackshift.game.model.GameTextKey
 import com.ugurbuga.stackshift.game.model.GameplayStyle
 import com.ugurbuga.stackshift.game.model.GridPoint
@@ -113,6 +103,8 @@ import com.ugurbuga.stackshift.game.model.gameText
 import com.ugurbuga.stackshift.game.model.paletteColor
 import com.ugurbuga.stackshift.game.model.toTopLeft
 import com.ugurbuga.stackshift.localization.LocalAppSettings
+import com.ugurbuga.stackshift.localization.appNameStringResource
+import com.ugurbuga.stackshift.platform.GlobalPlatformConfig
 import com.ugurbuga.stackshift.platform.feedback.GameHaptic
 import com.ugurbuga.stackshift.platform.feedback.GameHaptics
 import com.ugurbuga.stackshift.platform.feedback.GameSound
@@ -132,92 +124,24 @@ import com.ugurbuga.stackshift.telemetry.LogScreen
 import com.ugurbuga.stackshift.telemetry.NoOpAppTelemetry
 import com.ugurbuga.stackshift.telemetry.TelemetryActionNames
 import com.ugurbuga.stackshift.telemetry.TelemetryScreenNames
+import com.ugurbuga.stackshift.ui.theme.BlockGamesThemeTokens
 import com.ugurbuga.stackshift.ui.theme.GameUiShapeTokens
-import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
 import com.ugurbuga.stackshift.ui.theme.appBackgroundBrush
-import com.ugurbuga.stackshift.ui.theme.isStackShiftDarkTheme
-import com.ugurbuga.stackshift.ui.theme.stackShiftSurfaceShadow
+import com.ugurbuga.stackshift.ui.theme.blockGamesSurfaceShadow
+import com.ugurbuga.stackshift.ui.theme.isBlockGamesDarkTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
-import stackshift.composeapp.generated.resources.app_title
-import stackshift.composeapp.generated.resources.boost
-import stackshift.composeapp.generated.resources.challenge_completed
-import stackshift.composeapp.generated.resources.continue_label
-import stackshift.composeapp.generated.resources.danger
-import stackshift.composeapp.generated.resources.danger_none
-import stackshift.composeapp.generated.resources.feedback_chain
-import stackshift.composeapp.generated.resources.feedback_clear
-import stackshift.composeapp.generated.resources.feedback_extra_life
-import stackshift.composeapp.generated.resources.feedback_hold_armed
-import stackshift.composeapp.generated.resources.feedback_micro_adjust
-import stackshift.composeapp.generated.resources.feedback_overflow
-import stackshift.composeapp.generated.resources.feedback_perfect
-import stackshift.composeapp.generated.resources.feedback_perfect_lane
-import stackshift.composeapp.generated.resources.feedback_score_only
-import stackshift.composeapp.generated.resources.feedback_soft_lock
-import stackshift.composeapp.generated.resources.feedback_special
-import stackshift.composeapp.generated.resources.feedback_special_chain
-import stackshift.composeapp.generated.resources.feedback_swap
-import stackshift.composeapp.generated.resources.game_message_chain_lines
-import stackshift.composeapp.generated.resources.game_message_extra_life_used
-import stackshift.composeapp.generated.resources.game_message_good_shot
-import stackshift.composeapp.generated.resources.game_message_hold_updated
-import stackshift.composeapp.generated.resources.game_message_lines_cleared
-import stackshift.composeapp.generated.resources.game_message_no_opening
-import stackshift.composeapp.generated.resources.game_message_overflow
-import stackshift.composeapp.generated.resources.game_message_perfect_drop
-import stackshift.composeapp.generated.resources.game_message_pressure_game_over
-import stackshift.composeapp.generated.resources.game_message_select_column
-import stackshift.composeapp.generated.resources.game_message_soft_lock
-import stackshift.composeapp.generated.resources.game_message_special_chain_board
-import stackshift.composeapp.generated.resources.game_message_special_lines
-import stackshift.composeapp.generated.resources.game_message_special_triggered
-import stackshift.composeapp.generated.resources.game_message_tempo_critical
-import stackshift.composeapp.generated.resources.game_message_tempo_up
-import stackshift.composeapp.generated.resources.game_over_extra_life
-import stackshift.composeapp.generated.resources.game_over_extra_life_loading
-import stackshift.composeapp.generated.resources.game_over_new_high_score
-import stackshift.composeapp.generated.resources.game_over_title
-import stackshift.composeapp.generated.resources.high_score
-import stackshift.composeapp.generated.resources.high_score_new_record
-import stackshift.composeapp.generated.resources.hold
-import stackshift.composeapp.generated.resources.launch_bar
 import stackshift.composeapp.generated.resources.launch_boost_active
-import stackshift.composeapp.generated.resources.launch_boost_turns_remaining_format
-import stackshift.composeapp.generated.resources.launch_chain_message
 import stackshift.composeapp.generated.resources.launch_drag_hint
-import stackshift.composeapp.generated.resources.launch_game_over
-import stackshift.composeapp.generated.resources.launch_label
-import stackshift.composeapp.generated.resources.launch_progress_percent_format
-import stackshift.composeapp.generated.resources.launch_soft_lock_message
 import stackshift.composeapp.generated.resources.launch_special_chance
-import stackshift.composeapp.generated.resources.lines
-import stackshift.composeapp.generated.resources.piece_properties_none
-import stackshift.composeapp.generated.resources.play_again
-import stackshift.composeapp.generated.resources.queue_empty
-import stackshift.composeapp.generated.resources.queue_next_short
-import stackshift.composeapp.generated.resources.restart
 import stackshift.composeapp.generated.resources.restart_cancel
 import stackshift.composeapp.generated.resources.restart_confirm
 import stackshift.composeapp.generated.resources.restart_confirm_body
 import stackshift.composeapp.generated.resources.restart_confirm_title
-import stackshift.composeapp.generated.resources.return_home
-import stackshift.composeapp.generated.resources.score
-import stackshift.composeapp.generated.resources.settings_challenges
-import stackshift.composeapp.generated.resources.special_column_clearer
-import stackshift.composeapp.generated.resources.special_ghost
-import stackshift.composeapp.generated.resources.special_heavy
-import stackshift.composeapp.generated.resources.special_row_clearer
-import stackshift.composeapp.generated.resources.time_minutes_seconds_format
 import stackshift.composeapp.generated.resources.time_remaining
-import stackshift.composeapp.generated.resources.tutorial_back
-import stackshift.composeapp.generated.resources.tutorial_finish
-import stackshift.composeapp.generated.resources.tutorial_ready_body
-import stackshift.composeapp.generated.resources.tutorial_ready_title
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -228,33 +152,12 @@ private const val NextPieceScale = 0.45f
 private const val LaunchPreviewAlpha = 1f
 private const val QueuePreviewAlpha = 0.58f
 
-private val TopBarVerticalPadding = 6.dp
-private val TopBarRowSpacing = 4.dp
-private val TopBarIconSpacing = 4.dp
-private val TopBarMetricLaunchSpacing = 8.dp
-private val TopBarActionIconSize = 20.dp
-private val TopBarActionRailSize = 44.dp
-private val TopBarMetricHeight = 48.dp
-private val MetricChipHorizontalPadding = 16.dp
-private val MetricChipVerticalPadding = 7.dp
-private val RecordIndicatorIconSize = 12.dp
-private val RecordIndicatorSideGap = 6.dp
-private const val MetricHighlightThreshold = 0.08f
 private const val MetricHighlightPulseScale = 1.08f
 private const val MetricHighlightPulseUpDurationMillis = 180
 private const val MetricHighlightPulseDownDurationMillis = 520
 private const val TrayPulseScaleBoost = 0.055f
 private const val TrayPulseUpDurationMillis = 760
 private const val TrayPulseDownDurationMillis = 920
-private const val GameOverDialogRevealDurationMillis = 260
-
-private val GameOverDialogWidth = 420.dp
-private val GameOverDialogRevealOffsetDp = 12.dp
-private val GameOverDialogCardPadding = 24.dp
-private val GameOverDialogIconSize = 40.dp
-private const val TopBarPanelAlpha = 0.88f
-private const val TopBarPanelStrokeAlpha = 0.72f
-private const val TopBarPanelGlowAlpha = 0.14f
 private const val DockPanelAlpha = 0.90f
 private const val DockPanelStrokeAlpha = 0.74f
 private const val DockPanelGlowAlpha = 0.12f
@@ -265,14 +168,6 @@ private const val ScreenShakeFinalStepDurationMillis = 48
 private const val InteractiveOnboardingStageAdvanceDelayMillis = 720L
 private const val InteractiveOnboardingClearAnimationDurationMillis = 620
 private const val InteractiveOnboardingBoardShiftDurationMillis = 360
-private val TopBarActionBlockSize = 28.dp
-private val TopBarActionBlockTones = listOf(
-    CellTone.Cyan,
-    CellTone.Gold,
-    CellTone.Violet,
-    CellTone.Lime,
-    CellTone.Amber,
-)
 
 private data class InteractiveOnboardingAdvanceRequest(
     val completedStage: FirstRunOnboardingStage,
@@ -330,7 +225,7 @@ fun GameOverBoardClearOverlay(
     rowCount: Int,
     modifier: Modifier = Modifier,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     val fullyClearedRows = (revealProgress * rowCount).toInt()
     val partialClearAlpha = 1f - ((revealProgress * rowCount) - fullyClearedRows)
 
@@ -361,6 +256,7 @@ fun StackShiftGameApp(
     adController: GameAdController = NoOpGameAdController,
     viewModel: GameViewModel = remember { GameViewModel() },
     interactiveOnboardingEnabled: Boolean = false,
+    gameplayStyle: GameplayStyle = GlobalPlatformConfig.gameplayStyle,
     onInteractiveOnboardingFinished: (GameState) -> Unit = {},
     onInteractiveOnboardingReturnHome: (GameState) -> Unit = {},
     onReplaceActivePieceRewarded: (SpecialBlockType) -> Unit = {},
@@ -370,6 +266,7 @@ fun StackShiftGameApp(
 ) {
     val haptics = rememberGameHaptics()
     val uiState by viewModel.uiState.collectAsState()
+    val uiColors = BlockGamesThemeTokens.uiColors
     val onboardingStages = remember { FirstRunGameOnboardingStateFactory.stages }
     var onboardingStage by remember(interactiveOnboardingEnabled) {
         mutableStateOf(
@@ -440,7 +337,8 @@ fun StackShiftGameApp(
         if (request.nextStage != null) {
             onboardingStage = request.nextStage
         } else {
-            pendingOnboardingCompletionState = FirstRunGameOnboardingStateFactory.cleanGameState()
+            pendingOnboardingCompletionState =
+                FirstRunGameOnboardingStateFactory.cleanGameState(uiState.gameState.gameplayStyle)
             showOnboardingCompletionDialog = true
             onboardingStage = null
         }
@@ -466,11 +364,11 @@ fun StackShiftGameApp(
         }
 
         val placementCommitted = uiState.gameState.softLock == null && (
-            uiState.gameState.board != scene.gameState.board ||
-                uiState.gameState.activePiece?.id != scene.gameState.activePiece?.id ||
-                uiState.gameState.score != scene.gameState.score ||
-                uiState.gameState.linesCleared != scene.gameState.linesCleared
-            )
+                uiState.gameState.board != scene.gameState.board ||
+                        uiState.gameState.activePiece?.id != scene.gameState.activePiece?.id ||
+                        uiState.gameState.score != scene.gameState.score ||
+                        uiState.gameState.linesCleared != scene.gameState.linesCleared
+                )
         if (!placementCommitted) return@LaunchedEffect
 
         onboardingAdvanceRequest = InteractiveOnboardingAdvanceRequest(
@@ -480,17 +378,33 @@ fun StackShiftGameApp(
     }
 
     var highestScore by remember(uiState.gameState.gameMode, uiState.gameState.gameplayStyle) {
-        mutableIntStateOf(HighScoreStorage.load(uiState.gameState.gameMode, uiState.gameState.gameplayStyle))
+        mutableIntStateOf(
+            HighScoreStorage.load(
+                uiState.gameState.gameMode,
+                uiState.gameState.gameplayStyle
+            )
+        )
     }
-    var newHighScoreReached by remember(uiState.gameState.gameMode, uiState.gameState.gameplayStyle) { mutableStateOf(value = false) }
-    LaunchedEffect(uiState.gameState.score, uiState.gameState.gameMode, uiState.gameState.gameplayStyle) {
+    var newHighScoreReached by remember(
+        uiState.gameState.gameMode,
+        uiState.gameState.gameplayStyle
+    ) { mutableStateOf(value = false) }
+    LaunchedEffect(
+        uiState.gameState.score,
+        uiState.gameState.gameMode,
+        uiState.gameState.gameplayStyle
+    ) {
         if (uiState.gameState.score > highestScore) {
             telemetry.logHighScoreReached(
                 newScore = uiState.gameState.score,
                 previousHighScore = highestScore,
             )
             highestScore = uiState.gameState.score
-            HighScoreStorage.save(highestScore, uiState.gameState.gameMode, uiState.gameState.gameplayStyle)
+            HighScoreStorage.save(
+                highestScore,
+                uiState.gameState.gameMode,
+                uiState.gameState.gameplayStyle
+            )
             newHighScoreReached = true
         }
     }
@@ -505,8 +419,8 @@ fun StackShiftGameApp(
     }
 
     LogScreen(telemetry, TelemetryScreenNames.Game)
-    when (displayGameState.gameplayStyle) {
-        GameplayStyle.BlockWise -> BWGameScreen(
+    when (gameplayStyle) {
+        GameplayStyle.BlockWise -> BlockWiseGameScreen(
             modifier = modifier,
             gameState = displayGameState,
             onRequestPreview = { pieceId, origin -> viewModel.previewPlacement(pieceId, origin) },
@@ -521,7 +435,7 @@ fun StackShiftGameApp(
                 dispatchFeedback(
                     viewModel.restart(
                         config = uiState.gameState.config,
-                        gameplayStyle = GameplayStyle.BlockWise,
+                        gameplayStyle = GlobalPlatformConfig.gameplayStyle,
                     ),
                     soundPlayer,
                     haptics,
@@ -538,7 +452,7 @@ fun StackShiftGameApp(
             telemetry = telemetry,
         )
 
-        GameplayStyle.StackShift -> SSGameScreen(
+        GameplayStyle.StackShift -> StackShiftGameScreen(
             modifier = modifier,
             gameState = displayGameState,
             onRequestPreview = viewModel::previewPlacement,
@@ -553,7 +467,10 @@ fun StackShiftGameApp(
                             onboardingAwaitingCommit = false
                             onboardingAdvanceRequest = InteractiveOnboardingAdvanceRequest(
                                 completedStage = onboardingScene.stage,
-                                nextStage = nextInteractiveOnboardingStage(onboardingScene.stage, onboardingStages),
+                                nextStage = nextInteractiveOnboardingStage(
+                                    onboardingScene.stage,
+                                    onboardingStages
+                                ),
                             )
                         }
 
@@ -592,7 +509,8 @@ fun StackShiftGameApp(
             onLaunchOverlayFinished = { shouldShowLaunchOverlay = false },
             showNewHighScoreMessage = newHighScoreReached,
             interactiveOnboardingScene = onboardingScene,
-            interactiveOnboardingCurrentStep = onboardingStages.indexOf(onboardingStage).takeIf { it >= 0 }?.plus(1) ?: 0,
+            interactiveOnboardingCurrentStep = onboardingStages.indexOf(onboardingStage)
+                .takeIf { it >= 0 }?.plus(1) ?: 0,
             interactiveOnboardingTotalSteps = onboardingStages.size,
             interactiveOnboardingAwaitingCommit = onboardingAwaitingCommit,
             interactiveOnboardingCompletionDialogVisible = showOnboardingCompletionDialog,
@@ -637,7 +555,7 @@ fun GameScreenWithLaunchOverlay(
     modifier: Modifier = Modifier,
 ) {
     var overlayVisible by rememberSaveable { mutableStateOf(showLaunchOverlayInitially) }
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
 
     Box(modifier = modifier.fillMaxSize()) {
         GameScreen(
@@ -681,7 +599,7 @@ fun GameScreenWithLaunchOverlay(
 
 @Composable
 fun GameLaunchOverlay(
-    uiColors: com.ugurbuga.stackshift.ui.theme.StackShiftUiColors,
+    uiColors: com.ugurbuga.stackshift.ui.theme.BlockGamesUiColors,
     onFinished: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -701,7 +619,7 @@ fun GameLaunchOverlay(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
-                text = stringResource(Res.string.app_title),
+                text = appNameStringResource(),
                 style = MaterialTheme.typography.displayMedium,
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
@@ -744,7 +662,7 @@ fun GameScreen(
     modifier: Modifier = Modifier,
 ) {
     val coroutineScope = rememberCoroutineScope()
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     val colorScheme = MaterialTheme.colorScheme
     val settings = LocalAppSettings.current
     val resolvedPreviewStyle = resolveBoardBlockStyle(
@@ -869,6 +787,7 @@ fun GameScreen(
             )
         }
     }
+
     val hasDraggedAwayFromSpawn by remember(spawnTopLeft, cellSizePx) {
         derivedStateOf {
             val spawn = spawnTopLeft ?: return@derivedStateOf false
@@ -985,6 +904,19 @@ fun GameScreen(
             current.copy(x = columnToLeft(snappedColumn, boardRect, cellSizePx))
         }
     }
+
+    val isPieceInTrayArea by remember(displayOverlayTopLeft, trayRect) {
+        derivedStateOf {
+            val overlay = displayOverlayTopLeft ?: return@derivedStateOf false
+            trayRect != Rect.Zero && overlay.y >= trayRect.top - (cellSizePx * 0.5f)
+        }
+    }
+
+    val showOnboardingIndicators = interactiveOnboardingEnabled &&
+            !isDragging &&
+            !isLaunching &&
+            isPieceInTrayArea
+
     val shouldPulseTrayPiece =
         activePiece != null &&
                 spawnTopLeft != null &&
@@ -1185,7 +1117,7 @@ fun GameScreen(
                                         width = layoutSpec.boardWidth,
                                         height = layoutSpec.boardHeight
                                     )
-                                    .stackShiftSurfaceShadow(
+                                    .blockGamesSurfaceShadow(
                                         shape = boardShape,
                                         elevation = 10.dp,
                                     ),
@@ -1377,7 +1309,7 @@ fun GameScreen(
                             )
                         },
                         stylePulse = stylePulse,
-                        showOnboardingIndicators = interactiveOnboardingEnabled && !isDragging && !isLaunching,
+                        showOnboardingIndicators = showOnboardingIndicators,
                     )
                 }
 
@@ -1487,7 +1419,7 @@ internal fun BoxScope.LaunchGuideLineOverlay(
     if (preview == null || activePiece == null || pieceTopLeft == null || boardRect == Rect.Zero || cellSizePx <= 0f) return
 
     val settings = LocalAppSettings.current
-    val isDarkTheme = isStackShiftDarkTheme(settings)
+    val isDarkTheme = isBlockGamesDarkTheme(settings)
     val resolvedPreviewStyle = resolveBoardBlockStyle(
         selectedStyle = settings.blockVisualStyle,
         mode = settings.boardBlockStyleMode,
@@ -1658,8 +1590,7 @@ private fun ActivePieceOverlay(
                 scaleX = overlayScale * trayScale
                 scaleY = overlayScale * trayScale
                 transformOrigin = TransformOrigin(0f, 0f)
-            }
-            .then(pointerModifier),
+            },
         contentAlignment = Alignment.TopStart,
     ) {
         PieceBlocks(
@@ -1668,6 +1599,7 @@ private fun ActivePieceOverlay(
             cellCornerRadius = launchCellCornerRadius,
             alpha = 1f,
             pulse = stylePulse,
+            modifier = pointerModifier,
         )
 
         if (showOnboardingIndicators) {
@@ -1690,7 +1622,7 @@ private fun ActivePieceOverlay(
                 ),
                 label = "indicatorNudge",
             )
-            val isDark = isStackShiftDarkTheme(settings)
+            val isDark = isBlockGamesDarkTheme(settings)
             val indicatorColor = if (isDark) Color.White else Color(0xFF101114)
             val handSize = pieceCellDp * 1.3f
             val arrowSize = pieceCellDp * 0.72f
@@ -1738,112 +1670,6 @@ private fun ActivePieceOverlay(
             )
         }
     }
-}
-
-@Composable
-internal fun MinimalTopBar(
-    gameState: GameState,
-    scoreHighlightStrengthProvider: () -> Float,
-    scoreHighlightScaleProvider: () -> Float,
-    remainingTimeLabel: String,
-    onBack: () -> Unit,
-    onRestart: () -> Unit,
-    controlsEnabled: Boolean = true,
-    stylePulse: Float = 0f,
-) {
-    val uiColors = StackShiftThemeTokens.uiColors
-    val restartLabel = resolveGameText(gameText(GameTextKey.Restart))
-    val backLabel = stringResource(Res.string.tutorial_back)
-    val panelStrokeColor = uiColors.panelStroke.copy(alpha = TopBarPanelStrokeAlpha)
-    val panelGlow = Brush.verticalGradient(
-        colors = listOf(
-            uiColors.panelHighlight.copy(alpha = TopBarPanelGlowAlpha),
-            uiColors.launchGlow.copy(alpha = 0.10f),
-            Color.Transparent,
-        ),
-    )
-    Card(
-        shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
-        colors = CardDefaults.cardColors(containerColor = uiColors.gameSurface.copy(alpha = TopBarPanelAlpha)),
-        border = BorderStroke(1.dp, panelStrokeColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        modifier = Modifier.stackShiftSurfaceShadow(
-            shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
-            elevation = 10.dp,
-        ),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(panelGlow)
-                .padding(horizontal = 10.dp, vertical = TopBarVerticalPadding),
-            verticalArrangement = Arrangement.spacedBy(TopBarRowSpacing),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                TopBarActionBlockButton(
-                    tone = TopBarActionBlockTones[0],
-                    icon = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = backLabel,
-                    onClick = onBack,
-                    enabled = true,
-                    pulse = stylePulse,
-                    size = TopBarActionRailSize,
-                )
-                CompactMetricChip(
-                    title = resolveGameText(gameText(GameTextKey.Score)),
-                    value = gameState.score.toString(),
-                    highlightStrengthProvider = scoreHighlightStrengthProvider,
-                    scaleProvider = scoreHighlightScaleProvider,
-                    modifier = Modifier.weight(1f).height(TopBarMetricHeight),
-                )
-                gameState.remainingTimeMillis?.let { remainingTimeMillis ->
-                    CompactMetricChip(
-                        title = remainingTimeLabel,
-                        value = formatRemainingTime(remainingTimeMillis),
-                        modifier = Modifier.weight(1f).height(TopBarMetricHeight),
-                    )
-                }
-                TopBarActionBlockButton(
-                    tone = TopBarActionBlockTones[2],
-                    icon = Icons.Filled.Refresh,
-                    contentDescription = restartLabel,
-                    onClick = onRestart,
-                    enabled = controlsEnabled,
-                    pulse = stylePulse,
-                    size = TopBarActionRailSize,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun formatRemainingTime(remainingTimeMillis: Long): String {
-    val totalSeconds = (remainingTimeMillis.coerceAtLeast(0L) + 999L) / 1_000L
-    val minutes = totalSeconds / 60L
-    val seconds = totalSeconds % 60L
-    return stringResource(
-        Res.string.time_minutes_seconds_format,
-        minutes,
-        seconds.toString().padStart(2, '0'),
-    )
-}
-
-@Composable
-private fun TopBarActionBay(
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
-) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(TopBarIconSpacing),
-        verticalAlignment = Alignment.CenterVertically,
-        content = { content() },
-    )
 }
 
 @Composable
@@ -1897,6 +1723,7 @@ private fun EqualWidthMetricColumn(
     scoreHighlightScaleProvider: () -> Float,
     modifier: Modifier = Modifier,
 ) {
+    val uiColors = BlockGamesThemeTokens.uiColors
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -1930,11 +1757,11 @@ private fun MinimalBottomDock(
     stylePulse: Float = 0f,
     modifier: Modifier = Modifier,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     val resolvedHighlightColor = highlightColor ?: uiColors.actionButton
     val dockPulseAlpha = if (highlightDock) 0.10f + (0.08f * stylePulse) else 0f
     Card(
-        modifier = modifier.stackShiftSurfaceShadow(
+        modifier = modifier.blockGamesSurfaceShadow(
             shape = RoundedCornerShape(GameUiShapeTokens.dockCorner),
             elevation = 10.dp,
         ),
@@ -1967,329 +1794,57 @@ private fun MinimalBottomDock(
                 )
                 .padding(horizontal = 14.dp, vertical = 8.dp),
         ) {
-                Row(modifier = Modifier.fillMaxSize()) {
-                    if (gameState.activeChallenge != null) {
-                        ChallengeTasksDock(
-                            challenge = gameState.activeChallenge,
-                            modifier = Modifier.weight(1f),
-                        )
-                    } else {
-                        LaunchBarView(
-                            gameState = gameState,
-                            stylePulse = stylePulse,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
+            Row(modifier = Modifier.fillMaxSize()) {
+                if (gameState.activeChallenge != null) {
+                    ChallengeTasksDock(
+                        challenge = gameState.activeChallenge,
+                        modifier = Modifier.weight(1f),
+                    )
+                } else {
+                    LaunchBarView(
+                        gameState = gameState,
+                        stylePulse = stylePulse,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
 
-                    if (showNextPiece) {
-                        Column(
-                            modifier = Modifier.fillMaxHeight(),
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                if (showNextPiece) {
+                    Column(
+                        modifier = Modifier.fillMaxHeight(),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        HoldAndQueueStrip(
+                            queue = gameState.nextQueue,
+                            cellSize = (cellSizePx * NextPieceScale),
+                            stylePulse = stylePulse,
+                        )
+
+                        Spacer(modifier = Modifier.weight(1f))
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            HoldAndQueueStrip(
-                                queue = gameState.nextQueue,
-                                cellSize = (cellSizePx * NextPieceScale),
+                            SpecialActionAdButton(
+                                specialType = SpecialBlockType.RowClearer,
+                                tone = CellTone.Cyan,
+                                icon = Icons.Filled.SwapHoriz,
+                                adController = adController,
+                                onActivated = { onReplaceActivePiece(SpecialBlockType.RowClearer) },
                                 stylePulse = stylePulse,
                             )
-
-                            Spacer(modifier = Modifier.weight(1f))
-
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                SpecialActionAdButton(
-                                    specialType = SpecialBlockType.RowClearer,
-                                    tone = CellTone.Cyan,
-                                    icon = Icons.Filled.SwapHoriz,
-                                    adController = adController,
-                                    onActivated = { onReplaceActivePiece(SpecialBlockType.RowClearer) },
-                                    stylePulse = stylePulse,
-                                )
-                                SpecialActionAdButton(
-                                    specialType = SpecialBlockType.ColumnClearer,
-                                    tone = CellTone.Emerald,
-                                    icon = Icons.Filled.SwapVert,
-                                    adController = adController,
-                                    onActivated = { onReplaceActivePiece(SpecialBlockType.ColumnClearer) },
-                                    stylePulse = stylePulse,
-                                )
-                            }
+                            SpecialActionAdButton(
+                                specialType = SpecialBlockType.ColumnClearer,
+                                tone = CellTone.Emerald,
+                                icon = Icons.Filled.SwapVert,
+                                adController = adController,
+                                onActivated = { onReplaceActivePiece(SpecialBlockType.ColumnClearer) },
+                                stylePulse = stylePulse,
+                            )
                         }
                     }
                 }
-        }
-    }
-}
-
-@Composable
-private fun CompactMetricChip(
-    title: String,
-    value: String,
-    highlightStrengthProvider: () -> Float = { 0f },
-    scaleProvider: () -> Float = { 1f },
-    modifier: Modifier = Modifier,
-) {
-    val uiColors = StackShiftThemeTokens.uiColors
-    val highlightStrength = highlightStrengthProvider()
-    val isHighlighted = highlightStrength > MetricHighlightThreshold
-
-    Card(
-        modifier = modifier
-            .stackShiftSurfaceShadow(
-                shape = RoundedCornerShape(GameUiShapeTokens.chipCorner),
-                elevation = 5.dp,
-            )
-            .graphicsLayer {
-                val scale = scaleProvider()
-                scaleX = scale
-                scaleY = scale
-            },
-        shape = RoundedCornerShape(GameUiShapeTokens.chipCorner),
-        colors = CardDefaults.cardColors(containerColor = uiColors.metricCard.copy(alpha = 0.92f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = BorderStroke(
-            width = if (isHighlighted) 1.6.dp else 1.dp,
-            color = if (isHighlighted) {
-                uiColors.success.copy(alpha = (0.50f + highlightStrength * 0.50f).coerceIn(0f, 1f))
-            } else {
-                uiColors.panelStroke.copy(alpha = 0.72f)
-            }
-        ),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxHeight()
-                .padding(top = 1.dp)
-                .graphicsLayer {
-                    alpha = (0.92f + highlightStrength * 0.08f).coerceIn(0f, 1f)
-                }
-                .padding(
-                    horizontal = MetricChipHorizontalPadding,
-                    vertical = MetricChipVerticalPadding
-                ),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (isHighlighted) {
-                Icon(
-                    imageVector = Icons.Filled.EmojiEvents,
-                    contentDescription = null,
-                    tint = uiColors.success,
-                    modifier = Modifier
-                        .size(RecordIndicatorIconSize)
-                        .graphicsLayer { alpha = highlightStrengthProvider().coerceIn(0f, 1f) },
-                )
-                Spacer(modifier = Modifier.width(RecordIndicatorSideGap))
-            }
-
-            Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Text(
-                    text = title,
-                    modifier = Modifier.fillMaxWidth(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = uiColors.subtitle,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
-                )
-                Text(
-                    text = value,
-                    modifier = Modifier.fillMaxWidth(),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
-                )
-            }
-
-            if (isHighlighted) {
-                Spacer(modifier = Modifier.width(RecordIndicatorSideGap))
-                Icon(
-                    imageVector = Icons.Filled.EmojiEvents,
-                    contentDescription = null,
-                    tint = uiColors.success,
-                    modifier = Modifier
-                        .size(RecordIndicatorIconSize)
-                        .graphicsLayer { alpha = highlightStrength.coerceIn(0f, 1f) },
-                )
-            }
-        }
-    }
-}
-
-
-@Composable
-internal fun rememberBlockStylePulse(
-    style: BlockVisualStyle,
-    pulse: Float = 0f,
-): Float {
-    val needsPulse = style == BlockVisualStyle.DynamicLiquid ||
-            style == BlockVisualStyle.Tornado ||
-            style == BlockVisualStyle.Prism ||
-            style == BlockVisualStyle.SoundWave ||
-            style == BlockVisualStyle.Flame
-
-    if (pulse != 0f || !needsPulse) {
-        return pulse
-    }
-
-    val transition = rememberInfiniteTransition(label = "blockStyleButtonPulse")
-    val animatedPulse by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 3000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "blockStyleButtonPulseValue",
-    )
-    return animatedPulse
-}
-
-private data class ActionButtonColors(
-    val container: Color,
-    val content: Color,
-)
-
-@Composable
-private fun rememberActionButtonColors(
-    tone: CellTone,
-    enabled: Boolean,
-    emphasized: Boolean,
-): ActionButtonColors {
-    val uiColors = StackShiftThemeTokens.uiColors
-    val colorScheme = MaterialTheme.colorScheme
-    if (!enabled) {
-        return ActionButtonColors(
-            container = lerp(uiColors.actionButtonDisabled, uiColors.panelMuted, 0.16f),
-            content = uiColors.actionIconDisabled,
-        )
-    }
-
-    val (base, accent, content) = when (tone) {
-        CellTone.Cyan, CellTone.Blue -> Triple(
-            colorScheme.primary,
-            colorScheme.secondary,
-            colorScheme.onPrimary
-        )
-
-        CellTone.Violet -> Triple(
-            colorScheme.secondary,
-            colorScheme.primaryContainer,
-            colorScheme.onSecondary
-        )
-
-        CellTone.Emerald, CellTone.Lime -> Triple(
-            uiColors.success,
-            colorScheme.primary,
-            Color.White
-        )
-
-        CellTone.Gold, CellTone.Amber -> Triple(uiColors.warning, colorScheme.tertiary, Color.White)
-        CellTone.Coral, CellTone.Rose -> Triple(uiColors.danger, colorScheme.secondary, Color.White)
-    }
-    return ActionButtonColors(
-        container = lerp(
-            lerp(base, accent, if (emphasized) 0.16f else 0.08f),
-            Color.White,
-            if (emphasized) 0.06f else 0.02f,
-        ),
-        content = content,
-    )
-}
-
-@Composable
-internal fun TopBarActionBlockButton(
-    tone: CellTone,
-    icon: ImageVector,
-    contentDescription: String,
-    onClick: () -> Unit,
-    enabled: Boolean = true,
-    pulse: Float = 0f,
-    size: androidx.compose.ui.unit.Dp = TopBarActionBlockSize,
-    showAdIcon: Boolean = false,
-    adIcon: ImageVector = Icons.Outlined.Videocam,
-    extraAlpha: Float = 1f,
-) {
-    val settings = LocalAppSettings.current
-    val resolvedBlockStyle = resolveBoardBlockStyle(
-        selectedStyle = settings.blockVisualStyle,
-        mode = settings.boardBlockStyleMode,
-    )
-    val launchCellCornerRadius = boardCellCornerRadiusDp(
-        cellSize = size,
-        style = resolvedBlockStyle,
-    )
-    val effectivePulse = rememberBlockStylePulse(
-        style = resolvedBlockStyle,
-        pulse = pulse,
-    )
-    val buttonColors = rememberActionButtonColors(
-        tone = tone,
-        enabled = enabled,
-        emphasized = true,
-    )
-    val contentTint = blockStyleIconTint(style = resolvedBlockStyle)
-
-    Box(
-        modifier = Modifier
-            .size(size)
-            .graphicsLayer { alpha = if (enabled) 1f * extraAlpha else 0.72f * extraAlpha }
-            .stackShiftSurfaceShadow(
-                shape = RoundedCornerShape(launchCellCornerRadius),
-                elevation = 5.dp,
-            )
-            .clip(RoundedCornerShape(launchCellCornerRadius))
-            .clickable(enabled = enabled) { onClick.invoke() },
-        contentAlignment = Alignment.Center,
-    ) {
-        Canvas(modifier = Modifier.matchParentSize()) {
-            val canvasSize = this.size
-            val cornerRadiusPx = launchCellCornerRadius.toPx()
-            drawCellBody(
-                baseColor = buttonColors.container,
-                palette = settings.blockColorPalette,
-                style = resolvedBlockStyle,
-                topLeft = Offset.Zero,
-                size = canvasSize,
-                cornerRadius = CornerRadius(cornerRadiusPx, cornerRadiusPx),
-                pulse = effectivePulse,
-            )
-        }
-
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .background(StackShiftThemeTokens.uiColors.gameSurface.copy(alpha = 0.35f))
-        )
-
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            tint = contentTint,
-            modifier = Modifier.size(TopBarActionIconSize),
-        )
-
-        if (showAdIcon) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(2.dp),
-                contentAlignment = Alignment.TopEnd
-            ) {
-                Icon(
-                    imageVector = adIcon,
-                    contentDescription = null,
-                    tint = contentTint,
-                    modifier = Modifier.size(12.dp)
-                )
             }
         }
     }
@@ -2330,331 +1885,12 @@ private fun SpecialActionAdButton(
 }
 
 @Composable
-internal fun ThemedConfirmDialog(
-    onDismissRequest: () -> Unit,
-    title: String,
-    message: String,
-    confirmLabel: String,
-    dismissLabel: String,
-    onConfirm: () -> Unit,
-    icon: ImageVector = Icons.Filled.Refresh,
-    iconColors: List<Color>? = null,
-    dismissButtonIcon: ImageVector? = Icons.AutoMirrored.Filled.ArrowBack,
-) {
-    val uiColors = StackShiftThemeTokens.uiColors
-    Dialog(onDismissRequest = onDismissRequest) {
-        GameEventDialogCard(
-            modifier = Modifier.widthIn(max = GameOverDialogWidth),
-            title = title,
-            message = message,
-            buttonLabel = confirmLabel,
-            onAction = onConfirm,
-            secondaryButtonLabel = dismissLabel,
-            secondaryButtonIcon = dismissButtonIcon,
-            onSecondaryAction = onDismissRequest,
-            icon = icon,
-            iconColors = iconColors ?: listOf(
-                uiColors.danger.copy(alpha = 0.94f),
-                uiColors.warning.copy(alpha = 0.78f),
-                uiColors.panelHighlight.copy(alpha = 0.22f),
-            ),
-        )
-    }
-}
-
-@Composable
-private fun RestartConfirmDialog(
-    onDismissRequest: () -> Unit,
-    title: String,
-    message: String,
-    confirmLabel: String,
-    dismissLabel: String,
-    onConfirm: () -> Unit,
-) {
-    ThemedConfirmDialog(
-        onDismissRequest = onDismissRequest,
-        title = title,
-        message = message,
-        confirmLabel = confirmLabel,
-        dismissLabel = dismissLabel,
-        onConfirm = onConfirm,
-    )
-}
-
-@Composable
-private fun GameEventDialogCard(
-    title: String,
-    message: String,
-    buttonLabel: String,
-    onAction: () -> Unit,
-    modifier: Modifier = Modifier,
-    icon: ImageVector = Icons.Filled.EmojiEvents,
-    iconColors: List<Color> = listOf(Color.Yellow, Color.Red),
-    secondaryButtonLabel: String? = null,
-    primaryButtonIcon: ImageVector? = icon,
-    secondaryButtonIcon: ImageVector? = if (secondaryButtonLabel != null) Icons.AutoMirrored.Filled.ArrowBack else null,
-    secondaryButtonColor: Color? = null,
-    onSecondaryAction: (() -> Unit)? = null,
-) {
-    val uiColors = StackShiftThemeTokens.uiColors
-    val dialogContainerColor = dialogContainerColor(uiColors)
-    val dialogShape = RoundedCornerShape(GameUiShapeTokens.panelCorner)
-    Card(
-        modifier = modifier.stackShiftSurfaceShadow(
-            shape = dialogShape,
-            elevation = 12.dp,
-        ),
-        shape = dialogShape,
-        colors = CardDefaults.cardColors(containerColor = dialogContainerColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = BorderStroke(1.dp, uiColors.panelStroke),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            uiColors.panelHighlight.copy(alpha = 0.12f),
-                            Color.Transparent,
-                        ),
-                    ),
-                )
-                .padding(GameOverDialogCardPadding),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            DialogHeroIcon(
-                icon = icon,
-                iconColors = iconColors,
-            )
-
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                )
-                Text(
-                    text = message,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = dialogMessageColor(uiColors),
-                    textAlign = TextAlign.Center,
-                )
-            }
-
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                DialogActionButton(
-                    text = buttonLabel,
-                    onClick = onAction,
-                    modifier = Modifier.fillMaxWidth(),
-                    emphasized = true,
-                    icon = primaryButtonIcon,
-                )
-
-                if (secondaryButtonLabel != null && onSecondaryAction != null) {
-                    DialogActionButton(
-                        text = secondaryButtonLabel,
-                        onClick = onSecondaryAction,
-                        modifier = Modifier.fillMaxWidth(),
-                        emphasized = false,
-                        icon = secondaryButtonIcon,
-                        textColor = secondaryButtonColor
-                            ?: MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f),
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun DialogHeroIcon(
-    icon: ImageVector,
-    iconColors: List<Color>,
-    modifier: Modifier = Modifier,
-) {
-    val settings = LocalAppSettings.current
-    val resolvedStyle = settings.blockVisualStyle
-    val effectivePulse = rememberBlockStylePulse(style = resolvedStyle)
-    val iconTint = blockStyleIconTint(style = resolvedStyle)
-    val tileSize = 78.dp
-    val tileShape = RoundedCornerShape(boardCellCornerRadiusDp(tileSize, resolvedStyle))
-    val heroTone = when (iconColors.size % 4) {
-        1 -> CellTone.Gold
-        2 -> CellTone.Violet
-        3 -> CellTone.Emerald
-        else -> CellTone.Cyan
-    }
-    val heroColor = remember(settings.blockColorPalette, heroTone) {
-        heroTone.paletteColor(settings.blockColorPalette)
-    }
-
-    Box(
-        modifier = modifier
-            .size(tileSize)
-            .stackShiftSurfaceShadow(
-                shape = tileShape,
-                elevation = 10.dp,
-            )
-            .clip(tileShape)
-            .background(heroColor.copy(alpha = 0.10f)),
-        contentAlignment = Alignment.Center,
-    ) {
-        BlockCellPreview(
-            tone = heroTone,
-            palette = settings.blockColorPalette,
-            style = resolvedStyle,
-            size = 60.dp,
-            pulse = effectivePulse,
-        )
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = iconTint,
-            modifier = Modifier.size(GameOverDialogIconSize),
-        )
-    }
-}
-
-
-@Composable
-private fun DialogActionButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    emphasized: Boolean = true,
-    icon: ImageVector? = null,
-    textColor: Color? = null,
-) {
-    BlockStyleActionButton(
-        text = text,
-        onClick = onClick,
-        modifier = modifier,
-        enabled = enabled,
-        emphasized = emphasized,
-        icon = icon,
-        textColor = textColor,
-    )
-}
-
-@Composable
-internal fun BlockStyleActionButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    emphasized: Boolean = true,
-    icon: ImageVector? = null,
-    textColor: Color? = null,
-    tone: CellTone = if (emphasized) CellTone.Cyan else CellTone.Violet,
-    height: androidx.compose.ui.unit.Dp = 52.dp,
-    pulse: Float = 0f,
-    iconOnRight: Boolean = false,
-) {
-    val uiColors = StackShiftThemeTokens.uiColors
-    val settings = LocalAppSettings.current
-    val resolvedStyle = resolveBoardBlockStyle(
-        selectedStyle = settings.blockVisualStyle,
-        mode = settings.boardBlockStyleMode,
-    )
-    val effectivePulse = rememberBlockStylePulse(
-        style = resolvedStyle,
-        pulse = pulse,
-    )
-    val resolvedTone = if (enabled) tone else CellTone.Gold
-    val buttonColors = rememberActionButtonColors(
-        tone = resolvedTone,
-        enabled = enabled,
-        emphasized = emphasized,
-    )
-    val contentColor = textColor ?: blockStyleIconTint(style = resolvedStyle)
-    val buttonShape = RoundedCornerShape(boardCellCornerRadiusDp(height, resolvedStyle))
-
-    Box(
-        modifier = modifier
-            .height(height)
-            .graphicsLayer { alpha = if (enabled) 1f else 0.72f }
-            .stackShiftSurfaceShadow(
-                shape = buttonShape,
-                elevation = if (emphasized) 10.dp else 5.dp,
-            )
-            .clip(buttonShape)
-            .clickable(enabled = enabled, onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val cornerRadiusPx = boardCellCornerRadiusPx(size.minDimension, resolvedStyle)
-            drawCellBody(
-                baseColor = buttonColors.container,
-                palette = settings.blockColorPalette,
-                style = resolvedStyle,
-                topLeft = Offset.Zero,
-                size = size,
-                cornerRadius = CornerRadius(cornerRadiusPx, cornerRadiusPx),
-                pulse = effectivePulse,
-            )
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(uiColors.gameSurface.copy(alpha = 0.35f))
-        )
-
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-        ) {
-            if (icon != null && !iconOnRight) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = contentColor,
-                    modifier = Modifier.size(20.dp),
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-            }
-            Text(
-                text = text,
-                color = contentColor,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                maxLines = 1,
-            )
-            if (icon != null && iconOnRight) {
-                Spacer(modifier = Modifier.width(12.dp))
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = contentColor,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun LaunchBarView(
     gameState: GameState,
     stylePulse: Float = 0f,
     modifier: Modifier = Modifier,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     val progressPercent = (gameState.launchBar.progress * 100).toInt()
     val isBoostActive = gameState.launchBar.isBoostActive
     val animatedProgress by animateFloatAsState(
@@ -2716,14 +1952,7 @@ private fun LaunchBarView(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = if (isBoostActive) {
-                        stringResource(
-                            Res.string.launch_boost_turns_remaining_format,
-                            gameState.launchBar.boostTurnsRemaining,
-                        )
-                    } else {
-                        stringResource(Res.string.launch_progress_percent_format, progressPercent)
-                    },
+                    text = if (isBoostActive) "x${gameState.launchBar.boostTurnsRemaining}" else "%$progressPercent",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.SemiBold,
@@ -2777,7 +2006,7 @@ private fun QueueSlot(
     alpha: Float = 1f,
     stylePulse: Float = 0f,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     val density = LocalDensity.current
     val cellSizeDp = with(density) { cellSize.toDp() }
 
@@ -2830,7 +2059,7 @@ fun FloatingFeedbackBubble(
     alpha: Float = 1f,
     driftY: Float = 0f,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     Box(
         modifier = modifier
             .graphicsLayer {
@@ -2863,377 +2092,7 @@ fun FloatingFeedbackBubble(
 }
 
 @Composable
-private fun GameOverDialog(
-    gameState: GameState,
-    highestScore: Int,
-    showNewHighScoreMessage: Boolean,
-    revealProgressProvider: () -> Float,
-    canUseExtraLife: Boolean,
-    isExtraLifeLoading: Boolean,
-    showExtraLifeButton: Boolean,
-    onPlayAgain: () -> Unit,
-    onUseExtraLife: () -> Unit,
-) {
-    val density = LocalDensity.current
-    val revealOffsetPx = with(density) { GameOverDialogRevealOffsetDp.toPx() }
-
-    Dialog(
-        onDismissRequest = {},
-        properties = DialogProperties(
-            dismissOnBackPress = false,
-            dismissOnClickOutside = false,
-        ),
-    ) {
-        val revealProgress = revealProgressProvider()
-        GameOverDialogContent(
-            gameState = gameState,
-            highestScore = highestScore,
-            showNewHighScoreMessage = showNewHighScoreMessage,
-            canUseExtraLife = canUseExtraLife,
-            isExtraLifeLoading = isExtraLifeLoading,
-            showExtraLifeButton = showExtraLifeButton,
-            onPlayAgain = onPlayAgain,
-            onUseExtraLife = onUseExtraLife,
-            modifier = Modifier
-                .widthIn(max = GameOverDialogWidth)
-                .graphicsLayer {
-                    alpha = revealProgress
-                    scaleX = 0.90f + (0.10f * revealProgress)
-                    scaleY = 0.90f + (0.10f * revealProgress)
-                    translationY = (1f - revealProgress) * revealOffsetPx
-                },
-        )
-    }
-}
-
-@Composable
-private fun GameOverDialogContent(
-    gameState: GameState,
-    highestScore: Int,
-    showNewHighScoreMessage: Boolean,
-    canUseExtraLife: Boolean,
-    isExtraLifeLoading: Boolean,
-    showExtraLifeButton: Boolean,
-    onPlayAgain: () -> Unit,
-    onUseExtraLife: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val uiColors = StackShiftThemeTokens.uiColors
-    val recordPulsePhase = remember { Animatable(0f) }
-    val dialogContainerColor = dialogContainerColor(uiColors)
-
-    LaunchedEffect(showNewHighScoreMessage) {
-        if (!showNewHighScoreMessage) {
-            recordPulsePhase.snapTo(0f)
-            return@LaunchedEffect
-        }
-
-        recordPulsePhase.snapTo(0f)
-        while (isActive && showNewHighScoreMessage) {
-            recordPulsePhase.animateTo(
-                targetValue = 1f,
-                animationSpec = tween(
-                    durationMillis = MetricHighlightPulseUpDurationMillis,
-                    easing = FastOutSlowInEasing,
-                ),
-            )
-            recordPulsePhase.animateTo(
-                targetValue = 0f,
-                animationSpec = tween(
-                    durationMillis = MetricHighlightPulseDownDurationMillis,
-                    easing = FastOutSlowInEasing,
-                ),
-            )
-        }
-    }
-
-    Card(
-        modifier = modifier.stackShiftSurfaceShadow(
-            shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
-            elevation = 12.dp,
-        ),
-        shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
-        colors = CardDefaults.cardColors(containerColor = dialogContainerColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = BorderStroke(1.dp, uiColors.panelStroke),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            uiColors.panelHighlight.copy(alpha = 0.12f),
-                            Color.Transparent,
-                        ),
-                    ),
-                )
-                .padding(GameOverDialogCardPadding),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            DialogHeroIcon(
-                icon = Icons.Filled.EmojiEvents,
-                iconColors = listOf(
-                    if (showNewHighScoreMessage) uiColors.success.copy(alpha = 0.94f) else uiColors.warning.copy(
-                        alpha = 0.94f
-                    ),
-                    if (showNewHighScoreMessage) uiColors.success.copy(alpha = 0.70f) else uiColors.danger.copy(
-                        alpha = 0.72f
-                    ),
-                    uiColors.panel.copy(alpha = 0.12f),
-                ),
-                modifier = Modifier.graphicsLayer {
-                    scaleX =
-                        if (showNewHighScoreMessage) 1f + ((MetricHighlightPulseScale - 1f) * 0.28f * recordPulsePhase.value) else 1f
-                    scaleY =
-                        if (showNewHighScoreMessage) 1f + ((MetricHighlightPulseScale - 1f) * 0.28f * recordPulsePhase.value) else 1f
-                },
-            )
-
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                val isChallengeWin = gameState.activeChallenge?.isCompleted == true
-                Text(
-                    text = when {
-                        isChallengeWin -> stringResource(Res.string.challenge_completed)
-                        showNewHighScoreMessage -> stringResource(Res.string.high_score_new_record)
-                        else -> resolveGameText(gameText(GameTextKey.GameOverTitle))
-                    },
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = if (showNewHighScoreMessage || isChallengeWin) uiColors.success else MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    text = if (showNewHighScoreMessage) resolveGameText(gameText(GameTextKey.GameOverNewHighScore)) else resolveGameText(
-                        gameState.message
-                    ),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = uiColors.subtitle,
-                    textAlign = TextAlign.Center,
-                )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                GameOverStatChip(
-                    title = if (showNewHighScoreMessage) stringResource(Res.string.high_score_new_record) else resolveGameText(
-                        gameText(GameTextKey.HighScore)
-                    ),
-                    value = highestScore.toString(),
-                    accentColor = if (showNewHighScoreMessage) uiColors.success else null,
-                    modifier = Modifier
-                        .weight(1f)
-                        .graphicsLayer {
-                            scaleX =
-                                if (showNewHighScoreMessage) 1f + ((MetricHighlightPulseScale - 1f) * 0.10f * recordPulsePhase.value) else 1f
-                            scaleY =
-                                if (showNewHighScoreMessage) 1f + ((MetricHighlightPulseScale - 1f) * 0.10f * recordPulsePhase.value) else 1f
-                        }
-                )
-                GameOverStatChip(
-                    title = resolveGameText(gameText(GameTextKey.Score)),
-                    value = gameState.score.toString(),
-                    modifier = Modifier.weight(1f),
-                )
-            }
-
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                if (showExtraLifeButton) {
-                    DialogActionButton(
-                        text = if (isExtraLifeLoading) {
-                            stringResource(Res.string.game_over_extra_life_loading)
-                        } else {
-                            stringResource(Res.string.game_over_extra_life)
-                        },
-                        onClick = onUseExtraLife,
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = canUseExtraLife && !isExtraLifeLoading,
-                        emphasized = true,
-                        icon = Icons.Filled.PlayArrow,
-                    )
-                }
-
-                val isChallengeWin = gameState.activeChallenge?.isCompleted == true
-                DialogActionButton(
-                    text = if (isChallengeWin) stringResource(Res.string.settings_challenges) else stringResource(
-                        Res.string.play_again
-                    ),
-                    onClick = onPlayAgain,
-                    modifier = Modifier.fillMaxWidth(),
-                    emphasized = !showExtraLifeButton || isChallengeWin,
-                    icon = if (isChallengeWin) Icons.Default.EmojiEvents else Icons.Filled.Refresh,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun GameOverStatChip(
-    title: String,
-    value: String,
-    accentColor: Color? = null,
-    modifier: Modifier = Modifier,
-) {
-    val uiColors = StackShiftThemeTokens.uiColors
-    Card(
-        modifier = modifier.stackShiftSurfaceShadow(
-            shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
-            elevation = 5.dp,
-        ),
-        shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
-        colors = CardDefaults.cardColors(containerColor = uiColors.metricCard.copy(alpha = 0.88f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = BorderStroke(
-            1.dp,
-            accentColor?.copy(alpha = 0.52f) ?: uiColors.panelStroke.copy(alpha = 0.52f)
-        ),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelSmall,
-                color = accentColor ?: uiColors.subtitle,
-                maxLines = 1,
-            )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold,
-            )
-        }
-    }
-}
-
-@Composable
-fun InteractiveOnboardingCompletionDialog(
-    onStartGame: () -> Unit,
-    onReturnHome: () -> Unit,
-) {
-    val uiColors = StackShiftThemeTokens.uiColors
-    Dialog(onDismissRequest = {}) {
-        GameEventDialogCard(
-            title = stringResource(Res.string.tutorial_ready_title),
-            message = stringResource(Res.string.tutorial_ready_body),
-            buttonLabel = stringResource(Res.string.tutorial_finish),
-            onAction = onStartGame,
-            modifier = Modifier.widthIn(max = GameOverDialogWidth),
-            icon = Icons.Filled.EmojiEvents,
-            iconColors = listOf(
-                uiColors.success.copy(alpha = 0.94f),
-                uiColors.launchGlow.copy(alpha = 0.84f),
-                uiColors.panel.copy(alpha = 0.12f),
-            ),
-            secondaryButtonLabel = stringResource(Res.string.return_home),
-            primaryButtonIcon = Icons.Filled.PlayArrow,
-            secondaryButtonIcon = Icons.AutoMirrored.Filled.ArrowBack,
-            secondaryButtonColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.78f),
-            onSecondaryAction = onReturnHome,
-        )
-    }
-}
-
-@Composable
-internal fun resolveGameText(text: GameText): String {
-    return stringResource(text.key.stringResourceId(), *text.args.toTypedArray())
-}
-
-private fun SpecialBlockType.shortLabel(): GameText {
-    return when (this) {
-        SpecialBlockType.ColumnClearer -> gameText(GameTextKey.SpecialColumnClearer)
-        SpecialBlockType.RowClearer -> gameText(GameTextKey.SpecialRowClearer)
-        SpecialBlockType.Ghost -> gameText(GameTextKey.SpecialGhost)
-        SpecialBlockType.Heavy -> gameText(GameTextKey.SpecialHeavy)
-        SpecialBlockType.None -> gameText(GameTextKey.PiecePropertiesNone)
-    }
-}
-
-internal fun GameTextKey.stringResourceId(): StringResource {
-    return when (this) {
-        GameTextKey.AppTitle -> Res.string.app_title
-        GameTextKey.Hold -> Res.string.hold
-        GameTextKey.Restart -> Res.string.restart
-        GameTextKey.RestartConfirmTitle -> Res.string.restart_confirm_title
-        GameTextKey.RestartConfirmBody -> Res.string.restart_confirm_body
-        GameTextKey.RestartConfirm -> Res.string.restart_confirm
-        GameTextKey.RestartCancel -> Res.string.restart_cancel
-        GameTextKey.Score -> Res.string.score
-        GameTextKey.HighScore -> Res.string.high_score
-        GameTextKey.Lines -> Res.string.lines
-        GameTextKey.Boost -> Res.string.boost
-        GameTextKey.Danger -> Res.string.danger
-        GameTextKey.DangerNone -> Res.string.danger_none
-        GameTextKey.Launch -> Res.string.launch_label
-        GameTextKey.LaunchBar -> Res.string.launch_bar
-        GameTextKey.LaunchBoostActive -> Res.string.launch_boost_active
-        GameTextKey.LaunchSpecialChance -> Res.string.launch_special_chance
-        GameTextKey.LaunchSoftLockMessage -> Res.string.launch_soft_lock_message
-        GameTextKey.LaunchChainMessage -> Res.string.launch_chain_message
-        GameTextKey.LaunchGameOver -> Res.string.launch_game_over
-        GameTextKey.LaunchDragHint -> Res.string.launch_drag_hint
-        GameTextKey.QueueHold -> Res.string.hold
-        GameTextKey.QueueNextShort -> Res.string.queue_next_short
-        GameTextKey.QueueEmpty -> Res.string.queue_empty
-        GameTextKey.GameOverTitle -> Res.string.game_over_title
-        GameTextKey.Continue -> Res.string.continue_label
-        GameTextKey.GameOverExtraLife -> Res.string.game_over_extra_life
-        GameTextKey.GameOverExtraLifeLoading -> Res.string.game_over_extra_life_loading
-        GameTextKey.PlayAgain -> Res.string.play_again
-        GameTextKey.GameOverNewHighScore -> Res.string.game_over_new_high_score
-        GameTextKey.GameMessageSelectColumn -> Res.string.game_message_select_column
-        GameTextKey.GameMessageNoOpening -> Res.string.game_message_no_opening
-        GameTextKey.GameMessageSoftLock -> Res.string.game_message_soft_lock
-        GameTextKey.GameMessageOverflow -> Res.string.game_message_overflow
-        GameTextKey.GameMessageSpecialChainBoard -> Res.string.game_message_special_chain_board
-        GameTextKey.GameMessagePressureGameOver -> Res.string.game_message_pressure_game_over
-        GameTextKey.GameMessageSpecialLines -> Res.string.game_message_special_lines
-        GameTextKey.GameMessageSpecialTriggered -> Res.string.game_message_special_triggered
-        GameTextKey.GameMessagePerfectDrop -> Res.string.game_message_perfect_drop
-        GameTextKey.GameMessageChainLines -> Res.string.game_message_chain_lines
-        GameTextKey.GameMessageLinesCleared -> Res.string.game_message_lines_cleared
-        GameTextKey.GameMessageGoodShot -> Res.string.game_message_good_shot
-        GameTextKey.GameMessageHoldUpdated -> Res.string.game_message_hold_updated
-        GameTextKey.GameMessageTempoCritical -> Res.string.game_message_tempo_critical
-        GameTextKey.GameMessageTempoUp -> Res.string.game_message_tempo_up
-        GameTextKey.GameMessageExtraLifeUsed -> Res.string.game_message_extra_life_used
-        GameTextKey.FeedbackOverflow -> Res.string.feedback_overflow
-        GameTextKey.FeedbackPerfectLane -> Res.string.feedback_perfect_lane
-        GameTextKey.FeedbackMicroAdjust -> Res.string.feedback_micro_adjust
-        GameTextKey.FeedbackSoftLock -> Res.string.feedback_soft_lock
-        GameTextKey.FeedbackHoldArmed -> Res.string.feedback_hold_armed
-        GameTextKey.FeedbackSwap -> Res.string.feedback_swap
-        GameTextKey.FeedbackSpecialChain -> Res.string.feedback_special_chain
-        GameTextKey.FeedbackSpecial -> Res.string.feedback_special
-        GameTextKey.FeedbackPerfect -> Res.string.feedback_perfect
-        GameTextKey.FeedbackChain -> Res.string.feedback_chain
-        GameTextKey.FeedbackClear -> Res.string.feedback_clear
-        GameTextKey.FeedbackScoreOnly -> Res.string.feedback_score_only
-        GameTextKey.FeedbackExtraLife -> Res.string.feedback_extra_life
-        GameTextKey.SpecialColumnClearer -> Res.string.special_column_clearer
-        GameTextKey.SpecialRowClearer -> Res.string.special_row_clearer
-        GameTextKey.SpecialGhost -> Res.string.special_ghost
-        GameTextKey.SpecialHeavy -> Res.string.special_heavy
-        GameTextKey.PiecePropertiesNone -> Res.string.piece_properties_none
-    }
-}
-
-@Composable
-fun rememberGameHaptics(): GameHaptics {
+internal fun rememberGameHaptics(): GameHaptics {
     val hapticFeedback = LocalHapticFeedback.current
     return remember(hapticFeedback) {
         object : GameHaptics {
@@ -3315,7 +2174,7 @@ private fun GameScreenLightPreview() {
         blockVisualStyle = BlockVisualStyle.Prism,
         themeColorPalette = AppColorPalette.Classic
     )
-    StackShiftTheme(settings = settings) {
+    BlockGamesTheme(settings = settings) {
         GameScreen(
             gameState = previewGameState(),
             onRequestPreview = { previewPlacementPreview() },
@@ -3342,7 +2201,7 @@ private fun GameScreenDarkPreview() {
         blockVisualStyle = BlockVisualStyle.DynamicLiquid,
         themeColorPalette = AppColorPalette.ModernNeon
     )
-    StackShiftTheme(settings = settings) {
+    BlockGamesTheme(settings = settings) {
         GameScreen(
             gameState = previewGameState(),
             onRequestPreview = { previewPlacementPreview() },
@@ -3473,27 +2332,5 @@ private fun previewImpactPointsPreview(): Set<GridPoint> = setOf(
     GridPoint(4, 9)
 )
 
-@Composable
-private fun dialogContainerColor(
-    uiColors: com.ugurbuga.stackshift.ui.theme.StackShiftUiColors,
-): Color {
-    val settings = LocalAppSettings.current
-    return if (isStackShiftDarkTheme(settings)) {
-        uiColors.panel.copy(alpha = 0.98f)
-    } else {
-        MaterialTheme.colorScheme.surface.copy(alpha = 0.995f)
-    }
-}
 
-@Composable
-private fun dialogMessageColor(
-    uiColors: com.ugurbuga.stackshift.ui.theme.StackShiftUiColors,
-): Color {
-    val settings = LocalAppSettings.current
-    return if (isStackShiftDarkTheme(settings)) {
-        uiColors.subtitle
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.92f)
-    }
-}
 

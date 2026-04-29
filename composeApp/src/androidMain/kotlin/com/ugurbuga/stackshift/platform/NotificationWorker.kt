@@ -20,7 +20,7 @@ import com.ugurbuga.stackshift.settings.shouldSendMissYouReminder
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
 import stackshift.composeapp.generated.resources.Res
-import stackshift.composeapp.generated.resources.app_title
+import stackshift.composeapp.generated.resources.app_title_stackshift
 import stackshift.composeapp.generated.resources.notification_daily_challenge_body
 import stackshift.composeapp.generated.resources.notification_daily_challenge_title
 import stackshift.composeapp.generated.resources.notification_miss_you_body
@@ -77,7 +77,7 @@ class NotificationWorker(
 
         val title = when (type) {
             TYPE_DAILY_CHALLENGE -> localized(Res.string.notification_daily_challenge_title)
-            TYPE_TEST -> localized(Res.string.app_title)
+            TYPE_TEST -> localized(Res.string.app_title_stackshift)
             else -> localized(Res.string.notification_miss_you_title)
         }.ifBlank { appName }
 
@@ -126,7 +126,7 @@ class NotificationWorker(
 
         val notificationBuilder = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
-            .setColor("#4FC3F7".toColorInt())
+            .setColor("#071018".toColorInt())
             .setContentTitle(title)
             .setContentText(message)
             .setAutoCancel(true)

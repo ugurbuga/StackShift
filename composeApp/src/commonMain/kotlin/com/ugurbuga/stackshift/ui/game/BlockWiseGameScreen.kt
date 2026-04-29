@@ -11,7 +11,7 @@ import com.ugurbuga.stackshift.telemetry.AppTelemetry
 import com.ugurbuga.stackshift.telemetry.NoOpAppTelemetry
 
 @Composable
-fun BWGameScreen(
+fun BlockWiseGameScreen(
     gameState: GameState,
     onRequestPreview: (Long, GridPoint) -> PlacementPreview?,
     onResolvePreviewImpact: (PlacementPreview?) -> Set<GridPoint>,

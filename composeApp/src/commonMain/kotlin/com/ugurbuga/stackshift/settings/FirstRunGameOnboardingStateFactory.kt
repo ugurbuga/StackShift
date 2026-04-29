@@ -1,12 +1,13 @@
 package com.ugurbuga.stackshift.settings
 
 import androidx.compose.runtime.Immutable
-import com.ugurbuga.stackshift.game.logic.StackShiftGameLogic
+import com.ugurbuga.stackshift.game.logic.GameLogic
 import com.ugurbuga.stackshift.game.model.BoardMatrix
 import com.ugurbuga.stackshift.game.model.CellTone
 import com.ugurbuga.stackshift.game.model.GameConfig
 import com.ugurbuga.stackshift.game.model.GameState
 import com.ugurbuga.stackshift.game.model.GameTextKey
+import com.ugurbuga.stackshift.game.model.GameplayStyle
 import com.ugurbuga.stackshift.game.model.GridPoint
 import com.ugurbuga.stackshift.game.model.Piece
 import com.ugurbuga.stackshift.game.model.PieceKind
@@ -39,10 +40,10 @@ data class FirstRunOnboardingScene(
 )
 
 object FirstRunGameOnboardingStateFactory {
-    private val guideLogic = StackShiftGameLogic()
+    private val guideLogic = GameLogic.create()
     private val config = GameConfig(
         columns = 10,
-        rows = 10,
+        rows = 12,
         difficultyIntervalSeconds = 9_999,
         linesPerLevel = 9_999,
     )
@@ -59,9 +60,11 @@ object FirstRunGameOnboardingStateFactory {
     private val sceneCache: Map<FirstRunOnboardingStage, FirstRunOnboardingScene> =
         stages.associateWith(::buildScene)
 
-    fun initialState(): GameState = scene(stages.first()).gameState
+    fun initialState(gameplayStyle: GameplayStyle = GameplayStyle.StackShift): GameState =
+        scene(stages.first()).gameState.copy(gameplayStyle = gameplayStyle)
 
-    fun cleanGameState(): GameState = StackShiftGameLogic().newGame(config)
+    fun cleanGameState(gameplayStyle: GameplayStyle): GameState =
+        guideLogic.newGame(config, gameplayStyle = gameplayStyle)
 
     fun scene(stage: FirstRunOnboardingStage): FirstRunOnboardingScene = sceneCache.getValue(stage)
 
@@ -368,7 +371,7 @@ object FirstRunGameOnboardingStateFactory {
         nextQueue: List<Piece>,
         lastPlacementColumn: Int,
     ): GameState {
-        val baseState = StackShiftGameLogic().newGame(config)
+        val baseState = guideLogic.newGame(config = config, gameplayStyle = GameplayStyle.StackShift)
         return baseState.copy(
             board = board,
             activePiece = activePiece,

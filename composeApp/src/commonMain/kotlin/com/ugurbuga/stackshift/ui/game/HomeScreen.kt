@@ -53,32 +53,36 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ugurbuga.stackshift.StackShiftTheme
+import com.ugurbuga.stackshift.BlockGamesTheme
 import com.ugurbuga.stackshift.game.model.AppColorPalette
 import com.ugurbuga.stackshift.game.model.AppThemeMode
 import com.ugurbuga.stackshift.game.model.BlockVisualStyle
 import com.ugurbuga.stackshift.game.model.CellTone
 import com.ugurbuga.stackshift.game.model.GameplayStyle
+import com.ugurbuga.stackshift.localization.appNameStringResource
+import com.ugurbuga.stackshift.localization.appStringResource
 import com.ugurbuga.stackshift.platform.NotificationManager
+import com.ugurbuga.stackshift.platform.isDebugBuild
 import com.ugurbuga.stackshift.platform.rememberNotificationManager
 import com.ugurbuga.stackshift.settings.AppSettings
 import com.ugurbuga.stackshift.telemetry.AppTelemetry
 import com.ugurbuga.stackshift.telemetry.LogScreen
 import com.ugurbuga.stackshift.telemetry.NoOpAppTelemetry
 import com.ugurbuga.stackshift.telemetry.TelemetryScreenNames
+import com.ugurbuga.stackshift.ui.theme.BlockGamesThemeTokens
 import com.ugurbuga.stackshift.ui.theme.GameUiShapeTokens
-import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
-import com.ugurbuga.stackshift.ui.theme.isStackShiftDarkTheme
-import com.ugurbuga.stackshift.ui.theme.stackShiftSurfaceShadow
+import com.ugurbuga.stackshift.ui.theme.blockGamesSurfaceShadow
+import com.ugurbuga.stackshift.ui.theme.isBlockGamesDarkTheme
 import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
-import stackshift.composeapp.generated.resources.app_title
 import stackshift.composeapp.generated.resources.app_title_banner_blockwise_bottom
 import stackshift.composeapp.generated.resources.app_title_banner_blockwise_top
 import stackshift.composeapp.generated.resources.app_title_banner_stackshift_bottom
@@ -111,7 +115,7 @@ fun HomeScreen(
     notificationManager: NotificationManager,
     modifier: Modifier = Modifier,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     val stylePulseTransition = rememberInfiniteTransition(label = "homeStylePulse")
     val stylePulse by stylePulseTransition.animateFloat(
         initialValue = 0f,
@@ -153,7 +157,7 @@ fun HomeScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Text(
-                    text = stringResource(Res.string.app_title),
+                    text = appNameStringResource(),
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.ExtraBold,
@@ -185,23 +189,27 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         HomeQuickActionButton(
-                            text = stringResource(Res.string.home_classic_cta),
+                            text = appStringResource(Res.string.home_classic_cta),
                             icon = Icons.Filled.PlayArrow,
                             tone = CellTone.Cyan,
                             settings = settings,
                             pulse = stylePulse,
                             modifier = Modifier.weight(1f),
                             onClick = onPlay,
+                            iconSize = 44.dp,
+                            textStyle = MaterialTheme.typography.labelLarge,
                         )
 
                         HomeQuickActionButton(
-                            text = stringResource(Res.string.home_time_attack_cta),
+                            text = appStringResource(Res.string.home_time_attack_cta),
                             icon = Icons.Filled.Timer,
                             tone = CellTone.Amber,
                             settings = settings,
                             pulse = stylePulse,
                             modifier = Modifier.weight(1f),
                             onClick = onPlayTimeAttack,
+                            iconSize = 44.dp,
+                            textStyle = MaterialTheme.typography.labelLarge,
                         )
                     }
                 }
@@ -218,7 +226,11 @@ fun HomeScreen(
                 HomeHighScoreCard(
                     classicHighScore = classicHighScore,
                     timeAttackHighScore = timeAttackHighScore,
-                    onClick = { notificationManager.sendTestNotification() }
+                    onClick = {
+                        if (isDebugBuild()) {
+                            notificationManager.sendTestNotification()
+                        }
+                    }
                 )
 
                 Row(
@@ -227,7 +239,7 @@ fun HomeScreen(
                     verticalAlignment = Alignment.Bottom,
                 ) {
                     HomeQuickActionButton(
-                        text = stringResource(Res.string.settings_challenges),
+                        text = appStringResource(Res.string.settings_challenges),
                         icon = Icons.Default.EmojiEvents,
                         tone = CellTone.Emerald,
                         settings = settings,
@@ -236,7 +248,7 @@ fun HomeScreen(
                         onClick = onOpenChallenges,
                     )
                     HomeQuickActionButton(
-                        text = stringResource(Res.string.settings_tutorial),
+                        text = appStringResource(Res.string.settings_tutorial),
                         icon = Icons.AutoMirrored.Filled.MenuBook,
                         tone = CellTone.Gold,
                         settings = settings,
@@ -245,7 +257,7 @@ fun HomeScreen(
                         onClick = onOpenTutorial,
                     )
                     HomeQuickActionButton(
-                        text = stringResource(Res.string.settings_theme),
+                        text = appStringResource(Res.string.settings_theme),
                         icon = Icons.Filled.Palette,
                         tone = CellTone.Violet,
                         settings = settings,
@@ -254,7 +266,7 @@ fun HomeScreen(
                         onClick = onOpenTheme,
                     )
                     HomeQuickActionButton(
-                        text = stringResource(Res.string.settings_language),
+                        text = appStringResource(Res.string.settings_language),
                         icon = Icons.Filled.Translate,
                         tone = CellTone.Coral,
                         settings = settings,
@@ -275,7 +287,7 @@ private fun HomeTitleBanner(
     pulse: Float,
     modifier: Modifier = Modifier,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     val bannerMotionTransition = rememberInfiniteTransition(label = "homeTitleBannerMotion")
     val sequenceClock by bannerMotionTransition.animateFloat(
         initialValue = 0f,
@@ -337,7 +349,7 @@ private fun HomeTitleBanner(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .stackShiftSurfaceShadow(
+            .blockGamesSurfaceShadow(
                 shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
                 elevation = 10.dp,
             ),
@@ -371,7 +383,8 @@ private fun HomeTitleBanner(
             val dockSingleLeftX = maxWidth * 0.12f
             val dockSingleRightX = maxWidth - dockCellSize - (maxWidth * 0.12f)
             val dockWordStartX = (maxWidth - (dockCellSize * 5f)) / 2f
-            val dockBlockwiseBottomWordStartX = (maxWidth - (dockCellSize * HomeTitleBannerColumns)) / 2f
+            val dockBlockwiseBottomWordStartX =
+                (maxWidth - (dockCellSize * HomeTitleBannerColumns)) / 2f
             val dockPieceY = dockTop + ((dockHeight - dockCellSize) / 2f)
             val topTargetX = 0.dp
             val topGapTargetX = cellWidth * 5f
@@ -510,7 +523,11 @@ private fun HomeTitleBanner(
                 )
 
                 sequencePhase < 0.25f -> HomeTitleAnimatedPiece(
-                    cells = if (isBlockWiseBanner) blockWiseBottomGapCells else listOf(HomeTitleCell(tone = lowerLaunchTone)),
+                    cells = if (isBlockWiseBanner) blockWiseBottomGapCells else listOf(
+                        HomeTitleCell(
+                            tone = lowerLaunchTone
+                        )
+                    ),
                     settings = settings,
                     pulse = pulse,
                     cellSize = dockCellSize,
@@ -525,7 +542,11 @@ private fun HomeTitleBanner(
                 )
 
                 sequencePhase < 0.32f -> HomeTitleAnimatedPiece(
-                    cells = if (isBlockWiseBanner) blockWiseBottomGapCells else listOf(HomeTitleCell(tone = lowerLaunchTone)),
+                    cells = if (isBlockWiseBanner) blockWiseBottomGapCells else listOf(
+                        HomeTitleCell(
+                            tone = lowerLaunchTone
+                        )
+                    ),
                     settings = settings,
                     pulse = pulse,
                     cellSize = dockCellSize,
@@ -642,7 +663,7 @@ private fun HomeTitleBanner(
             }
 
             if (handAlpha > 0f) {
-                val isDark = isStackShiftDarkTheme(settings)
+                val isDark = isBlockGamesDarkTheme(settings)
                 val handColor = if (isDark) Color.White else Color.Black.copy(alpha = 0.85f)
                 val handX = when {
                     isBlockWiseBanner && sequencePhase < 0.20f -> lerpDp(
@@ -650,29 +671,47 @@ private fun HomeTitleBanner(
                         bottomGapTargetX,
                         segmentProgress(sequencePhase, 0.00f, 0.20f),
                     ) + homeTitleOccupiedCenterOffset(blockWiseBottomGapCells, dockCellSize)
+
                     isBlockWiseBanner && sequencePhase < 0.54f -> lerpDp(
                         dockSingleStartX,
                         topGapTargetX,
                         segmentProgress(sequencePhase, 0.34f, 0.54f),
                     )
+
                     isBlockWiseBanner && sequencePhase < 0.82f -> lerpDp(
                         dockWordStartX,
                         topTargetX,
                         blockWordTravel,
                     ) + homeTitleOccupiedCenterOffset(animatedTopWordCells, dockCellSize)
+
                     isBlockWiseBanner && sequencePhase < 0.96f -> lerpDp(
                         dockBlockwiseBottomWordStartX,
                         bottomTargetX,
                         wiseWordTravel,
                     ) + homeTitleOccupiedCenterOffset(animatedBottomWordCells, dockCellSize)
-                    sequencePhase < 0.15f -> lerpDp(dockSingleStartX, dockSingleLeftX, lowerDrift).let { x ->
+
+                    sequencePhase < 0.15f -> lerpDp(
+                        dockSingleStartX,
+                        dockSingleLeftX,
+                        lowerDrift
+                    ).let { x ->
                         if (sequencePhase > 0.10f) lerpDp(x, bottomGapTargetX, lowerAlign) else x
                     }
-                    sequencePhase < 0.49f -> lerpDp(dockSingleStartX, dockSingleRightX, upperDrift).let { x ->
+
+                    sequencePhase < 0.49f -> lerpDp(
+                        dockSingleStartX,
+                        dockSingleRightX,
+                        upperDrift
+                    ).let { x ->
                         if (sequencePhase > 0.44f) lerpDp(x, topGapTargetX, upperAlign) else x
                     }
                     // For 5-block pieces, offset by 2 cells to center under the 3rd block
-                    sequencePhase < 0.74f -> lerpDp(dockWordStartX, topTargetX, stackAlign) + (dockCellSize * 2f)
+                    sequencePhase < 0.74f -> lerpDp(
+                        dockWordStartX,
+                        topTargetX,
+                        stackAlign
+                    ) + (dockCellSize * 2f)
+
                     else -> lerpDp(dockWordStartX, bottomTargetX, shiftAlign) + (dockCellSize * 2f)
                 }
                 val handY = when {
@@ -681,21 +720,25 @@ private fun HomeTitleBanner(
                         boardCellHeight,
                         segmentProgress(sequencePhase, 0.00f, 0.20f),
                     )
+
                     isBlockWiseBanner && sequencePhase < 0.54f -> lerpDp(
                         dockPieceY,
                         0.dp,
                         segmentProgress(sequencePhase, 0.34f, 0.54f),
                     )
+
                     isBlockWiseBanner && sequencePhase < 0.82f -> lerpDp(
                         dockPieceY,
                         0.dp,
                         blockWordTravel,
                     )
+
                     isBlockWiseBanner && sequencePhase < 0.96f -> lerpDp(
                         dockPieceY,
                         boardCellHeight,
                         wiseWordTravel,
                     )
+
                     else -> dockPieceY
                 }
 
@@ -837,7 +880,7 @@ private fun HomeTitleAnimatedCell(
     )
     val letterTint = specialBlockIconTint(
         style = settings.blockVisualStyle,
-        isDarkTheme = isStackShiftDarkTheme(settings),
+        isDarkTheme = isBlockGamesDarkTheme(settings),
         palette = settings.blockColorPalette,
     )
 
@@ -874,7 +917,7 @@ private fun HomeTitleEmptyCell(
     pulse: Float = 0f,
     modifier: Modifier = Modifier,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     BoxWithConstraints(
         modifier = modifier,
         contentAlignment = Alignment.Center,
@@ -916,9 +959,9 @@ private fun HomeTitleEmptyCell(
 private fun HomeTitleMiniDock(
     modifier: Modifier = Modifier,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     Card(
-        modifier = modifier.stackShiftSurfaceShadow(
+        modifier = modifier.blockGamesSurfaceShadow(
             shape = RoundedCornerShape(GameUiShapeTokens.dockCorner),
             elevation = 8.dp,
         ),
@@ -1004,7 +1047,7 @@ private fun HomeTitleRowClearOverlay(
     modifier: Modifier = Modifier,
 ) {
     if (alpha <= 0f) return
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     Box(
         modifier = modifier,
     ) {
@@ -1033,10 +1076,10 @@ private fun HomeHighScoreCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     Surface(
         modifier = modifier
-            .stackShiftSurfaceShadow(
+            .blockGamesSurfaceShadow(
                 shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
                 elevation = 5.dp,
             )
@@ -1053,7 +1096,7 @@ private fun HomeHighScoreCard(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(
-                text = stringResource(Res.string.high_score),
+                text = appStringResource(Res.string.high_score),
                 style = MaterialTheme.typography.labelMedium,
                 color = uiColors.subtitle,
                 fontWeight = FontWeight.SemiBold,
@@ -1063,7 +1106,7 @@ private fun HomeHighScoreCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 HomeHighScoreMetric(
-                    title = stringResource(Res.string.home_classic_cta),
+                    title = appStringResource(Res.string.home_classic_cta),
                     value = classicHighScore.toString(),
                 )
                 Box(
@@ -1073,7 +1116,7 @@ private fun HomeHighScoreCard(
                         .background(uiColors.panelStroke.copy(alpha = 0.48f)),
                 )
                 HomeHighScoreMetric(
-                    title = stringResource(Res.string.home_time_attack_cta),
+                    title = appStringResource(Res.string.home_time_attack_cta),
                     value = timeAttackHighScore.toString(),
                 )
             }
@@ -1086,7 +1129,7 @@ private fun HomeHighScoreMetric(
     title: String,
     value: String,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(2.dp),
@@ -1115,6 +1158,8 @@ private fun HomeQuickActionButton(
     pulse: Float,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    iconSize: Dp = 24.dp,
+    textStyle: TextStyle = MaterialTheme.typography.labelMedium,
 ) {
     val resolvedStyle = settings.blockVisualStyle
     val density = LocalDensity.current
@@ -1137,7 +1182,7 @@ private fun HomeQuickActionButton(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .stackShiftSurfaceShadow(
+                    .blockGamesSurfaceShadow(
                         shape = buttonShape,
                         elevation = 0.dp,
                     )
@@ -1164,7 +1209,7 @@ private fun HomeQuickActionButton(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(StackShiftThemeTokens.uiColors.gameSurface.copy(alpha = 0.35f))
+                        .background(BlockGamesThemeTokens.uiColors.gameSurface.copy(alpha = 0.35f))
                 )
 
                 Column(
@@ -1178,11 +1223,11 @@ private fun HomeQuickActionButton(
                         imageVector = icon,
                         contentDescription = null,
                         tint = contentColor,
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(iconSize),
                     )
                     Text(
                         text = text,
-                        style = MaterialTheme.typography.labelMedium,
+                        style = textStyle,
                         color = contentColor,
                         fontWeight = FontWeight.ExtraBold,
                         textAlign = TextAlign.Center,
@@ -1205,7 +1250,7 @@ fun HomeScreenLightPreview() {
         blockVisualStyle = BlockVisualStyle.Prism,
         themeColorPalette = AppColorPalette.ModernNeon
     )
-    StackShiftTheme(settings = settings) {
+    BlockGamesTheme(settings = settings) {
         HomeScreen(
             settings = settings,
             classicHighScore = 1250,
@@ -1231,7 +1276,7 @@ fun HomeScreenDarkPreview() {
         blockVisualStyle = BlockVisualStyle.Flat,
         themeColorPalette = AppColorPalette.Classic
     )
-    StackShiftTheme(settings = settings) {
+    BlockGamesTheme(settings = settings) {
         HomeScreen(
             settings = settings,
             classicHighScore = 1250,

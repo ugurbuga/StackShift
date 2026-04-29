@@ -13,7 +13,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class GameSessionCodecTest {
-    private val logic = GameLogic(random = Random(21))
+    private val logic = GameLogic.create(random = Random(21))
 
     @Test
     fun encodeDecode_preservesTimeAttackSessionDetails() {

@@ -2,7 +2,6 @@ package com.ugurbuga.stackshift.presentation.game
 
 import com.ugurbuga.stackshift.game.logic.GameEvent
 import com.ugurbuga.stackshift.game.logic.GameLogic
-import com.ugurbuga.stackshift.game.logic.StackShiftGameLogic
 import com.ugurbuga.stackshift.game.model.DailyChallenge
 import com.ugurbuga.stackshift.game.model.GameConfig
 import com.ugurbuga.stackshift.game.model.GameMode
@@ -23,8 +22,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class GameViewModel(
-    private val blockWiseGameLogic: GameLogic = GameLogic(),
-    private val stackShiftGameLogic: StackShiftGameLogic = StackShiftGameLogic(),
+    private val gameLogic: GameLogic = GameLogic.create(),
     initialState: GameState? = null,
     private val onStateChanged: (GameState) -> Unit = {},
     private val onChallengeCompleted: (DailyChallenge) -> Unit = {},
@@ -32,8 +30,7 @@ class GameViewModel(
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
 ) {
     private val store = GameStore(
-        blockWiseGameLogic = blockWiseGameLogic,
-        stackShiftGameLogic = stackShiftGameLogic,
+        gameLogic = gameLogic,
         scope = scope,
         initialState = initialState,
         onStateChanged = onStateChanged,
