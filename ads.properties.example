@@ -1,0 +1,28 @@
+# Copy this file to `ads.properties` and fill in your local AdMob ids.
+# The real `ads.properties` is gitignored or protected.
+#
+# Android product flavors:
+# - stackshift  -> applicationId com.ugurbuga.stackshift
+# - blockwise   -> applicationId com.ugurbuga.blockwise
+#
+# Legacy `ads.android.*` keys are still accepted for the stackshift flavor only.
+
+ads.android.stackshift.applicationId=
+ads.android.stackshift.bannerUnitId=
+ads.android.stackshift.interstitialUnitId=
+ads.android.stackshift.rewardedUnitId=
+ads.android.stackshift.rewardedSpecialUnitId=
+
+ads.android.blockwise.applicationId=
+ads.android.blockwise.bannerUnitId=
+ads.android.blockwise.interstitialUnitId=
+ads.android.blockwise.rewardedUnitId=
+ads.android.blockwise.rewardedSpecialUnitId=
+
+# Legacy fallback keys for the stackshift flavor only.
+ads.android.applicationId=
+ads.android.bannerUnitId=
+ads.android.interstitialUnitId=
+ads.android.rewardedUnitId=
+ads.android.rewardedSpecialUnitId=
+

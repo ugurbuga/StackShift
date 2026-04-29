@@ -44,7 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.ugurbuga.stackshift.StackShiftTheme
+import com.ugurbuga.stackshift.BlockGamesTheme
 import com.ugurbuga.stackshift.game.logic.GameLogic
 import com.ugurbuga.stackshift.game.model.AppThemeMode
 import com.ugurbuga.stackshift.game.model.PlacementPreview
@@ -53,10 +53,10 @@ import com.ugurbuga.stackshift.settings.FirstRunGameOnboardingStateFactory
 import com.ugurbuga.stackshift.settings.FirstRunOnboardingScene
 import com.ugurbuga.stackshift.settings.FirstRunOnboardingStage
 import com.ugurbuga.stackshift.settings.FirstRunOnboardingTarget
+import com.ugurbuga.stackshift.ui.theme.BlockGamesThemeTokens
 import com.ugurbuga.stackshift.ui.theme.GameUiShapeTokens
-import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
 import com.ugurbuga.stackshift.ui.theme.appBackgroundBrush
-import com.ugurbuga.stackshift.ui.theme.stackShiftSurfaceShadow
+import com.ugurbuga.stackshift.ui.theme.blockGamesSurfaceShadow
 import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
 import stackshift.composeapp.generated.resources.interactive_onboarding_aim_hint
@@ -89,7 +89,7 @@ data class GameInteractiveOnboardingUi(
     val isAwaitingPlacementCommit: Boolean,
 )
 
-private val onboardingGuideLogic = GameLogic()
+private val onboardingLogic = GameLogic.create()
 private const val InteractiveOnboardingTargetPulseDurationMillis = 1880
 
 @Immutable
@@ -151,7 +151,7 @@ internal fun InteractiveOnboardingTargetOverlay(
     cellSizePx: Float,
     modifier: Modifier = Modifier,
 ) {
-    val suppressTargetRect = ui.scene.stage == FirstRunOnboardingStage.DragAndLaunch && ui.hasDraggedAwayFromSpawn
+    val suppressTargetRect = (ui.scene.stage == FirstRunOnboardingStage.DragAndLaunch) && ui.hasDraggedAwayFromSpawn
     val targetRect = remember(ui.scene, boardRect, trayRect, spawnRect, cellSizePx, suppressTargetRect) {
         if (suppressTargetRect) {
             null
@@ -197,7 +197,7 @@ internal fun rememberInteractiveOnboardingVisualState(
     val dragReadyHint = stringResource(Res.string.interactive_onboarding_drag_ready)
     val dragToBoardHint = stringResource(Res.string.interactive_onboarding_drag_to_board)
     val aimHint = stringResource(Res.string.interactive_onboarding_aim_hint)
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     return remember(
         ui,
         uiColors.warning,
@@ -273,9 +273,9 @@ internal fun InteractiveOnboardingInfoCard(
     stylePulse: Float = 0f,
     modifier: Modifier = Modifier,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     Card(
-        modifier = modifier.stackShiftSurfaceShadow(
+        modifier = modifier.blockGamesSurfaceShadow(
             shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
             elevation = 10.dp,
         ),
@@ -444,7 +444,7 @@ private fun InteractiveOnboardingTargetHighlight(
         if (shouldAnimatePulse) {
             drawRoundRect(
                 color = guideColor.copy(
-                    alpha = 0.08f + (pulsePhase * 0.04f)
+                    alpha = 0.08f + (pulsePhase * 0.04f),
                 ),
                 topLeft = Offset(pulseRect.left, pulseRect.top),
                 size = pulseRect.size,
@@ -463,7 +463,7 @@ private fun onboardingTargetRect(
     cellSizePx: Float,
 ): Rect? = when (scene.target) {
     FirstRunOnboardingTarget.Tray -> when {
-        scene.stage == FirstRunOnboardingStage.DragAndLaunch && trayRect != Rect.Zero -> {
+        (scene.stage == FirstRunOnboardingStage.DragAndLaunch) && (trayRect != Rect.Zero) -> {
             trayRect.expand(horizontalPadding = -14f, verticalPadding = -10f)
         }
         spawnRect != Rect.Zero -> spawnRect.expand(horizontalPadding = 10f, verticalPadding = 8f)
@@ -482,8 +482,11 @@ private fun onboardingTargetPreview(scene: FirstRunOnboardingScene): PlacementPr
         scene.guideColumn?.let(::add)
         addAll(scene.acceptedColumns.sorted())
     }.distinct()
+
+    val logic: GameLogic = onboardingLogic
+
     return candidateColumns.firstNotNullOfOrNull { column ->
-        onboardingGuideLogic.previewPlacement(scene.gameState, column)
+        logic.previewPlacement(scene.gameState, column)
     }
 }
 
@@ -624,7 +627,7 @@ private fun InteractiveGameOnboardingOverlayPreviewHost(
         cellSizePx = previewCellSizePx,
         column = previewSpawnColumn,
     )
-    val spawnRect = if (scene.gameState.activePiece != null && spawnTopLeft != null) {
+    val spawnRect = if ((scene.gameState.activePiece != null) && (spawnTopLeft != null)) {
         Rect(
             left = spawnTopLeft.x,
             top = spawnTopLeft.y,
@@ -634,11 +637,11 @@ private fun InteractiveGameOnboardingOverlayPreviewHost(
     } else {
         Rect.Zero
     }
-    StackShiftTheme(settings = settings) {
+    BlockGamesTheme(settings = settings) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(appBackgroundBrush(StackShiftThemeTokens.uiColors))
+                .background(appBackgroundBrush(BlockGamesThemeTokens.uiColors))
                 .padding(horizontal = 12.dp, vertical = 10.dp),
         ) {
             Column(
@@ -649,8 +652,8 @@ private fun InteractiveGameOnboardingOverlayPreviewHost(
                         .fillMaxWidth()
                         .weight(1f),
                     shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
-                    color = StackShiftThemeTokens.uiColors.panel.copy(alpha = 0.34f),
-                    border = BorderStroke(1.dp, StackShiftThemeTokens.uiColors.panelStroke.copy(alpha = 0.38f)),
+                    color = BlockGamesThemeTokens.uiColors.panel.copy(alpha = 0.34f),
+                    border = BorderStroke(1.dp, BlockGamesThemeTokens.uiColors.panelStroke.copy(alpha = 0.38f)),
                 ) {}
                 Spacer(modifier = Modifier.height(8.dp))
                 Surface(
@@ -658,8 +661,8 @@ private fun InteractiveGameOnboardingOverlayPreviewHost(
                         .fillMaxWidth()
                         .height(104.dp),
                     shape = RoundedCornerShape(GameUiShapeTokens.dockCorner),
-                    color = StackShiftThemeTokens.uiColors.gameSurface.copy(alpha = 0.52f),
-                    border = BorderStroke(1.dp, StackShiftThemeTokens.uiColors.panelStroke.copy(alpha = 0.42f)),
+                    color = BlockGamesThemeTokens.uiColors.gameSurface.copy(alpha = 0.52f),
+                    border = BorderStroke(1.dp, BlockGamesThemeTokens.uiColors.panelStroke.copy(alpha = 0.42f)),
                 ) {}
             }
 

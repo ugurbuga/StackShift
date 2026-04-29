@@ -44,8 +44,8 @@ import com.ugurbuga.stackshift.telemetry.LogScreen
 import com.ugurbuga.stackshift.telemetry.NoOpAppTelemetry
 import com.ugurbuga.stackshift.telemetry.TelemetryScreenNames
 import com.ugurbuga.stackshift.ui.theme.GameUiShapeTokens
-import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
-import com.ugurbuga.stackshift.ui.theme.stackShiftSurfaceShadow
+import com.ugurbuga.stackshift.ui.theme.BlockGamesThemeTokens
+import com.ugurbuga.stackshift.ui.theme.blockGamesSurfaceShadow
 import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
 import stackshift.composeapp.generated.resources.block_properties_column_clearer_desc
@@ -70,7 +70,7 @@ fun BlockPropertiesScreen(
 ) {
     LogScreen(telemetry, TelemetryScreenNames.BlockProperties)
     var selected by remember { mutableStateOf(SpecialBlockType.None) }
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     
     val transition = rememberInfiniteTransition(label = "blockPropsPulse")
     val stylePulse by transition.animateFloat(
@@ -94,7 +94,7 @@ fun BlockPropertiesScreen(
                 .padding(horizontal = 12.dp, vertical = 10.dp),
         ) {
             Card(
-                modifier = Modifier.stackShiftSurfaceShadow(
+                modifier = Modifier.blockGamesSurfaceShadow(
                     shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
                     elevation = 10.dp,
                 ),
@@ -149,7 +149,7 @@ fun BlockPropertiesScreen(
                 Card(
                     modifier = Modifier
                         .width(132.dp)
-                        .stackShiftSurfaceShadow(
+                        .blockGamesSurfaceShadow(
                             shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
                             elevation = 5.dp,
                         ),
@@ -199,7 +199,7 @@ private fun BlockTypeRow(
     onClick: () -> Unit,
     pulse: Float = 0f,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     
     val transition = rememberInfiniteTransition(label = "blockPropsPulse")
     val stylePulse by transition.animateFloat(
@@ -223,7 +223,7 @@ private fun BlockTypeRow(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .stackShiftSurfaceShadow(
+            .blockGamesSurfaceShadow(
                 shape = rowShape,
                 elevation = 5.dp,
             )

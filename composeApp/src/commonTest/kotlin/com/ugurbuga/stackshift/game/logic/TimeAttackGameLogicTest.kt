@@ -15,14 +15,14 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class TimeAttackGameLogicTest {
-    private val logic = GameLogic(random = Random(13))
+    private val logic = GameLogic.create(random = Random(13))
 
     @Test
     fun timeAttack_newGameStartsWithDefaultTimer() {
         val state = logic.newGame(mode = GameMode.TimeAttack)
 
         assertEquals(GameMode.TimeAttack, state.gameMode)
-        assertEquals(GameLogic.DefaultTimeAttackDurationMillis, state.remainingTimeMillis)
+        assertEquals(GameLogic.DEFAULT_TIME_ATTACK_DURATION_MILLIS, state.remainingTimeMillis)
     }
 
     @Test
@@ -39,15 +39,18 @@ class TimeAttackGameLogicTest {
             board = board,
             activePiece = domino(id = 1),
             nextQueue = listOf(domino(id = 2), domino(id = 3), domino(id = 4)),
-            remainingTimeMillis = GameLogic.DefaultTimeAttackDurationMillis,
+            remainingTimeMillis = GameLogic.DEFAULT_TIME_ATTACK_DURATION_MILLIS,
         )
 
-        val launched = logic.placePiece(state = state, approximateColumn = 2).state
-        val committed = logic.commitSoftLock(launched).state
+        val committed = logic.placePiece(
+            state = state,
+            pieceId = 1,
+            origin = GridPoint(column = 2, row = 0),
+        ).state
 
         assertEquals(1, committed.linesCleared)
         assertEquals(
-            GameLogic.DefaultTimeAttackDurationMillis + (4L * GameLogic.TimeAttackBonusPerClearedBlockMillis),
+            GameLogic.DEFAULT_TIME_ATTACK_DURATION_MILLIS + (4L * GameLogic.TIME_ATTACK_BONUS_PER_CLEARED_BLOCK_MILLIS),
             committed.remainingTimeMillis,
         )
     }
@@ -62,7 +65,7 @@ class TimeAttackGameLogicTest {
         assertEquals(GameStatus.GameOver, timedOut.status)
         assertEquals(0L, timedOut.remainingTimeMillis)
         assertEquals(GameStatus.Running, revived.status)
-        assertEquals(GameLogic.TimeAttackReviveBonusMillis, revived.remainingTimeMillis)
+        assertEquals(GameLogic.TIME_ATTACK_REVIVE_BONUS_MILLIS, revived.remainingTimeMillis)
         assertTrue(revived.rewardedReviveUsed)
     }
 

@@ -28,8 +28,8 @@ import com.ugurbuga.stackshift.telemetry.LogScreen
 import com.ugurbuga.stackshift.telemetry.NoOpAppTelemetry
 import com.ugurbuga.stackshift.telemetry.TelemetryScreenNames
 import com.ugurbuga.stackshift.ui.theme.GameUiShapeTokens
-import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
-import com.ugurbuga.stackshift.ui.theme.stackShiftSurfaceShadow
+import com.ugurbuga.stackshift.ui.theme.BlockGamesThemeTokens
+import com.ugurbuga.stackshift.ui.theme.blockGamesSurfaceShadow
 import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
 import stackshift.composeapp.generated.resources.piece_properties_active
@@ -55,7 +55,7 @@ fun PiecePropertiesScreen(
     onBack: () -> Unit,
 ) {
     LogScreen(telemetry, TelemetryScreenNames.PieceProperties)
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
@@ -67,7 +67,7 @@ fun PiecePropertiesScreen(
                 .padding(horizontal = 12.dp, vertical = 10.dp),
         ) {
             Card(
-                modifier = Modifier.stackShiftSurfaceShadow(
+                modifier = Modifier.blockGamesSurfaceShadow(
                     shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
                     elevation = 10.dp,
                 ),
@@ -108,7 +108,7 @@ fun PiecePropertiesScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .stackShiftSurfaceShadow(
+                    .blockGamesSurfaceShadow(
                         shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
                         elevation = 5.dp,
                     ),
@@ -166,7 +166,7 @@ private fun PropertyRow(
     label: String,
     value: String,
 ) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     Spacer(modifier = Modifier.height(6.dp))
     Text(
         text = label,

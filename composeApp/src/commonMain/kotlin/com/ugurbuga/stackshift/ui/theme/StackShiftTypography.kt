@@ -17,7 +17,7 @@ import stackshift.composeapp.generated.resources.nunito_regular
 import stackshift.composeapp.generated.resources.nunito_semibold
 
 @Composable
-fun stackShiftTypography(): Typography {
+fun blockGamesTypography(): Typography {
     val nunito = FontFamily(
         Font(resource = Res.font.nunito_regular, weight = FontWeight.Normal),
         Font(resource = Res.font.nunito_medium, weight = FontWeight.Medium),

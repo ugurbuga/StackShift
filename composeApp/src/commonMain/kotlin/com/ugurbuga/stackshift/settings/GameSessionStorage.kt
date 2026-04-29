@@ -12,6 +12,7 @@ import com.ugurbuga.stackshift.game.model.GameState
 import com.ugurbuga.stackshift.game.model.GameStatus
 import com.ugurbuga.stackshift.game.model.GameText
 import com.ugurbuga.stackshift.game.model.GameTextKey
+import com.ugurbuga.stackshift.game.model.GameplayStyle
 import com.ugurbuga.stackshift.game.model.GridPoint
 import com.ugurbuga.stackshift.game.model.LaunchBarState
 import com.ugurbuga.stackshift.game.model.Piece
@@ -21,14 +22,35 @@ import com.ugurbuga.stackshift.game.model.PressureLevel
 import com.ugurbuga.stackshift.game.model.SoftLockState
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
 
+enum class GameSessionSlot {
+    Classic,
+    TimeAttack,
+    DailyChallenge,
+}
+
+fun sessionSlotFor(
+    mode: GameMode,
+    challenge: DailyChallenge? = null,
+): GameSessionSlot = when {
+    challenge != null -> GameSessionSlot.DailyChallenge
+    mode == GameMode.TimeAttack -> GameSessionSlot.TimeAttack
+    else -> GameSessionSlot.Classic
+}
+
+fun GameState.sessionSlot(): GameSessionSlot = sessionSlotFor(
+    mode = gameMode,
+    challenge = activeChallenge,
+)
+
 expect object GameSessionStorage {
-    fun load(): GameState?
-    fun save(state: GameState)
+    fun load(slot: GameSessionSlot): GameState?
+    fun save(slot: GameSessionSlot, state: GameState)
+    fun clear(slot: GameSessionSlot)
     fun clear()
 }
 
 internal object GameSessionCodec {
-    private const val Version = 3
+    private const val Version = 5
     private const val SectionSeparator = '|'
     private const val FieldSeparator = ','
     private const val ListSeparator = ';'
@@ -84,16 +106,20 @@ internal object GameSessionCodec {
         val summary = decodeSummaryState(parts[15]) ?: return null
         val visual = decodeVisualState(parts[16]) ?: return null
         val message = decodeGameText(parts[17]) ?: GameText(GameTextKey.GameMessageSelectColumn)
-        val activity = if (version >= 3) {
+        val inferredGameplayStyle = inferLegacyGameplayStyle(nextQueue)
+        val activity = if (version >= 4) {
             decodeActivityState(parts[18]) ?: return null
+        } else if (version >= 3) {
+            decodeLegacyActivityState(parts[18], inferredGameplayStyle) ?: return null
         } else {
-            ActivityState()
+            ActivityState(gameplayStyle = inferredGameplayStyle)
         }
-        val activeChallenge = if (version >= 3) decodeChallenge(parts[19]) else null
+        val activeChallenge = if (version >= 3) decodeChallenge(parts[19], activity.gameplayStyle) else null
 
         return GameState(
             config = config,
             gameMode = progress.gameMode,
+            gameplayStyle = activity.gameplayStyle,
             board = board,
             activePiece = activePiece,
             nextQueue = nextQueue,
@@ -449,6 +475,7 @@ internal object GameSessionCodec {
     private data class ActivityState(
         val recentlyClearedColumns: Set<Int> = emptySet(),
         val rewardedReviveUsed: Boolean = false,
+        val gameplayStyle: GameplayStyle = GameplayStyle.StackShift,
     )
 
     private fun encodeVisualState(state: GameState): String = listOf(
@@ -474,21 +501,39 @@ internal object GameSessionCodec {
     private fun encodeActivityState(state: GameState): String = listOf(
         encodeIntSet(state.recentlyClearedColumns),
         state.rewardedReviveUsed,
+        state.gameplayStyle.ordinal,
     ).joinToString(separator = FieldSeparator.toString())
 
     private fun decodeActivityState(value: String): ActivityState? {
+        val parts = value.split(FieldSeparator)
+        if (parts.size != 3) return null
+        return ActivityState(
+            recentlyClearedColumns = decodeIntSet(parts[0]) ?: return null,
+            rewardedReviveUsed = parts[1].toBooleanStrictOrNull() ?: return null,
+            gameplayStyle = GameplayStyle.entries.getOrNull(parts[2].toIntOrNull() ?: return null) ?: return null,
+        )
+    }
+
+    private fun decodeLegacyActivityState(
+        value: String,
+        gameplayStyle: GameplayStyle,
+    ): ActivityState? {
         val parts = value.split(FieldSeparator)
         if (parts.size != 2) return null
         return ActivityState(
             recentlyClearedColumns = decodeIntSet(parts[0]) ?: return null,
             rewardedReviveUsed = parts[1].toBooleanStrictOrNull() ?: return null,
+            gameplayStyle = gameplayStyle,
         )
     }
+
+    private fun inferLegacyGameplayStyle(nextQueue: List<Piece>): GameplayStyle =
+        if (nextQueue.size <= 2) GameplayStyle.BlockWise else GameplayStyle.StackShift
 
     private fun encodeChallenge(challenge: DailyChallenge?): String {
         if (challenge == null) return EmptyToken
         val tasks = challenge.tasks.joinToString(separator = ListSeparator.toString()) { task ->
-            listOf(task.type.ordinal, task.target, task.current).joinToString(separator = PointSeparator.toString())
+            listOf(task.type.stableId, task.target, task.current).joinToString(separator = PointSeparator.toString())
         }
         return listOf(
             challenge.year,
@@ -498,7 +543,10 @@ internal object GameSessionCodec {
         ).joinToString(separator = FieldSeparator.toString())
     }
 
-    private fun decodeChallenge(value: String): DailyChallenge? {
+    private fun decodeChallenge(
+        value: String,
+        gameplayStyle: GameplayStyle,
+    ): DailyChallenge? {
         if (value == EmptyToken || value.isBlank()) return null
         val parts = value.split(FieldSeparator, limit = 4)
         if (parts.size != 4) return null
@@ -509,8 +557,7 @@ internal object GameSessionCodec {
                 val taskParts = token.split(PointSeparator)
                 if (taskParts.size != 3) return null
                 ChallengeTask(
-                    type = ChallengeTaskType.entries.getOrNull(taskParts[0].toIntOrNull() ?: return null)
-                        ?: return null,
+                    type = decodeChallengeTaskType(taskParts[0], gameplayStyle) ?: return null,
                     target = taskParts[1].toIntOrNull() ?: return null,
                     current = taskParts[2].toIntOrNull() ?: return null,
                 )
@@ -522,6 +569,14 @@ internal object GameSessionCodec {
             day = parts[2].toIntOrNull() ?: return null,
             tasks = tasks,
         )
+    }
+
+    private fun decodeChallengeTaskType(
+        token: String,
+        gameplayStyle: GameplayStyle,
+    ): ChallengeTaskType? {
+        return ChallengeTaskType.fromStableId(token)
+            ?: token.toIntOrNull()?.let { ChallengeTaskType.fromLegacyOrdinal(gameplayStyle, it) }
     }
 
     private fun encodeGameText(text: GameText): String = buildList {

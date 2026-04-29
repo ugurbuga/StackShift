@@ -3,8 +3,10 @@ package com.ugurbuga.stackshift.presentation.game
 import com.ugurbuga.stackshift.game.logic.GameEvent
 import com.ugurbuga.stackshift.game.logic.GameLogic
 import com.ugurbuga.stackshift.game.model.GameState
+import com.ugurbuga.stackshift.game.model.GameplayStyle
 import com.ugurbuga.stackshift.game.model.GridPoint
 import com.ugurbuga.stackshift.game.model.PlacementPreview
+import com.ugurbuga.stackshift.platform.GlobalPlatformConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,7 +23,9 @@ class GameStore(
     private val reducer = GameReducer(gameLogic)
     private val _uiState = MutableStateFlow(
         GameUiState(
-            gameState = gameLogic.restoreGame(initialState ?: gameLogic.newGame()),
+            gameState = restoreState(
+                initialState ?: gameLogic.newGame(gameplayStyle = GlobalPlatformConfig.gameplayStyle)
+            ),
         ),
     )
     private val effectHandler = GameEffectHandler(
@@ -38,18 +42,20 @@ class GameStore(
 
     fun previewPlacement(column: Int): PlacementPreview? {
         val state = _uiState.value.gameState
-        return state.softLock?.preview ?: gameLogic.previewPlacement(
-            state = state,
-            approximateColumn = column,
-        )
+        return gameLogic.previewPlacement(state = state, column = column)
+    }
+
+    fun previewPlacement(
+        pieceId: Long,
+        origin: GridPoint,
+    ): PlacementPreview? {
+        val state = _uiState.value.gameState
+        return gameLogic.previewPlacement(state = state, pieceId = pieceId, origin = origin)
     }
 
     fun previewImpactPoints(preview: PlacementPreview?): Set<GridPoint> {
         val state = _uiState.value.gameState
-        return gameLogic.previewImpactPoints(
-            state = state,
-            preview = preview,
-        )
+        return gameLogic.previewImpactPoints(state = state, preview = preview)
     }
 
     fun dispatch(intent: GameIntent): Set<GameEvent> {
@@ -75,7 +81,7 @@ class GameStore(
 
     fun replaceState(state: GameState) {
         effectHandler.handle(GameEffect.CancelSoftLockTimer)
-        updateState(state)
+        updateState(restoreState(state))
     }
 
     fun dispose() {
@@ -86,4 +92,6 @@ class GameStore(
         _uiState.update { current -> current.copy(gameState = state) }
         onStateChanged(state)
     }
+
+    private fun restoreState(state: GameState): GameState = gameLogic.restoreGame(state)
 }

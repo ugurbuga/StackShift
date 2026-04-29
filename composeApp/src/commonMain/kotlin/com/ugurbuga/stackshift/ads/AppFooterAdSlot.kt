@@ -4,8 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -28,11 +28,11 @@ import androidx.compose.ui.unit.dp
 import com.ugurbuga.stackshift.game.model.CellTone
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
 import com.ugurbuga.stackshift.localization.LocalAppSettings
+import com.ugurbuga.stackshift.localization.appStringResource
 import com.ugurbuga.stackshift.ui.game.BlockCellPreview
-import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
-import org.jetbrains.compose.resources.stringResource
+import com.ugurbuga.stackshift.ui.theme.BlockGamesThemeTokens
 import stackshift.composeapp.generated.resources.Res
-import stackshift.composeapp.generated.resources.app_title
+import stackshift.composeapp.generated.resources.app_title_stackshift
 
 val AppFooterBannerHeight = 50.dp
 
@@ -44,7 +44,7 @@ fun AppFooterAdSlot(
     if (adController.bannerPresentationMode != BannerPresentationMode.Inline) return
 
     var bannerLoaded by remember { mutableStateOf(false) }
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
 
     Surface(
         modifier = modifier
@@ -73,7 +73,7 @@ fun AppFooterAdSlot(
 
 @Composable
 private fun AppBrandedBannerPlaceholder(modifier: Modifier = Modifier) {
-    val uiColors = StackShiftThemeTokens.uiColors
+    val uiColors = BlockGamesThemeTokens.uiColors
     val settings = LocalAppSettings.current
     Surface(
         modifier = modifier,
@@ -122,7 +122,7 @@ private fun AppBrandedBannerPlaceholder(modifier: Modifier = Modifier) {
                     }
                 }
                 Text(
-                    text = stringResource(Res.string.app_title),
+                    text = appStringResource(Res.string.app_title_stackshift),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.ExtraBold,

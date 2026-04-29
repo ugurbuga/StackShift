@@ -6,11 +6,11 @@
       <stop offset="1" stop-color="#070D14"/>
     </linearGradient>
     <radialGradient id="screenGlowA" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(232 214) rotate(45) scale(448)">
-      <stop stop-color="#48D8C8" stop-opacity="0.26"/>
+      <stop offset="0" stop-color="#48D8C8" stop-opacity="0.26"/>
       <stop offset="1" stop-color="#48D8C8" stop-opacity="0"/>
     </radialGradient>
     <radialGradient id="screenGlowB" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(796 822) rotate(45) scale(404)">
-      <stop stop-color="#6B74FF" stop-opacity="0.22"/>
+      <stop offset="0" stop-color="#6B74FF" stop-opacity="0.22"/>
       <stop offset="1" stop-color="#6B74FF" stop-opacity="0"/>
     </radialGradient>
   </defs>

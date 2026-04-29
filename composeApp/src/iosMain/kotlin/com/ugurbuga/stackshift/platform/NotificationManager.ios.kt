@@ -10,6 +10,9 @@ import com.ugurbuga.stackshift.settings.MissYouReminderSlots
 import com.ugurbuga.stackshift.settings.NotificationReminderSchedulingHorizonDays
 import com.ugurbuga.stackshift.settings.ReminderTimeSlot
 import com.ugurbuga.stackshift.settings.hasCompletedChallengeForDate
+import kotlinx.coroutines.runBlocking
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.getString
 import platform.Foundation.NSCalendar
 import platform.Foundation.NSCalendarUnitDay
 import platform.Foundation.NSCalendarUnitHour
@@ -18,7 +21,7 @@ import platform.Foundation.NSCalendarUnitMonth
 import platform.Foundation.NSCalendarUnitYear
 import platform.Foundation.NSDate
 import platform.Foundation.NSDateComponents
-import platform.Foundation.timeIntervalSince1970
+import platform.Foundation.NSUserDefaults
 import platform.UserNotifications.UNAuthorizationOptionAlert
 import platform.UserNotifications.UNAuthorizationOptionBadge
 import platform.UserNotifications.UNAuthorizationOptionSound
@@ -28,9 +31,17 @@ import platform.UserNotifications.UNNotificationRequest
 import platform.UserNotifications.UNNotificationSound
 import platform.UserNotifications.UNTimeIntervalNotificationTrigger
 import platform.UserNotifications.UNUserNotificationCenter
+import stackshift.composeapp.generated.resources.Res
+import stackshift.composeapp.generated.resources.app_title_stackshift
+import stackshift.composeapp.generated.resources.notification_daily_challenge_body
+import stackshift.composeapp.generated.resources.notification_daily_challenge_title
+import stackshift.composeapp.generated.resources.notification_miss_you_body
+import stackshift.composeapp.generated.resources.notification_miss_you_title
+import stackshift.composeapp.generated.resources.notification_test_body
 
 private const val DayMillis = 24L * 60L * 60L * 1000L
 private const val MinuteMillis = 60L * 1000L
+private const val AppleLanguagesKey = "AppleLanguages"
 
 class IosNotificationManager : NotificationManager {
 
@@ -106,8 +117,35 @@ class IosNotificationManager : NotificationManager {
         }
     }
 
+    private fun <T> withPreferredLanguage(localeTag: String, block: () -> T): T {
+        val defaults = NSUserDefaults.standardUserDefaults
+        val previousLanguages = defaults.objectForKey(AppleLanguagesKey)
+        if (localeTag.isBlank()) {
+            defaults.removeObjectForKey(AppleLanguagesKey)
+        } else {
+            defaults.setObject(listOf(localeTag), forKey = AppleLanguagesKey)
+        }
+        return try {
+            block()
+        } finally {
+            if (previousLanguages == null) {
+                defaults.removeObjectForKey(AppleLanguagesKey)
+            } else {
+                defaults.setObject(previousLanguages, forKey = AppleLanguagesKey)
+            }
+        }
+    }
+
+    private fun localizedText(localeTag: String, resource: StringResource): String =
+        withPreferredLanguage(localeTag) {
+            runBlocking { getString(resource) }
+        }
+
     override fun scheduleMissYouNotification() {
         val settings = AppSettingsStorage.load()
+        val localeTag = settings.language.localeTag
+        val title = localizedText(localeTag, Res.string.notification_miss_you_title)
+        val body = localizedText(localeTag, Res.string.notification_miss_you_body)
         val (currentHour, currentMinute) = currentReminderTime()
         repeat(NotificationReminderSchedulingHorizonDays) { dayOffset ->
             MissYouReminderSlots.forEach { slot ->
@@ -120,8 +158,8 @@ class IosNotificationManager : NotificationManager {
                 if (!inactiveEnough) return@forEach
 
                 val content = UNMutableNotificationContent().apply {
-                    setTitle("StackShift")
-                    setBody("We missed you! Come back and play some more.")
+                    setTitle(title)
+                    setBody(body)
                     setSound(UNNotificationSound.defaultSound)
                 }
                 val trigger = UNCalendarNotificationTrigger.triggerWithDateMatchingComponents(
@@ -148,6 +186,9 @@ class IosNotificationManager : NotificationManager {
 
     override fun scheduleDailyChallengeNotification() {
         val settings = AppSettingsStorage.load()
+        val localeTag = settings.language.localeTag
+        val title = localizedText(localeTag, Res.string.notification_daily_challenge_title)
+        val body = localizedText(localeTag, Res.string.notification_daily_challenge_body)
         val today = getCurrentDate()
         val todayCompleted = settings.hasCompletedChallengeForDate(today)
         val (currentHour, currentMinute) = currentReminderTime()
@@ -157,8 +198,8 @@ class IosNotificationManager : NotificationManager {
                 if (dayOffset == 0 && slotPassedToday(slot, currentHour, currentMinute)) return@forEach
                 val components = slotDateComponents(dayOffset, slot)
                 val content = UNMutableNotificationContent().apply {
-                    setTitle("StackShift")
-                    setBody("Have you completed today's daily challenge tasks yet?")
+                    setTitle(title)
+                    setBody(body)
                     setSound(UNNotificationSound.defaultSound)
                 }
                 val trigger = UNCalendarNotificationTrigger.triggerWithDateMatchingComponents(
@@ -184,9 +225,10 @@ class IosNotificationManager : NotificationManager {
     }
 
     override fun sendTestNotification() {
+        val localeTag = AppSettingsStorage.load().language.localeTag
         val content = UNMutableNotificationContent().apply {
-            setTitle("StackShift")
-            setBody("This is a test notification.")
+            setTitle(localizedText(localeTag, Res.string.app_title_stackshift))
+            setBody(localizedText(localeTag, Res.string.notification_test_body))
             setSound(UNNotificationSound.defaultSound)
         }
         val trigger = UNTimeIntervalNotificationTrigger.triggerWithTimeInterval(5.0, repeats = false)

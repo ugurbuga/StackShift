@@ -13,7 +13,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class GameSessionCodecTest {
-    private val logic = GameLogic(random = Random(21))
+    private val logic = GameLogic.create(random = Random(21))
 
     @Test
     fun encodeDecode_preservesTimeAttackSessionDetails() {
@@ -22,7 +22,7 @@ class GameSessionCodecTest {
             month = 4,
             day = 28,
             tasks = listOf(
-                ChallengeTask(type = ChallengeTaskType.ClearBlocks, target = 24, current = 7),
+                ChallengeTask(type = ChallengeTaskType.ClearRows, target = 4, current = 2),
                 ChallengeTask(type = ChallengeTaskType.ReachScore, target = 1200, current = 450),
             ),
         )
@@ -49,6 +49,23 @@ class GameSessionCodecTest {
         assertEquals(challenge.month, decoded.activeChallenge.month)
         assertEquals(challenge.day, decoded.activeChallenge.day)
         assertEquals(challenge.tasks, decoded.activeChallenge.tasks)
+    }
+
+    @Test
+    fun sessionSlotFor_routesClassicTimeAttackAndChallengeSeparately() {
+        val classicState = logic.newGame(mode = GameMode.Classic)
+        val timeAttackState = logic.newGame(mode = GameMode.TimeAttack)
+        val challenge = DailyChallenge(
+            year = 2026,
+            month = 4,
+            day = 28,
+            tasks = listOf(ChallengeTask(type = ChallengeTaskType.PlacePieces, target = 6)),
+        )
+        val challengeState = logic.newGame(mode = GameMode.Classic, challenge = challenge)
+
+        assertEquals(GameSessionSlot.Classic, classicState.sessionSlot())
+        assertEquals(GameSessionSlot.TimeAttack, timeAttackState.sessionSlot())
+        assertEquals(GameSessionSlot.DailyChallenge, challengeState.sessionSlot())
     }
 }
 

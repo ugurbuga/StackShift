@@ -6,6 +6,7 @@ import com.ugurbuga.stackshift.game.model.DailyChallenge
 import com.ugurbuga.stackshift.game.model.GameConfig
 import com.ugurbuga.stackshift.game.model.GameMode
 import com.ugurbuga.stackshift.game.model.GameState
+import com.ugurbuga.stackshift.game.model.GameplayStyle
 import com.ugurbuga.stackshift.game.model.GridPoint
 import com.ugurbuga.stackshift.game.model.PlacementPreview
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
@@ -21,7 +22,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class GameViewModel(
-    private val gameLogic: GameLogic = GameLogic(),
+    private val gameLogic: GameLogic = GameLogic.create(),
     initialState: GameState? = null,
     private val onStateChanged: (GameState) -> Unit = {},
     private val onChallengeCompleted: (DailyChallenge) -> Unit = {},
@@ -54,13 +55,31 @@ class GameViewModel(
         return store.previewPlacement(column)
     }
 
+    fun previewPlacement(
+        pieceId: Long,
+        origin: GridPoint,
+    ): PlacementPreview? {
+        return store.previewPlacement(pieceId, origin)
+    }
+
     fun previewImpactPoints(preview: PlacementPreview?): Set<GridPoint> {
         return store.previewImpactPoints(preview)
     }
 
-    fun placePiece(column: Int): InteractionFeedback = dispatch(GameIntent.LaunchColumn(column))
+    fun placePiece(column: Int): InteractionFeedback = dispatch(GameIntent.PlacePiece(
+        pieceId = uiState.value.gameState.activePiece?.id ?: -1L,
+        origin = store.previewPlacement(column)?.landingAnchor ?: GridPoint(0, 0),
+    ))
 
-    fun placePieceResult(column: Int): GameDispatchResult = dispatchResult(GameIntent.LaunchColumn(column))
+    fun placePiece(pieceId: Long, origin: GridPoint): InteractionFeedback = dispatch(GameIntent.PlacePiece(pieceId, origin))
+
+    fun placePieceResult(column: Int): GameDispatchResult {
+        val pieceId = uiState.value.gameState.activePiece?.id ?: return GameDispatchResult()
+        val origin = store.previewPlacement(column)?.landingAnchor ?: return GameDispatchResult()
+        return dispatchResult(GameIntent.PlacePiece(pieceId, origin))
+    }
+
+    fun placePieceResult(pieceId: Long, origin: GridPoint): GameDispatchResult = dispatchResult(GameIntent.PlacePiece(pieceId, origin))
 
     fun holdPiece(): InteractionFeedback = dispatch(GameIntent.HoldPiece)
 
@@ -73,12 +92,13 @@ class GameViewModel(
         config: GameConfig = uiState.value.gameState.config,
         challenge: DailyChallenge? = uiState.value.gameState.activeChallenge,
         mode: GameMode = uiState.value.gameState.gameMode,
+        gameplayStyle: GameplayStyle = uiState.value.gameState.gameplayStyle,
     ): InteractionFeedback {
-        return dispatch(GameIntent.Restart(config, challenge, mode))
+        return dispatch(GameIntent.Restart(config, challenge, mode, gameplayStyle))
     }
 
     fun replaceState(state: GameState) {
-        store.replaceState(gameLogic.restoreGame(state))
+        store.replaceState(state)
     }
 
     fun snapshotState(): GameState = uiState.value.gameState

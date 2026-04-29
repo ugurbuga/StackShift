@@ -1,8 +1,7 @@
-import org.gradle.internal.Actions.add
+
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import java.io.File
 
 private fun findDesktopJdkHome(): File? {
     val candidateHomes = buildList {
@@ -37,7 +36,7 @@ val desktopJdkHome = findDesktopJdkHome()
 
 kotlin {
     android {
-        namespace = "com.ugurbuga.stackshift"
+        namespace = "com.ugurbuga.blockgames"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
 

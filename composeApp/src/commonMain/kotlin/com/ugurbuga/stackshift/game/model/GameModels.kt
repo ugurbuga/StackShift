@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.ugurbuga.stackshift.platform.GlobalPlatformConfig
 import org.jetbrains.compose.resources.StringResource
 import stackshift.composeapp.generated.resources.Res
 import stackshift.composeapp.generated.resources.app_language_arabic
@@ -246,6 +247,11 @@ data class GameConfig(
 enum class GameMode {
     Classic,
     TimeAttack,
+}
+
+enum class GameplayStyle {
+    StackShift,
+    BlockWise,
 }
 
 enum class GameStatus {
@@ -678,6 +684,40 @@ class BoardMatrix private constructor(
         }
     }
 
+    fun fullColumns(): List<Int> = buildList {
+        for (column in 0 until columns) {
+            var isFull = true
+            for (row in 0 until rows) {
+                if (cells[indexOf(column, row)] == EMPTY_CELL) {
+                    isFull = false
+                    break
+                }
+            }
+            if (isFull) add(column)
+        }
+    }
+
+    fun clearLines(
+        rowsToClear: Set<Int>,
+        columnsToClear: Set<Int>,
+    ): BoardMatrix {
+        if (rowsToClear.isEmpty() && columnsToClear.isEmpty()) return this
+        val next = cells.copyOf()
+        rowsToClear.forEach { row ->
+            if (row !in 0 until rows) return@forEach
+            for (column in 0 until columns) {
+                next[indexOf(column, row)] = EMPTY_CELL
+            }
+        }
+        columnsToClear.forEach { column ->
+            if (column !in 0 until columns) return@forEach
+            for (row in 0 until rows) {
+                next[indexOf(column, row)] = EMPTY_CELL
+            }
+        }
+        return BoardMatrix(columns = columns, rows = rows, cells = next)
+    }
+
     fun clearRows(rowsToClear: Set<Int>): BoardMatrix {
         if (rowsToClear.isEmpty()) return this
 
@@ -756,6 +796,7 @@ data class PlacementPreview(
 data class GameState(
     val config: GameConfig,
     val gameMode: GameMode = GameMode.Classic,
+    val gameplayStyle: GameplayStyle = GlobalPlatformConfig.gameplayStyle,
     val board: BoardMatrix,
     val activePiece: Piece?,
     val nextQueue: List<Piece>,
@@ -786,6 +827,7 @@ data class GameState(
     val floatingFeedback: FloatingFeedback? = null,
     val feedbackToken: Long = 0L,
     val rewardedReviveUsed: Boolean = false,
+    val nextPieceId: Long = 1L,
     val lastActionTime: Long = 0L,
     val remainingTimeMillis: Long? = null,
     val message: GameText = GameText(GameTextKey.GameMessageSelectColumn),
@@ -793,6 +835,12 @@ data class GameState(
 ) {
     val nextPiece: Piece?
         get() = nextQueue.firstOrNull()
+
+    val trayPieces: List<Piece>
+        get() = buildList {
+            activePiece?.let(::add)
+            addAll(nextQueue.take(2))
+        }
 
     val isSoftLockActive: Boolean
         get() = softLock != null

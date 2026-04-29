@@ -30,8 +30,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ugurbuga.stackshift.ui.theme.GameUiShapeTokens
-import com.ugurbuga.stackshift.ui.theme.StackShiftThemeTokens
-import com.ugurbuga.stackshift.ui.theme.stackShiftSurfaceShadow
+import com.ugurbuga.stackshift.ui.theme.BlockGamesThemeTokens
+import com.ugurbuga.stackshift.ui.theme.blockGamesSurfaceShadow
 import kotlinx.coroutines.delay
 
 @Composable
@@ -61,13 +61,13 @@ fun RewardFeedbackCard(
             enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
             exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
         ) {
-            val uiColors = StackShiftThemeTokens.uiColors
+            val uiColors = BlockGamesThemeTokens.uiColors
             val panelShape = RoundedCornerShape(GameUiShapeTokens.panelCorner)
             
             Card(
                 modifier = Modifier
                     .widthIn(max = 400.dp)
-                    .stackShiftSurfaceShadow(
+                    .blockGamesSurfaceShadow(
                         shape = panelShape,
                         elevation = 12.dp,
                     ),

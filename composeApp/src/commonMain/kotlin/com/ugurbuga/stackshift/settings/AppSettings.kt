@@ -1,5 +1,6 @@
 package com.ugurbuga.stackshift.settings
 
+import androidx.compose.runtime.Immutable
 import com.ugurbuga.stackshift.game.model.AppColorPalette
 import com.ugurbuga.stackshift.game.model.AppLanguage
 import com.ugurbuga.stackshift.game.model.AppThemeMode
@@ -8,6 +9,7 @@ import com.ugurbuga.stackshift.game.model.BlockVisualStyle
 import com.ugurbuga.stackshift.game.model.BoardBlockStyleMode
 import com.ugurbuga.stackshift.game.model.ChallengeProgress
 
+@Immutable
 data class AppSettings(
     val language: AppLanguage = AppLanguage.English,
     val themeMode: AppThemeMode = AppThemeMode.System,

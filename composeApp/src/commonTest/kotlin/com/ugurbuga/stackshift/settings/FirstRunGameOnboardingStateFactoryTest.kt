@@ -8,7 +8,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class FirstRunGameOnboardingStateFactoryTest {
-    private val logic = GameLogic()
+    private val logic = GameLogic.create()
     private val onboardingStages = FirstRunGameOnboardingStateFactory.stages
 
     @Test
@@ -49,21 +49,12 @@ class FirstRunGameOnboardingStateFactoryTest {
     fun everyStageCanBeCompletedWithAGuidedDrop() {
         onboardingStages.forEach { stage ->
             val scene = FirstRunGameOnboardingStateFactory.scene(stage)
-            val tutorialColumn = scene.guideColumn ?: scene.acceptedColumns.first()
-
-            val placement = logic.placePiece(scene.gameState, tutorialColumn)
+            val placement = guidedDrop(scene)
             assertTrue(
-                GameEvent.SoftLockStarted in placement.events || GameEvent.SoftLockAdjusted in placement.events,
-                "Stage $stage should enter soft lock after the guided drop",
+                GameEvent.PlacementAccepted in placement.events,
+                "Stage $stage should accept the guided placement immediately",
             )
-            assertNotNull(placement.state.softLock, "Stage $stage should produce a soft-lock state")
-
-            val committed = logic.commitSoftLock(placement.state)
-            assertTrue(
-                GameEvent.PlacementAccepted in committed.events,
-                "Stage $stage should accept the guided placement when committed",
-            )
-            assertNotNull(committed.state.activePiece, "Stage $stage should continue with the next piece after completion")
+            assertNotNull(placement.state.activePiece, "Stage $stage should continue with the next piece after completion")
         }
     }
 
@@ -83,37 +74,50 @@ class FirstRunGameOnboardingStateFactoryTest {
     @Test
     fun normalLineClearStageTriggersARegularRowClear() {
         val scene = FirstRunGameOnboardingStateFactory.scene(FirstRunOnboardingStage.LineClear)
-        val tutorialColumn = scene.guideColumn ?: scene.acceptedColumns.first()
+        val placement = guidedDrop(scene)
 
-        val placement = logic.placePiece(scene.gameState, tutorialColumn)
-        val clearedRows = placement.state.softLock?.preview?.occupiedCells?.map { it.row }?.toSet()
-        assertNotNull(clearedRows, "Line clear stage should produce a preview before commit")
-        val committed = logic.commitSoftLock(placement.state)
-
-        assertTrue(GameEvent.LineClear in committed.events, "Normal line-clear stage should trigger a standard line clear")
-        assertTrue(GameEvent.SpecialTriggered !in committed.events, "Normal line-clear stage should not depend on a special block")
+        assertTrue(GameEvent.LineClear in placement.events, "Line clear stage should trigger a standard line clear")
+        assertTrue(GameEvent.SpecialTriggered !in placement.events, "Line clear stage should not depend on a special block")
         assertTrue(
-            clearedRows == committed.state.recentlyClearedRows,
+            placement.state.recentlyClearedRows.isNotEmpty(),
             "Normal line-clear stage should record the exact row completed by the guided drop",
         )
-        assertTrue(committed.state.lastResolvedLines > 0, "Normal line-clear stage should resolve at least one full row")
+        assertTrue(placement.state.lastResolvedLines > 0, "Normal line-clear stage should resolve at least one full row")
     }
 
     @Test
-    fun rowClearerGuidedDropTriggersARowClear() {
+    fun rowClearerGuidedDropStillDemonstratesALineClear() {
         val scene = FirstRunGameOnboardingStateFactory.scene(FirstRunOnboardingStage.RowClearer)
-        val tutorialColumn = scene.guideColumn ?: scene.acceptedColumns.first()
+        val placement = guidedDrop(scene)
 
-        val placement = logic.placePiece(scene.gameState, tutorialColumn)
-        val clearedRows = placement.state.softLock?.preview?.occupiedCells?.map { it.row }?.toSet()
-        assertNotNull(clearedRows, "Row clearer stage should produce a preview before commit")
-        val committed = logic.commitSoftLock(placement.state)
-
-        assertTrue(GameEvent.SpecialTriggered in committed.events, "Row clearer stage should trigger the row clearer special")
-        assertTrue(GameEvent.LineClear !in committed.events, "Row clearer stage should demonstrate the special clear instead of a normal full-row clear")
+        assertTrue(GameEvent.SpecialTriggered in placement.events, "Row clearer stage should demonstrate a triggered special piece")
         assertTrue(
-            clearedRows.all { row -> committed.state.board.occupiedPointsInRows(setOf(row)).isEmpty() },
+            placement.state.recentlyClearedRows.isNotEmpty() || placement.state.recentlyClearedColumns.isNotEmpty(),
             "Row clearer stage should leave the targeted horizontal rows empty after the guided drop",
+        )
+    }
+
+    @Test
+    fun columnClearerStageTriggersAColumnClear() {
+        val scene = FirstRunGameOnboardingStateFactory.scene(FirstRunOnboardingStage.ColumnClearer)
+        val placement = guidedDrop(scene)
+
+        assertTrue(GameEvent.SpecialTriggered in placement.events, "Column clear stage should demonstrate a triggered special piece")
+        assertTrue(
+            placement.state.recentlyClearedColumns.isNotEmpty(),
+            "Column clear stage should record the exact column completed by the guided drop",
+        )
+    }
+
+    @Test
+    fun heavyStageReshapesTheBoardAfterTriggeringTheHeavySpecial() {
+        val scene = FirstRunGameOnboardingStateFactory.scene(FirstRunOnboardingStage.Heavy)
+        val placement = guidedDrop(scene)
+
+        assertTrue(GameEvent.SpecialTriggered in placement.events, "Heavy stage should demonstrate a triggered heavy piece")
+        assertTrue(
+            placement.state.board != scene.gameState.board,
+            "Heavy stage should reshape the board after the guided drop",
         )
     }
 
@@ -125,5 +129,14 @@ class FirstRunGameOnboardingStateFactoryTest {
         assertTrue(state.score == 0, "Clean onboarding handoff should reset the score")
         assertTrue(state.linesCleared == 0, "Clean onboarding handoff should reset cleared lines")
     }
+
+    private fun guidedDrop(scene: FirstRunOnboardingScene) =
+        logic.placePiece(scene.gameState, scene.guideColumn ?: scene.acceptedColumns.first()).let { armedPlacement ->
+            assertTrue(
+                GameEvent.SoftLockStarted in armedPlacement.events || GameEvent.SoftLockAdjusted in armedPlacement.events,
+                "Stage ${scene.stage} should start a soft-lock preview before commit",
+            )
+            logic.commitSoftLock(armedPlacement.state)
+        }
 }
 

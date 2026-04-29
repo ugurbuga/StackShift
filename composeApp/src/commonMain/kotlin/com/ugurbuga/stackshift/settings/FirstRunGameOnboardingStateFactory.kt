@@ -7,6 +7,7 @@ import com.ugurbuga.stackshift.game.model.CellTone
 import com.ugurbuga.stackshift.game.model.GameConfig
 import com.ugurbuga.stackshift.game.model.GameState
 import com.ugurbuga.stackshift.game.model.GameTextKey
+import com.ugurbuga.stackshift.game.model.GameplayStyle
 import com.ugurbuga.stackshift.game.model.GridPoint
 import com.ugurbuga.stackshift.game.model.Piece
 import com.ugurbuga.stackshift.game.model.PieceKind
@@ -39,10 +40,10 @@ data class FirstRunOnboardingScene(
 )
 
 object FirstRunGameOnboardingStateFactory {
-    private val guideLogic = GameLogic()
+    private val guideLogic = GameLogic.create()
     private val config = GameConfig(
         columns = 10,
-        rows = 6,
+        rows = 12,
         difficultyIntervalSeconds = 9_999,
         linesPerLevel = 9_999,
     )
@@ -59,9 +60,11 @@ object FirstRunGameOnboardingStateFactory {
     private val sceneCache: Map<FirstRunOnboardingStage, FirstRunOnboardingScene> =
         stages.associateWith(::buildScene)
 
-    fun initialState(): GameState = scene(stages.first()).gameState
+    fun initialState(gameplayStyle: GameplayStyle = GameplayStyle.StackShift): GameState =
+        scene(stages.first()).gameState.copy(gameplayStyle = gameplayStyle)
 
-    fun cleanGameState(): GameState = GameLogic().newGame()
+    fun cleanGameState(gameplayStyle: GameplayStyle): GameState =
+        guideLogic.newGame(config, gameplayStyle = gameplayStyle)
 
     fun scene(stage: FirstRunOnboardingStage): FirstRunOnboardingScene = sceneCache.getValue(stage)
 
@@ -317,7 +320,7 @@ object FirstRunGameOnboardingStateFactory {
             ),
             guideColumn = null,
             acceptedColumns = emptySet(),
-        ).withGuidance(preferredColumns = listOf(6, 5, 4), lockGuideColumn = true)
+        ).withGuidance(preferredColumns = listOf(5, 4, 6), lockGuideColumn = true)
     }
 
     private fun FirstRunOnboardingScene.withGuidance(
@@ -368,7 +371,7 @@ object FirstRunGameOnboardingStateFactory {
         nextQueue: List<Piece>,
         lastPlacementColumn: Int,
     ): GameState {
-        val baseState = GameLogic().newGame(config)
+        val baseState = guideLogic.newGame(config = config, gameplayStyle = GameplayStyle.StackShift)
         return baseState.copy(
             board = board,
             activePiece = activePiece,

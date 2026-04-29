@@ -27,9 +27,12 @@ import com.ugurbuga.stackshift.game.model.GameConfig
 import com.ugurbuga.stackshift.game.model.GameMode
 import com.ugurbuga.stackshift.game.model.GameState
 import com.ugurbuga.stackshift.game.model.GameStatus
+import com.ugurbuga.stackshift.game.model.GameplayStyle
 import com.ugurbuga.stackshift.game.model.SpecialBlockType
 import com.ugurbuga.stackshift.localization.AppEnvironment
+import com.ugurbuga.stackshift.localization.appStringResource
 import com.ugurbuga.stackshift.localization.currentDeviceLocaleTag
+import com.ugurbuga.stackshift.platform.GlobalPlatformConfig
 import com.ugurbuga.stackshift.platform.currentEpochMillis
 import com.ugurbuga.stackshift.platform.feedback.GameSound
 import com.ugurbuga.stackshift.platform.feedback.rememberSoundEffectPlayer
@@ -39,6 +42,7 @@ import com.ugurbuga.stackshift.presentation.game.GameViewModel
 import com.ugurbuga.stackshift.settings.AppSettings
 import com.ugurbuga.stackshift.settings.AppSettingsStorage
 import com.ugurbuga.stackshift.settings.FirstRunGameOnboardingStateFactory
+import com.ugurbuga.stackshift.settings.GameSessionSlot
 import com.ugurbuga.stackshift.settings.GameSessionStorage
 import com.ugurbuga.stackshift.settings.HighScoreStorage
 import com.ugurbuga.stackshift.settings.RewardedTokenAdReward
@@ -49,6 +53,8 @@ import com.ugurbuga.stackshift.settings.initializeAppSettingsForFirstLaunch
 import com.ugurbuga.stackshift.settings.logLanguageBootstrapDecision
 import com.ugurbuga.stackshift.settings.recordAppOpened
 import com.ugurbuga.stackshift.settings.sanitized
+import com.ugurbuga.stackshift.settings.sessionSlot
+import com.ugurbuga.stackshift.settings.sessionSlotFor
 import com.ugurbuga.stackshift.telemetry.AppTelemetry
 import com.ugurbuga.stackshift.telemetry.TelemetryActionNames
 import com.ugurbuga.stackshift.telemetry.TelemetryUserPropertyNames
@@ -61,13 +67,12 @@ import com.ugurbuga.stackshift.ui.game.HomeScreen
 import com.ugurbuga.stackshift.ui.game.RewardFeedbackCard
 import com.ugurbuga.stackshift.ui.game.StackShiftGameApp
 import com.ugurbuga.stackshift.ui.game.ThemedConfirmDialog
-import com.ugurbuga.stackshift.ui.theme.LocalStackShiftUiColors
-import com.ugurbuga.stackshift.ui.theme.isStackShiftDarkTheme
-import com.ugurbuga.stackshift.ui.theme.stackShiftThemeSpec
-import com.ugurbuga.stackshift.ui.theme.stackShiftTypography
+import com.ugurbuga.stackshift.ui.theme.LocalBlockGamesUiColors
+import com.ugurbuga.stackshift.ui.theme.isBlockGamesDarkTheme
+import com.ugurbuga.stackshift.ui.theme.blockGamesThemeSpec
+import com.ugurbuga.stackshift.ui.theme.blockGamesTypography
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.StringResource
-import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
 import stackshift.composeapp.generated.resources.cancel
 import stackshift.composeapp.generated.resources.leave_session_confirm
@@ -89,18 +94,18 @@ enum class AppRoute {
 }
 
 @Composable
-fun StackShiftTheme(
+fun BlockGamesTheme(
     settings: AppSettings,
     content: @Composable () -> Unit,
 ) {
-    val darkTheme = isStackShiftDarkTheme(settings)
-    val themeSpec = stackShiftThemeSpec(
+    val darkTheme = isBlockGamesDarkTheme(settings)
+    val themeSpec = blockGamesThemeSpec(
         settings = settings,
         darkTheme = darkTheme,
     )
     PlatformSystemBarsEffect(darkTheme = darkTheme)
-    CompositionLocalProvider(LocalStackShiftUiColors provides themeSpec.uiColors) {
-        val typography = stackShiftTypography()
+    CompositionLocalProvider(LocalBlockGamesUiColors provides themeSpec.uiColors) {
+        val typography = blockGamesTypography()
         MaterialTheme(
             colorScheme = themeSpec.colorScheme,
             typography = typography,
@@ -121,14 +126,13 @@ fun StackShiftRoot(
     settings: AppSettings,
     telemetry: AppTelemetry,
     gameViewModel: GameViewModel,
-    currentRoute: AppRoute,
     classicHighScore: Int,
     timeAttackHighScore: Int,
     rewardFeedback: RewardFeedbackState,
     onRewardFeedbackDismiss: () -> Unit,
     onPlayRequested: () -> Unit,
     onTimeAttackRequested: () -> Unit,
-    onNavigateToInteractiveOnboarding: () -> Unit,
+    onPlayChallengeRequested: (com.ugurbuga.stackshift.game.model.DailyChallenge) -> Unit,
     onNavigateToTheme: () -> Unit,
     onNavigateToLanguage: () -> Unit,
     onNavigateToTutorial: () -> Unit,
@@ -140,6 +144,8 @@ fun StackShiftRoot(
     onTutorialFinishRequested: () -> Unit,
     onInteractiveOnboardingFinished: (GameState) -> Unit,
     onInteractiveOnboardingReturnHome: (GameState) -> Unit,
+    currentRoute: AppRoute = AppRoute.Home,
+    gameplayStyle: GameplayStyle = GlobalPlatformConfig.gameplayStyle,
     showLeaveSessionDialog: Boolean = false,
     onDismissLeaveSessionDialog: () -> Unit = {},
     onConfirmLeaveSessionDialog: () -> Unit = {},
@@ -167,7 +173,7 @@ fun StackShiftRoot(
             notificationManager.scheduleMissYouNotification()
         }
         notificationManager.RequestPermission()
-        StackShiftTheme(settings = settings) {
+        BlockGamesTheme(settings = settings) {
             Box(modifier = Modifier.fillMaxSize()) {
                 Column(modifier = Modifier.fillMaxSize()) {
                     Box(
@@ -182,10 +188,10 @@ fun StackShiftRoot(
                                     settings = settings,
                                     classicHighScore = classicHighScore,
                                     timeAttackHighScore = timeAttackHighScore,
+                                    gameplayStyle = gameplayStyle,
                                     telemetry = telemetry,
                                     onPlay = onPlayRequested,
                                     onPlayTimeAttack = onTimeAttackRequested,
-                                    onOpenInteractiveGuide = onNavigateToInteractiveOnboarding,
                                     onOpenTutorial = {
                                         telemetry.logUserAction(TelemetryActionNames.OpenTutorial)
                                         onNavigateToTutorial()
@@ -211,12 +217,10 @@ fun StackShiftRoot(
                                     currentYear = date.year,
                                     currentMonth = date.month,
                                     currentDay = date.day,
+                                    gameplayStyle = gameplayStyle,
                                     progress = settings.challengeProgress,
                                     onBack = onNavigateBack,
-                                    onPlayChallenge = { challenge ->
-                                        gameViewModel.restart(GameConfig(), challenge, GameMode.Classic)
-                                        onPlayRequested()
-                                    }
+                                    onPlayChallenge = onPlayChallengeRequested,
                                 )
                             }
 
@@ -246,6 +250,7 @@ fun StackShiftRoot(
                                 GameTutorialScreen(
                                     modifier = Modifier.fillMaxSize(),
                                     telemetry = telemetry,
+                                    gameplayStyle = gameplayStyle,
                                     onBack = onNavigateBack,
                                     onFinish = onTutorialFinishRequested,
                                     adController = adController,
@@ -285,7 +290,7 @@ fun StackShiftRoot(
 
                 RewardFeedbackCard(
                     message = if (rewardFeedback.messageRes != null) {
-                        stringResource(
+                        appStringResource(
                             rewardFeedback.messageRes,
                             *rewardFeedback.messageArgs.toTypedArray()
                         )
@@ -308,6 +313,7 @@ fun App() {
 @Composable
 fun StackShiftAppHost(
     bootstrapLogSource: String,
+    gameplayStyle: GameplayStyle = GlobalPlatformConfig.gameplayStyle,
     beforeRoot: @Composable (settings: AppSettings, canNavigateBack: Boolean, onRequestBack: () -> Unit) -> Unit = { _, _, _ -> },
 ) {
     val telemetry = rememberAppTelemetry()
@@ -346,9 +352,43 @@ fun StackShiftAppHost(
         },
     )
 
-    val gameViewModelState =
-        remember { mutableStateOf(createGameViewModel(GameSessionStorage.load())) }
+    fun isUsableSavedSession(
+        state: GameState,
+        slot: GameSessionSlot,
+    ): Boolean {
+        if (state.config.columns <= 0 || state.config.rows <= 0) return false
+        if (slot == GameSessionSlot.DailyChallenge && state.activeChallenge == null) return false
+        if (state.status != GameStatus.Running) return true
+        return when (state.gameplayStyle) {
+            GameplayStyle.BlockWise -> state.trayPieces.isNotEmpty()
+            GameplayStyle.StackShift -> state.activePiece != null
+        }
+    }
+
+    fun loadSavedSession(slot: GameSessionSlot): GameState? {
+        val savedState = GameSessionStorage.load(slot) ?: return null
+        if (savedState.gameplayStyle != gameplayStyle || !isUsableSavedSession(savedState, slot)) {
+            GameSessionStorage.clear(slot)
+            return null
+        }
+        return savedState
+    }
+
+    val gameViewModelState = remember { mutableStateOf(createGameViewModel(initialState = null)) }
     var gameViewModel by gameViewModelState
+
+    fun restoreOrRestartSession(
+        slot: GameSessionSlot,
+        fallback: () -> Unit,
+    ) {
+        persistActiveSession.value = true
+        val savedState = loadSavedSession(slot)
+        if (savedState != null) {
+            gameViewModel.replaceState(savedState)
+        } else {
+            fallback()
+        }
+    }
 
     val currentRoute = routeStack.lastOrNull() ?: AppRoute.Home
     val canNavigateBack = routeStack.size > 1
@@ -373,7 +413,7 @@ fun StackShiftAppHost(
         if (leavingRoute == AppRoute.InteractiveOnboarding) {
             persistActiveSession.value = true
             pendingSessionState = null
-            gameViewModel = createGameViewModel(GameSessionStorage.load())
+            gameViewModel = createGameViewModel(loadSavedSession(GameSessionSlot.Classic))
         }
     }
 
@@ -394,45 +434,56 @@ fun StackShiftAppHost(
     fun prepareInteractiveOnboarding() {
         persistActiveSession.value = false
         pendingSessionState = null
-        gameViewModel = createGameViewModel(FirstRunGameOnboardingStateFactory.initialState())
+        gameViewModel = createGameViewModel(FirstRunGameOnboardingStateFactory.initialState(gameplayStyle))
     }
 
-    fun startPlayFlow(mode: GameMode = GameMode.Classic) {
-        if (mode == GameMode.Classic && !settings.hasShownInteractiveOnboarding) {
+    fun startPlayFlow(
+        mode: GameMode = GameMode.Classic,
+    ) {
+        val sessionSlot = sessionSlotFor(mode = mode)
+        if (mode == GameMode.Classic && !settings.hasSeenTutorial) {
+            navigateTo(AppRoute.Tutorial)
+        } else if (gameplayStyle == GameplayStyle.StackShift && mode == GameMode.Classic && !settings.hasShownInteractiveOnboarding) {
             prepareInteractiveOnboarding()
             navigateTo(AppRoute.InteractiveOnboarding)
         } else {
-            persistActiveSession.value = true
-            gameViewModel.restart(mode = mode)
+            restoreOrRestartSession(slot = sessionSlot) {
+                gameViewModel.restart(mode = mode, gameplayStyle = gameplayStyle)
+            }
             navigateTo(AppRoute.Game)
         }
     }
 
-    fun openInteractiveOnboarding() {
-        prepareInteractiveOnboarding()
-        navigateTo(AppRoute.InteractiveOnboarding)
-    }
 
     fun completeInteractiveOnboarding(finalState: GameState, returnHome: Boolean) {
         persistActiveSession.value = true
-        pendingSessionState = finalState
-        GameSessionStorage.save(finalState)
         if (!settings.hasShownInteractiveOnboarding) {
             persistSettings(settings.copy(hasShownInteractiveOnboarding = true))
         }
         if (returnHome) {
             navigateHome()
         } else {
+            telemetry.logUserAction(TelemetryActionNames.StartGameFromHome)
+            restoreOrRestartSession(slot = GameSessionSlot.Classic) {
+                gameViewModel.restart(mode = GameMode.Classic, gameplayStyle = gameplayStyle)
+            }
             replaceTop(AppRoute.Game)
         }
     }
 
+    var isResetReady by remember(initialBootstrapResult) {
+        mutableStateOf(initialBootstrapResult.settings.isHighScoresClearedOnce)
+    }
+
     LaunchedEffect(initialBootstrapResult, telemetry) {
-        if (!settings.isHighScoresClearedOnce) {
-            HighScoreStorage.save(0, GameMode.Classic)
-            HighScoreStorage.save(0, GameMode.TimeAttack)
+        if (!isResetReady) {
+            GameplayStyle.entries.forEach { gs ->
+                HighScoreStorage.save(0, GameMode.Classic, gs)
+                HighScoreStorage.save(0, GameMode.TimeAttack, gs)
+            }
             GameSessionStorage.clear()
             persistSettings(settings.copy(isHighScoresClearedOnce = true))
+            isResetReady = true
         }
 
         logLanguageBootstrapDecision(
@@ -441,7 +492,7 @@ fun StackShiftAppHost(
             telemetry = telemetry,
         )
         if (initialBootstrapResult.shouldPersist) {
-            AppSettingsStorage.save(initialBootstrapResult.settings)
+            AppSettingsStorage.save(settings)
         }
     }
     LaunchedEffect(persistActiveSession.value, pendingSessionState) {
@@ -449,12 +500,14 @@ fun StackShiftAppHost(
         if (!persistActiveSession.value) return@LaunchedEffect
         delay(350.milliseconds)
         if (persistActiveSession.value && (pendingSessionState == state)) {
-            GameSessionStorage.save(state)
+            GameSessionStorage.save(state.sessionSlot(), state)
         }
     }
     androidx.compose.runtime.DisposableEffect(gameViewModel) {
         onDispose(gameViewModel::dispose)
     }
+
+    if (!isResetReady) return
 
     beforeRoot(settings, canNavigateBack, ::requestBackNavigation)
 
@@ -462,9 +515,8 @@ fun StackShiftAppHost(
         settings = settings,
         telemetry = telemetry,
         gameViewModel = gameViewModel,
-        currentRoute = currentRoute,
-        classicHighScore = HighScoreStorage.load(GameMode.Classic),
-        timeAttackHighScore = HighScoreStorage.load(GameMode.TimeAttack),
+        classicHighScore = HighScoreStorage.load(GameMode.Classic, gameplayStyle),
+        timeAttackHighScore = HighScoreStorage.load(GameMode.TimeAttack, gameplayStyle),
         rewardFeedback = rewardFeedback,
         onRewardFeedbackDismiss = { rewardFeedback = rewardFeedback.copy(visible = false) },
         onPlayRequested = {
@@ -472,14 +524,33 @@ fun StackShiftAppHost(
             startPlayFlow(GameMode.Classic)
         },
         onTimeAttackRequested = {
-            telemetry.logUserAction("start_time_attack_from_home")
+            telemetry.logUserAction(TelemetryActionNames.StartTimeAttackFromHome)
             startPlayFlow(GameMode.TimeAttack)
         },
-        onNavigateToInteractiveOnboarding = {
-            telemetry.logUserAction(TelemetryActionNames.OpenInteractiveOnboarding)
-            openInteractiveOnboarding()
-        },
         onNavigateToTheme = { navigateTo(AppRoute.Settings) },
+        onPlayChallengeRequested = { challenge ->
+            restoreOrRestartSession(slot = GameSessionSlot.DailyChallenge) {
+                gameViewModel.restart(
+                    config = GameConfig(),
+                    challenge = challenge,
+                    mode = GameMode.Classic,
+                    gameplayStyle = gameplayStyle,
+                )
+            }
+            val restoredChallenge = gameViewModel.snapshotState().activeChallenge
+            val isMatchingChallenge = restoredChallenge?.let {
+                it.year == challenge.year && it.month == challenge.month && it.day == challenge.day
+            } == true
+            if (!isMatchingChallenge) {
+                gameViewModel.restart(
+                    config = GameConfig(),
+                    challenge = challenge,
+                    mode = GameMode.Classic,
+                    gameplayStyle = gameplayStyle,
+                )
+            }
+            navigateTo(AppRoute.Game)
+        },
         onNavigateToLanguage = { navigateTo(AppRoute.Language) },
         onNavigateToTutorial = { navigateTo(AppRoute.Tutorial) },
         onNavigateToChallenges = { navigateTo(AppRoute.DailyChallenges) },
@@ -518,9 +589,17 @@ fun StackShiftAppHost(
             if (!settings.hasSeenTutorial) {
                 persistSettings(settings.copy(hasSeenTutorial = true))
             }
-            telemetry.logUserAction(TelemetryActionNames.OpenInteractiveOnboarding)
-            prepareInteractiveOnboarding()
-            replaceTop(AppRoute.InteractiveOnboarding)
+            if (gameplayStyle == GameplayStyle.StackShift) {
+                telemetry.logUserAction(TelemetryActionNames.OpenInteractiveOnboarding)
+                prepareInteractiveOnboarding()
+                replaceTop(AppRoute.InteractiveOnboarding)
+            } else {
+                telemetry.logUserAction(TelemetryActionNames.StartGameFromHome)
+                restoreOrRestartSession(slot = GameSessionSlot.Classic) {
+                    gameViewModel.restart(mode = GameMode.Classic, gameplayStyle = gameplayStyle)
+                }
+                replaceTop(AppRoute.Game)
+            }
         },
         onInteractiveOnboardingFinished = { finalState ->
             completeInteractiveOnboarding(finalState = finalState, returnHome = false)
@@ -528,6 +607,8 @@ fun StackShiftAppHost(
         onInteractiveOnboardingReturnHome = { finalState ->
             completeInteractiveOnboarding(finalState = finalState, returnHome = true)
         },
+        currentRoute = currentRoute,
+        gameplayStyle = gameplayStyle,
         showLeaveSessionDialog = showLeaveSessionDialog,
         onDismissLeaveSessionDialog = { showLeaveSessionDialog = false },
         onConfirmLeaveSessionDialog = ::navigateBack,
@@ -561,10 +642,10 @@ fun LeaveSessionConfirmDialog(
 ) {
     ThemedConfirmDialog(
         onDismissRequest = onDismissRequest,
-        title = stringResource(Res.string.leave_session_confirm_title),
-        message = stringResource(Res.string.leave_session_confirm_body),
-        confirmLabel = stringResource(Res.string.leave_session_confirm),
-        dismissLabel = stringResource(Res.string.cancel),
+        title = appStringResource(Res.string.leave_session_confirm_title),
+        message = appStringResource(Res.string.leave_session_confirm_body),
+        confirmLabel = appStringResource(Res.string.leave_session_confirm),
+        dismissLabel = appStringResource(Res.string.cancel),
         onConfirm = onConfirm,
         icon = Icons.AutoMirrored.Filled.ArrowBack,
         dismissButtonIcon = Icons.Filled.Close,
