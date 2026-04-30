@@ -7,14 +7,14 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-class FirstRunGameOnboardingStateFactoryTest {
+class StackShiftGameOnboardingStateFactoryTest {
     private val logic = GameLogic.create()
-    private val onboardingStages = FirstRunGameOnboardingStateFactory.stages
+    private val onboardingStages = StackShiftGameOnboardingStateFactory.stages
 
     @Test
     fun everyStageUsesTenBySixBoardConfig() {
         onboardingStages.forEach { stage ->
-            val config = FirstRunGameOnboardingStateFactory.scene(stage).gameState.config
+            val config = StackShiftGameOnboardingStateFactory.scene(stage).gameState.config
             assertEquals(10, config.columns, "Stage $stage should use 10 columns during interactive onboarding")
             assertEquals(6, config.rows, "Stage $stage should use 6 rows during interactive onboarding")
         }
@@ -23,7 +23,7 @@ class FirstRunGameOnboardingStateFactoryTest {
     @Test
     fun everyStageExposesValidGuidance() {
         onboardingStages.forEach { stage ->
-            val scene = FirstRunGameOnboardingStateFactory.scene(stage)
+            val scene = StackShiftGameOnboardingStateFactory.scene(stage)
             val candidateColumns = when {
                 scene.acceptedColumns.isNotEmpty() -> scene.acceptedColumns
                 scene.guideColumn != null -> setOf(scene.guideColumn)
@@ -48,7 +48,7 @@ class FirstRunGameOnboardingStateFactoryTest {
     @Test
     fun everyStageCanBeCompletedWithAGuidedDrop() {
         onboardingStages.forEach { stage ->
-            val scene = FirstRunGameOnboardingStateFactory.scene(stage)
+            val scene = StackShiftGameOnboardingStateFactory.scene(stage)
             val placement = guidedDrop(scene)
             assertTrue(
                 GameEvent.PlacementAccepted in placement.events,
@@ -63,9 +63,9 @@ class FirstRunGameOnboardingStateFactoryTest {
         assertTrue(onboardingStages.size >= 3, "Onboarding should define at least three stages")
         assertTrue(
             onboardingStages.take(3) == listOf(
-                FirstRunOnboardingStage.DragAndLaunch,
-                FirstRunOnboardingStage.LineClear,
-                FirstRunOnboardingStage.RowClearer,
+                StackShiftOnboardingStage.DragAndLaunch,
+                StackShiftOnboardingStage.LineClear,
+                StackShiftOnboardingStage.RowClearer,
             ),
             "The guided flow should show a normal line clear before the row clearer example.",
         )
@@ -73,7 +73,7 @@ class FirstRunGameOnboardingStateFactoryTest {
 
     @Test
     fun normalLineClearStageTriggersARegularRowClear() {
-        val scene = FirstRunGameOnboardingStateFactory.scene(FirstRunOnboardingStage.LineClear)
+        val scene = StackShiftGameOnboardingStateFactory.scene(StackShiftOnboardingStage.LineClear)
         val placement = guidedDrop(scene)
 
         assertTrue(GameEvent.LineClear in placement.events, "Line clear stage should trigger a standard line clear")
@@ -87,7 +87,7 @@ class FirstRunGameOnboardingStateFactoryTest {
 
     @Test
     fun rowClearerGuidedDropStillDemonstratesALineClear() {
-        val scene = FirstRunGameOnboardingStateFactory.scene(FirstRunOnboardingStage.RowClearer)
+        val scene = StackShiftGameOnboardingStateFactory.scene(StackShiftOnboardingStage.RowClearer)
         val placement = guidedDrop(scene)
 
         assertTrue(GameEvent.SpecialTriggered in placement.events, "Row clearer stage should demonstrate a triggered special piece")
@@ -99,7 +99,7 @@ class FirstRunGameOnboardingStateFactoryTest {
 
     @Test
     fun columnClearerStageTriggersAColumnClear() {
-        val scene = FirstRunGameOnboardingStateFactory.scene(FirstRunOnboardingStage.ColumnClearer)
+        val scene = StackShiftGameOnboardingStateFactory.scene(StackShiftOnboardingStage.ColumnClearer)
         val placement = guidedDrop(scene)
 
         assertTrue(GameEvent.SpecialTriggered in placement.events, "Column clear stage should demonstrate a triggered special piece")
@@ -111,7 +111,7 @@ class FirstRunGameOnboardingStateFactoryTest {
 
     @Test
     fun heavyStageReshapesTheBoardAfterTriggeringTheHeavySpecial() {
-        val scene = FirstRunGameOnboardingStateFactory.scene(FirstRunOnboardingStage.Heavy)
+        val scene = StackShiftGameOnboardingStateFactory.scene(StackShiftOnboardingStage.Heavy)
         val placement = guidedDrop(scene)
 
         assertTrue(GameEvent.SpecialTriggered in placement.events, "Heavy stage should demonstrate a triggered heavy piece")
@@ -123,14 +123,14 @@ class FirstRunGameOnboardingStateFactoryTest {
 
     @Test
     fun cleanGameStateStartsWithEmptyBoardAndZeroProgress() {
-        val state = FirstRunGameOnboardingStateFactory.cleanGameState()
+        val state = StackShiftGameOnboardingStateFactory.cleanGameState()
 
         assertTrue((0 until state.config.columns).all(state.board::isColumnEmpty), "Clean onboarding handoff should start with an empty board")
         assertTrue(state.score == 0, "Clean onboarding handoff should reset the score")
         assertTrue(state.linesCleared == 0, "Clean onboarding handoff should reset cleared lines")
     }
 
-    private fun guidedDrop(scene: FirstRunOnboardingScene) =
+    private fun guidedDrop(scene: StackShiftOnboardingScene) =
         logic.placePiece(scene.gameState, scene.guideColumn ?: scene.acceptedColumns.first()).let { armedPlacement ->
             assertTrue(
                 GameEvent.SoftLockStarted in armedPlacement.events || GameEvent.SoftLockAdjusted in armedPlacement.events,

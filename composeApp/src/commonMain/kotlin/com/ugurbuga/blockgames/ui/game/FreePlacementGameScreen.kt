@@ -38,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -47,6 +48,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import blockgames.composeapp.generated.resources.Res
+import blockgames.composeapp.generated.resources.time_remaining
 import com.ugurbuga.blockgames.ads.GameAdController
 import com.ugurbuga.blockgames.ads.NoOpGameAdController
 import com.ugurbuga.blockgames.game.model.GameConfig
@@ -57,6 +60,8 @@ import com.ugurbuga.blockgames.game.model.GridPoint
 import com.ugurbuga.blockgames.game.model.Piece
 import com.ugurbuga.blockgames.game.model.PlacementPreview
 import com.ugurbuga.blockgames.game.model.gameText
+import com.ugurbuga.blockgames.settings.BlockWiseOnboardingScene
+import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStage
 import com.ugurbuga.blockgames.telemetry.AppTelemetry
 import com.ugurbuga.blockgames.telemetry.NoOpAppTelemetry
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
@@ -64,8 +69,6 @@ import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
 import com.ugurbuga.blockgames.ui.theme.appBackgroundBrush
 import com.ugurbuga.blockgames.ui.theme.blockGamesSurfaceShadow
 import org.jetbrains.compose.resources.stringResource
-import blockgames.composeapp.generated.resources.Res
-import blockgames.composeapp.generated.resources.time_remaining
 
 private const val FreePlacementDragLiftPx = 400f
 private val FreePlacementTrayCardHeight = 104.dp
@@ -86,6 +89,13 @@ fun FreePlacementGameScreen(
     showNewHighScoreMessage: Boolean,
     adController: GameAdController = NoOpGameAdController,
     telemetry: AppTelemetry = NoOpAppTelemetry,
+    interactiveOnboardingScene: BlockWiseOnboardingScene? = null,
+    interactiveOnboardingCurrentStep: Int = 0,
+    interactiveOnboardingTotalSteps: Int = 0,
+    interactiveOnboardingAwaitingCommit: Boolean = false,
+    interactiveOnboardingCompletionDialogVisible: Boolean = false,
+    onInteractiveOnboardingStartGame: () -> Unit = {},
+    onInteractiveOnboardingReturnHome: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val currentGameState by rememberUpdatedState(gameState)
@@ -97,12 +107,15 @@ fun FreePlacementGameScreen(
     val uiColors = BlockGamesThemeTokens.uiColors
     var hostRectInRoot by remember { mutableStateOf(Rect.Zero) }
     var boardRectInRoot by remember { mutableStateOf(Rect.Zero) }
+    var trayRectInRoot by remember { mutableStateOf(Rect.Zero) }
     val trayPieceRectsInRoot = remember { mutableStateMapOf<Long, Rect>() }
     var draggedPieceId by remember { mutableStateOf<Long?>(null) }
     var dragPointerInHost by remember { mutableStateOf<Offset?>(null) }
     var showRestartDialog by remember { mutableStateOf(false) }
     var rewardedReviveLoading by remember { mutableStateOf(false) }
     val gameOverDialogRevealProgress = remember { Animatable(0f) }
+
+    val interactiveOnboardingEnabled = interactiveOnboardingScene != null
 
     LaunchedEffect(gameState.status) {
         if (gameState.status == GameStatus.GameOver) {
@@ -186,6 +199,36 @@ fun FreePlacementGameScreen(
         }
     }
 
+    val hasDraggedAwayFromSpawn by remember(dragPointerInHost) {
+        derivedStateOf {
+            dragPointerInHost != null
+        }
+    }
+
+    val interactiveOnboardingTargetAligned by remember(
+        interactiveOnboardingScene,
+        placementPreview,
+        draggedPieceId,
+    ) {
+        derivedStateOf {
+            interactiveOnboardingScene != null &&
+                    (interactiveOnboardingScene.stage != BlockWiseOnboardingStage.DragToBoard) &&
+                    (draggedPieceId != null) &&
+                    (placementPreview != null)
+        }
+    }
+
+    val resolvedInteractiveOnboardingUi = interactiveOnboardingScene?.let { scene ->
+        BlockWiseInteractiveGameOnboardingUi(
+            scene = scene,
+            currentStep = interactiveOnboardingCurrentStep,
+            totalSteps = interactiveOnboardingTotalSteps,
+            hasDraggedAwayFromSpawn = hasDraggedAwayFromSpawn,
+            isTargetAligned = interactiveOnboardingTargetAligned,
+            isAwaitingPlacementCommit = interactiveOnboardingAwaitingCommit,
+        )
+    }
+
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
@@ -202,17 +245,27 @@ fun FreePlacementGameScreen(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                MinimalTopBar(
-                    gameState = gameState,
-                    scoreHighlightStrengthProvider = { if (showNewHighScoreMessage) 1f else 0f },
-                    scoreHighlightScaleProvider = { if (showNewHighScoreMessage) 1.04f else 1f },
-                    remainingTimeLabel = stringResource(Res.string.time_remaining),
-                    onBack = onBack,
-                    onRestart = { showRestartDialog = true },
-                    stylePulse = 0f,
-                )
+                if (!interactiveOnboardingEnabled) {
+                    MinimalTopBar(
+                        gameState = gameState,
+                        scoreHighlightStrengthProvider = { if (showNewHighScoreMessage) 1f else 0f },
+                        scoreHighlightScaleProvider = { if (showNewHighScoreMessage) 1.04f else 1f },
+                        remainingTimeLabel = stringResource(Res.string.time_remaining),
+                        onBack = onBack,
+                        onRestart = { showRestartDialog = true },
+                        stylePulse = 0f,
+                    )
 
-                StatusCard(text = resolveGameText(gameState.message))
+                    StatusCard(text = resolveGameText(gameState.message))
+                } else {
+                    resolvedInteractiveOnboardingUi?.let { onboardingUi ->
+                        BlockWiseInteractiveOnboardingInfoCard(
+                            ui = onboardingUi,
+                            onBack = onBack,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
 
                 BoxWithConstraints(
                     modifier = Modifier
@@ -220,7 +273,8 @@ fun FreePlacementGameScreen(
                         .weight(1f),
                     contentAlignment = Alignment.Center,
                 ) {
-                    val boardAspectRatio = gameState.config.columns.toFloat() / gameState.config.rows.toFloat()
+                    val boardAspectRatio =
+                        gameState.config.columns.toFloat() / gameState.config.rows.toFloat()
                     val boardWidth = minOf(maxWidth, maxHeight * boardAspectRatio)
                     val boardHeight = boardWidth / boardAspectRatio
                     Box(
@@ -250,6 +304,7 @@ fun FreePlacementGameScreen(
                     challenge = gameState.activeChallenge,
                     activeDragPieceId = draggedPieceId,
                     onPieceRectChanged = { pieceId, rect -> trayPieceRectsInRoot[pieceId] = rect },
+                    onPositioned = { trayRectInRoot = it },
                     onStartDrag = { piece, dragStartOffset ->
                         val rect = trayPieceRectsInRoot[piece.id] ?: return@TrayDock
                         draggedPieceId = piece.id
@@ -278,6 +333,8 @@ fun FreePlacementGameScreen(
                     },
                     pieceCardHeight = trayCardHeight,
                     pieceCellSize = trayPieceCellSize,
+                    highlightDock = interactiveOnboardingEnabled && resolvedInteractiveOnboardingUi?.scene?.stage == BlockWiseOnboardingStage.DragToBoard,
+                    highlightColor = if (interactiveOnboardingEnabled) BlockGamesThemeTokens.uiColors.success else null,
                 )
             }
 
@@ -298,7 +355,23 @@ fun FreePlacementGameScreen(
                         ),
                 )
             }
+
+            resolvedInteractiveOnboardingUi?.let { onboardingUi ->
+                BlockWiseOnboardingTargetOverlay(
+                    ui = onboardingUi,
+                    boardRect = boardRect,
+                    trayRect = trayRectInRoot.toLocalRect(hostRectInRoot),
+                    cellSizePx = cellSizePx,
+                )
+            }
         }
+    }
+
+    if (interactiveOnboardingCompletionDialogVisible) {
+        InteractiveOnboardingCompletionDialog(
+            onStartGame = onInteractiveOnboardingStartGame,
+            onReturnHome = onInteractiveOnboardingReturnHome,
+        )
     }
 
     if (showRestartDialog) {
@@ -372,22 +445,35 @@ private fun TrayDock(
     challenge: com.ugurbuga.blockgames.game.model.DailyChallenge?,
     activeDragPieceId: Long?,
     onPieceRectChanged: (Long, Rect) -> Unit,
+    onPositioned: (Rect) -> Unit = {},
     onStartDrag: (Piece, Offset) -> Unit,
     onDrag: (Offset) -> Unit,
     onEndDrag: () -> Unit,
     onCancelDrag: () -> Unit,
     pieceCardHeight: androidx.compose.ui.unit.Dp,
     pieceCellSize: androidx.compose.ui.unit.Dp,
+    highlightDock: Boolean = false,
+    highlightColor: Color? = null,
 ) {
     val uiColors = BlockGamesThemeTokens.uiColors
+    val resolvedHighlightColor = highlightColor ?: uiColors.actionButton
     Card(
         shape = RoundedCornerShape(GameUiShapeTokens.dockCorner),
         colors = CardDefaults.cardColors(containerColor = uiColors.panel.copy(alpha = 0.92f)),
-        border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.72f)),
-        modifier = Modifier.blockGamesSurfaceShadow(
-            shape = RoundedCornerShape(GameUiShapeTokens.dockCorner),
-            elevation = 10.dp,
+        border = BorderStroke(
+            width = if (highlightDock) 2.dp else 1.dp,
+            color = if (highlightDock) {
+                resolvedHighlightColor.copy(alpha = 0.92f)
+            } else {
+                uiColors.panelStroke.copy(alpha = 0.72f)
+            },
         ),
+        modifier = Modifier
+            .blockGamesSurfaceShadow(
+                shape = RoundedCornerShape(GameUiShapeTokens.dockCorner),
+                elevation = 10.dp,
+            )
+            .onGloballyPositioned { onPositioned(it.boundsInRoot()) },
     ) {
         Column(
             modifier = Modifier
@@ -395,9 +481,13 @@ private fun TrayDock(
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            uiColors.panelHighlight.copy(alpha = 0.16f),
+                            if (highlightDock) {
+                                resolvedHighlightColor.copy(alpha = 0.16f)
+                            } else {
+                                uiColors.panelHighlight.copy(alpha = 0.16f)
+                            },
                             uiColors.launchGlow.copy(alpha = 0.08f),
-                            androidx.compose.ui.graphics.Color.Transparent,
+                            Color.Transparent,
                         ),
                     ),
                 )
@@ -653,6 +743,3 @@ private data class FreePlacementPreviewCandidate(
     val overlapArea: Float,
     val proximityScore: Float,
 )
-
-
-

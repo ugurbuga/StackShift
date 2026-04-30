@@ -12,7 +12,7 @@ import com.ugurbuga.blockgames.platform.feedback.GameHaptics
 import com.ugurbuga.blockgames.platform.feedback.NoOpGameHaptics
 import com.ugurbuga.blockgames.platform.feedback.NoOpSoundEffectPlayer
 import com.ugurbuga.blockgames.platform.feedback.SoundEffectPlayer
-import com.ugurbuga.blockgames.settings.FirstRunOnboardingScene
+import com.ugurbuga.blockgames.settings.StackShiftOnboardingScene
 import com.ugurbuga.blockgames.telemetry.AppTelemetry
 import com.ugurbuga.blockgames.telemetry.NoOpAppTelemetry
 
@@ -37,7 +37,7 @@ fun StackShiftGameScreen(
     showLaunchOverlayInitially: Boolean = false,
     onLaunchOverlayFinished: () -> Unit = {},
     showNewHighScoreMessage: Boolean = false,
-    interactiveOnboardingScene: FirstRunOnboardingScene? = null,
+    interactiveOnboardingScene: StackShiftOnboardingScene? = null,
     interactiveOnboardingCurrentStep: Int = 0,
     interactiveOnboardingTotalSteps: Int = 0,
     interactiveOnboardingAwaitingCommit: Boolean = false,

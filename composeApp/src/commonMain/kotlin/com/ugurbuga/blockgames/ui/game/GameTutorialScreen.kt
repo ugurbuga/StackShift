@@ -57,7 +57,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -80,6 +79,50 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import blockgames.composeapp.generated.resources.Res
+import blockgames.composeapp.generated.resources.block_properties_column_clearer_desc
+import blockgames.composeapp.generated.resources.block_properties_column_clearer_title
+import blockgames.composeapp.generated.resources.block_properties_ghost_desc
+import blockgames.composeapp.generated.resources.block_properties_ghost_title
+import blockgames.composeapp.generated.resources.block_properties_heavy_desc
+import blockgames.composeapp.generated.resources.block_properties_heavy_title
+import blockgames.composeapp.generated.resources.block_properties_row_clearer_desc
+import blockgames.composeapp.generated.resources.block_properties_row_clearer_title
+import blockgames.composeapp.generated.resources.game_message_special_chain_board
+import blockgames.composeapp.generated.resources.game_message_tempo_up
+import blockgames.composeapp.generated.resources.launch_drag_hint
+import blockgames.composeapp.generated.resources.launch_drag_hint_blockwise
+import blockgames.composeapp.generated.resources.piece_properties_active
+import blockgames.composeapp.generated.resources.queue_next_short
+import blockgames.composeapp.generated.resources.restart
+import blockgames.composeapp.generated.resources.settings_challenges
+import blockgames.composeapp.generated.resources.settings_language
+import blockgames.composeapp.generated.resources.settings_theme
+import blockgames.composeapp.generated.resources.settings_tutorial
+import blockgames.composeapp.generated.resources.tutorial_back
+import blockgames.composeapp.generated.resources.tutorial_finish
+import blockgames.composeapp.generated.resources.tutorial_intro_body
+import blockgames.composeapp.generated.resources.tutorial_intro_title
+import blockgames.composeapp.generated.resources.tutorial_next
+import blockgames.composeapp.generated.resources.tutorial_ready_body
+import blockgames.composeapp.generated.resources.tutorial_ready_settings_hint
+import blockgames.composeapp.generated.resources.tutorial_ready_title
+import blockgames.composeapp.generated.resources.tutorial_ready_tutorial_hint
+import blockgames.composeapp.generated.resources.tutorial_specials_body
+import blockgames.composeapp.generated.resources.tutorial_specials_title
+import blockgames.composeapp.generated.resources.tutorial_stackshift_intro_body
+import blockgames.composeapp.generated.resources.tutorial_stackshift_intro_title
+import blockgames.composeapp.generated.resources.tutorial_stackshift_ready_body
+import blockgames.composeapp.generated.resources.tutorial_stackshift_ready_settings_hint
+import blockgames.composeapp.generated.resources.tutorial_stackshift_ready_title
+import blockgames.composeapp.generated.resources.tutorial_stackshift_ready_tutorial_hint
+import blockgames.composeapp.generated.resources.tutorial_stackshift_specials_body
+import blockgames.composeapp.generated.resources.tutorial_stackshift_specials_title
+import blockgames.composeapp.generated.resources.tutorial_stackshift_systems_body
+import blockgames.composeapp.generated.resources.tutorial_stackshift_systems_title
+import blockgames.composeapp.generated.resources.tutorial_step_counter
+import blockgames.composeapp.generated.resources.tutorial_systems_body
+import blockgames.composeapp.generated.resources.tutorial_systems_title
 import com.ugurbuga.blockgames.BlockGamesTheme
 import com.ugurbuga.blockgames.ads.GameAdController
 import com.ugurbuga.blockgames.ads.NoOpGameAdController
@@ -105,7 +148,6 @@ import com.ugurbuga.blockgames.telemetry.LogScreen
 import com.ugurbuga.blockgames.telemetry.NoOpAppTelemetry
 import com.ugurbuga.blockgames.telemetry.TelemetryScreenNames
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
-import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens.uiColors
 import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
 import com.ugurbuga.blockgames.ui.theme.appBackgroundBrush
 import com.ugurbuga.blockgames.ui.theme.blockGamesSurfaceShadow
@@ -114,53 +156,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
-import blockgames.composeapp.generated.resources.Res
-import blockgames.composeapp.generated.resources.block_properties_column_clearer_desc
-import blockgames.composeapp.generated.resources.block_properties_column_clearer_title
-import blockgames.composeapp.generated.resources.block_properties_ghost_desc
-import blockgames.composeapp.generated.resources.block_properties_ghost_title
-import blockgames.composeapp.generated.resources.block_properties_heavy_desc
-import blockgames.composeapp.generated.resources.block_properties_heavy_title
-import blockgames.composeapp.generated.resources.block_properties_row_clearer_desc
-import blockgames.composeapp.generated.resources.block_properties_row_clearer_title
-import blockgames.composeapp.generated.resources.game_message_special_chain_board
-import blockgames.composeapp.generated.resources.game_message_tempo_up
-import blockgames.composeapp.generated.resources.interactive_onboarding_drag_title
-import blockgames.composeapp.generated.resources.interactive_onboarding_drag_to_board
-import blockgames.composeapp.generated.resources.launch_drag_hint
-import blockgames.composeapp.generated.resources.launch_drag_hint_blockwise
-import blockgames.composeapp.generated.resources.piece_properties_active
-import blockgames.composeapp.generated.resources.queue_next_short
-import blockgames.composeapp.generated.resources.restart
-import blockgames.composeapp.generated.resources.settings_challenges
-import blockgames.composeapp.generated.resources.settings_language
-import blockgames.composeapp.generated.resources.settings_theme
-import blockgames.composeapp.generated.resources.settings_tutorial
-import blockgames.composeapp.generated.resources.settings_tutorial_replay
-import blockgames.composeapp.generated.resources.tutorial_back
-import blockgames.composeapp.generated.resources.tutorial_finish
-import blockgames.composeapp.generated.resources.tutorial_intro_body
-import blockgames.composeapp.generated.resources.tutorial_intro_title
-import blockgames.composeapp.generated.resources.tutorial_next
-import blockgames.composeapp.generated.resources.tutorial_ready_body
-import blockgames.composeapp.generated.resources.tutorial_ready_settings_hint
-import blockgames.composeapp.generated.resources.tutorial_ready_title
-import blockgames.composeapp.generated.resources.tutorial_ready_tutorial_hint
-import blockgames.composeapp.generated.resources.tutorial_specials_body
-import blockgames.composeapp.generated.resources.tutorial_specials_title
-import blockgames.composeapp.generated.resources.tutorial_stackshift_intro_body
-import blockgames.composeapp.generated.resources.tutorial_stackshift_intro_title
-import blockgames.composeapp.generated.resources.tutorial_stackshift_ready_body
-import blockgames.composeapp.generated.resources.tutorial_stackshift_ready_settings_hint
-import blockgames.composeapp.generated.resources.tutorial_stackshift_ready_title
-import blockgames.composeapp.generated.resources.tutorial_stackshift_ready_tutorial_hint
-import blockgames.composeapp.generated.resources.tutorial_stackshift_specials_body
-import blockgames.composeapp.generated.resources.tutorial_stackshift_specials_title
-import blockgames.composeapp.generated.resources.tutorial_stackshift_systems_body
-import blockgames.composeapp.generated.resources.tutorial_stackshift_systems_title
-import blockgames.composeapp.generated.resources.tutorial_step_counter
-import blockgames.composeapp.generated.resources.tutorial_systems_body
-import blockgames.composeapp.generated.resources.tutorial_systems_title
 
 private val TutorialMiniDockHeight = 88.dp
 private const val TutorialIntroColumns = 10
@@ -250,7 +245,6 @@ private enum class TutorialPage {
     BlockWiseIntro,
     BlockWiseSystems,
     BlockWiseSpecials,
-    BlockWisePractice,
     BlockWiseReady,
 }
 
@@ -554,7 +548,6 @@ fun GameTutorialScreen(
                                 TutorialPage.BlockWiseIntro -> TutorialBlockWiseIntroStep()
                                 TutorialPage.BlockWiseSystems -> TutorialBlockWiseSystemsStep()
                                 TutorialPage.BlockWiseSpecials -> TutorialBlockWiseSpecialsStep()
-                                TutorialPage.BlockWisePractice -> TutorialBlockWisePracticeStep()
                                 TutorialPage.BlockWiseReady -> TutorialBlockWiseReadyStep()
                             }
                         }
@@ -591,11 +584,7 @@ fun GameTutorialScreen(
                         icon = if (isLastStep) Icons.Filled.PlayArrow else Icons.AutoMirrored.Filled.ArrowForward,
                         onClick = {
                             if (isLastStep) {
-                                if (gameplayStyle == GameplayStyle.BlockWise) {
-                                    showBlockWiseFinishDialog = true
-                                } else {
-                                    onFinish()
-                                }
+                                onFinish()
                             } else {
                                 coroutineScope.launch {
                                     pagerState.animateScrollToPage(currentStep + 1)
@@ -918,17 +907,6 @@ private fun TutorialBlockWiseSpecialsStep() {
 }
 
 @Composable
-private fun TutorialBlockWisePracticeStep() {
-    TutorialSection(
-        title = stringResource(Res.string.settings_tutorial_replay),
-        body = stringResource(Res.string.interactive_onboarding_drag_title),
-    ) {
-        TutorialBlockWisePracticeDemo()
-        TutorialHintCard(text = stringResource(Res.string.interactive_onboarding_drag_to_board))
-    }
-}
-
-@Composable
 private fun TutorialBlockWiseReadyStep() {
     TutorialSection(
         title = stringResource(Res.string.tutorial_ready_title),
@@ -936,177 +914,6 @@ private fun TutorialBlockWiseReadyStep() {
     ) {
         TutorialHintCard(text = stringResource(Res.string.tutorial_ready_tutorial_hint))
         TutorialHintCard(text = stringResource(Res.string.tutorial_ready_settings_hint))
-    }
-}
-
-@Composable
-private fun TutorialBlockWisePracticeDemo() {
-    val settings = LocalAppSettings.current
-    val density = LocalDensity.current
-    val boardStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
-    val gameLogic = remember { GameLogic.create() }
-
-    var gameState by remember {
-        mutableStateOf(
-            gameLogic.newGame(
-                config = GameConfig(columns = TutorialCompactColumns, rows = TutorialCompactRows),
-                gameplayStyle = GameplayStyle.BlockWise,
-            ).copy(
-                activePiece = TutorialBlockWisePrimaryPiece.copy(id = 1),
-                nextQueue = listOf(
-                    TutorialBlockWiseSecondaryPiece.copy(id = 2),
-                    TutorialBlockWiseTertiaryPiece.copy(id = 3),
-                ),
-                message = gameText(GameTextKey.LaunchDragHintBlockWise),
-            )
-        )
-    }
-
-    var hostRectInRoot by remember { mutableStateOf(Rect.Zero) }
-    var boardRectInRoot by remember { mutableStateOf(Rect.Zero) }
-    val trayPieceRectsInRoot = remember { mutableStateMapOf<Long, Rect>() }
-    var draggedPieceId by remember { mutableStateOf<Long?>(null) }
-    var dragPointerInHost by remember { mutableStateOf<Offset?>(null) }
-
-    val draggedPiece = remember(draggedPieceId, gameState.trayPieces) {
-        gameState.trayPieces.find { it.id == draggedPieceId }
-    }
-
-    val boardRect = remember(boardRectInRoot, hostRectInRoot) {
-        boardRectInRoot.toLocalRect(hostRectInRoot)
-    }
-
-    val cellSizePx = if (boardRect != Rect.Zero) boardRect.width / gameState.config.columns else 0f
-
-    val overlayTopLeft = remember(dragPointerInHost, draggedPiece, cellSizePx) {
-        val pointer = dragPointerInHost ?: return@remember null
-        val piece = draggedPiece ?: return@remember null
-        freePlacementDragTopLeft(pointer, piece, cellSizePx, liftPx = 150f)
-    }
-
-    val placementPreview =
-        remember(draggedPieceId, draggedPiece, overlayTopLeft, boardRect, cellSizePx, gameState) {
-            if (draggedPieceId == null || draggedPiece == null || overlayTopLeft == null || boardRect == Rect.Zero || cellSizePx <= 0f) {
-                null
-            } else {
-                resolveNearestFreePlacementPreview(
-                    pieceId = draggedPieceId!!,
-                    piece = draggedPiece,
-                    overlayTopLeft = overlayTopLeft,
-                    boardRect = boardRect,
-                    cellSizePx = cellSizePx,
-                    config = gameState.config,
-                    requestPreview = { id, origin -> gameLogic.previewPlacement(gameState, id, origin) }
-                )
-            }
-        }
-
-    val impactedPreviewCells = remember(gameState, placementPreview) {
-        if (placementPreview == null) emptySet() else gameLogic.previewImpactPoints(
-            gameState,
-            placementPreview
-        )
-    }
-
-    TutorialMiniBoardShell {
-        BoxWithConstraints(
-            modifier = Modifier
-                .fillMaxWidth()
-                .onGloballyPositioned { hostRectInRoot = it.boundsInRoot() },
-        ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                BoardGrid(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(gameState.config.columns.toFloat() / gameState.config.rows.toFloat())
-                        .onGloballyPositioned { boardRectInRoot = it.boundsInRoot() },
-                    gameState = gameState,
-                    preview = placementPreview,
-                    impactedPreviewCells = impactedPreviewCells,
-                    activeColumn = placementPreview?.selectedColumn,
-                    activePiece = draggedPiece,
-                    isDragging = draggedPiece != null,
-                )
-
-                TutorialMiniBottomDock(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(TutorialMiniDockHeight),
-                    onTrayPositioned = {},
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        gameState.trayPieces.forEach { piece ->
-                            TutorialPracticeTrayPieceChip(
-                                piece = piece,
-                                hidden = draggedPieceId == piece.id,
-                                modifier = Modifier.weight(1f),
-                                onRectChanged = { trayPieceRectsInRoot[piece.id] = it },
-                                onStartDrag = { offset ->
-                                    val rect =
-                                        trayPieceRectsInRoot[piece.id] ?: return@TutorialPracticeTrayPieceChip
-                                    draggedPieceId = piece.id
-                                    dragPointerInHost = Offset(
-                                        x = rect.left + offset.x - hostRectInRoot.left,
-                                        y = rect.top + offset.y - hostRectInRoot.top,
-                                    )
-                                },
-                                onDrag = { dragAmount ->
-                                    dragPointerInHost =
-                                        (dragPointerInHost ?: Offset.Zero) + dragAmount
-                                },
-                                onEndDrag = {
-                                    val pid = draggedPieceId
-                                    val preview = placementPreview
-                                    if (pid != null && preview != null) {
-                                        val result =
-                                            gameLogic.placePiece(gameState, pid, preview.landingAnchor)
-                                        gameState = result.state
-                                        if (gameState.trayPieces.isEmpty()) {
-                                            gameState = gameState.copy(
-                                                activePiece = TutorialBlockWisePrimaryPiece.copy(id = 1),
-                                                nextQueue = listOf(
-                                                    TutorialBlockWiseSecondaryPiece.copy(id = 2),
-                                                    TutorialBlockWiseTertiaryPiece.copy(id = 3),
-                                                )
-                                            )
-                                        }
-                                    }
-                                    draggedPieceId = null
-                                    dragPointerInHost = null
-                                },
-                                onCancelDrag = {
-                                    draggedPieceId = null
-                                    dragPointerInHost = null
-                                }
-                            )
-                        }
-                        repeat((3 - gameState.trayPieces.size).coerceAtLeast(0)) {
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
-                    }
-                }
-            }
-
-            if (draggedPiece != null && overlayTopLeft != null && cellSizePx > 0f) {
-                val pieceCellDp = with(density) { cellSizePx.toDp() }
-                PieceBlocks(
-                    piece = draggedPiece,
-                    cellSize = pieceCellDp,
-                    modifier = Modifier.graphicsLayer(
-                        translationX = overlayTopLeft.x,
-                        translationY = overlayTopLeft.y,
-                        transformOrigin = TransformOrigin(0f, 0f),
-                    ),
-                )
-            }
-        }
     }
 }
 
@@ -1997,6 +1804,7 @@ private fun TutorialActionTile(
     title: String,
     modifier: Modifier = Modifier,
 ) {
+    val uiColors = BlockGamesThemeTokens.uiColors
     val settings = LocalAppSettings.current
     val blockStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
     val stylePulse = rememberBlockStylePulse(style = blockStyle)

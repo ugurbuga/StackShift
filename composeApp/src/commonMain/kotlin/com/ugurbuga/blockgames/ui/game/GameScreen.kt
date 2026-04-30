@@ -79,6 +79,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import blockgames.composeapp.generated.resources.Res
+import blockgames.composeapp.generated.resources.launch_boost_active
+import blockgames.composeapp.generated.resources.launch_drag_hint
+import blockgames.composeapp.generated.resources.launch_drag_hint_blockwise
+import blockgames.composeapp.generated.resources.launch_special_chance
+import blockgames.composeapp.generated.resources.restart_cancel
+import blockgames.composeapp.generated.resources.restart_confirm
+import blockgames.composeapp.generated.resources.restart_confirm_body
+import blockgames.composeapp.generated.resources.restart_confirm_title
+import blockgames.composeapp.generated.resources.time_remaining
 import com.ugurbuga.blockgames.BlockGamesTheme
 import com.ugurbuga.blockgames.ads.GameAdController
 import com.ugurbuga.blockgames.ads.NoOpGameAdController
@@ -115,10 +125,13 @@ import com.ugurbuga.blockgames.presentation.game.GameDispatchResult
 import com.ugurbuga.blockgames.presentation.game.GameViewModel
 import com.ugurbuga.blockgames.presentation.game.InteractionFeedback
 import com.ugurbuga.blockgames.settings.AppSettings
-import com.ugurbuga.blockgames.settings.FirstRunGameOnboardingStateFactory
-import com.ugurbuga.blockgames.settings.FirstRunOnboardingScene
-import com.ugurbuga.blockgames.settings.FirstRunOnboardingStage
+import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStage
+import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.HighScoreStorage
+import com.ugurbuga.blockgames.settings.OnboardingStage
+import com.ugurbuga.blockgames.settings.StackShiftGameOnboardingStateFactory
+import com.ugurbuga.blockgames.settings.StackShiftOnboardingScene
+import com.ugurbuga.blockgames.settings.StackShiftOnboardingStage
 import com.ugurbuga.blockgames.telemetry.AppTelemetry
 import com.ugurbuga.blockgames.telemetry.LogScreen
 import com.ugurbuga.blockgames.telemetry.NoOpAppTelemetry
@@ -133,16 +146,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
-import blockgames.composeapp.generated.resources.Res
-import blockgames.composeapp.generated.resources.launch_boost_active
-import blockgames.composeapp.generated.resources.launch_drag_hint
-import blockgames.composeapp.generated.resources.launch_drag_hint_blockwise
-import blockgames.composeapp.generated.resources.launch_special_chance
-import blockgames.composeapp.generated.resources.restart_cancel
-import blockgames.composeapp.generated.resources.restart_confirm
-import blockgames.composeapp.generated.resources.restart_confirm_body
-import blockgames.composeapp.generated.resources.restart_confirm_title
-import blockgames.composeapp.generated.resources.time_remaining
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -171,14 +174,14 @@ private const val InteractiveOnboardingClearAnimationDurationMillis = 620
 private const val InteractiveOnboardingBoardShiftDurationMillis = 360
 
 private data class InteractiveOnboardingAdvanceRequest(
-    val completedStage: FirstRunOnboardingStage,
-    val nextStage: FirstRunOnboardingStage?,
+    val completedStage: OnboardingStage,
+    val nextStage: OnboardingStage?,
 )
 
 private fun nextInteractiveOnboardingStage(
-    currentStage: FirstRunOnboardingStage,
-    stages: List<FirstRunOnboardingStage>,
-): FirstRunOnboardingStage? {
+    currentStage: OnboardingStage,
+    stages: List<OnboardingStage>,
+): OnboardingStage? {
     val currentIndex = stages.indexOf(currentStage)
     if (currentIndex < 0) return null
     return stages.getOrNull(currentIndex + 1)
@@ -250,7 +253,7 @@ fun GameOverBoardClearOverlay(
 }
 
 @Composable
-fun StackShiftGameApp(
+fun BlockGamesGameApp(
     modifier: Modifier = Modifier,
     soundPlayer: SoundEffectPlayer = NoOpSoundEffectPlayer,
     telemetry: AppTelemetry = NoOpAppTelemetry,
@@ -268,9 +271,15 @@ fun StackShiftGameApp(
     val haptics = rememberGameHaptics()
     val uiState by viewModel.uiState.collectAsState()
     val uiColors = BlockGamesThemeTokens.uiColors
-    val onboardingStages = remember { FirstRunGameOnboardingStateFactory.stages }
-    var onboardingStage by remember(interactiveOnboardingEnabled) {
-        mutableStateOf(
+    val onboardingStages: List<OnboardingStage> = remember(gameplayStyle) {
+        if (gameplayStyle == GameplayStyle.BlockWise) {
+            BlockWiseOnboardingStateFactory.stages
+        } else {
+            StackShiftGameOnboardingStateFactory.stages
+        }
+    }
+    var onboardingStage by remember(interactiveOnboardingEnabled, gameplayStyle) {
+        mutableStateOf<OnboardingStage?>(
             if (interactiveOnboardingEnabled) onboardingStages.firstOrNull() else null,
         )
     }
@@ -287,10 +296,21 @@ fun StackShiftGameApp(
         mutableStateOf<GameState?>(null)
     }
     var shouldShowLaunchOverlay by rememberSaveable { mutableStateOf(value = true) }
-    val onboardingScene = remember(interactiveOnboardingEnabled, onboardingStage) {
-        onboardingStage?.takeIf { interactiveOnboardingEnabled }
-            ?.let(FirstRunGameOnboardingStateFactory::scene)
+
+    val stackShiftOnboardingScene = remember(interactiveOnboardingEnabled, onboardingStage) {
+        if (interactiveOnboardingEnabled && onboardingStage is StackShiftOnboardingStage) {
+            StackShiftGameOnboardingStateFactory.scene(onboardingStage as StackShiftOnboardingStage)
+        } else null
     }
+
+    val blockWiseOnboardingScene = remember(interactiveOnboardingEnabled, onboardingStage) {
+        if (interactiveOnboardingEnabled && onboardingStage is BlockWiseOnboardingStage) {
+            BlockWiseOnboardingStateFactory.scene(onboardingStage as BlockWiseOnboardingStage)
+        } else null
+    }
+
+    val onboardingSceneGameState = stackShiftOnboardingScene?.gameState ?: blockWiseOnboardingScene?.gameState
+
     val displayGameState by remember(
         uiState.gameState,
         onboardingAdvanceRequest,
@@ -305,16 +325,19 @@ fun StackShiftGameApp(
         }
     }
 
-    LaunchedEffect(interactiveOnboardingEnabled, onboardingScene) {
-        if (!interactiveOnboardingEnabled || onboardingScene == null) return@LaunchedEffect
+    LaunchedEffect(interactiveOnboardingEnabled, onboardingSceneGameState) {
+        if (!interactiveOnboardingEnabled || onboardingSceneGameState == null) return@LaunchedEffect
         onboardingAwaitingCommit = false
         onboardingAdvanceRequest = null
         showOnboardingCompletionDialog = false
         pendingOnboardingCompletionState = null
-        viewModel.replaceState(onboardingScene.gameState)
+        viewModel.replaceState(onboardingSceneGameState)
+
+        val stageName = onboardingStage?.name ?: "unknown"
+
         telemetry.logUserAction(
             action = "interactive_onboarding_stage_shown",
-            parameters = mapOf("stage" to onboardingScene.stage.name),
+            parameters = mapOf("stage" to stageName),
         )
     }
 
@@ -330,16 +353,21 @@ fun StackShiftGameApp(
 
         if (onboardingAdvanceRequest != request || onboardingStage != request.completedStage) return@LaunchedEffect
 
+        val stageName = request.completedStage.name
+
         telemetry.logUserAction(
             action = "interactive_onboarding_stage_completed",
-            parameters = mapOf("stage" to request.completedStage.name),
+            parameters = mapOf("stage" to stageName),
         )
 
         if (request.nextStage != null) {
             onboardingStage = request.nextStage
         } else {
-            pendingOnboardingCompletionState =
-                FirstRunGameOnboardingStateFactory.cleanGameState(uiState.gameState.gameplayStyle)
+            pendingOnboardingCompletionState = if (gameplayStyle == GameplayStyle.BlockWise) {
+                BlockWiseOnboardingStateFactory.cleanGameState()
+            } else {
+                StackShiftGameOnboardingStateFactory.cleanGameState(uiState.gameState.gameplayStyle)
+            }
             showOnboardingCompletionDialog = true
             onboardingStage = null
         }
@@ -350,7 +378,7 @@ fun StackShiftGameApp(
 
     LaunchedEffect(
         interactiveOnboardingEnabled,
-        onboardingScene?.stage,
+        onboardingStage,
         onboardingAwaitingCommit,
         onboardingAdvanceRequest,
         uiState.gameState.softLock,
@@ -359,22 +387,23 @@ fun StackShiftGameApp(
         uiState.gameState.score,
         uiState.gameState.linesCleared,
     ) {
-        val scene = onboardingScene ?: return@LaunchedEffect
         if (!interactiveOnboardingEnabled || !onboardingAwaitingCommit || onboardingAdvanceRequest != null) {
             return@LaunchedEffect
         }
+        val sceneGameState = onboardingSceneGameState ?: return@LaunchedEffect
 
         val placementCommitted = uiState.gameState.softLock == null && (
-                uiState.gameState.board != scene.gameState.board ||
-                        uiState.gameState.activePiece?.id != scene.gameState.activePiece?.id ||
-                        uiState.gameState.score != scene.gameState.score ||
-                        uiState.gameState.linesCleared != scene.gameState.linesCleared
+                uiState.gameState.board != sceneGameState.board ||
+                        uiState.gameState.activePiece?.id != sceneGameState.activePiece?.id ||
+                        uiState.gameState.score != sceneGameState.score ||
+                        uiState.gameState.linesCleared != sceneGameState.linesCleared
                 )
         if (!placementCommitted) return@LaunchedEffect
 
+        val currentStage = onboardingStage ?: return@LaunchedEffect
         onboardingAdvanceRequest = InteractiveOnboardingAdvanceRequest(
-            completedStage = scene.stage,
-            nextStage = nextInteractiveOnboardingStage(scene.stage, onboardingStages),
+            completedStage = currentStage,
+            nextStage = nextInteractiveOnboardingStage(currentStage, onboardingStages),
         )
     }
 
@@ -430,6 +459,18 @@ fun StackShiftGameApp(
                 telemetry.logUserAction("place_piece_free")
                 val result = viewModel.placePieceResult(pieceId, origin)
                 dispatchFeedback(result.feedback, soundPlayer, haptics)
+
+                if (interactiveOnboardingEnabled && blockWiseOnboardingScene != null) {
+                    if (GameEvent.PlacementAccepted in result.events) {
+                        onboardingAdvanceRequest = InteractiveOnboardingAdvanceRequest(
+                            completedStage = blockWiseOnboardingScene.stage,
+                            nextStage = nextInteractiveOnboardingStage(
+                                blockWiseOnboardingScene.stage,
+                                onboardingStages
+                            ),
+                        )
+                    }
+                }
             },
             onRestart = {
                 telemetry.logUserAction(TelemetryActionNames.RestartGame)
@@ -451,6 +492,18 @@ fun StackShiftGameApp(
             showNewHighScoreMessage = newHighScoreReached,
             adController = adController,
             telemetry = telemetry,
+            interactiveOnboardingScene = blockWiseOnboardingScene,
+            interactiveOnboardingCurrentStep = onboardingStages.indexOf(onboardingStage)
+                .takeIf { it >= 0 }?.plus(1) ?: 0,
+            interactiveOnboardingTotalSteps = onboardingStages.size,
+            interactiveOnboardingAwaitingCommit = onboardingAwaitingCommit,
+            interactiveOnboardingCompletionDialogVisible = showOnboardingCompletionDialog,
+            onInteractiveOnboardingStartGame = {
+                pendingOnboardingCompletionState?.let(onInteractiveOnboardingFinished)
+            },
+            onInteractiveOnboardingReturnHome = {
+                pendingOnboardingCompletionState?.let(onInteractiveOnboardingReturnHome)
+            },
         )
 
         GameplayStyle.StackShift -> StackShiftGameScreen(
@@ -461,15 +514,16 @@ fun StackShiftGameApp(
             onPlacePiece = { column ->
                 telemetry.logUserAction("place_piece_stackshift")
                 viewModel.placePieceResult(column).also { result ->
-                    if (!interactiveOnboardingEnabled || onboardingScene == null) return@also
+                    val scene = stackShiftOnboardingScene
+                    if (!interactiveOnboardingEnabled || scene == null) return@also
 
                     when {
                         GameEvent.PlacementAccepted in result.events -> {
                             onboardingAwaitingCommit = false
                             onboardingAdvanceRequest = InteractiveOnboardingAdvanceRequest(
-                                completedStage = onboardingScene.stage,
+                                completedStage = scene.stage,
                                 nextStage = nextInteractiveOnboardingStage(
-                                    onboardingScene.stage,
+                                    scene.stage,
                                     onboardingStages
                                 ),
                             )
@@ -509,7 +563,7 @@ fun StackShiftGameApp(
             showLaunchOverlayInitially = shouldShowLaunchOverlay,
             onLaunchOverlayFinished = { shouldShowLaunchOverlay = false },
             showNewHighScoreMessage = newHighScoreReached,
-            interactiveOnboardingScene = onboardingScene,
+            interactiveOnboardingScene = stackShiftOnboardingScene,
             interactiveOnboardingCurrentStep = onboardingStages.indexOf(onboardingStage)
                 .takeIf { it >= 0 }?.plus(1) ?: 0,
             interactiveOnboardingTotalSteps = onboardingStages.size,
@@ -546,7 +600,7 @@ fun GameScreenWithLaunchOverlay(
     showLaunchOverlayInitially: Boolean = false,
     onLaunchOverlayFinished: () -> Unit = {},
     showNewHighScoreMessage: Boolean = false,
-    interactiveOnboardingScene: FirstRunOnboardingScene? = null,
+    interactiveOnboardingScene: StackShiftOnboardingScene? = null,
     interactiveOnboardingCurrentStep: Int = 0,
     interactiveOnboardingTotalSteps: Int = 0,
     interactiveOnboardingAwaitingCommit: Boolean = false,
@@ -661,7 +715,7 @@ fun GameScreen(
     haptics: GameHaptics,
     highestScore: Int,
     showNewHighScoreMessage: Boolean = false,
-    interactiveOnboardingScene: FirstRunOnboardingScene? = null,
+    interactiveOnboardingScene: StackShiftOnboardingScene? = null,
     interactiveOnboardingCurrentStep: Int = 0,
     interactiveOnboardingTotalSteps: Int = 0,
     interactiveOnboardingAwaitingCommit: Boolean = false,
@@ -833,7 +887,7 @@ fun GameScreen(
     ) {
         derivedStateOf {
             interactiveOnboardingScene != null &&
-                    interactiveOnboardingScene.stage != FirstRunOnboardingStage.DragAndLaunch &&
+                    interactiveOnboardingScene.stage != StackShiftOnboardingStage.DragAndLaunch &&
                     isDragging &&
                     placementPreview != null &&
                     selectedColumn != null &&
@@ -1180,7 +1234,7 @@ fun GameScreen(
                                 showNextPiece = !interactiveOnboardingEnabled,
                                 highlightColor = resolvedInteractiveOnboardingVisualState?.guideColor,
                                 highlightDock = resolvedInteractiveOnboardingUi?.let {
-                                    it.scene.stage == FirstRunOnboardingStage.DragAndLaunch && it.hasDraggedAwayFromSpawn
+                                    it.scene.stage == StackShiftOnboardingStage.DragAndLaunch && it.hasDraggedAwayFromSpawn
                                 } == true,
                                 adController = adController,
                                 onReplaceActivePiece = { type ->

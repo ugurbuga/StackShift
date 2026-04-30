@@ -15,7 +15,7 @@ import com.ugurbuga.blockgames.game.model.SpecialBlockType
 import com.ugurbuga.blockgames.game.model.gameText
 
 @Immutable
-enum class FirstRunOnboardingStage {
+enum class StackShiftOnboardingStage : OnboardingStage {
     DragAndLaunch,
     LineClear,
     ColumnClearer,
@@ -25,21 +25,21 @@ enum class FirstRunOnboardingStage {
 }
 
 @Immutable
-enum class FirstRunOnboardingTarget {
+enum class StackShiftOnboardingTarget {
     Tray,
     Board,
 }
 
 @Immutable
-data class FirstRunOnboardingScene(
-    val stage: FirstRunOnboardingStage,
+data class StackShiftOnboardingScene(
+    val stage: StackShiftOnboardingStage,
     val gameState: GameState,
-    val target: FirstRunOnboardingTarget,
+    val target: StackShiftOnboardingTarget,
     val guideColumn: Int?,
     val acceptedColumns: Set<Int>,
 )
 
-object FirstRunGameOnboardingStateFactory {
+object StackShiftGameOnboardingStateFactory {
     private val guideLogic = GameLogic.create()
     private val config = GameConfig(
         columns = 10,
@@ -48,16 +48,16 @@ object FirstRunGameOnboardingStateFactory {
         linesPerLevel = 9_999,
     )
 
-    val stages: List<FirstRunOnboardingStage> = listOf(
-        FirstRunOnboardingStage.DragAndLaunch,
-        FirstRunOnboardingStage.LineClear,
-        FirstRunOnboardingStage.RowClearer,
-        FirstRunOnboardingStage.ColumnClearer,
-        FirstRunOnboardingStage.Ghost,
-        FirstRunOnboardingStage.Heavy,
+    val stages: List<StackShiftOnboardingStage> = listOf(
+        StackShiftOnboardingStage.DragAndLaunch,
+        StackShiftOnboardingStage.LineClear,
+        StackShiftOnboardingStage.RowClearer,
+        StackShiftOnboardingStage.ColumnClearer,
+        StackShiftOnboardingStage.Ghost,
+        StackShiftOnboardingStage.Heavy,
     )
 
-    private val sceneCache: Map<FirstRunOnboardingStage, FirstRunOnboardingScene> =
+    private val sceneCache: Map<StackShiftOnboardingStage, StackShiftOnboardingScene> =
         stages.associateWith(::buildScene)
 
     fun initialState(gameplayStyle: GameplayStyle = GameplayStyle.StackShift): GameState =
@@ -66,12 +66,12 @@ object FirstRunGameOnboardingStateFactory {
     fun cleanGameState(gameplayStyle: GameplayStyle): GameState =
         guideLogic.newGame(config, gameplayStyle = gameplayStyle)
 
-    fun scene(stage: FirstRunOnboardingStage): FirstRunOnboardingScene = sceneCache.getValue(stage)
+    fun scene(stage: StackShiftOnboardingStage): StackShiftOnboardingScene = sceneCache.getValue(stage)
 
-    private fun buildScene(stage: FirstRunOnboardingStage): FirstRunOnboardingScene = when (stage) {
-        FirstRunOnboardingStage.DragAndLaunch -> FirstRunOnboardingScene(
+    private fun buildScene(stage: StackShiftOnboardingStage): StackShiftOnboardingScene = when (stage) {
+        StackShiftOnboardingStage.DragAndLaunch -> StackShiftOnboardingScene(
             stage = stage,
-            target = FirstRunOnboardingTarget.Tray,
+            target = StackShiftOnboardingTarget.Tray,
             gameState = scriptedState(
                 board = BoardMatrix.empty(columns = config.columns, rows = config.rows)
                     .fill(
@@ -113,9 +113,9 @@ object FirstRunGameOnboardingStateFactory {
             },
         )
 
-        FirstRunOnboardingStage.LineClear -> FirstRunOnboardingScene(
+        StackShiftOnboardingStage.LineClear -> StackShiftOnboardingScene(
             stage = stage,
-            target = FirstRunOnboardingTarget.Board,
+            target = StackShiftOnboardingTarget.Board,
             gameState = scriptedState(
                 board = BoardMatrix.empty(columns = config.columns, rows = config.rows)
                     .fill(
@@ -160,9 +160,9 @@ object FirstRunGameOnboardingStateFactory {
             acceptedColumns = { setOf(4) },
         )
 
-        FirstRunOnboardingStage.ColumnClearer -> FirstRunOnboardingScene(
+        StackShiftOnboardingStage.ColumnClearer -> StackShiftOnboardingScene(
             stage = stage,
-            target = FirstRunOnboardingTarget.Board,
+            target = StackShiftOnboardingTarget.Board,
             gameState = scriptedState(
                 board = BoardMatrix.empty(columns = config.columns, rows = config.rows)
                     .fill(
@@ -202,9 +202,9 @@ object FirstRunGameOnboardingStateFactory {
             acceptedColumns = emptySet(),
         ).withGuidance(preferredColumns = listOf(4, 3, 5), lockGuideColumn = true)
 
-        FirstRunOnboardingStage.RowClearer -> FirstRunOnboardingScene(
+        StackShiftOnboardingStage.RowClearer -> StackShiftOnboardingScene(
             stage = stage,
-            target = FirstRunOnboardingTarget.Board,
+            target = StackShiftOnboardingTarget.Board,
             gameState = scriptedState(
                 board = BoardMatrix.empty(columns = config.columns, rows = config.rows)
                     .fill(
@@ -239,9 +239,9 @@ object FirstRunGameOnboardingStateFactory {
             acceptedColumns = { setOf(4) },
         )
 
-        FirstRunOnboardingStage.Ghost -> FirstRunOnboardingScene(
+        StackShiftOnboardingStage.Ghost -> StackShiftOnboardingScene(
             stage = stage,
-            target = FirstRunOnboardingTarget.Board,
+            target = StackShiftOnboardingTarget.Board,
             gameState = scriptedState(
                 board = BoardMatrix.empty(columns = config.columns, rows = config.rows)
                     .fill(
@@ -277,9 +277,9 @@ object FirstRunGameOnboardingStateFactory {
             acceptedColumns = emptySet(),
         ).withGuidance(preferredColumns = listOf(4, 3, 5), lockGuideColumn = true)
 
-        FirstRunOnboardingStage.Heavy -> FirstRunOnboardingScene(
+        StackShiftOnboardingStage.Heavy -> StackShiftOnboardingScene(
             stage = stage,
-            target = FirstRunOnboardingTarget.Board,
+            target = StackShiftOnboardingTarget.Board,
             gameState = scriptedState(
                 board = BoardMatrix.empty(columns = config.columns, rows = config.rows)
                     .fill(
@@ -323,11 +323,11 @@ object FirstRunGameOnboardingStateFactory {
         ).withGuidance(preferredColumns = listOf(5, 4, 6), lockGuideColumn = true)
     }
 
-    private fun FirstRunOnboardingScene.withGuidance(
+    private fun StackShiftOnboardingScene.withGuidance(
         preferredColumns: List<Int>,
         lockGuideColumn: Boolean = false,
-        acceptedColumns: ((FirstRunOnboardingScene) -> Set<Int>)? = null,
-    ): FirstRunOnboardingScene {
+        acceptedColumns: ((StackShiftOnboardingScene) -> Set<Int>)? = null,
+    ): StackShiftOnboardingScene {
         val validColumns = validColumns(gameState).toSet()
         val candidateAcceptedColumns = acceptedColumns?.invoke(this)?.intersect(validColumns).orEmpty()
         val resolvedAcceptedColumns = when {

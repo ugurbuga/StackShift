@@ -49,11 +49,12 @@ import com.ugurbuga.blockgames.platform.rememberNotificationManager
 import com.ugurbuga.blockgames.presentation.game.GameViewModel
 import com.ugurbuga.blockgames.settings.AppSettings
 import com.ugurbuga.blockgames.settings.AppSettingsStorage
-import com.ugurbuga.blockgames.settings.FirstRunGameOnboardingStateFactory
+import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.GameSessionSlot
 import com.ugurbuga.blockgames.settings.GameSessionStorage
 import com.ugurbuga.blockgames.settings.HighScoreStorage
 import com.ugurbuga.blockgames.settings.RewardedTokenAdReward
+import com.ugurbuga.blockgames.settings.StackShiftGameOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.awardBonusTokens
 import com.ugurbuga.blockgames.settings.awardCompletedChallenge
 import com.ugurbuga.blockgames.settings.awardScoreTokens
@@ -69,11 +70,11 @@ import com.ugurbuga.blockgames.telemetry.TelemetryUserPropertyNames
 import com.ugurbuga.blockgames.telemetry.rememberAppTelemetry
 import com.ugurbuga.blockgames.ui.game.AppLanguageScreen
 import com.ugurbuga.blockgames.ui.game.AppSettingsScreen
+import com.ugurbuga.blockgames.ui.game.BlockGamesGameApp
 import com.ugurbuga.blockgames.ui.game.DailyChallengeScreen
 import com.ugurbuga.blockgames.ui.game.GameTutorialScreen
 import com.ugurbuga.blockgames.ui.game.HomeScreen
 import com.ugurbuga.blockgames.ui.game.RewardFeedbackCard
-import com.ugurbuga.blockgames.ui.game.StackShiftGameApp
 import com.ugurbuga.blockgames.ui.game.ThemedConfirmDialog
 import com.ugurbuga.blockgames.ui.theme.LocalBlockGamesUiColors
 import com.ugurbuga.blockgames.ui.theme.blockGamesThemeSpec
@@ -260,7 +261,7 @@ fun BlockGamesRoot(
                             AppRoute.Game,
                             AppRoute.InteractiveOnboarding,
                                 -> {
-                                StackShiftGameApp(
+                                BlockGamesGameApp(
                                     modifier = Modifier.fillMaxSize(),
                                     telemetry = telemetry,
                                     viewModel = gameViewModel,
@@ -434,7 +435,12 @@ fun BlockGamesAppHost(
     fun prepareInteractiveOnboarding() {
         persistActiveSession.value = false
         pendingSessionState = null
-        gameViewModel = createGameViewModel(FirstRunGameOnboardingStateFactory.initialState(gameplayStyle))
+        val initialState = if (gameplayStyle == GameplayStyle.BlockWise) {
+            BlockWiseOnboardingStateFactory.initialState()
+        } else {
+            StackShiftGameOnboardingStateFactory.initialState(gameplayStyle)
+        }
+        gameViewModel = createGameViewModel(initialState)
     }
 
     fun startPlayFlow(
@@ -443,7 +449,7 @@ fun BlockGamesAppHost(
         val sessionSlot = sessionSlotFor(mode = mode)
         if (mode == GameMode.Classic && !settings.hasSeenTutorial) {
             navigateTo(AppRoute.Tutorial)
-        } else if (gameplayStyle == GameplayStyle.StackShift && mode == GameMode.Classic && !settings.hasShownInteractiveOnboarding) {
+        } else if (mode == GameMode.Classic && !settings.hasShownInteractiveOnboarding) {
             prepareInteractiveOnboarding()
             navigateTo(AppRoute.InteractiveOnboarding)
         } else {
@@ -589,17 +595,9 @@ fun BlockGamesAppHost(
             if (!settings.hasSeenTutorial) {
                 persistSettings(settings.copy(hasSeenTutorial = true))
             }
-            if (gameplayStyle == GameplayStyle.StackShift) {
-                telemetry.logUserAction(TelemetryActionNames.OpenInteractiveOnboarding)
-                prepareInteractiveOnboarding()
-                replaceTop(AppRoute.InteractiveOnboarding)
-            } else {
-                telemetry.logUserAction(TelemetryActionNames.StartGameFromHome)
-                restoreOrRestartSession(slot = GameSessionSlot.Classic) {
-                    gameViewModel.restart(mode = GameMode.Classic, gameplayStyle = gameplayStyle)
-                }
-                replaceTop(AppRoute.Game)
-            }
+            telemetry.logUserAction(TelemetryActionNames.OpenInteractiveOnboarding)
+            prepareInteractiveOnboarding()
+            replaceTop(AppRoute.InteractiveOnboarding)
         },
         onInteractiveOnboardingFinished = { finalState ->
             completeInteractiveOnboarding(finalState = finalState, returnHome = false)
