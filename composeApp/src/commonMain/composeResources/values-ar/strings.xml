@@ -105,6 +105,7 @@
     <string name="launch_paused">متوقف مؤقتًا</string>
     <string name="launch_game_over">أعد البدء لجولة جديدة</string>
     <string name="launch_drag_hint">اسحب أفقيًا → حرّر</string>
+    <string name="launch_drag_hint_blockwise">اسحب في أي مكان على اللوحة ← اتركه لوضعه</string>
     <string name="queue_hold">احتفاظ</string>
     <string name="queue_next_short">التالي</string>
     <string name="queue_empty">—</string>
@@ -264,10 +265,10 @@
     <string name="tutorial_stackshift_ready_body">هذا كل شيء — خطط للعمود التالي، راقب شريط الإطلاق، واستخدم القدرات الخاصة في الوقت المناسب. يمكنك إعادة فتح هذا الدليل في أي وقت من الإعدادات.</string>
     <string name="tutorial_stackshift_ready_tutorial_hint">افتح البرنامج التعليمي متى أردت مراجعة سريعة لعناصر التحكم والأيقونات الخاصة.</string>
     <string name="tutorial_stackshift_ready_settings_hint">افتح الإعدادات لتغيير اللغة والمظهر والألوان ونمط الكتل قبل جولتك التالية.</string>
-    <string name="tutorial_intro_title">أطلق القطع من الشريط السفلي</string>
-    <string name="tutorial_intro_body">تنتظر قطعتك النشطة في الأسفل. اسحبها أفقياً لمطابقة العمود ثم أفلتها لإطلاقها نحو اللوحة. يتم عرض معاينة القطعة التالية بشكل أخف عمداً ليبقى تركيزك على القطعة النشطة.</string>
-    <string name="tutorial_systems_title">استخدم كتل الإجراءات عندما تضيق اللوحة</string>
-    <string name="tutorial_systems_body">يبدّل الاحتفاظ القطعة الحالية، ويجمّد الإيقاف المؤقت الجولة، وتشرح خصائص الكتلة الرموز، بينما تغيّر الإعدادات المظهر العام. كما أن هذه الأزرار تطابق نمط كتل اللوحة الذي اخترته.</string>
+    <string name="tutorial_intro_title">اسحب أيًا من القطع الثلاث إلى اللوحة</string>
+    <string name="tutorial_intro_body">تنتظر ثلاثة أشكال في الحاوية. اختر الشكل الذي تريده، واسحبه إلى أي خلايا فارغة، ثم أفلت لوضعه تمامًا حيث يناسب.</string>
+    <string name="tutorial_systems_title">فكر في الحاوية بالكامل، وليس فقط في حركة واحدة</string>
+    <string name="tutorial_systems_body">بعد وضع قطعة واحدة، تظل الحاوية المتبقية على الشاشة. عند استخدام الثلاثة جميعًا، تظهر مجموعة جديدة. حاول ترك مساحة كافية لكل شكل لا يزال لديك.</string>
     <string name="tutorial_specials_title">قد تنقذ الكتل الخاصة الجولة</string>
     <string name="tutorial_specials_body">تحمل بعض القطع تأثيرات خاصة. تعلّم شاراتها واستخدمها لخفض الضغط أو فتح مساحة أو تجاوز التكدسات الصعبة.</string>
     <string name="tutorial_ready_title">أنت جاهز لمتابعة هذه الجولة</string>

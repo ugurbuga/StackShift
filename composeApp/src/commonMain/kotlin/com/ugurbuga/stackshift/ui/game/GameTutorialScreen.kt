@@ -128,6 +128,7 @@ import stackshift.composeapp.generated.resources.game_message_tempo_up
 import stackshift.composeapp.generated.resources.interactive_onboarding_drag_title
 import stackshift.composeapp.generated.resources.interactive_onboarding_drag_to_board
 import stackshift.composeapp.generated.resources.launch_drag_hint
+import stackshift.composeapp.generated.resources.launch_drag_hint_blockwise
 import stackshift.composeapp.generated.resources.piece_properties_active
 import stackshift.composeapp.generated.resources.queue_next_short
 import stackshift.composeapp.generated.resources.restart
@@ -447,9 +448,8 @@ fun GameTutorialScreen(
 
             GameplayStyle.BlockWise -> listOf(
                 TutorialPage.BlockWiseIntro,
+                TutorialPage.StackShiftSystems,
                 TutorialPage.BlockWiseSystems,
-                TutorialPage.BlockWiseSpecials,
-                TutorialPage.BlockWisePractice,
                 TutorialPage.BlockWiseReady,
             )
         }
@@ -863,7 +863,7 @@ private fun TutorialBlockWiseIntroStep() {
         body = stringResource(Res.string.tutorial_intro_body),
     ) {
         TutorialBlockWisePlacementDemo()
-        TutorialHintCard(text = stringResource(Res.string.launch_drag_hint))
+        TutorialHintCard(text = stringResource(Res.string.launch_drag_hint_blockwise))
     }
 }
 
@@ -957,7 +957,7 @@ private fun TutorialBlockWisePracticeDemo() {
                     TutorialBlockWiseSecondaryPiece.copy(id = 2),
                     TutorialBlockWiseTertiaryPiece.copy(id = 3),
                 ),
-                message = gameText(GameTextKey.LaunchDragHint),
+                message = gameText(GameTextKey.LaunchDragHintBlockWise),
             )
         )
     }
@@ -1190,7 +1190,7 @@ private fun TutorialBlockWisePlacementDemo() {
             difficultyStage = 0,
             secondsUntilDifficultyIncrease = 0,
             status = GameStatus.Running,
-            message = gameText(GameTextKey.LaunchDragHint),
+            message = gameText(GameTextKey.LaunchDragHintBlockWise),
         )
     }
     val primaryPiece = initialState.activePiece ?: return

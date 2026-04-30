@@ -94,6 +94,7 @@
     <string name="launch_paused">Пауза</string>
     <string name="launch_game_over">Перезапустите для новой партии</string>
     <string name="launch_drag_hint">Тяните по горизонтали → отпустите</string>
+    <string name="launch_drag_hint_blockwise">Перетащите в любое место на поле → отпустите, чтобы разместить</string>
     <string name="queue_hold">Удержание</string>
     <string name="queue_next_short">Следующий</string>
     <string name="queue_empty">—</string>
@@ -244,10 +245,10 @@
     <string name="tutorial_stackshift_ready_body">Вот и всё: планируйте следующую колонку, следите за полосой запуска и используйте спецэффекты в нужный момент. Вы можете открыть это руководство снова в Настройках в любое время.</string>
     <string name="tutorial_stackshift_ready_tutorial_hint">Открывайте обучение, когда хотите быстро освежить в памяти управление и специальные значки.</string>
     <string name="tutorial_stackshift_ready_settings_hint">Откройте Настройки, чтобы изменить язык, тему, цвета и стиль блоков перед следующей игрой.</string>
-    <string name="tutorial_intro_title">Запускайте фигуры из нижнего дока</string>
-    <string name="tutorial_intro_body">Активная фигура ждёт внизу. Перетащите её по горизонтали, чтобы выбрать колонку, затем отпустите, чтобы запустить её на поле. Следующая фигура показана более мягко, чтобы внимание оставалось на активной.</string>
-    <string name="tutorial_systems_title">Используйте блоки действий, когда поле заполняется</string>
-    <string name="tutorial_systems_body">Удержание меняет текущую фигуру, Пауза замораживает игру, Свойства блока объясняют символы, а Настройки меняют внешний вид. Эти кнопки также подстраиваются под выбранный стиль блоков поля.</string>
+    <string name="tutorial_intro_title">Перетащите любую из трех фигур на поле</string>
+    <string name="tutorial_intro_body">В лотке ждут три фигуры. Выберите нужную, перетащите ее на пустые клетки и отпустите, чтобы разместить ее там, где она подходит.</string>
+    <string name="tutorial_systems_title">Думайте обо всем лотке, а не только об одном ходе</string>
+    <string name="tutorial_systems_body">После размещения одной фигуры оставшийся лоток остается на экране. Когда все три будут использованы, появится новое трио. Постарайтесь оставить достаточно места для каждой фигуры, которая у вас еще есть.</string>
     <string name="tutorial_specials_title">Специальные блоки могут спасти игру</string>
     <string name="tutorial_specials_body">Некоторые фигуры имеют особые эффекты. Запомните их значки и используйте их, чтобы снизить давление, освободить место или пройти через сложные завалы.</string>
     <string name="tutorial_ready_title">Вы готовы продолжить эту игру</string>

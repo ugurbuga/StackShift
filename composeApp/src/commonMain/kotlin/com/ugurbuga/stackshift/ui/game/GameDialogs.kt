@@ -120,6 +120,7 @@ import stackshift.composeapp.generated.resources.launch_bar
 import stackshift.composeapp.generated.resources.launch_boost_active
 import stackshift.composeapp.generated.resources.launch_chain_message
 import stackshift.composeapp.generated.resources.launch_drag_hint
+import stackshift.composeapp.generated.resources.launch_drag_hint_blockwise
 import stackshift.composeapp.generated.resources.launch_game_over
 import stackshift.composeapp.generated.resources.launch_label
 import stackshift.composeapp.generated.resources.launch_soft_lock_message
@@ -1020,6 +1021,7 @@ internal fun GameTextKey.stringResourceId(): StringResource {
         GameTextKey.LaunchChainMessage -> Res.string.launch_chain_message
         GameTextKey.LaunchGameOver -> Res.string.launch_game_over
         GameTextKey.LaunchDragHint -> Res.string.launch_drag_hint
+        GameTextKey.LaunchDragHintBlockWise -> Res.string.launch_drag_hint_blockwise
         GameTextKey.QueueHold -> Res.string.hold
         GameTextKey.QueueNextShort -> Res.string.queue_next_short
         GameTextKey.QueueEmpty -> Res.string.queue_empty

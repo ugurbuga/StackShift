@@ -113,6 +113,7 @@
     <string name="launch_paused">Paused</string>
     <string name="launch_game_over">Restart for a new run</string>
     <string name="launch_drag_hint">Drag horizontally → release</string>
+    <string name="launch_drag_hint_blockwise">Drag anywhere on the board → release to place</string>
     <string name="queue_hold">Hold</string>
     <string name="queue_next_short">Next</string>
     <string name="queue_empty">—</string>
@@ -264,8 +265,8 @@
     <string name="return_home">Return to Home</string>
     <string name="tutorial_stackshift_intro_title">Drag the active piece and line up your launch</string>
     <string name="tutorial_stackshift_intro_body">The current piece starts in the launch dock. Drag it left or right under the board, release when the preview looks good, and it will drop into the nearest valid lane.</string>
-    <string name="tutorial_stackshift_systems_title">Read the queue and protect your next launch</string>
-    <string name="tutorial_stackshift_systems_body">Only one piece launches at a time, so watch the next queue, keep space open in multiple columns, and use restart or settings between runs when you need a reset.</string>
+    <string name="tutorial_stackshift_systems_title">Use action blocks when the board gets crowded</string>
+    <string name="tutorial_stackshift_systems_body">Hold swaps the current piece, Pause freezes the run, Block Properties explains symbols, and Settings changes the look. These buttons also follow your chosen board block style.</string>
     <string name="tutorial_stackshift_specials_title">Special blocks can save tight boards</string>
     <string name="tutorial_stackshift_specials_body">Some pieces carry special effects. Learn what each icon does so you can clear a row, clear a column, slip through gaps, or punch through danger when the board gets crowded.</string>
     <string name="tutorial_stackshift_ready_title">You are ready to launch in StackShift</string>

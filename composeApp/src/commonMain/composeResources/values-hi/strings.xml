@@ -104,6 +104,7 @@
     <string name="launch_paused">रुका हुआ</string>
     <string name="launch_game_over">नई रन के लिए पुनः प्रारंभ करें</string>
     <string name="launch_drag_hint">क्षैतिज रूप से खींचें → छोड़ें</string>
+    <string name="launch_drag_hint_blockwise">बोर्ड पर कहीं भी खींचें → रखने के लिए छोड़ें</string>
     <string name="queue_hold">संग्रह</string>
     <string name="queue_next_short">अगला</string>
     <string name="queue_empty">—</string>
@@ -263,10 +264,10 @@
     <string name="tutorial_stackshift_ready_body">बस इतना ही — अगला कॉलम सोचें, लॉन्च बार पर नज़र रखें, और सही समय पर स्पेशल्स का उपयोग करें। आप इस ट्यूटोरियल को कभी भी Settings से फिर खोल सकते हैं।</string>
     <string name="tutorial_stackshift_ready_tutorial_hint">कंट्रोल और विशेष आइकन जल्दी से दोहराने के लिए कभी भी ट्यूटोरियल खोलें।</string>
     <string name="tutorial_stackshift_ready_settings_hint">अगली रन से पहले भाषा, थीम, रंग और ब्लॉक स्टाइल बदलने के लिए Settings खोलें।</string>
-    <string name="tutorial_intro_title">नीचे के डॉक से पीस लॉन्च करें</string>
-    <string name="tutorial_intro_body">आपका सक्रिय पीस नीचे इंतज़ार करता है। कॉलम मिलाने के लिए उसे क्षैतिज रूप से खींचें, फिर छोड़कर बोर्ड पर लॉन्च करें। अगले पीस की झलक जानबूझकर हल्की रखी गई है ताकि ध्यान सक्रिय पीस पर रहे।</string>
-    <string name="tutorial_systems_title">जब बोर्ड भरने लगे तो एक्शन ब्लॉक्स का उपयोग करें</string>
-    <string name="tutorial_systems_body">संग्रह वर्तमान पीस को बदलता है, विराम रन को रोक देता है, ब्लॉक गुण प्रतीकों को समझाता है, और सेटिंग्स रूप-रंग बदलती हैं। ये बटन आपके चुने हुए बोर्ड ब्लॉक स्टाइल से भी मेल खाते हैं।</string>
+    <string name="tutorial_intro_title">तीनों पीस में से किसी एक को बोर्ड पर खींचें</string>
+    <string name="tutorial_intro_body">ट्रे में तीन आकृतियाँ इंतज़ार करती हैं। अपनी पसंद की आकृति चुनें, उसे किसी भी खाली सेल पर खींचें, और जहाँ वह फिट हो वहाँ रखने के लिए छोड़ दें।</string>
+    <string name="tutorial_systems_title">केवल एक चाल नहीं, बल्कि पूरी ट्रे के बारे में सोचें</string>
+    <string name="tutorial_systems_body">एक पीस रखने के बाद, बाकी बची हुई ट्रे स्क्रीन पर ही रहती है। जब तीनों का उपयोग हो जाता है, तो एक नया तिकड़ी आ जाती है। आपके पास अभी भी जो आकृतियाँ हैं, उनके लिए पर्याप्त जगह छोड़ने की कोशिश करें।</string>
     <string name="tutorial_specials_title">स्पेशल ब्लॉक रन बचा सकते हैं</string>
     <string name="tutorial_specials_body">कुछ पीस विशेष प्रभाव लाते हैं। उनके बैज पहचानें और दबाव घटाने, जगह खोलने या कठिन स्टैक के बीच से निकलने के लिए सही समय पर उनका उपयोग करें।</string>
     <string name="tutorial_ready_title">अब आप इस रन को जारी रखने के लिए तैयार हैं</string>

@@ -104,6 +104,7 @@
     <string name="launch_paused">Dijeda</string>
     <string name="launch_game_over">Mulai ulang untuk putaran baru</string>
     <string name="launch_drag_hint">Seret horizontal → lepaskan</string>
+    <string name="launch_drag_hint_blockwise">Seret ke mana saja di papan → lepaskan untuk menempatkan</string>
     <string name="queue_hold">Simpan</string>
     <string name="queue_next_short">Berikutnya</string>
     <string name="queue_empty">—</string>
@@ -263,10 +264,10 @@
     <string name="tutorial_stackshift_ready_body">Itu saja — rencanakan kolom berikutnya, perhatikan bilah launch, dan gunakan spesial di saat yang tepat. Kamu bisa membuka kembali tutorial ini kapan saja dari Pengaturan.</string>
     <string name="tutorial_stackshift_ready_tutorial_hint">Buka Tutorial kapan saja jika kamu ingin mengingat cepat kontrol dan ikon spesial.</string>
     <string name="tutorial_stackshift_ready_settings_hint">Buka Pengaturan untuk mengubah bahasa, tema, warna, dan gaya blok sebelum permainan berikutnya.</string>
-    <string name="tutorial_intro_title">Luncurkan piece dari dock bawah</string>
-    <string name="tutorial_intro_body">Piece aktifmu menunggu di bawah. Geser secara horizontal untuk menyelaraskan kolom, lalu lepaskan untuk meluncurkannya ke papan. Pratinjau piece berikutnya sengaja dibuat lebih samar agar fokus tetap pada piece aktif.</string>
-    <string name="tutorial_systems_title">Gunakan blok aksi saat papan mulai penuh</string>
-    <string name="tutorial_systems_body">Simpanan menukar piece saat ini, Jeda membekukan permainan, Properti blok menjelaskan simbol, dan Pengaturan mengubah tampilan. Tombol-tombol ini juga mengikuti gaya blok papan yang kamu pilih.</string>
+    <string name="tutorial_intro_title">Seret salah satu dari tiga piece ke papan</string>
+    <string name="tutorial_intro_body">Tiga bentuk menunggu di tray. Pilih yang kamu inginkan, seret ke sel kosong mana pun, dan lepaskan untuk menempatkannya tepat di tempat yang pas.</string>
+    <string name="tutorial_systems_title">Pikirkan seluruh tray, bukan hanya satu langkah</string>
+    <string name="tutorial_systems_body">Setelah menempatkan satu piece, tray yang tersisa tetap di layar. Saat ketiganya habis, trio baru akan muncul. Coba sisakan ruang yang cukup untuk setiap bentuk yang masih kamu miliki.</string>
     <string name="tutorial_specials_title">Blok spesial bisa menyelamatkan permainan</string>
     <string name="tutorial_specials_body">Beberapa piece memiliki efek spesial. Pelajari lencananya dan gunakan untuk menurunkan tekanan, membuka ruang, atau menembus tumpukan yang sulit.</string>
     <string name="tutorial_ready_title">Kamu siap melanjutkan permainan ini</string>

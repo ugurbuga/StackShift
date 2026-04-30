@@ -136,6 +136,7 @@ import org.jetbrains.compose.resources.stringResource
 import stackshift.composeapp.generated.resources.Res
 import stackshift.composeapp.generated.resources.launch_boost_active
 import stackshift.composeapp.generated.resources.launch_drag_hint
+import stackshift.composeapp.generated.resources.launch_drag_hint_blockwise
 import stackshift.composeapp.generated.resources.launch_special_chance
 import stackshift.composeapp.generated.resources.restart_cancel
 import stackshift.composeapp.generated.resources.restart_confirm
@@ -587,6 +588,7 @@ fun GameScreenWithLaunchOverlay(
 
         if (overlayVisible) {
             GameLaunchOverlay(
+                gameplayStyle = gameState.gameplayStyle,
                 uiColors = uiColors,
                 onFinished = {
                     overlayVisible = false
@@ -599,6 +601,7 @@ fun GameScreenWithLaunchOverlay(
 
 @Composable
 fun GameLaunchOverlay(
+    gameplayStyle: GameplayStyle,
     uiColors: com.ugurbuga.stackshift.ui.theme.BlockGamesUiColors,
     onFinished: () -> Unit,
     modifier: Modifier = Modifier,
@@ -625,7 +628,13 @@ fun GameLaunchOverlay(
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text = stringResource(Res.string.launch_drag_hint),
+                text = stringResource(
+                    if (gameplayStyle == GameplayStyle.BlockWise) {
+                        Res.string.launch_drag_hint_blockwise
+                    } else {
+                        Res.string.launch_drag_hint
+                    }
+                ),
                 style = MaterialTheme.typography.bodyLarge,
                 color = Color.White.copy(alpha = 0.88f),
             )

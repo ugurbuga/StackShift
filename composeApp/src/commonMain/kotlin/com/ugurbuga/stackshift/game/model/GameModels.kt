@@ -303,6 +303,7 @@ enum class GameTextKey {
     LaunchChainMessage,
     LaunchGameOver,
     LaunchDragHint,
+    LaunchDragHintBlockWise,
     QueueHold,
     QueueNextShort,
     QueueEmpty,
