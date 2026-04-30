@@ -2,18 +2,18 @@ package com.ugurbuga.blockgames.app
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
-import com.ugurbuga.stackshift.AndroidSystemBarsEffect
-import com.ugurbuga.stackshift.StackShiftAppHost
-import com.ugurbuga.stackshift.game.model.GameplayStyle
-import com.ugurbuga.stackshift.platform.GlobalPlatformConfig
-import com.ugurbuga.stackshift.ui.theme.blockGamesThemeSpec
-import com.ugurbuga.stackshift.ui.theme.isBlockGamesDarkTheme
+import com.ugurbuga.blockgames.AndroidSystemBarsEffect
+import com.ugurbuga.blockgames.BlockGamesAppHost
+import com.ugurbuga.blockgames.game.model.GameplayStyle
+import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
+import com.ugurbuga.blockgames.ui.theme.blockGamesThemeSpec
+import com.ugurbuga.blockgames.ui.theme.isBlockGamesDarkTheme
 
 @Composable
 fun AndroidApp() {
     val gameplayStyle = resolveGameplayStyle()
     GlobalPlatformConfig.gameplayStyle = gameplayStyle
-    StackShiftAppHost(
+    BlockGamesAppHost(
         bootstrapLogSource = "android_app_${BuildConfig.APP_VARIANT_NAME}",
         gameplayStyle = gameplayStyle,
     ) { settings, canNavigateBack, onRequestBack ->

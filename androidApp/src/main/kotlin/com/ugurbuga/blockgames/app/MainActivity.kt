@@ -9,11 +9,11 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.drawable.toDrawable
-import com.ugurbuga.stackshift.ads.AndroidAdMobIds
-import com.ugurbuga.stackshift.platform.GlobalPlatformConfig
-import com.ugurbuga.stackshift.settings.AppContextHolder
-import com.ugurbuga.stackshift.settings.AppSettingsStorage
-import com.ugurbuga.stackshift.ui.theme.blockGamesThemeSpec
+import com.ugurbuga.blockgames.ads.AndroidAdMobIds
+import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
+import com.ugurbuga.blockgames.settings.AppContextHolder
+import com.ugurbuga.blockgames.settings.AppSettingsStorage
+import com.ugurbuga.blockgames.ui.theme.blockGamesThemeSpec
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,7 +31,7 @@ class MainActivity : ComponentActivity() {
             darkTheme = initialDarkTheme,
         )
 
-        setTheme(R.style.Theme_StackShift)
+        setTheme(R.style.Theme_BlockGames)
         enableEdgeToEdge(
             statusBarStyle = if (initialDarkTheme) {
                 SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)

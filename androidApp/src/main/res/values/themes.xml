@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <style name="Theme.StackShift" parent="@android:style/Theme.Material.NoActionBar">
+    <style name="Theme.BlockGames" parent="@android:style/Theme.Material.NoActionBar">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:colorBackground">@android:color/transparent</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
@@ -10,7 +10,7 @@
         <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
     </style>
 
-    <style name="Theme.StackShift.Splash" parent="@android:style/Theme.Material.NoActionBar">
+    <style name="Theme.BlockGames.Splash" parent="@android:style/Theme.Material.NoActionBar">
         <item name="android:windowBackground">@drawable/splash_screen</item>
         <item name="android:colorBackground">#FF070D14</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
