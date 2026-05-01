@@ -116,14 +116,14 @@ dependencies {
 
 compose.desktop {
     application {
-        mainClass = "com.ugurbuga.stackshift.MainKt"
+        mainClass = "com.ugurbuga.blockgames.MainKt"
 
         if (desktopJdkHome != null) {
             javaHome = desktopJdkHome.absolutePath
 
             nativeDistributions {
                 targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-                packageName = "com.ugurbuga.stackshift"
+                packageName = "com.ugurbuga.blockgames"
                 packageVersion = "1.0.0"
 
                 macOS {

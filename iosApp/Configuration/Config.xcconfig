@@ -3,7 +3,7 @@ TEAM_ID=
 #include? "GeneratedAds.xcconfig"
 
 PRODUCT_NAME=StackShift
-PRODUCT_BUNDLE_IDENTIFIER=com.ugurbuga.stackshift
+PRODUCT_BUNDLE_IDENTIFIER=com.ugurbuga.blockgames
 
 CURRENT_PROJECT_VERSION=1
 MARKETING_VERSION=1.0

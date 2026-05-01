@@ -112,6 +112,7 @@
     <string name="launch_paused">Duraklatıldı</string>
     <string name="launch_game_over">Yeni tur için yeniden başlat</string>
     <string name="launch_drag_hint">Yatay sürükle → bırak</string>
+    <string name="launch_drag_hint_blockwise">Tahtada istediğin yere sürükle → bırakınca yerleşir</string>
     <string name="queue_hold">Beklet</string>
     <string name="queue_next_short">Sıradaki</string>
     <string name="queue_empty">—</string>
@@ -254,8 +255,8 @@
     <string name="return_home">Ana sayfaya dön</string>
     <string name="tutorial_stackshift_intro_title">Aktif parçayı sürükle ve fırlatmanı hizala</string>
     <string name="tutorial_stackshift_intro_body">Mevcut parça launch dock'ta başlar. Tahtanın altında sola veya sağa sürükle, ön izleme iyi görünüyorsa bırak; en yakın geçerli şeride düşer.</string>
-    <string name="tutorial_stackshift_systems_title">Sırayı oku ve sonraki fırlatmanı koru</string>
-    <string name="tutorial_stackshift_systems_body">Aynı anda yalnızca tek parça fırlatılır; bu yüzden sonraki sırayı izle, birden fazla sütunda alan açık tut ve ihtiyaç duyduğunda turlar arasında yeniden başlatma ya da ayarlardan sıfırlama yap.</string>
+    <string name="tutorial_stackshift_systems_title">Tahta dolmaya başladığında aksiyon bloklarını kullan</string>
+    <string name="tutorial_stackshift_systems_body">Beklet mevcut parçayı değiştirir, Duraklat oyunu dondurur, Blok Özellikleri sembolleri açıklar ve Ayarlar görünümü değiştirir. Bu butonlar aynı zamanda seçtiğin tahta blok stiline de uyum sağlar.</string>
     <string name="tutorial_stackshift_specials_title">Özel bloklar sıkışık tahtaları kurtarabilir</string>
     <string name="tutorial_stackshift_specials_body">Bazı parçalar özel etkiler taşır. Her ikonun ne yaptığını öğren ki bir satırı temizleyebilesin, bir sütunu temizleyebilesin, boşluklardan sızabilesin ya da tahta sıkıştığında tehlikeyi delebilesin.</string>
     <string name="tutorial_stackshift_ready_title">StackShift'te fırlatmaya hazırsın</string>

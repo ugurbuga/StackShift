@@ -51,7 +51,7 @@ private data class AndroidFlavorConfig(
 private val androidFlavorConfigs = listOf(
     AndroidFlavorConfig(
         name = "StackShift",
-        applicationId = "com.ugurbuga.stackshift",
+        applicationId = "com.ugurbuga.blockgames",
         versionCode = 5,
         versionName = "1.0.4",
     ),

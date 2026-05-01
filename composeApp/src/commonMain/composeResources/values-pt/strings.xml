@@ -104,6 +104,7 @@
     <string name="launch_paused">Pausado</string>
     <string name="launch_game_over">Reinicie para uma nova partida</string>
     <string name="launch_drag_hint">Arraste horizontalmente → solte</string>
+    <string name="launch_drag_hint_blockwise">Arraste para qualquer lugar no tabuleiro → solte para colocar</string>
     <string name="queue_hold">Reserva</string>
     <string name="queue_next_short">Próximo</string>
     <string name="queue_empty">—</string>
@@ -263,10 +264,10 @@
     <string name="tutorial_stackshift_ready_body">É isso — planeje a próxima coluna, acompanhe a barra de lançamento e use os especiais na hora certa. Você pode abrir este tutorial novamente a qualquer momento em Configurações.</string>
     <string name="tutorial_stackshift_ready_tutorial_hint">Abra o Tutorial sempre que quiser relembrar rapidamente os controles e os ícones especiais.</string>
     <string name="tutorial_stackshift_ready_settings_hint">Abra Configurações para mudar idioma, tema, cores e estilo dos blocos antes da sua próxima partida.</string>
-    <string name="tutorial_intro_title">Lance peças a partir do dock inferior</string>
-    <string name="tutorial_intro_body">Sua peça ativa espera embaixo. Arraste-a horizontalmente para alinhar uma coluna e solte para lançá-la no tabuleiro. A prévia da próxima peça aparece mais suave de propósito para manter o foco na peça ativa.</string>
-    <string name="tutorial_systems_title">Use os blocos de ação quando o tabuleiro apertar</string>
-    <string name="tutorial_systems_body">Reserva troca a peça atual, Pausa congela a rodada, Propriedades do bloco explica os símbolos, e Configurações muda o visual. Esses botões também acompanham o estilo de bloco do tabuleiro que você escolheu.</string>
+    <string name="tutorial_intro_title">Arraste qualquer uma das três peças para o tabuleiro</string>
+    <string name="tutorial_intro_body">Três formas esperam na bandeja. Escolha a que você deseja, arraste-a para qualquer célula vazia e solte para colocá-la exatamente onde ela se encaixa.</string>
+    <string name="tutorial_systems_title">Pense em toda a bandeja, não apenas em um movimento</string>
+    <string name="tutorial_systems_body">Depois de colocar uma peça, a bandeja restante permanece na tela. Quando todas as três são usadas, um novo trio aparece. Tente deixar espaço suficiente para cada forma que você ainda tem.</string>
     <string name="tutorial_specials_title">Blocos especiais podem salvar uma partida</string>
     <string name="tutorial_specials_body">Algumas peças carregam efeitos especiais. Aprenda seus selos e use-os para aliviar a pressão, abrir espaço ou atravessar pilhas difíceis.</string>
     <string name="tutorial_ready_title">Você está pronto para continuar esta partida</string>

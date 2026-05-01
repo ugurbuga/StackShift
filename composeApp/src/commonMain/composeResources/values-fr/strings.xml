@@ -104,6 +104,7 @@
     <string name="launch_paused">En pause</string>
     <string name="launch_game_over">Redémarrez pour une nouvelle partie</string>
     <string name="launch_drag_hint">Glissez horizontalement → relâchez</string>
+    <string name="launch_drag_hint_blockwise">Faites glisser n'importe où sur le plateau → relâchez pour placer</string>
     <string name="queue_hold">Réserve</string>
     <string name="queue_next_short">Suivant</string>
     <string name="queue_empty">—</string>
@@ -254,10 +255,10 @@
     <string name="tutorial_stackshift_ready_body">C’est tout : préparez la prochaine colonne, surveillez la barre de lancement et utilisez les spéciaux au bon moment. Vous pouvez rouvrir ce tutoriel à tout moment depuis Réglages.</string>
     <string name="tutorial_stackshift_ready_tutorial_hint">Ouvrez le tutoriel quand vous voulez un rappel rapide des commandes et des icônes spéciales.</string>
     <string name="tutorial_stackshift_ready_settings_hint">Ouvrez Réglages pour modifier la langue, le thème, les couleurs et le style des blocs avant votre prochaine partie.</string>
-    <string name="tutorial_intro_title">Lancez les pièces depuis le dock inférieur</string>
-    <string name="tutorial_intro_body">Votre pièce active attend en bas. Faites-la glisser horizontalement pour aligner une colonne, puis relâchez-la pour la lancer sur le plateau. L’aperçu de la pièce suivante est volontairement plus discret pour garder l’attention sur la pièce active.</string>
-    <string name="tutorial_systems_title">Utilisez les blocs d’action quand le plateau se resserre</string>
-    <string name="tutorial_systems_body">Réserve échange la pièce actuelle, Pause fige la partie, Propriétés du bloc explique les symboles et Réglages modifie l’apparence. Ces boutons reprennent aussi le style de bloc du plateau que vous avez choisi.</string>
+    <string name="tutorial_intro_title">Faites glisser l\'une des trois pièces sur le plateau</string>
+    <string name="tutorial_intro_body">Trois formes attendent dans le plateau. Choisissez celle que vous voulez, faites-la glisser sur des cases vides et relâchez pour la placer exactement là où elle s\'adapte.</string>
+    <string name="tutorial_systems_title">Pensez à tout le plateau, pas seulement à un coup</string>
+    <string name="tutorial_systems_body">Après avoir placé une pièce, le plateau restant reste à l\'écran. Une fois les trois utilisées, un nouveau trio apparaît. Essayez de laisser assez d\'espace pour chaque forme que vous possédez encore.</string>
     <string name="tutorial_specials_title">Les blocs spéciaux peuvent sauver une partie</string>
     <string name="tutorial_specials_body">Certaines pièces possèdent des effets spéciaux. Apprenez leurs badges et utilisez-les pour réduire la pression, libérer de l’espace ou traverser des piles difficiles.</string>
     <string name="tutorial_ready_title">Vous êtes prêt à continuer cette partie</string>

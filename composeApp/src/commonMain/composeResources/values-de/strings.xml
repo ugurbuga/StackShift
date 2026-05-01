@@ -104,6 +104,7 @@
     <string name="launch_paused">Pausiert</string>
     <string name="launch_game_over">Für eine neue Runde neu starten</string>
     <string name="launch_drag_hint">Horizontal ziehen → loslassen</string>
+    <string name="launch_drag_hint_blockwise">Überall auf das Spielfeld ziehen → zum Platzieren loslassen</string>
     <string name="queue_hold">Ablage</string>
     <string name="queue_next_short">Nächste</string>
     <string name="queue_empty">—</string>
@@ -254,10 +255,10 @@
     <string name="tutorial_stackshift_ready_body">Das ist alles: Plane die nächste Spalte, beobachte die Startleiste und setze Specials im richtigen Moment ein. Du kannst dieses Tutorial jederzeit über Einstellungen erneut öffnen.</string>
     <string name="tutorial_stackshift_ready_tutorial_hint">Öffne das Tutorial, wenn du eine kurze Auffrischung zu Steuerung und Spezialsymbolen möchtest.</string>
     <string name="tutorial_stackshift_ready_settings_hint">Öffne Einstellungen, um Sprache, Thema, Farben und Blockstil vor deiner nächsten Runde anzupassen.</string>
-    <string name="tutorial_intro_title">Starte Teile aus dem unteren Dock</string>
-    <string name="tutorial_intro_body">Dein aktives Teil wartet unten. Ziehe es horizontal, um eine Spalte auszurichten, und lass los, um es auf das Spielfeld zu starten. Die Vorschau auf das nächste Teil ist absichtlich dezenter, damit dein Blick auf dem aktiven Teil bleibt.</string>
-    <string name="tutorial_systems_title">Nutze die Aktionsblöcke, wenn es eng wird</string>
-    <string name="tutorial_systems_body">Ablage tauscht das aktuelle Teil, Pausieren friert die Runde ein, Blockeigenschaften erklärt die Symbole und Einstellungen verändert das Erscheinungsbild. Diese Buttons übernehmen außerdem deinen gewählten Spielfeld-Blockstil.</string>
+    <string name="tutorial_intro_title">Ziehe eines der drei Teile auf das Spielfeld</string>
+    <string name="tutorial_intro_body">Drei Formen warten in der Ablage. Wähle eine aus, ziehe sie auf leere Zellen und lass sie dort los, wo sie genau hinpasst.</string>
+    <string name="tutorial_systems_title">Denk an die ganze Ablage, nicht nur an einen Zug</string>
+    <string name="tutorial_systems_body">Nachdem du ein Teil platziert hast, bleiben die restlichen Teile in der Ablage auf dem Bildschirm. Wenn alle drei verbraucht sind, erscheint ein neues Trio. Versuche, genug Platz für jede Form zu lassen, die du noch hast.</string>
     <string name="tutorial_specials_title">Spezialblöcke können eine Runde retten</string>
     <string name="tutorial_specials_body">Einige Teile haben Spezialeffekte. Lerne ihre Symbole und nutze sie, um Druck zu senken, Platz zu schaffen oder schwierige Stapel zu durchdringen.</string>
     <string name="tutorial_ready_title">Du bist bereit, diese Runde fortzusetzen</string>
