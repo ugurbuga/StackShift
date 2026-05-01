@@ -88,6 +88,13 @@ fun BlockGamesGameApp(
     }
     var shouldShowLaunchOverlay by rememberSaveable { mutableStateOf(value = true) }
 
+    LaunchedEffect(uiState.gameState.status) {
+        while (uiState.gameState.status == GameStatus.Running) {
+            delay(1000.milliseconds)
+            viewModel.tick()
+        }
+    }
+
     val stackShiftOnboardingScene = remember(interactiveOnboardingEnabled, onboardingStage) {
         if (interactiveOnboardingEnabled && onboardingStage is StackShiftOnboardingStage) {
             StackShiftGameOnboardingStateFactory.scene(onboardingStage as StackShiftOnboardingStage)

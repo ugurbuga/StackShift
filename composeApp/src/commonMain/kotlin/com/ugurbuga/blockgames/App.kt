@@ -360,7 +360,13 @@ fun BlockGamesAppHost(
         slot: GameSessionSlot,
     ): Boolean {
         if (state.config.columns <= 0 || state.config.rows <= 0) return false
-        if (slot == GameSessionSlot.DailyChallenge && state.activeChallenge == null) return false
+        if (slot == GameSessionSlot.DailyChallenge) {
+            val activeChallenge = state.activeChallenge ?: return false
+            val today = getCurrentDate()
+            if (activeChallenge.year != today.year || activeChallenge.month != today.month || activeChallenge.day != today.day) {
+                return false
+            }
+        }
         if (state.status != GameStatus.Running) return true
         return when (state.gameplayStyle) {
             GameplayStyle.BlockWise -> state.trayPieces.isNotEmpty()
@@ -377,7 +383,12 @@ fun BlockGamesAppHost(
         return savedState
     }
 
-    val gameViewModelState = remember { mutableStateOf(createGameViewModel(initialState = null)) }
+    val gameViewModelState = remember {
+        val lastSlot = initialBootstrapResult.settings.lastActiveSlot
+        val initialSession = lastSlot?.let { loadSavedSession(it) }
+        mutableStateOf(createGameViewModel(initialState = initialSession))
+    }
+
     var gameViewModel by gameViewModelState
 
     fun restoreOrRestartSession(
@@ -385,6 +396,7 @@ fun BlockGamesAppHost(
         fallback: () -> Unit,
     ) {
         persistActiveSession.value = true
+        persistSettings(settings.copy(lastActiveSlot = slot))
         val savedState = loadSavedSession(slot)
         if (savedState != null) {
             gameViewModel.replaceState(savedState)
@@ -413,6 +425,14 @@ fun BlockGamesAppHost(
         showLeaveSessionDialog = false
         val leavingRoute = routeStack.lastOrNull()
         routeStack = routeStack.dropLast(1)
+
+        // Save immediately when leaving a game
+        if (leavingRoute == AppRoute.Game || leavingRoute == AppRoute.InteractiveOnboarding) {
+            pendingSessionState?.let { state ->
+                GameSessionStorage.save(state.sessionSlot(), state)
+            }
+        }
+
         if (leavingRoute == AppRoute.InteractiveOnboarding) {
             persistActiveSession.value = true
             pendingSessionState = null
@@ -506,7 +526,7 @@ fun BlockGamesAppHost(
     LaunchedEffect(persistActiveSession.value, pendingSessionState) {
         val state = pendingSessionState ?: return@LaunchedEffect
         if (!persistActiveSession.value) return@LaunchedEffect
-        delay(350.milliseconds)
+        delay(200.milliseconds)
         if (persistActiveSession.value && (pendingSessionState == state)) {
             GameSessionStorage.save(state.sessionSlot(), state)
         }
@@ -651,5 +671,3 @@ fun LeaveSessionConfirmDialog(
         dismissButtonIcon = Icons.Filled.Close,
     )
 }
-
-
