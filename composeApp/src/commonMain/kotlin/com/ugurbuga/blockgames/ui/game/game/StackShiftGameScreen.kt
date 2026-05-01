@@ -78,6 +78,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.launch_boost_active
 import blockgames.composeapp.generated.resources.launch_drag_hint
@@ -126,12 +127,28 @@ import com.ugurbuga.blockgames.settings.StackShiftOnboardingStage
 import com.ugurbuga.blockgames.telemetry.AppTelemetry
 import com.ugurbuga.blockgames.telemetry.NoOpAppTelemetry
 import com.ugurbuga.blockgames.telemetry.TelemetryActionNames
+import com.ugurbuga.blockgames.ui.game.BoardGrid
+import com.ugurbuga.blockgames.ui.game.CompactMetricChip
+import com.ugurbuga.blockgames.ui.game.GameOverDialog
+import com.ugurbuga.blockgames.ui.game.GameOverDialogRevealDurationMillis
+import com.ugurbuga.blockgames.ui.game.InteractiveOnboardingCompletionDialog
+import com.ugurbuga.blockgames.ui.game.MinimalTopBar
+import com.ugurbuga.blockgames.ui.game.PieceBlocks
+import com.ugurbuga.blockgames.ui.game.RestartConfirmDialog
+import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
+import com.ugurbuga.blockgames.ui.game.TopBarMetricLaunchSpacing
+import com.ugurbuga.blockgames.ui.game.boardCellCornerRadiusDp
+import com.ugurbuga.blockgames.ui.game.boardCellCornerRadiusPx
+import com.ugurbuga.blockgames.ui.game.boardFrameCornerRadiusDp
 import com.ugurbuga.blockgames.ui.game.dailychallenge.ChallengeTasksDock
 import com.ugurbuga.blockgames.ui.game.onboarding.GameInteractiveOnboardingUi
 import com.ugurbuga.blockgames.ui.game.onboarding.InteractiveOnboardingInfoCard
 import com.ugurbuga.blockgames.ui.game.onboarding.InteractiveOnboardingTargetOverlay
 import com.ugurbuga.blockgames.ui.game.onboarding.rememberInteractiveOnboardingVisualState
+import com.ugurbuga.blockgames.ui.game.resolveBoardBlockStyle
+import com.ugurbuga.blockgames.ui.game.resolveGameText
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
+import com.ugurbuga.blockgames.ui.theme.BlockGamesUiColors
 import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
 import com.ugurbuga.blockgames.ui.theme.appBackgroundBrush
 import com.ugurbuga.blockgames.ui.theme.blockGamesSurfaceShadow
@@ -140,6 +157,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
+import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -168,15 +186,15 @@ private const val InteractiveOnboardingClearAnimationDurationMillis = 620
 private const val InteractiveOnboardingBoardShiftDurationMillis = 360
 
 private data class GameLayoutSpec(
-    val cellSize: androidx.compose.ui.unit.Dp,
-    val boardWidth: androidx.compose.ui.unit.Dp,
-    val boardHeight: androidx.compose.ui.unit.Dp,
-    val dockHeight: androidx.compose.ui.unit.Dp,
+    val cellSize: Dp,
+    val boardWidth: Dp,
+    val boardHeight: Dp,
+    val dockHeight: Dp,
 )
 
 private fun rememberGameLayoutSpec(
-    maxWidth: androidx.compose.ui.unit.Dp,
-    maxHeight: androidx.compose.ui.unit.Dp,
+    maxWidth: Dp,
+    maxHeight: Dp,
     columns: Int,
     rows: Int,
 ): GameLayoutSpec {
@@ -273,7 +291,7 @@ fun StackShiftGameScreen(
 @Composable
 fun GameLaunchOverlay(
     gameplayStyle: GameplayStyle,
-    uiColors: com.ugurbuga.blockgames.ui.theme.BlockGamesUiColors,
+    uiColors: BlockGamesUiColors,
     onFinished: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -345,11 +363,10 @@ fun GameScreen(
     val uiColors = BlockGamesThemeTokens.uiColors
     val colorScheme = MaterialTheme.colorScheme
     val settings = LocalAppSettings.current
-    val resolvedPreviewStyle =
-        _root_ide_package_.com.ugurbuga.blockgames.ui.game.resolveBoardBlockStyle(
-            selectedStyle = settings.blockVisualStyle,
-            mode = settings.boardBlockStyleMode,
-        )
+    val resolvedPreviewStyle = resolveBoardBlockStyle(
+        selectedStyle = settings.blockVisualStyle,
+        mode = settings.boardBlockStyleMode,
+    )
     val updatedPreviewProvider by rememberUpdatedState(onRequestPreview)
     val updatedPreviewImpactProvider by rememberUpdatedState(onResolvePreviewImpact)
     val updatedPlacePiece by rememberUpdatedState(onPlacePiece)
@@ -473,7 +490,7 @@ fun GameScreen(
         derivedStateOf {
             val spawn = spawnTopLeft ?: return@derivedStateOf false
             val overlay = overlayTopLeftState.value ?: return@derivedStateOf false
-            kotlin.math.abs(overlay.x - spawn.x) >= (cellSizePx * 0.45f)
+            abs(overlay.x - spawn.x) >= (cellSizePx * 0.45f)
         }
     }
 
@@ -679,7 +696,7 @@ fun GameScreen(
             gameOverDialogRevealProgress.animateTo(
                 targetValue = 1f,
                 animationSpec = tween(
-                    durationMillis = _root_ide_package_.com.ugurbuga.blockgames.ui.game.GameOverDialogRevealDurationMillis,
+                    durationMillis = GameOverDialogRevealDurationMillis,
                     easing = FastOutSlowInEasing,
                 ),
             )
@@ -745,7 +762,7 @@ fun GameScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     if (!interactiveOnboardingEnabled) {
-                        _root_ide_package_.com.ugurbuga.blockgames.ui.game.MinimalTopBar(
+                        MinimalTopBar(
                             gameState = gameState,
                             scoreHighlightStrengthProvider = scoreHighlightStrengthProvider,
                             scoreHighlightScaleProvider = scorePulseScaleProvider,
@@ -792,7 +809,7 @@ fun GameScreen(
                         ) {
                             val boardShape =
                                 RoundedCornerShape(
-                                    _root_ide_package_.com.ugurbuga.blockgames.ui.game.boardFrameCornerRadiusDp(
+                                    boardFrameCornerRadiusDp(
                                         resolvedPreviewStyle
                                     )
                                 )
@@ -808,7 +825,7 @@ fun GameScreen(
                                     ),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                _root_ide_package_.com.ugurbuga.blockgames.ui.game.BoardGrid(
+                                BoardGrid(
                                     modifier = Modifier
                                         .matchParentSize()
                                         .onGloballyPositioned { coordinates ->
@@ -893,7 +910,7 @@ fun GameScreen(
 
                 gameState.floatingFeedback?.let { floatingFeedback ->
                     FloatingFeedbackOverlay(
-                        text = _root_ide_package_.com.ugurbuga.blockgames.ui.game.resolveGameText(
+                        text = resolveGameText(
                             floatingFeedback.text
                         ),
                         isBonus = floatingFeedback.emphasis != FeedbackEmphasis.Info,
@@ -1001,7 +1018,7 @@ fun GameScreen(
                 }
 
                 if (showGameOverDialog) {
-                    _root_ide_package_.com.ugurbuga.blockgames.ui.game.GameOverDialog(
+                    GameOverDialog(
                         gameState = gameState,
                         highestScore = highestScore,
                         showNewHighScoreMessage = showNewHighScoreMessage,
@@ -1033,14 +1050,14 @@ fun GameScreen(
                 }
 
                 if (interactiveOnboardingCompletionDialogVisible) {
-                    _root_ide_package_.com.ugurbuga.blockgames.ui.game.InteractiveOnboardingCompletionDialog(
+                    InteractiveOnboardingCompletionDialog(
                         onStartGame = onInteractiveOnboardingStartGame,
                         onReturnHome = onInteractiveOnboardingReturnHome,
                     )
                 }
 
                 if (showRestartDialog) {
-                    _root_ide_package_.com.ugurbuga.blockgames.ui.game.RestartConfirmDialog(
+                    RestartConfirmDialog(
                         onDismissRequest = { showRestartDialog = false },
                         title = stringResource(Res.string.restart_confirm_title),
                         message = stringResource(Res.string.restart_confirm_body),
@@ -1108,7 +1125,7 @@ internal fun BoxScope.LaunchGuideLineOverlay(
     val settings = LocalAppSettings.current
     val isDarkTheme = isBlockGamesDarkTheme(settings)
     val resolvedPreviewStyle =
-        _root_ide_package_.com.ugurbuga.blockgames.ui.game.resolveBoardBlockStyle(
+        resolveBoardBlockStyle(
             selectedStyle = settings.blockVisualStyle,
             mode = settings.boardBlockStyleMode,
         )
@@ -1130,7 +1147,7 @@ internal fun BoxScope.LaunchGuideLineOverlay(
 
     Canvas(modifier = modifier.matchParentSize()) {
         val blockCornerRadius =
-            _root_ide_package_.com.ugurbuga.blockgames.ui.game.boardCellCornerRadiusPx(
+            boardCellCornerRadiusPx(
                 cellSizePx = cellSizePx,
                 style = resolvedPreviewStyle,
             )
@@ -1262,12 +1279,12 @@ private fun ActivePieceOverlay(
     }
     val pieceCellDp = with(density) { cellSizePx.toDp() }
     val resolvedPreviewStyle =
-        _root_ide_package_.com.ugurbuga.blockgames.ui.game.resolveBoardBlockStyle(
+        resolveBoardBlockStyle(
             selectedStyle = settings.blockVisualStyle,
             mode = settings.boardBlockStyleMode,
         )
     val launchCellCornerRadius =
-        _root_ide_package_.com.ugurbuga.blockgames.ui.game.boardCellCornerRadiusDp(
+        boardCellCornerRadiusDp(
             cellSize = pieceCellDp,
             style = resolvedPreviewStyle,
         )
@@ -1284,7 +1301,7 @@ private fun ActivePieceOverlay(
             },
         contentAlignment = Alignment.TopStart,
     ) {
-        _root_ide_package_.com.ugurbuga.blockgames.ui.game.PieceBlocks(
+        PieceBlocks(
             piece = piece,
             cellSize = pieceCellDp,
             cellCornerRadius = launchCellCornerRadius,
@@ -1378,7 +1395,7 @@ private fun MetricLaunchRow(
 ) {
     Row(
         modifier = modifier.fillMaxWidth().height(IntrinsicSize.Max),
-        horizontalArrangement = Arrangement.spacedBy(_root_ide_package_.com.ugurbuga.blockgames.ui.game.TopBarMetricLaunchSpacing),
+        horizontalArrangement = Arrangement.spacedBy(TopBarMetricLaunchSpacing),
     ) {
         EqualWidthMetricColumn(
             highScoreTitle = highScoreTitle,
@@ -1419,14 +1436,14 @@ private fun EqualWidthMetricColumn(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        _root_ide_package_.com.ugurbuga.blockgames.ui.game.CompactMetricChip(
+        CompactMetricChip(
             title = highScoreTitle,
             value = highScoreValue,
             highlightStrengthProvider = highScoreHighlightStrengthProvider,
             scaleProvider = highScoreHighlightScaleProvider,
             modifier = Modifier.fillMaxWidth().weight(1f),
         )
-        _root_ide_package_.com.ugurbuga.blockgames.ui.game.CompactMetricChip(
+        CompactMetricChip(
             title = scoreTitle,
             value = scoreValue,
             highlightStrengthProvider = scoreHighlightStrengthProvider,
@@ -1552,7 +1569,7 @@ private fun SpecialActionAdButton(
 ) {
     var loading by remember { mutableStateOf(false) }
 
-    _root_ide_package_.com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton(
+    TopBarActionBlockButton(
         tone = tone,
         icon = icon,
         contentDescription = specialType.name,
@@ -1632,9 +1649,9 @@ private fun LaunchBarView(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = if (isBoostActive) _root_ide_package_.com.ugurbuga.blockgames.ui.game.resolveGameText(
+                    text = if (isBoostActive) resolveGameText(
                         gameText(GameTextKey.Boost)
-                    ) else _root_ide_package_.com.ugurbuga.blockgames.ui.game.resolveGameText(
+                    ) else resolveGameText(
                         gameText(GameTextKey.Launch)
                     ),
                     style = MaterialTheme.typography.labelSmall,
@@ -1681,7 +1698,7 @@ private fun HoldAndQueueStrip(
     ) {
         queue.take(1).forEachIndexed { index, piece ->
             QueueSlot(
-                label = if (index == 0) _root_ide_package_.com.ugurbuga.blockgames.ui.game.resolveGameText(
+                label = if (index == 0) resolveGameText(
                     gameText(GameTextKey.QueueNextShort)
                 ) else "",
                 piece = piece,
@@ -1729,7 +1746,7 @@ private fun QueueSlot(
             contentAlignment = Alignment.Center,
         ) {
             if (piece != null) {
-                _root_ide_package_.com.ugurbuga.blockgames.ui.game.PieceBlocks(
+                PieceBlocks(
                     piece = piece,
                     cellSize = cellSizeDp * 0.72f,
                     alpha = alpha * QueuePreviewAlpha,
@@ -1737,7 +1754,7 @@ private fun QueueSlot(
                 )
             } else {
                 Text(
-                    text = _root_ide_package_.com.ugurbuga.blockgames.ui.game.resolveGameText(
+                    text = resolveGameText(
                         gameText(GameTextKey.QueueEmpty)
                     ),
                     style = MaterialTheme.typography.labelMedium,

@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,6 +32,7 @@ import blockgames.composeapp.generated.resources.reward_piece_column_message
 import blockgames.composeapp.generated.resources.reward_piece_row_message
 import com.ugurbuga.blockgames.ads.AppFooterAdSlot
 import com.ugurbuga.blockgames.ads.rememberPlatformGameAdController
+import com.ugurbuga.blockgames.game.model.DailyChallenge
 import com.ugurbuga.blockgames.game.model.GameConfig
 import com.ugurbuga.blockgames.game.model.GameMode
 import com.ugurbuga.blockgames.game.model.GameState
@@ -133,7 +135,7 @@ fun BlockGamesRoot(
     onRewardFeedbackDismiss: () -> Unit,
     onPlayRequested: () -> Unit,
     onTimeAttackRequested: () -> Unit,
-    onPlayChallengeRequested: (com.ugurbuga.blockgames.game.model.DailyChallenge) -> Unit,
+    onPlayChallengeRequested: (DailyChallenge) -> Unit,
     onNavigateToTheme: () -> Unit,
     onNavigateToLanguage: () -> Unit,
     onNavigateToTutorial: () -> Unit,
@@ -509,7 +511,7 @@ fun BlockGamesAppHost(
             GameSessionStorage.save(state.sessionSlot(), state)
         }
     }
-    androidx.compose.runtime.DisposableEffect(gameViewModel) {
+    DisposableEffect(gameViewModel) {
         onDispose(gameViewModel::dispose)
     }
 

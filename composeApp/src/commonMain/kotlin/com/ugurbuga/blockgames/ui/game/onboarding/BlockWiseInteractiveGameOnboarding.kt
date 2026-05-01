@@ -33,6 +33,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -58,6 +59,7 @@ import blockgames.composeapp.generated.resources.interactive_onboarding_target_l
 import blockgames.composeapp.generated.resources.interactive_onboarding_waiting
 import blockgames.composeapp.generated.resources.tutorial_back
 import com.ugurbuga.blockgames.game.logic.GameLogic
+import com.ugurbuga.blockgames.game.model.CellTone
 import com.ugurbuga.blockgames.game.model.PlacementPreview
 import com.ugurbuga.blockgames.settings.BlockWiseOnboardingScene
 import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStage
@@ -249,7 +251,7 @@ internal fun BlockWiseInteractiveOnboardingInfoCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
-                    androidx.compose.ui.graphics.Brush.verticalGradient(
+                    Brush.verticalGradient(
                         colors = listOf(
                             uiColors.panelHighlight.copy(alpha = 0.18f),
                             uiColors.launchGlow.copy(alpha = 0.10f),
@@ -267,7 +269,7 @@ internal fun BlockWiseInteractiveOnboardingInfoCard(
             ) {
                 if (onBack != null) {
                     TopBarActionBlockButton(
-                        tone = com.ugurbuga.blockgames.game.model.CellTone.Cyan,
+                        tone = CellTone.Cyan,
                         icon = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = stringResource(Res.string.tutorial_back),
                         onClick = onBack,

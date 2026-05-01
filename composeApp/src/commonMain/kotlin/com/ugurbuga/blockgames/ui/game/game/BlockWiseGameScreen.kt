@@ -47,11 +47,13 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.time_remaining
 import com.ugurbuga.blockgames.ads.GameAdController
 import com.ugurbuga.blockgames.ads.NoOpGameAdController
+import com.ugurbuga.blockgames.game.model.DailyChallenge
 import com.ugurbuga.blockgames.game.model.GameConfig
 import com.ugurbuga.blockgames.game.model.GameState
 import com.ugurbuga.blockgames.game.model.GameStatus
@@ -454,7 +456,7 @@ private fun StatusCard(text: String) {
 @Composable
 private fun TrayDock(
     pieces: List<Piece>,
-    challenge: com.ugurbuga.blockgames.game.model.DailyChallenge?,
+    challenge: DailyChallenge?,
     activeDragPieceId: Long?,
     onPieceRectChanged: (Long, Rect) -> Unit,
     onPositioned: (Rect) -> Unit = {},
@@ -462,8 +464,8 @@ private fun TrayDock(
     onDrag: (Offset) -> Unit,
     onEndDrag: () -> Unit,
     onCancelDrag: () -> Unit,
-    pieceCardHeight: androidx.compose.ui.unit.Dp,
-    pieceCellSize: androidx.compose.ui.unit.Dp,
+    pieceCardHeight: Dp,
+    pieceCellSize: Dp,
     highlightDock: Boolean = false,
     highlightColor: Color? = null,
 ) {
@@ -548,8 +550,8 @@ private fun TrayDock(
 private fun TrayPieceCard(
     piece: Piece,
     hidden: Boolean,
-    cardHeight: androidx.compose.ui.unit.Dp,
-    pieceCellSize: androidx.compose.ui.unit.Dp,
+    cardHeight: Dp,
+    pieceCellSize: Dp,
     onRectChanged: (Rect) -> Unit,
     onStartDrag: (Offset) -> Unit,
     onDrag: (Offset) -> Unit,

@@ -3,6 +3,7 @@ package com.ugurbuga.blockgames.ui.game.properties
 import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
 import com.ugurbuga.blockgames.ui.game.PieceBlocks
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -76,7 +77,7 @@ fun PiecePropertiesScreen(
                 ),
                 shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
                 colors = CardDefaults.cardColors(containerColor = uiColors.panel),
-                border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
+                border = BorderStroke(1.dp, uiColors.panelStroke),
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             ) {
                 Column(
@@ -117,7 +118,7 @@ fun PiecePropertiesScreen(
                     ),
                 shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
                 colors = CardDefaults.cardColors(containerColor = uiColors.panelMuted),
-                border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.72f)),
+                border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.72f)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             ) {
                 Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {

@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -73,7 +74,7 @@ fun RewardFeedbackCard(
                     ),
                 shape = panelShape,
                 colors = CardDefaults.cardColors(containerColor = uiColors.panel),
-                border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
+                border = BorderStroke(1.dp, uiColors.panelStroke),
             ) {
                 Row(
                     modifier = Modifier

@@ -7,6 +7,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -466,7 +467,7 @@ private fun SettingsSectionCard(
         shape = panelShape,
         colors = CardDefaults.cardColors(containerColor = uiColors.panel),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
+        border = BorderStroke(1.dp, uiColors.panelStroke),
     ) {
         Column(
             modifier = Modifier
@@ -508,7 +509,7 @@ private fun SectionHeader(
             shape = surfaceShape,
             color = uiColors.panelHighlight,
             shadowElevation = 0.dp,
-            border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
+            border = BorderStroke(1.dp, uiColors.panelStroke),
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
@@ -697,7 +698,7 @@ private fun BlockStyleSettingsGroup(
                     colors = CardDefaults.cardColors(
                         containerColor = if (selected) uiColors.chipSelected else uiColors.chip.copy(alpha = 0.72f),
                     ),
-                    border = androidx.compose.foundation.BorderStroke(
+                    border = BorderStroke(
                         width = 1.dp,
                         color = if (selected) {
                             MaterialTheme.colorScheme.primary.copy(alpha = 0.84f)
@@ -767,7 +768,7 @@ private fun TokenBalanceCard(
         shape = surfaceShape,
         colors = CardDefaults.cardColors(containerColor = uiColors.panelHighlight.copy(alpha = 0.92f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
+        border = BorderStroke(1.dp, uiColors.panelStroke),
     ) {
         Row(
             modifier = Modifier
