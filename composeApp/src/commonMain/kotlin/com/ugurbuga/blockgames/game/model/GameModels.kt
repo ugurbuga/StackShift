@@ -13,8 +13,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
-import org.jetbrains.compose.resources.StringResource
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.app_language_arabic
 import blockgames.composeapp.generated.resources.app_language_chinese_simplified
@@ -27,6 +25,8 @@ import blockgames.composeapp.generated.resources.app_language_portuguese
 import blockgames.composeapp.generated.resources.app_language_russian
 import blockgames.composeapp.generated.resources.app_language_spanish
 import blockgames.composeapp.generated.resources.app_language_turkish
+import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
+import org.jetbrains.compose.resources.StringResource
 import kotlin.math.max
 
 enum class AppLanguage(
@@ -242,7 +242,14 @@ data class GameConfig(
     val rows: Int = 12,
     val difficultyIntervalSeconds: Int = 18,
     val linesPerLevel: Int = 6,
-)
+) {
+    companion object {
+        fun default(gameplayStyle: GameplayStyle): GameConfig = when (gameplayStyle) {
+            GameplayStyle.BlockWise -> GameConfig(columns = 8, rows = 10)
+            GameplayStyle.StackShift -> GameConfig(columns = 10, rows = 12)
+        }
+    }
+}
 
 enum class GameMode {
     Classic,

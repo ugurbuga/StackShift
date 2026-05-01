@@ -64,7 +64,7 @@ object StackShiftGameOnboardingStateFactory {
         scene(stages.first()).gameState.copy(gameplayStyle = gameplayStyle)
 
     fun cleanGameState(gameplayStyle: GameplayStyle): GameState =
-        guideLogic.newGame(config, gameplayStyle = gameplayStyle)
+        guideLogic.newGame(gameplayStyle = gameplayStyle, config = config)
 
     fun scene(stage: StackShiftOnboardingStage): StackShiftOnboardingScene = sceneCache.getValue(stage)
 
@@ -371,7 +371,10 @@ object StackShiftGameOnboardingStateFactory {
         nextQueue: List<Piece>,
         lastPlacementColumn: Int,
     ): GameState {
-        val baseState = guideLogic.newGame(config = config, gameplayStyle = GameplayStyle.StackShift)
+        val baseState = guideLogic.newGame(
+            gameplayStyle = GameplayStyle.StackShift,
+            config = config
+        )
         return baseState.copy(
             board = board,
             activePiece = activePiece,

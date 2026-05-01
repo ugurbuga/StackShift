@@ -38,10 +38,10 @@ internal class BlockWiseGameLogic(
     }
 
     override fun newGame(
+        gameplayStyle: GameplayStyle,
         config: GameConfig,
         challenge: DailyChallenge?,
         mode: GameMode,
-        gameplayStyle: GameplayStyle,
     ): GameState {
         val board = BoardMatrix.empty(columns = config.columns, rows = config.rows)
         var currentNextId = 1L

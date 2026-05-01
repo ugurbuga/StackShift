@@ -83,7 +83,10 @@ class GameReducerCommonTest {
 
     @Test
     fun reducer_placePiece_startsSoftLockTimerForStackShift() {
-        val state = logic.newGame(GameConfig(columns = 6, rows = 8), gameplayStyle = GameplayStyle.StackShift)
+        val state = logic.newGame(
+            gameplayStyle = GameplayStyle.StackShift,
+            config = GameConfig(columns = 6, rows = 8)
+        )
         val preview = logic.previewPlacement(state = state, column = state.config.columns / 2)
 
         assertNotNull(preview)
@@ -104,7 +107,10 @@ class GameReducerCommonTest {
 
     @Test
     fun reducer_commitSoftLock_placesStackShiftPieceAndAdvancesQueue() {
-        val state = logic.newGame(GameConfig(columns = 6, rows = 8), gameplayStyle = GameplayStyle.StackShift)
+        val state = logic.newGame(
+            gameplayStyle = GameplayStyle.StackShift,
+            config = GameConfig(columns = 6, rows = 8)
+        )
         val preview = logic.previewPlacement(state = state, column = state.config.columns / 2)
 
         assertNotNull(preview)
@@ -162,7 +168,7 @@ class GameReducerCommonTest {
 
     private fun testState(
         activePiece: Piece = dominoPiece(id = 1),
-    ) = logic.newGame(GameConfig(columns = 4, rows = 4)).copy(
+    ) = logic.newGame(config = GameConfig(columns = 4, rows = 4)).copy(
         board = BoardMatrix.empty(columns = 4, rows = 4).fill(
             points = listOf(GridPoint(0, 0), GridPoint(1, 0)),
             tone = CellTone.Blue,

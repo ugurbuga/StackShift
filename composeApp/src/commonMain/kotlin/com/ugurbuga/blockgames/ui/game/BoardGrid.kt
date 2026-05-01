@@ -65,6 +65,7 @@ import com.ugurbuga.blockgames.game.model.BoardMatrix
 import com.ugurbuga.blockgames.game.model.CellTone
 import com.ugurbuga.blockgames.game.model.GameState
 import com.ugurbuga.blockgames.game.model.GameStatus
+import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.GridPoint
 import com.ugurbuga.blockgames.game.model.Piece
 import com.ugurbuga.blockgames.game.model.PlacementPreview
@@ -129,7 +130,9 @@ fun BoardGrid(
     var boardTransitionToken by remember { mutableLongStateOf(gameState.clearAnimationToken) }
     val boardShiftProgress = remember { Animatable(1f) }
     val shouldAnimateBoardShift =
-        gameState.status == GameStatus.Running && gameState.clearAnimationToken != boardTransitionToken
+        gameState.status == GameStatus.Running &&
+                gameState.gameplayStyle == GameplayStyle.StackShift &&
+                gameState.clearAnimationToken != boardTransitionToken
     val animatedBoardCells =
         remember(boardTransitionSource, gameState.board, shouldAnimateBoardShift) {
             if (shouldAnimateBoardShift) {

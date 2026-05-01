@@ -3,10 +3,8 @@ package com.ugurbuga.blockgames.presentation.game
 import com.ugurbuga.blockgames.game.logic.GameEvent
 import com.ugurbuga.blockgames.game.logic.GameLogic
 import com.ugurbuga.blockgames.game.model.GameState
-import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.GridPoint
 import com.ugurbuga.blockgames.game.model.PlacementPreview
-import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,7 +22,7 @@ class GameStore(
     private val _uiState = MutableStateFlow(
         GameUiState(
             gameState = restoreState(
-                initialState ?: gameLogic.newGame(gameplayStyle = GlobalPlatformConfig.gameplayStyle)
+                initialState ?: gameLogic.newGame()
             ),
         ),
     )

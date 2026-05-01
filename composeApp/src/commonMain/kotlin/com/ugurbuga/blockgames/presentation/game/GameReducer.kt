@@ -82,10 +82,10 @@ internal class GameReducer(
 
         is GameAction.Restart -> ReduceResult(
             state = gameLogic.newGame(
-                action.config,
-                action.challenge,
-                action.mode,
-                action.gameplayStyle
+                gameplayStyle = action.gameplayStyle,
+                config = action.config,
+                challenge = action.challenge,
+                mode = action.mode,
             ),
             events = setOf(GameEvent.Restarted),
             effects = listOf(GameEffect.CancelSoftLockTimer),

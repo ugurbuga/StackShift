@@ -34,8 +34,8 @@ enum class BlockWiseOnboardingStage : OnboardingStage {
 object BlockWiseOnboardingStateFactory {
     private val guideLogic = GameLogic.create()
     private val config = GameConfig(
-        columns = 10,
-        rows = 12,
+        columns = 8,
+        rows = 10,
         difficultyIntervalSeconds = 9_999,
         linesPerLevel = 9_999,
     )
@@ -54,7 +54,7 @@ object BlockWiseOnboardingStateFactory {
         scene(stages.first()).gameState
 
     fun cleanGameState(): GameState =
-        guideLogic.newGame(config, gameplayStyle = GameplayStyle.BlockWise)
+        guideLogic.newGame(gameplayStyle = GameplayStyle.BlockWise, config = config)
 
     fun scene(stage: BlockWiseOnboardingStage): BlockWiseOnboardingScene = sceneCache.getValue(stage)
 
@@ -66,8 +66,8 @@ object BlockWiseOnboardingStateFactory {
                 board = BoardMatrix.empty(columns = config.columns, rows = config.rows)
                     .fill(
                         points = listOf(
-                            GridPoint(1, 4), GridPoint(2, 4), GridPoint(3, 4),
-                            GridPoint(6, 3), GridPoint(7, 3), GridPoint(8, 3),
+                            GridPoint(0, 4), GridPoint(1, 4), GridPoint(2, 4),
+                            GridPoint(5, 3), GridPoint(6, 3), GridPoint(7, 3),
                         ),
                         tone = CellTone.Blue,
                     ),
@@ -85,8 +85,8 @@ object BlockWiseOnboardingStateFactory {
                 board = BoardMatrix.empty(columns = config.columns, rows = config.rows)
                     .fill(
                         points = listOf(
-                            GridPoint(0, 5), GridPoint(1, 5), GridPoint(2, 5), GridPoint(3, 5),
-                            GridPoint(6, 5), GridPoint(7, 5), GridPoint(8, 5), GridPoint(9, 5),
+                            GridPoint(0, 5), GridPoint(1, 5), GridPoint(2, 5),
+                            GridPoint(5, 5), GridPoint(6, 5), GridPoint(7, 5),
                         ),
                         tone = CellTone.Blue,
                     ),
@@ -94,7 +94,7 @@ object BlockWiseOnboardingStateFactory {
                     piece(id = -20_101, kind = PieceKind.TriL, tone = CellTone.Gold),
                 ),
             ),
-            guidePoint = GridPoint(4, 4),
+            guidePoint = GridPoint(3, 4),
         )
 
         BlockWiseOnboardingStage.ColumnClear -> BlockWiseOnboardingScene(
@@ -104,8 +104,8 @@ object BlockWiseOnboardingStateFactory {
                 board = BoardMatrix.empty(columns = config.columns, rows = config.rows)
                     .fill(
                         points = listOf(
-                            GridPoint(4, 0), GridPoint(4, 1), GridPoint(4, 2), GridPoint(4, 3), GridPoint(4, 4),
-                            GridPoint(4, 6), GridPoint(4, 7), GridPoint(4, 8), GridPoint(4, 9), GridPoint(4, 10), GridPoint(4, 11),
+                            GridPoint(3, 0), GridPoint(3, 1), GridPoint(3, 2), GridPoint(3, 3), GridPoint(3, 4),
+                            GridPoint(3, 6), GridPoint(3, 7), GridPoint(3, 8), GridPoint(3, 9),
                         ),
                         tone = CellTone.Blue,
                     ),
@@ -113,7 +113,7 @@ object BlockWiseOnboardingStateFactory {
                     piece(id = -20_201, kind = PieceKind.Domino, tone = CellTone.Emerald),
                 ),
             ),
-            guidePoint = GridPoint(4, 5),
+            guidePoint = GridPoint(3, 5),
         )
 
         BlockWiseOnboardingStage.CrossClear -> BlockWiseOnboardingScene(
@@ -123,10 +123,10 @@ object BlockWiseOnboardingStateFactory {
                 board = BoardMatrix.empty(columns = config.columns, rows = config.rows)
                     .fill(
                         points = listOf(
-                            GridPoint(0, 5), GridPoint(1, 5), GridPoint(2, 5), GridPoint(3, 5),
-                            GridPoint(5, 5), GridPoint(6, 5), GridPoint(7, 5), GridPoint(8, 5), GridPoint(9, 5),
-                            GridPoint(4, 0), GridPoint(4, 1), GridPoint(4, 2), GridPoint(4, 3), GridPoint(4, 4),
-                            GridPoint(4, 8), GridPoint(4, 9), GridPoint(4, 10), GridPoint(4, 11),
+                            GridPoint(0, 6), GridPoint(1, 6), GridPoint(2, 6),
+                            GridPoint(5, 6), GridPoint(6, 6), GridPoint(7, 6),
+                            GridPoint(3, 0), GridPoint(3, 1), GridPoint(3, 2), GridPoint(3, 3),
+                            GridPoint(3, 7), GridPoint(3, 8), GridPoint(3, 9),
                         ),
                         tone = CellTone.Blue,
                     ),
@@ -134,7 +134,7 @@ object BlockWiseOnboardingStateFactory {
                     piece(id = -20_301, kind = PieceKind.L, tone = CellTone.Amber),
                 ),
             ),
-            guidePoint = GridPoint(4, 5),
+            guidePoint = GridPoint(3, 4),
         )
     }
 
@@ -142,7 +142,7 @@ object BlockWiseOnboardingStateFactory {
         board: BoardMatrix,
         trayPieces: List<Piece>,
     ): GameState {
-        val baseState = guideLogic.newGame(config = config, gameplayStyle = GameplayStyle.BlockWise)
+        val baseState = guideLogic.newGame(gameplayStyle = GameplayStyle.BlockWise, config = config)
         return baseState.copy(
             board = board,
             activePiece = trayPieces.firstOrNull(),

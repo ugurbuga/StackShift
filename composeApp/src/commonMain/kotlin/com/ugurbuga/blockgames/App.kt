@@ -70,14 +70,14 @@ import com.ugurbuga.blockgames.telemetry.AppTelemetry
 import com.ugurbuga.blockgames.telemetry.TelemetryActionNames
 import com.ugurbuga.blockgames.telemetry.TelemetryUserPropertyNames
 import com.ugurbuga.blockgames.telemetry.rememberAppTelemetry
-import com.ugurbuga.blockgames.ui.game.settings.AppSettingsScreen
-import com.ugurbuga.blockgames.ui.game.game.BlockGamesGameApp
-import com.ugurbuga.blockgames.ui.game.gametutorial.GameTutorialScreen
-import com.ugurbuga.blockgames.ui.game.home.HomeScreen
 import com.ugurbuga.blockgames.ui.game.RewardFeedbackCard
 import com.ugurbuga.blockgames.ui.game.ThemedConfirmDialog
 import com.ugurbuga.blockgames.ui.game.dailychallenge.DailyChallengeScreen
+import com.ugurbuga.blockgames.ui.game.game.BlockGamesGameApp
+import com.ugurbuga.blockgames.ui.game.gametutorial.GameTutorialScreen
+import com.ugurbuga.blockgames.ui.game.home.HomeScreen
 import com.ugurbuga.blockgames.ui.game.settings.AppLanguageScreen
+import com.ugurbuga.blockgames.ui.game.settings.AppSettingsScreen
 import com.ugurbuga.blockgames.ui.theme.LocalBlockGamesUiColors
 import com.ugurbuga.blockgames.ui.theme.blockGamesThemeSpec
 import com.ugurbuga.blockgames.ui.theme.blockGamesTypography
@@ -539,7 +539,7 @@ fun BlockGamesAppHost(
         onPlayChallengeRequested = { challenge ->
             restoreOrRestartSession(slot = GameSessionSlot.DailyChallenge) {
                 gameViewModel.restart(
-                    config = GameConfig(),
+                    config = GameConfig.default(gameplayStyle),
                     challenge = challenge,
                     mode = GameMode.Classic,
                     gameplayStyle = gameplayStyle,
@@ -551,7 +551,7 @@ fun BlockGamesAppHost(
             } == true
             if (!isMatchingChallenge) {
                 gameViewModel.restart(
-                    config = GameConfig(),
+                    config = GameConfig.default(gameplayStyle),
                     challenge = challenge,
                     mode = GameMode.Classic,
                     gameplayStyle = gameplayStyle,
