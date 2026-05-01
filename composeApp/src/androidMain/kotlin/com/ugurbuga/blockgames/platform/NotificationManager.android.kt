@@ -19,10 +19,10 @@ import com.ugurbuga.blockgames.settings.MissYouReminderMinimumInactivityMillis
 import com.ugurbuga.blockgames.settings.MissYouReminderSlots
 import com.ugurbuga.blockgames.settings.NotificationReminderSchedulingHorizonDays
 import com.ugurbuga.blockgames.settings.hasCompletedChallengeForDate
-
 import kotlinx.coroutines.delay
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.milliseconds
 
 class AndroidNotificationManager(private val context: Context) : NotificationManager {
 
@@ -156,7 +156,7 @@ class AndroidNotificationManager(private val context: Context) : NotificationMan
             ) { _ -> }
 
             LaunchedEffect(Unit) {
-                delay(500)
+                delay(500.milliseconds)
                 launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         }

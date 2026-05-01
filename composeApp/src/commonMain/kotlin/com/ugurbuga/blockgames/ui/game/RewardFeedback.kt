@@ -30,10 +30,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
+import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
 import com.ugurbuga.blockgames.ui.theme.blockGamesSurfaceShadow
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun RewardFeedbackCard(
@@ -45,7 +46,7 @@ fun RewardFeedbackCard(
 ) {
     LaunchedEffect(visible) {
         if (visible) {
-            delay(4000)
+            delay(4000.milliseconds)
             onDismiss()
         }
     }

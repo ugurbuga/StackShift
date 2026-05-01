@@ -77,8 +77,8 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.launch_boost_active
 import blockgames.composeapp.generated.resources.launch_drag_hint
@@ -669,7 +669,7 @@ fun GameScreen(
                 targetValue = 1f,
                 animationSpec = tween(durationMillis = 240, easing = FastOutSlowInEasing)
             )
-            delay(800)
+            delay(800.milliseconds)
             comboAlpha.animateTo(
                 targetValue = 0f,
                 animationSpec = tween(durationMillis = 420, easing = FastOutSlowInEasing)
@@ -993,13 +993,13 @@ fun GameScreen(
                                             cellSizePx = cellSizePx
                                         )
                                         coroutineScope.launch {
-                                            delay(EntryAnimationMillis)
+                                            delay(EntryAnimationMillis.milliseconds)
                                             overlayTopLeftState.value =
                                                 preview.landingAnchor.toTopLeft(
                                                     boardRect = boardRect,
                                                     cellSizePx = cellSizePx
                                                 )
-                                            delay(LaunchAnimationMillis)
+                                            delay(LaunchAnimationMillis.milliseconds)
                                             val result = updatedPlacePiece(column)
                                             dispatchFeedback(result.feedback, soundPlayer, haptics)
                                             isLaunching = false

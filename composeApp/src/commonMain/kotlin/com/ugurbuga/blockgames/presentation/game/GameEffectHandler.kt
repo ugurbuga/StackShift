@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 internal class GameEffectHandler(
     private val scope: CoroutineScope,
@@ -23,7 +24,7 @@ internal class GameEffectHandler(
             is GameEffect.StartSoftLockTimer -> {
                 softLockJob?.cancel()
                 softLockJob = scope.launch {
-                    delay(effect.delayMillis)
+                    delay(effect.delayMillis.milliseconds)
                     val latest = stateProvider().softLock
                     if (latest?.revision == effect.revision) {
                         dispatchIntent(GameIntent.CommitSoftLock)

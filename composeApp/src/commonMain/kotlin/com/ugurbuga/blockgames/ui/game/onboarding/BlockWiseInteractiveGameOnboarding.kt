@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.interactive_onboarding_aim_hint
@@ -58,11 +59,14 @@ import blockgames.composeapp.generated.resources.interactive_onboarding_step_cou
 import blockgames.composeapp.generated.resources.interactive_onboarding_target_locked
 import blockgames.composeapp.generated.resources.interactive_onboarding_waiting
 import blockgames.composeapp.generated.resources.tutorial_back
+import com.ugurbuga.blockgames.BlockGamesTheme
 import com.ugurbuga.blockgames.game.logic.GameLogic
 import com.ugurbuga.blockgames.game.model.CellTone
 import com.ugurbuga.blockgames.game.model.PlacementPreview
+import com.ugurbuga.blockgames.settings.AppSettings
 import com.ugurbuga.blockgames.settings.BlockWiseOnboardingScene
 import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStage
+import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.StackShiftOnboardingTarget
 import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
@@ -127,7 +131,7 @@ internal fun BlockWiseOnboardingTargetOverlay(
     cellSizePx: Float,
     modifier: Modifier = Modifier,
 ) {
-    val suppressTargetRect = (ui.scene.stage == BlockWiseOnboardingStage.DragToBoard) && ui.hasDraggedAwayFromSpawn
+    val suppressTargetRect = (ui.scene.target == StackShiftOnboardingTarget.Tray) && ui.hasDraggedAwayFromSpawn
     val targetRect = remember(ui.scene, boardRect, trayRect, cellSizePx, suppressTargetRect) {
         if (suppressTargetRect) {
             null
@@ -188,9 +192,7 @@ internal fun rememberBlockWiseInteractiveOnboardingVisualState(
         dragToBoardHint,
         aimHint,
     ) {
-        val isDragStepReady = (ui.scene.stage == BlockWiseOnboardingStage.DragToBoard) && ui.hasDraggedAwayFromSpawn
-        val isLaterStepReady = (ui.scene.stage != BlockWiseOnboardingStage.DragToBoard) && ui.isTargetAligned
-        val isSuccessState = isDragStepReady || isLaterStepReady
+        val isSuccessState = ui.isTargetAligned
         val title = when (ui.scene.stage) {
             BlockWiseOnboardingStage.DragToBoard -> dragTitle
             BlockWiseOnboardingStage.LineClear -> lineClearTitle
@@ -205,8 +207,9 @@ internal fun rememberBlockWiseInteractiveOnboardingVisualState(
         }
         val hint = when {
             ui.isAwaitingPlacementCommit -> waitingHint
-            isLaterStepReady -> targetLockedHint
-            isDragStepReady -> dragReadyHint
+            isSuccessState -> {
+                if (ui.scene.stage == BlockWiseOnboardingStage.DragToBoard) dragReadyHint else targetLockedHint
+            }
             ui.scene.stage == BlockWiseOnboardingStage.DragToBoard -> dragToBoardHint
             else -> aimHint
         }
@@ -480,4 +483,42 @@ private fun Rect.scaleAroundCenter(scale: Float): Rect {
         right = center.x + (scaledWidth / 2f),
         bottom = center.y + (scaledHeight / 2f),
     )
+}
+
+@Preview(name = "Onboarding Card - Default")
+@Composable
+private fun BlockWiseInteractiveOnboardingInfoCardPreview() {
+    BlockGamesTheme(settings = AppSettings()) {
+        Box(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+            BlockWiseInteractiveOnboardingInfoCard(
+                ui = BlockWiseInteractiveGameOnboardingUi(
+                    scene = BlockWiseOnboardingStateFactory.scene(BlockWiseOnboardingStage.DragToBoard),
+                    currentStep = 1,
+                    totalSteps = 4,
+                    hasDraggedAwayFromSpawn = false,
+                    isTargetAligned = false,
+                    isAwaitingPlacementCommit = false,
+                ),
+            )
+        }
+    }
+}
+
+@Preview(name = "Onboarding Card - Success")
+@Composable
+private fun BlockWiseInteractiveOnboardingInfoCardSuccessPreview() {
+    BlockGamesTheme(settings = AppSettings()) {
+        Box(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+            BlockWiseInteractiveOnboardingInfoCard(
+                ui = BlockWiseInteractiveGameOnboardingUi(
+                    scene = BlockWiseOnboardingStateFactory.scene(BlockWiseOnboardingStage.DragToBoard),
+                    currentStep = 1,
+                    totalSteps = 4,
+                    hasDraggedAwayFromSpawn = true,
+                    isTargetAligned = true,
+                    isAwaitingPlacementCommit = false,
+                ),
+            )
+        }
+    }
 }

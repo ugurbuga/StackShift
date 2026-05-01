@@ -173,6 +173,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
+import kotlin.time.Duration.Companion.milliseconds
 
 private val TutorialMiniDockHeight = 88.dp
 private const val TutorialIntroColumns = 10
@@ -1377,7 +1378,7 @@ private fun TutorialMiniGameDemo(
     ) {
         if (boardRect == Rect.Zero || trayRect == Rect.Zero || cellSizePx <= 0f) return@LaunchedEffect
         if (resolvedLockedColumn != null || isDragging || activePiece == null) return@LaunchedEffect
-        delay(TutorialDemoAutoplayStartDelayMillis)
+        delay(TutorialDemoAutoplayStartDelayMillis.milliseconds)
         var autoIndex = 0
         while (isActive && !isDragging) {
             val column = autoColumns[autoIndex % autoColumns.size]
@@ -1390,7 +1391,7 @@ private fun TutorialMiniGameDemo(
                     column = column,
                 )
             autoIndex += 1
-            delay(TutorialDemoAutoplayStepDelayMillis)
+            delay(TutorialDemoAutoplayStepDelayMillis.milliseconds)
         }
     }
 
@@ -1411,7 +1412,7 @@ private fun TutorialMiniGameDemo(
                     cellSizePx = cellSizePx,
                     column = spawnColumn,
                 )
-            delay(TutorialDemoAutoplayStartDelayMillis)
+            delay(TutorialDemoAutoplayStartDelayMillis.milliseconds)
 
             overlayTopLeft =
                 pieceSpawnTopLeft(
@@ -1421,12 +1422,12 @@ private fun TutorialMiniGameDemo(
                     cellSizePx = cellSizePx,
                     column = resolvedLockedColumn,
                 )
-            delay(TutorialDemoTravelDurationMillis.toLong())
+            delay(TutorialDemoTravelDurationMillis.milliseconds)
 
             val placed = gameLogic.placePiece(scene.gameState, resolvedLockedColumn)
             val lockedPreview = placed.state.softLock?.preview
             if (lockedPreview == null) {
-                delay(TutorialDemoResetDelayMillis)
+                delay(TutorialDemoResetDelayMillis.milliseconds)
                 continue
             }
 
@@ -1435,21 +1436,21 @@ private fun TutorialMiniGameDemo(
                 boardRect = boardRect,
                 cellSizePx = cellSizePx
             )
-            delay((TutorialDemoTravelDurationMillis / 2).toLong())
+            delay((TutorialDemoTravelDurationMillis / 2).milliseconds)
             overlayTopLeft = lockedPreview.landingAnchor.toLocalTopLeft(
                 boardRect = boardRect,
                 cellSizePx = cellSizePx
             )
-            delay((TutorialDemoTravelDurationMillis / 3).toLong())
+            delay((TutorialDemoTravelDurationMillis / 3).milliseconds)
 
             gameState = placed.state
-            delay(TutorialDemoSoftLockDelayMillis)
+            delay(TutorialDemoSoftLockDelayMillis.milliseconds)
 
             val committed = gameLogic.commitSoftLock(placed.state)
             gameState = committed.state
             overlayTopLeft = null
-            delay(TutorialDemoResolutionHoldMillis)
-            delay(TutorialDemoResetDelayMillis)
+            delay(TutorialDemoResolutionHoldMillis.milliseconds)
+            delay(TutorialDemoResetDelayMillis.milliseconds)
         }
     }
 
@@ -1871,7 +1872,7 @@ private fun TutorialActionTile(
             style = MaterialTheme.typography.labelSmall,
             color = uiColors.subtitle,
             textAlign = TextAlign.Center,
-            maxLines = 1,
+            maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
     }
@@ -2027,6 +2028,58 @@ private fun TutorialSpecialsStepPreview() {
 private fun TutorialReadyStepPreview() {
     BlockGamesTheme(settings = AppSettings()) {
         GameTutorialScreen(
+            initialPage = 3,
+            onBack = {},
+            onFinish = {},
+        )
+    }
+}
+
+@Preview(name = "Tutorial - BlockWise - Intro", widthDp = 412, heightDp = 915)
+@Composable
+private fun TutorialBlockWiseIntroStepPreview() {
+    BlockGamesTheme(settings = AppSettings()) {
+        GameTutorialScreen(
+            gameplayStyle = GameplayStyle.BlockWise,
+            initialPage = 0,
+            onBack = {},
+            onFinish = {},
+        )
+    }
+}
+
+@Preview(name = "Tutorial - BlockWise - App Features", widthDp = 412, heightDp = 915)
+@Composable
+private fun TutorialBlockWiseAppFeaturesStepPreview() {
+    BlockGamesTheme(settings = AppSettings()) {
+        GameTutorialScreen(
+            gameplayStyle = GameplayStyle.BlockWise,
+            initialPage = 1,
+            onBack = {},
+            onFinish = {},
+        )
+    }
+}
+
+@Preview(name = "Tutorial - BlockWise - Systems", widthDp = 412, heightDp = 915)
+@Composable
+private fun TutorialBlockWiseSystemsStepPreview() {
+    BlockGamesTheme(settings = AppSettings()) {
+        GameTutorialScreen(
+            gameplayStyle = GameplayStyle.BlockWise,
+            initialPage = 2,
+            onBack = {},
+            onFinish = {},
+        )
+    }
+}
+
+@Preview(name = "Tutorial - BlockWise - Ready", widthDp = 412, heightDp = 915)
+@Composable
+private fun TutorialBlockWiseReadyStepPreview() {
+    BlockGamesTheme(settings = AppSettings()) {
+        GameTutorialScreen(
+            gameplayStyle = GameplayStyle.BlockWise,
             initialPage = 3,
             onBack = {},
             onFinish = {},

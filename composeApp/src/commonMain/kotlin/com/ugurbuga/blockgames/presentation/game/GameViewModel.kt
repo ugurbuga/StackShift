@@ -20,6 +20,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 class GameViewModel(
     private val gameLogic: GameLogic = GameLogic.create(),
@@ -123,7 +124,7 @@ class GameViewModel(
     private fun startGameLoop() {
         scope.launch {
             while (isActive) {
-                delay(1_000)
+                delay(1000.milliseconds)
                 store.tick()
             }
         }

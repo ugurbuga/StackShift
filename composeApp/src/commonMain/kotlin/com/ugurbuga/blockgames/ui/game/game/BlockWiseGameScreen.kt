@@ -47,10 +47,12 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.time_remaining
+import com.ugurbuga.blockgames.BlockGamesTheme
 import com.ugurbuga.blockgames.ads.GameAdController
 import com.ugurbuga.blockgames.ads.NoOpGameAdController
 import com.ugurbuga.blockgames.game.model.DailyChallenge
@@ -62,8 +64,11 @@ import com.ugurbuga.blockgames.game.model.GridPoint
 import com.ugurbuga.blockgames.game.model.Piece
 import com.ugurbuga.blockgames.game.model.PlacementPreview
 import com.ugurbuga.blockgames.game.model.gameText
+import com.ugurbuga.blockgames.settings.AppSettings
 import com.ugurbuga.blockgames.settings.BlockWiseOnboardingScene
 import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStage
+import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStateFactory
+import com.ugurbuga.blockgames.settings.StackShiftOnboardingTarget
 import com.ugurbuga.blockgames.telemetry.AppTelemetry
 import com.ugurbuga.blockgames.telemetry.NoOpAppTelemetry
 import com.ugurbuga.blockgames.ui.game.BoardGrid
@@ -187,19 +192,44 @@ fun BlockWiseGameScreen(
             )
         }
     }
-    val placementPreview by remember {
+    val placementPreview by remember(interactiveOnboardingScene) {
         derivedStateOf {
             val pieceId = draggedPieceId ?: return@derivedStateOf null
             if (currentGameState.status != GameStatus.Running) return@derivedStateOf null
-            resolveNearestFreePlacementPreview(
-                pieceId = pieceId,
-                piece = draggedPiece,
-                overlayTopLeft = overlayTopLeft,
-                boardRect = boardRect,
-                cellSizePx = cellSizePx,
-                config = currentGameState.config,
-                requestPreview = currentOnRequestPreview,
-            )
+
+            val piece = draggedPiece ?: return@derivedStateOf null
+            val resolvedOverlayTopLeft = overlayTopLeft ?: return@derivedStateOf null
+
+            if (interactiveOnboardingEnabled && interactiveOnboardingScene.guidePoint != null) {
+                // Sadece guidePoint için preview isteği atılır, diğer alanlar taranmaz
+                val guidePoint = interactiveOnboardingScene.guidePoint
+                val preview = currentOnRequestPreview(pieceId, guidePoint) ?: return@derivedStateOf null
+
+                val candidateTopLeft = guidePoint.toFreePlacementTopLeft(boardRect, cellSizePx)
+                val candidateCellRects = piece.cellRects(candidateTopLeft, cellSizePx)
+                val overlayCellRects = piece.cellRects(resolvedOverlayTopLeft, cellSizePx)
+
+                val overlap = overlapArea(overlayCellRects, candidateCellRects)
+                val totalPieceArea = piece.cells.size * cellSizePx * cellSizePx
+
+                // Sadece hedef alanla yeterli kesişim varsa preview döner, aksi halde null döner (bırakılamaz)
+                if (overlap >= totalPieceArea * 0.4f) {
+                    preview
+                } else {
+                    null
+                }
+            } else {
+                // DragToBoard veya normal oyun: En yakın geçerli noktayı bul
+                resolveNearestFreePlacementPreview(
+                    pieceId = pieceId,
+                    piece = piece,
+                    overlayTopLeft = resolvedOverlayTopLeft,
+                    boardRect = boardRect,
+                    cellSizePx = cellSizePx,
+                    config = currentGameState.config,
+                    requestPreview = currentOnRequestPreview,
+                )
+            }
         }
     }
     val impactedPreviewCells by remember {
@@ -226,7 +256,6 @@ fun BlockWiseGameScreen(
     ) {
         derivedStateOf {
             interactiveOnboardingScene != null &&
-                    (interactiveOnboardingScene.stage != BlockWiseOnboardingStage.DragToBoard) &&
                     (draggedPieceId != null) &&
                     (placementPreview != null)
         }
@@ -347,7 +376,7 @@ fun BlockWiseGameScreen(
                     },
                     pieceCardHeight = trayCardHeight,
                     pieceCellSize = trayPieceCellSize,
-                    highlightDock = interactiveOnboardingEnabled && resolvedInteractiveOnboardingUi?.scene?.stage == BlockWiseOnboardingStage.DragToBoard,
+                    highlightDock = interactiveOnboardingScene?.target == StackShiftOnboardingTarget.Tray,
                     highlightColor = if (interactiveOnboardingEnabled) BlockGamesThemeTokens.uiColors.success else null,
                 )
             }
@@ -521,7 +550,7 @@ private fun TrayDock(
                 )
             }
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().height(pieceCardHeight),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 pieces.forEach { piece ->
@@ -759,5 +788,111 @@ private data class FreePlacementPreviewCandidate(
     val overlapArea: Float,
     val proximityScore: Float,
 )
+
+@Preview(name = "Game - Classic", widthDp = 412, heightDp = 915)
+@Composable
+private fun BlockWiseGameScreenPreview() {
+    BlockGamesTheme(settings = AppSettings()) {
+        BlockWiseGameScreen(
+            gameState = BlockWiseOnboardingStateFactory.initialState(),
+            onRequestPreview = { _, _ -> null },
+            onResolvePreviewImpact = { emptySet() },
+            onPlacePiece = { _, _ -> },
+            onRestart = {},
+            onRewardedRevive = {},
+            onBack = {},
+            highestScore = 1000,
+            showNewHighScoreMessage = false,
+        )
+    }
+}
+
+@Preview(name = "Onboarding - 1 - Drag", widthDp = 412, heightDp = 915)
+@Composable
+private fun BlockWiseOnboardingDragPreview() {
+    val scene = BlockWiseOnboardingStateFactory.scene(BlockWiseOnboardingStage.DragToBoard)
+    BlockGamesTheme(settings = AppSettings()) {
+        BlockWiseGameScreen(
+            gameState = scene.gameState,
+            onRequestPreview = { _, _ -> null },
+            onResolvePreviewImpact = { emptySet() },
+            onPlacePiece = { _, _ -> },
+            onRestart = {},
+            onRewardedRevive = {},
+            onBack = {},
+            highestScore = 1000,
+            showNewHighScoreMessage = false,
+            interactiveOnboardingScene = scene,
+            interactiveOnboardingCurrentStep = 1,
+            interactiveOnboardingTotalSteps = 4,
+        )
+    }
+}
+
+@Preview(name = "Onboarding - 2 - Line Clear", widthDp = 412, heightDp = 915)
+@Composable
+private fun BlockWiseOnboardingLineClearPreview() {
+    val scene = BlockWiseOnboardingStateFactory.scene(BlockWiseOnboardingStage.LineClear)
+    BlockGamesTheme(settings = AppSettings()) {
+        BlockWiseGameScreen(
+            gameState = scene.gameState,
+            onRequestPreview = { _, _ -> null },
+            onResolvePreviewImpact = { emptySet() },
+            onPlacePiece = { _, _ -> },
+            onRestart = {},
+            onRewardedRevive = {},
+            onBack = {},
+            highestScore = 1000,
+            showNewHighScoreMessage = false,
+            interactiveOnboardingScene = scene,
+            interactiveOnboardingCurrentStep = 2,
+            interactiveOnboardingTotalSteps = 4,
+        )
+    }
+}
+
+@Preview(name = "Onboarding - 3 - Column Clear", widthDp = 412, heightDp = 915)
+@Composable
+private fun BlockWiseOnboardingColumnClearPreview() {
+    val scene = BlockWiseOnboardingStateFactory.scene(BlockWiseOnboardingStage.ColumnClear)
+    BlockGamesTheme(settings = AppSettings()) {
+        BlockWiseGameScreen(
+            gameState = scene.gameState,
+            onRequestPreview = { _, _ -> null },
+            onResolvePreviewImpact = { emptySet() },
+            onPlacePiece = { _, _ -> },
+            onRestart = {},
+            onRewardedRevive = {},
+            onBack = {},
+            highestScore = 1000,
+            showNewHighScoreMessage = false,
+            interactiveOnboardingScene = scene,
+            interactiveOnboardingCurrentStep = 3,
+            interactiveOnboardingTotalSteps = 4,
+        )
+    }
+}
+
+@Preview(name = "Onboarding - 4 - Cross Clear", widthDp = 412, heightDp = 915)
+@Composable
+private fun BlockWiseOnboardingCrossClearPreview() {
+    val scene = BlockWiseOnboardingStateFactory.scene(BlockWiseOnboardingStage.CrossClear)
+    BlockGamesTheme(settings = AppSettings()) {
+        BlockWiseGameScreen(
+            gameState = scene.gameState,
+            onRequestPreview = { _, _ -> null },
+            onResolvePreviewImpact = { emptySet() },
+            onPlacePiece = { _, _ -> },
+            onRestart = {},
+            onRewardedRevive = {},
+            onBack = {},
+            highestScore = 1000,
+            showNewHighScoreMessage = false,
+            interactiveOnboardingScene = scene,
+            interactiveOnboardingCurrentStep = 4,
+            interactiveOnboardingTotalSteps = 4,
+        )
+    }
+}
 
 

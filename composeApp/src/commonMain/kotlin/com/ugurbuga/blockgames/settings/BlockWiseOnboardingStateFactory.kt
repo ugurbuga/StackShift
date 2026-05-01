@@ -73,8 +73,6 @@ object BlockWiseOnboardingStateFactory {
                     ),
                 trayPieces = listOf(
                     piece(id = -20_001, kind = PieceKind.T, tone = CellTone.Cyan),
-                    piece(id = -20_002, kind = PieceKind.Domino, tone = CellTone.Gold),
-                    piece(id = -20_003, kind = PieceKind.Square, tone = CellTone.Emerald),
                 ),
             ),
             guidePoint = null,
@@ -93,12 +91,10 @@ object BlockWiseOnboardingStateFactory {
                         tone = CellTone.Blue,
                     ),
                 trayPieces = listOf(
-                    piece(id = -20_101, kind = PieceKind.Domino, tone = CellTone.Gold),
-                    piece(id = -20_102, kind = PieceKind.Square, tone = CellTone.Emerald),
-                    piece(id = -20_103, kind = PieceKind.TriL, tone = CellTone.Violet),
+                    piece(id = -20_101, kind = PieceKind.TriL, tone = CellTone.Gold),
                 ),
             ),
-            guidePoint = GridPoint(4, 5),
+            guidePoint = GridPoint(4, 4),
         )
 
         BlockWiseOnboardingStage.ColumnClear -> BlockWiseOnboardingScene(
@@ -108,15 +104,13 @@ object BlockWiseOnboardingStateFactory {
                 board = BoardMatrix.empty(columns = config.columns, rows = config.rows)
                     .fill(
                         points = listOf(
-                            GridPoint(4, 2), GridPoint(4, 3), GridPoint(4, 4),
-                            GridPoint(4, 6), GridPoint(4, 7), GridPoint(4, 8),
+                            GridPoint(4, 0), GridPoint(4, 1), GridPoint(4, 2), GridPoint(4, 3), GridPoint(4, 4),
+                            GridPoint(4, 6), GridPoint(4, 7), GridPoint(4, 8), GridPoint(4, 9), GridPoint(4, 10), GridPoint(4, 11),
                         ),
                         tone = CellTone.Blue,
                     ),
                 trayPieces = listOf(
                     piece(id = -20_201, kind = PieceKind.Domino, tone = CellTone.Emerald),
-                    piece(id = -20_202, kind = PieceKind.Square, tone = CellTone.Violet),
-                    piece(id = -20_203, kind = PieceKind.TriL, tone = CellTone.Gold),
                 ),
             ),
             guidePoint = GridPoint(4, 5),
@@ -131,15 +125,13 @@ object BlockWiseOnboardingStateFactory {
                         points = listOf(
                             GridPoint(0, 5), GridPoint(1, 5), GridPoint(2, 5), GridPoint(3, 5),
                             GridPoint(5, 5), GridPoint(6, 5), GridPoint(7, 5), GridPoint(8, 5), GridPoint(9, 5),
-                            GridPoint(4, 2), GridPoint(4, 3), GridPoint(4, 4),
-                            GridPoint(4, 6), GridPoint(4, 7), GridPoint(4, 8),
+                            GridPoint(4, 0), GridPoint(4, 1), GridPoint(4, 2), GridPoint(4, 3), GridPoint(4, 4),
+                            GridPoint(4, 8), GridPoint(4, 9), GridPoint(4, 10), GridPoint(4, 11),
                         ),
                         tone = CellTone.Blue,
                     ),
                 trayPieces = listOf(
-                    piece(id = -20_301, kind = PieceKind.TriL, tone = CellTone.Amber),
-                    piece(id = -20_302, kind = PieceKind.Square, tone = CellTone.Violet),
-                    piece(id = -20_303, kind = PieceKind.TriL, tone = CellTone.Gold),
+                    piece(id = -20_301, kind = PieceKind.L, tone = CellTone.Amber),
                 ),
             ),
             guidePoint = GridPoint(4, 5),
