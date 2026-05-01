@@ -1,4 +1,4 @@
-package com.ugurbuga.blockgames.ui.game
+package com.ugurbuga.blockgames.ui.game.properties
 
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -36,17 +36,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.ugurbuga.blockgames.game.model.CellTone
-import com.ugurbuga.blockgames.game.model.SpecialBlockType
-import com.ugurbuga.blockgames.localization.LocalAppSettings
-import com.ugurbuga.blockgames.telemetry.AppTelemetry
-import com.ugurbuga.blockgames.telemetry.LogScreen
-import com.ugurbuga.blockgames.telemetry.NoOpAppTelemetry
-import com.ugurbuga.blockgames.telemetry.TelemetryScreenNames
-import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
-import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
-import com.ugurbuga.blockgames.ui.theme.blockGamesSurfaceShadow
-import org.jetbrains.compose.resources.stringResource
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.block_properties_column_clearer_desc
 import blockgames.composeapp.generated.resources.block_properties_column_clearer_title
@@ -60,6 +49,20 @@ import blockgames.composeapp.generated.resources.block_properties_row_clearer_de
 import blockgames.composeapp.generated.resources.block_properties_row_clearer_title
 import blockgames.composeapp.generated.resources.block_properties_select_hint
 import blockgames.composeapp.generated.resources.block_properties_title
+import com.ugurbuga.blockgames.game.model.CellTone
+import com.ugurbuga.blockgames.game.model.SpecialBlockType
+import com.ugurbuga.blockgames.localization.LocalAppSettings
+import com.ugurbuga.blockgames.telemetry.AppTelemetry
+import com.ugurbuga.blockgames.telemetry.LogScreen
+import com.ugurbuga.blockgames.telemetry.NoOpAppTelemetry
+import com.ugurbuga.blockgames.telemetry.TelemetryScreenNames
+import com.ugurbuga.blockgames.ui.game.BlockCellPreview
+import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
+import com.ugurbuga.blockgames.ui.game.blockStyleIconTint
+import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
+import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
+import com.ugurbuga.blockgames.ui.theme.blockGamesSurfaceShadow
+import org.jetbrains.compose.resources.stringResource
 
 private val BlockSampleSize = 78.dp
 @Composable

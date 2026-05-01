@@ -7,7 +7,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import org.jetbrains.compose.resources.Font
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.nunito_black
 import blockgames.composeapp.generated.resources.nunito_bold
@@ -15,6 +14,7 @@ import blockgames.composeapp.generated.resources.nunito_extrabold
 import blockgames.composeapp.generated.resources.nunito_medium
 import blockgames.composeapp.generated.resources.nunito_regular
 import blockgames.composeapp.generated.resources.nunito_semibold
+import org.jetbrains.compose.resources.Font
 
 @Composable
 fun blockGamesTypography(): Typography {

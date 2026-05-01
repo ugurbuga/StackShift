@@ -1,4 +1,4 @@
-package com.ugurbuga.blockgames.ui.game
+package com.ugurbuga.blockgames.ui.game.onboarding
 
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloat
@@ -12,10 +12,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,7 +40,6 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.interactive_onboarding_aim_hint
@@ -52,36 +49,28 @@ import blockgames.composeapp.generated.resources.interactive_onboarding_drag_bod
 import blockgames.composeapp.generated.resources.interactive_onboarding_drag_ready
 import blockgames.composeapp.generated.resources.interactive_onboarding_drag_title
 import blockgames.composeapp.generated.resources.interactive_onboarding_drag_to_board
-import blockgames.composeapp.generated.resources.interactive_onboarding_ghost_body
-import blockgames.composeapp.generated.resources.interactive_onboarding_ghost_title
 import blockgames.composeapp.generated.resources.interactive_onboarding_heavy_body
 import blockgames.composeapp.generated.resources.interactive_onboarding_heavy_title
 import blockgames.composeapp.generated.resources.interactive_onboarding_line_clear_body
 import blockgames.composeapp.generated.resources.interactive_onboarding_line_clear_title
-import blockgames.composeapp.generated.resources.interactive_onboarding_row_clearer_body
-import blockgames.composeapp.generated.resources.interactive_onboarding_row_clearer_title
 import blockgames.composeapp.generated.resources.interactive_onboarding_step_counter
 import blockgames.composeapp.generated.resources.interactive_onboarding_target_locked
 import blockgames.composeapp.generated.resources.interactive_onboarding_waiting
 import blockgames.composeapp.generated.resources.tutorial_back
-import com.ugurbuga.blockgames.BlockGamesTheme
 import com.ugurbuga.blockgames.game.logic.GameLogic
-import com.ugurbuga.blockgames.game.model.AppThemeMode
 import com.ugurbuga.blockgames.game.model.PlacementPreview
-import com.ugurbuga.blockgames.settings.AppSettings
-import com.ugurbuga.blockgames.settings.StackShiftGameOnboardingStateFactory
-import com.ugurbuga.blockgames.settings.StackShiftOnboardingScene
-import com.ugurbuga.blockgames.settings.StackShiftOnboardingStage
+import com.ugurbuga.blockgames.settings.BlockWiseOnboardingScene
+import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStage
 import com.ugurbuga.blockgames.settings.StackShiftOnboardingTarget
+import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
 import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
-import com.ugurbuga.blockgames.ui.theme.appBackgroundBrush
 import com.ugurbuga.blockgames.ui.theme.blockGamesSurfaceShadow
 import org.jetbrains.compose.resources.stringResource
 
 @Immutable
-data class GameInteractiveOnboardingUi(
-    val scene: StackShiftOnboardingScene,
+data class BlockWiseInteractiveGameOnboardingUi(
+    val scene: BlockWiseOnboardingScene,
     val currentStep: Int,
     val totalSteps: Int,
     val hasDraggedAwayFromSpawn: Boolean,
@@ -92,37 +81,23 @@ data class GameInteractiveOnboardingUi(
 private val onboardingLogic = GameLogic.create()
 private const val InteractiveOnboardingTargetPulseDurationMillis = 1880
 
-@Immutable
-internal data class InteractiveOnboardingVisualState(
-    val title: String,
-    val body: String,
-    val hint: String,
-    val guideColor: Color,
-    val guideBadgeTextColor: Color,
-    val hintContainerAlpha: Float,
-    val hintBorderAlpha: Float,
-    val isSuccessState: Boolean,
-)
-
 @Composable
-fun InteractiveGameOnboardingOverlay(
-    ui: GameInteractiveOnboardingUi,
+fun BlockWiseInteractiveGameOnboardingOverlay(
+    ui: BlockWiseInteractiveGameOnboardingUi,
     boardRect: Rect,
     trayRect: Rect,
-    spawnRect: Rect = Rect.Zero,
     cellSizePx: Float,
     modifier: Modifier = Modifier,
 ) {
-    val targetRect = remember(ui.scene, boardRect, trayRect, spawnRect, cellSizePx) {
-        onboardingTargetRect(
+    val targetRect = remember(ui.scene, boardRect, trayRect, cellSizePx) {
+        blockWiseOnboardingTargetRect(
             scene = ui.scene,
             boardRect = boardRect,
             trayRect = trayRect,
-            spawnRect = spawnRect,
             cellSizePx = cellSizePx,
         )
     }
-    val visualState = rememberInteractiveOnboardingVisualState(ui = ui)
+    val visualState = rememberBlockWiseInteractiveOnboardingVisualState(ui = ui)
 
     Box(modifier = modifier.fillMaxSize()) {
         InteractiveOnboardingTargetHighlight(
@@ -132,7 +107,7 @@ fun InteractiveGameOnboardingOverlay(
             isAwaitingPlacementCommit = ui.isAwaitingPlacementCommit,
         )
 
-        InteractiveOnboardingInfoCard(
+        BlockWiseInteractiveOnboardingInfoCard(
             ui = ui,
             visualState = visualState,
             modifier = Modifier
@@ -143,29 +118,27 @@ fun InteractiveGameOnboardingOverlay(
 }
 
 @Composable
-internal fun InteractiveOnboardingTargetOverlay(
-    ui: GameInteractiveOnboardingUi,
+internal fun BlockWiseOnboardingTargetOverlay(
+    ui: BlockWiseInteractiveGameOnboardingUi,
     boardRect: Rect,
     trayRect: Rect,
-    spawnRect: Rect = Rect.Zero,
     cellSizePx: Float,
     modifier: Modifier = Modifier,
 ) {
-    val suppressTargetRect = (ui.scene.stage == StackShiftOnboardingStage.DragAndLaunch) && ui.hasDraggedAwayFromSpawn
-    val targetRect = remember(ui.scene, boardRect, trayRect, spawnRect, cellSizePx, suppressTargetRect) {
+    val suppressTargetRect = (ui.scene.stage == BlockWiseOnboardingStage.DragToBoard) && ui.hasDraggedAwayFromSpawn
+    val targetRect = remember(ui.scene, boardRect, trayRect, cellSizePx, suppressTargetRect) {
         if (suppressTargetRect) {
             null
         } else {
-            onboardingTargetRect(
+            blockWiseOnboardingTargetRect(
                 scene = ui.scene,
                 boardRect = boardRect,
                 trayRect = trayRect,
-                spawnRect = spawnRect,
                 cellSizePx = cellSizePx,
             )
         }
     }
-    val visualState = rememberInteractiveOnboardingVisualState(ui = ui)
+    val visualState = rememberBlockWiseInteractiveOnboardingVisualState(ui = ui)
     Box(modifier = modifier.fillMaxSize()) {
         InteractiveOnboardingTargetHighlight(
             targetRect = targetRect,
@@ -177,21 +150,17 @@ internal fun InteractiveOnboardingTargetOverlay(
 }
 
 @Composable
-internal fun rememberInteractiveOnboardingVisualState(
-    ui: GameInteractiveOnboardingUi,
+internal fun rememberBlockWiseInteractiveOnboardingVisualState(
+    ui: BlockWiseInteractiveGameOnboardingUi,
 ): InteractiveOnboardingVisualState {
     val dragTitle = stringResource(Res.string.interactive_onboarding_drag_title)
     val lineClearTitle = stringResource(Res.string.interactive_onboarding_line_clear_title)
     val columnClearTitle = stringResource(Res.string.interactive_onboarding_column_clearer_title)
-    val rowClearTitle = stringResource(Res.string.interactive_onboarding_row_clearer_title)
-    val ghostTitle = stringResource(Res.string.interactive_onboarding_ghost_title)
-    val heavyTitle = stringResource(Res.string.interactive_onboarding_heavy_title)
+    val crossClearTitle = stringResource(Res.string.interactive_onboarding_heavy_title)
     val dragBody = stringResource(Res.string.interactive_onboarding_drag_body)
     val lineClearBody = stringResource(Res.string.interactive_onboarding_line_clear_body)
     val columnClearBody = stringResource(Res.string.interactive_onboarding_column_clearer_body)
-    val rowClearBody = stringResource(Res.string.interactive_onboarding_row_clearer_body)
-    val ghostBody = stringResource(Res.string.interactive_onboarding_ghost_body)
-    val heavyBody = stringResource(Res.string.interactive_onboarding_heavy_body)
+    val crossClearBody = stringResource(Res.string.interactive_onboarding_heavy_body)
     val waitingHint = stringResource(Res.string.interactive_onboarding_waiting)
     val targetLockedHint = stringResource(Res.string.interactive_onboarding_target_locked)
     val dragReadyHint = stringResource(Res.string.interactive_onboarding_drag_ready)
@@ -206,45 +175,37 @@ internal fun rememberInteractiveOnboardingVisualState(
         dragTitle,
         lineClearTitle,
         columnClearTitle,
-        rowClearTitle,
-        ghostTitle,
-        heavyTitle,
+        crossClearTitle,
         dragBody,
         lineClearBody,
         columnClearBody,
-        rowClearBody,
-        ghostBody,
-        heavyBody,
+        crossClearBody,
         waitingHint,
         targetLockedHint,
         dragReadyHint,
         dragToBoardHint,
         aimHint,
     ) {
-        val isDragStepReady = (ui.scene.stage == StackShiftOnboardingStage.DragAndLaunch) && ui.hasDraggedAwayFromSpawn
-        val isLaterStepReady = (ui.scene.stage != StackShiftOnboardingStage.DragAndLaunch) && ui.isTargetAligned
+        val isDragStepReady = (ui.scene.stage == BlockWiseOnboardingStage.DragToBoard) && ui.hasDraggedAwayFromSpawn
+        val isLaterStepReady = (ui.scene.stage != BlockWiseOnboardingStage.DragToBoard) && ui.isTargetAligned
         val isSuccessState = isDragStepReady || isLaterStepReady
         val title = when (ui.scene.stage) {
-            StackShiftOnboardingStage.DragAndLaunch -> dragTitle
-            StackShiftOnboardingStage.LineClear -> lineClearTitle
-            StackShiftOnboardingStage.ColumnClearer -> columnClearTitle
-            StackShiftOnboardingStage.RowClearer -> rowClearTitle
-            StackShiftOnboardingStage.Ghost -> ghostTitle
-            StackShiftOnboardingStage.Heavy -> heavyTitle
+            BlockWiseOnboardingStage.DragToBoard -> dragTitle
+            BlockWiseOnboardingStage.LineClear -> lineClearTitle
+            BlockWiseOnboardingStage.ColumnClear -> columnClearTitle
+            BlockWiseOnboardingStage.CrossClear -> crossClearTitle
         }
         val body = when (ui.scene.stage) {
-            StackShiftOnboardingStage.DragAndLaunch -> dragBody
-            StackShiftOnboardingStage.LineClear -> lineClearBody
-            StackShiftOnboardingStage.ColumnClearer -> columnClearBody
-            StackShiftOnboardingStage.RowClearer -> rowClearBody
-            StackShiftOnboardingStage.Ghost -> ghostBody
-            StackShiftOnboardingStage.Heavy -> heavyBody
+            BlockWiseOnboardingStage.DragToBoard -> dragBody
+            BlockWiseOnboardingStage.LineClear -> lineClearBody
+            BlockWiseOnboardingStage.ColumnClear -> columnClearBody
+            BlockWiseOnboardingStage.CrossClear -> crossClearBody
         }
         val hint = when {
             ui.isAwaitingPlacementCommit -> waitingHint
             isLaterStepReady -> targetLockedHint
             isDragStepReady -> dragReadyHint
-            ui.scene.stage == StackShiftOnboardingStage.DragAndLaunch -> dragToBoardHint
+            ui.scene.stage == BlockWiseOnboardingStage.DragToBoard -> dragToBoardHint
             else -> aimHint
         }
         val guideColor = when {
@@ -266,9 +227,9 @@ internal fun rememberInteractiveOnboardingVisualState(
 }
 
 @Composable
-internal fun InteractiveOnboardingInfoCard(
-    ui: GameInteractiveOnboardingUi,
-    visualState: InteractiveOnboardingVisualState = rememberInteractiveOnboardingVisualState(ui),
+internal fun BlockWiseInteractiveOnboardingInfoCard(
+    ui: BlockWiseInteractiveGameOnboardingUi,
+    visualState: InteractiveOnboardingVisualState = rememberBlockWiseInteractiveOnboardingVisualState(ui),
     onBack: (() -> Unit)? = null,
     stylePulse: Float = 0f,
     modifier: Modifier = Modifier,
@@ -455,39 +416,28 @@ private fun InteractiveOnboardingTargetHighlight(
     }
 }
 
-private fun onboardingTargetRect(
-    scene: StackShiftOnboardingScene,
+private fun blockWiseOnboardingTargetRect(
+    scene: BlockWiseOnboardingScene,
     boardRect: Rect,
     trayRect: Rect,
-    spawnRect: Rect,
     cellSizePx: Float,
 ): Rect? = when (scene.target) {
-    StackShiftOnboardingTarget.Tray -> when {
-        (scene.stage == StackShiftOnboardingStage.DragAndLaunch) && (trayRect != Rect.Zero) -> {
+    StackShiftOnboardingTarget.Tray -> {
+        if (trayRect != Rect.Zero) {
             trayRect.expand(horizontalPadding = -14f, verticalPadding = -10f)
-        }
-        spawnRect != Rect.Zero -> spawnRect.expand(horizontalPadding = 10f, verticalPadding = 8f)
-        trayRect != Rect.Zero -> trayRect.expand(horizontalPadding = 14f, verticalPadding = 8f)
-        else -> null
+        } else null
     }
     StackShiftOnboardingTarget.Board -> {
         if ((boardRect == Rect.Zero) || (cellSizePx <= 0f)) return null
-        onboardingTargetPreview(scene)?.toBoardRect(boardRect, cellSizePx)?.expand(padding = 8f)
+        blockWiseOnboardingTargetPreview(scene)?.toBoardRect(boardRect, cellSizePx)?.expand(padding = 8f)
             ?: boardRect.expand(padding = 6f)
     }
 }
 
-private fun onboardingTargetPreview(scene: StackShiftOnboardingScene): PlacementPreview? {
-    val candidateColumns = buildList {
-        scene.guideColumn?.let(::add)
-        addAll(scene.acceptedColumns.sorted())
-    }.distinct()
-
-    val logic: GameLogic = onboardingLogic
-
-    return candidateColumns.firstNotNullOfOrNull { column ->
-        logic.previewPlacement(scene.gameState, column)
-    }
+private fun blockWiseOnboardingTargetPreview(scene: BlockWiseOnboardingScene): PlacementPreview? {
+    val point = scene.guidePoint ?: return null
+    val pieceId = scene.gameState.activePiece?.id ?: return null
+    return onboardingLogic.previewPlacement(scene.gameState, pieceId, point)
 }
 
 private fun PlacementPreview.toBoardRect(boardRect: Rect, cellSizePx: Float): Rect? {
@@ -528,158 +478,4 @@ private fun Rect.scaleAroundCenter(scale: Float): Rect {
         right = center.x + (scaledWidth / 2f),
         bottom = center.y + (scaledHeight / 2f),
     )
-}
-
-@Preview
-@Composable
-private fun InteractiveGameOnboardingOverlayTrayPreview() {
-    InteractiveGameOnboardingOverlayPreviewHost(
-        stage = StackShiftOnboardingStage.DragAndLaunch,
-        settings = AppSettings(),
-        hasDraggedAwayFromSpawn = false,
-        isTargetAligned = false,
-        isAwaitingPlacementCommit = false,
-    )
-}
-
-@Preview
-@Composable
-private fun InteractiveGameOnboardingOverlayLineClearPreview() {
-    InteractiveGameOnboardingOverlayPreviewHost(
-        stage = StackShiftOnboardingStage.LineClear,
-        settings = AppSettings(themeMode = AppThemeMode.Dark),
-        hasDraggedAwayFromSpawn = true,
-        isTargetAligned = true,
-        isAwaitingPlacementCommit = false,
-    )
-}
-
-@Preview
-@Composable
-private fun InteractiveGameOnboardingOverlayRowClearerPreview() {
-    InteractiveGameOnboardingOverlayPreviewHost(
-        stage = StackShiftOnboardingStage.RowClearer,
-        settings = AppSettings(themeMode = AppThemeMode.Dark),
-        hasDraggedAwayFromSpawn = true,
-        isTargetAligned = true,
-        isAwaitingPlacementCommit = false,
-    )
-}
-
-@Preview
-@Composable
-private fun InteractiveGameOnboardingOverlayColumnClearerPreview() {
-    InteractiveGameOnboardingOverlayPreviewHost(
-        stage = StackShiftOnboardingStage.ColumnClearer,
-        settings = AppSettings(themeMode = AppThemeMode.Dark),
-        hasDraggedAwayFromSpawn = true,
-        isTargetAligned = true,
-        isAwaitingPlacementCommit = true,
-    )
-}
-
-@Preview
-@Composable
-private fun InteractiveGameOnboardingOverlayGhostPreview() {
-    InteractiveGameOnboardingOverlayPreviewHost(
-        stage = StackShiftOnboardingStage.Ghost,
-        settings = AppSettings(themeMode = AppThemeMode.Dark),
-        hasDraggedAwayFromSpawn = true,
-        isTargetAligned = true,
-        isAwaitingPlacementCommit = false,
-    )
-}
-
-@Preview
-@Composable
-private fun InteractiveGameOnboardingOverlayHeavyPreview() {
-    InteractiveGameOnboardingOverlayPreviewHost(
-        stage = StackShiftOnboardingStage.Heavy,
-        settings = AppSettings(themeMode = AppThemeMode.Dark),
-        hasDraggedAwayFromSpawn = true,
-        isTargetAligned = false,
-        isAwaitingPlacementCommit = false,
-    )
-}
-
-@Composable
-private fun InteractiveGameOnboardingOverlayPreviewHost(
-    stage: StackShiftOnboardingStage,
-    settings: AppSettings,
-    hasDraggedAwayFromSpawn: Boolean,
-    isTargetAligned: Boolean,
-    isAwaitingPlacementCommit: Boolean,
-) {
-    val onboardingStages = StackShiftGameOnboardingStateFactory.stages
-    val scene = StackShiftGameOnboardingStateFactory.scene(stage)
-    val boardRect = Rect(left = 76f, top = 372f, right = 716f, bottom = 756f)
-    val trayRect = Rect(left = 68f, top = 818f, right = 724f, bottom = 946f)
-    val previewCellSizePx = boardRect.width / scene.gameState.config.columns
-    val previewSpawnColumn = resolveSpawnColumn(
-        piece = scene.gameState.activePiece,
-        boardColumns = scene.gameState.config.columns,
-        lastPlacementColumn = scene.gameState.lastPlacementColumn,
-    )
-    val spawnTopLeft = pieceSpawnTopLeft(
-        piece = scene.gameState.activePiece,
-        trayRect = trayRect,
-        boardRect = boardRect,
-        cellSizePx = previewCellSizePx,
-        column = previewSpawnColumn,
-    )
-    val spawnRect = if ((scene.gameState.activePiece != null) && (spawnTopLeft != null)) {
-        Rect(
-            left = spawnTopLeft.x,
-            top = spawnTopLeft.y,
-            right = spawnTopLeft.x + (scene.gameState.activePiece.width * previewCellSizePx),
-            bottom = spawnTopLeft.y + (scene.gameState.activePiece.height * previewCellSizePx),
-        )
-    } else {
-        Rect.Zero
-    }
-    BlockGamesTheme(settings = settings) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(appBackgroundBrush(BlockGamesThemeTokens.uiColors))
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-        ) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
-                    color = BlockGamesThemeTokens.uiColors.panel.copy(alpha = 0.34f),
-                    border = BorderStroke(1.dp, BlockGamesThemeTokens.uiColors.panelStroke.copy(alpha = 0.38f)),
-                ) {}
-                Spacer(modifier = Modifier.height(8.dp))
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(104.dp),
-                    shape = RoundedCornerShape(GameUiShapeTokens.dockCorner),
-                    color = BlockGamesThemeTokens.uiColors.gameSurface.copy(alpha = 0.52f),
-                    border = BorderStroke(1.dp, BlockGamesThemeTokens.uiColors.panelStroke.copy(alpha = 0.42f)),
-                ) {}
-            }
-
-            InteractiveGameOnboardingOverlay(
-                ui = GameInteractiveOnboardingUi(
-                    scene = scene,
-                    currentStep = onboardingStages.indexOf(stage) + 1,
-                    totalSteps = onboardingStages.size,
-                    hasDraggedAwayFromSpawn = hasDraggedAwayFromSpawn,
-                    isTargetAligned = isTargetAligned,
-                    isAwaitingPlacementCommit = isAwaitingPlacementCommit,
-                ),
-                boardRect = boardRect,
-                trayRect = trayRect,
-                spawnRect = spawnRect,
-                cellSizePx = previewCellSizePx,
-            )
-        }
-    }
 }

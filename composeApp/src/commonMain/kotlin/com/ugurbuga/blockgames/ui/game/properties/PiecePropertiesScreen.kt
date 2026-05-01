@@ -1,4 +1,7 @@
-package com.ugurbuga.blockgames.ui.game
+package com.ugurbuga.blockgames.ui.game.properties
+
+import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
+import com.ugurbuga.blockgames.ui.game.PieceBlocks
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer

@@ -1,4 +1,13 @@
-package com.ugurbuga.blockgames.ui.game
+package com.ugurbuga.blockgames.ui.game.home
+
+import com.ugurbuga.blockgames.ui.game.rememberBlockStylePulse
+import com.ugurbuga.blockgames.ui.game.specialBlockIconTint
+import com.ugurbuga.blockgames.ui.game.BlockCellPreview
+import com.ugurbuga.blockgames.ui.game.boardCellCornerRadiusDp
+import com.ugurbuga.blockgames.ui.game.boardCellInsetDp
+import com.ugurbuga.blockgames.ui.game.blockStyleIconTint
+import com.ugurbuga.blockgames.ui.game.boardCellCornerRadiusPx
+import com.ugurbuga.blockgames.ui.game.drawCellBody
 
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -61,6 +70,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import blockgames.composeapp.generated.resources.Res
+import blockgames.composeapp.generated.resources.app_title_banner_blockwise_bottom
+import blockgames.composeapp.generated.resources.app_title_banner_blockwise_top
+import blockgames.composeapp.generated.resources.app_title_banner_stackshift_bottom
+import blockgames.composeapp.generated.resources.app_title_banner_stackshift_top
+import blockgames.composeapp.generated.resources.high_score
+import blockgames.composeapp.generated.resources.home_classic_cta
+import blockgames.composeapp.generated.resources.home_time_attack_cta
+import blockgames.composeapp.generated.resources.settings_challenges
+import blockgames.composeapp.generated.resources.settings_language
+import blockgames.composeapp.generated.resources.settings_theme
+import blockgames.composeapp.generated.resources.settings_tutorial
 import com.ugurbuga.blockgames.BlockGamesTheme
 import com.ugurbuga.blockgames.game.model.AppColorPalette
 import com.ugurbuga.blockgames.game.model.AppThemeMode
@@ -77,23 +98,19 @@ import com.ugurbuga.blockgames.telemetry.AppTelemetry
 import com.ugurbuga.blockgames.telemetry.LogScreen
 import com.ugurbuga.blockgames.telemetry.NoOpAppTelemetry
 import com.ugurbuga.blockgames.telemetry.TelemetryScreenNames
+import com.ugurbuga.blockgames.ui.game.BlockCellPreview
+import com.ugurbuga.blockgames.ui.game.blockStyleIconTint
+import com.ugurbuga.blockgames.ui.game.boardCellCornerRadiusDp
+import com.ugurbuga.blockgames.ui.game.boardCellCornerRadiusPx
+import com.ugurbuga.blockgames.ui.game.boardCellInsetDp
+import com.ugurbuga.blockgames.ui.game.drawCellBody
+import com.ugurbuga.blockgames.ui.game.rememberBlockStylePulse
+import com.ugurbuga.blockgames.ui.game.specialBlockIconTint
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
 import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
 import com.ugurbuga.blockgames.ui.theme.blockGamesSurfaceShadow
 import com.ugurbuga.blockgames.ui.theme.isBlockGamesDarkTheme
 import org.jetbrains.compose.resources.stringResource
-import blockgames.composeapp.generated.resources.Res
-import blockgames.composeapp.generated.resources.app_title_banner_blockwise_bottom
-import blockgames.composeapp.generated.resources.app_title_banner_blockwise_top
-import blockgames.composeapp.generated.resources.app_title_banner_stackshift_bottom
-import blockgames.composeapp.generated.resources.app_title_banner_stackshift_top
-import blockgames.composeapp.generated.resources.high_score
-import blockgames.composeapp.generated.resources.home_classic_cta
-import blockgames.composeapp.generated.resources.home_time_attack_cta
-import blockgames.composeapp.generated.resources.settings_challenges
-import blockgames.composeapp.generated.resources.settings_language
-import blockgames.composeapp.generated.resources.settings_theme
-import blockgames.composeapp.generated.resources.settings_tutorial
 import kotlin.math.abs
 
 private const val HomeTitleBannerColumns = 6

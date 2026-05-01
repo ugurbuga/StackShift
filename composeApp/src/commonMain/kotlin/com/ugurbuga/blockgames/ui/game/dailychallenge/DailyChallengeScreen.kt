@@ -1,4 +1,4 @@
-package com.ugurbuga.blockgames.ui.game
+package com.ugurbuga.blockgames.ui.game.dailychallenge
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -122,9 +122,14 @@ import com.ugurbuga.blockgames.game.model.ChallengeTask
 import com.ugurbuga.blockgames.game.model.ChallengeTaskType
 import com.ugurbuga.blockgames.game.model.DailyChallenge
 import com.ugurbuga.blockgames.game.model.GameplayStyle
+import com.ugurbuga.blockgames.game.model.paletteColor
 import com.ugurbuga.blockgames.game.model.resolveBoardBlockStyle
 import com.ugurbuga.blockgames.localization.LocalAppSettings
 import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
+import com.ugurbuga.blockgames.ui.game.BlockStyleActionButton
+import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
+import com.ugurbuga.blockgames.ui.game.color
+import com.ugurbuga.blockgames.ui.game.rememberBlockStylePulse
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
 import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
 import com.ugurbuga.blockgames.ui.theme.appBackgroundBrush

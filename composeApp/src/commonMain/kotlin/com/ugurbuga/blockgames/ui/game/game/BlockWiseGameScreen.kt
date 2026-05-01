@@ -1,4 +1,4 @@
-package com.ugurbuga.blockgames.ui.game
+package com.ugurbuga.blockgames.ui.game.game
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -64,11 +64,23 @@ import com.ugurbuga.blockgames.settings.BlockWiseOnboardingScene
 import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStage
 import com.ugurbuga.blockgames.telemetry.AppTelemetry
 import com.ugurbuga.blockgames.telemetry.NoOpAppTelemetry
+import com.ugurbuga.blockgames.ui.game.BoardGrid
+import com.ugurbuga.blockgames.ui.game.GameOverDialog
+import com.ugurbuga.blockgames.ui.game.InteractiveOnboardingCompletionDialog
+import com.ugurbuga.blockgames.ui.game.MinimalTopBar
+import com.ugurbuga.blockgames.ui.game.PieceBlocks
+import com.ugurbuga.blockgames.ui.game.RestartConfirmDialog
+import com.ugurbuga.blockgames.ui.game.dailychallenge.ChallengeTasksDock
+import com.ugurbuga.blockgames.ui.game.onboarding.BlockWiseInteractiveGameOnboardingUi
+import com.ugurbuga.blockgames.ui.game.onboarding.BlockWiseInteractiveOnboardingInfoCard
+import com.ugurbuga.blockgames.ui.game.onboarding.BlockWiseOnboardingTargetOverlay
+import com.ugurbuga.blockgames.ui.game.resolveGameText
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
 import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
 import com.ugurbuga.blockgames.ui.theme.appBackgroundBrush
 import com.ugurbuga.blockgames.ui.theme.blockGamesSurfaceShadow
 import org.jetbrains.compose.resources.stringResource
+
 
 private const val FreePlacementDragLiftPx = 400f
 private val FreePlacementTrayCardHeight = 104.dp
@@ -77,7 +89,7 @@ private val FreePlacementTrayPieceCellSize = 18.dp
 private val FreePlacementCompactTrayPieceCellSize = 14.dp
 
 @Composable
-fun FreePlacementGameScreen(
+fun BlockWiseGameScreen(
     gameState: GameState,
     onRequestPreview: (Long, GridPoint) -> PlacementPreview?,
     onResolvePreviewImpact: (PlacementPreview?) -> Set<GridPoint>,
@@ -685,8 +697,10 @@ private fun overlapArea(
     first: Rect,
     second: Rect,
 ): Float {
-    val overlapWidth = (minOf(first.right, second.right) - maxOf(first.left, second.left)).coerceAtLeast(0f)
-    val overlapHeight = (minOf(first.bottom, second.bottom) - maxOf(first.top, second.top)).coerceAtLeast(0f)
+    val overlapWidth =
+        (minOf(first.right, second.right) - maxOf(first.left, second.left)).coerceAtLeast(0f)
+    val overlapHeight =
+        (minOf(first.bottom, second.bottom) - maxOf(first.top, second.top)).coerceAtLeast(0f)
     return overlapWidth * overlapHeight
 }
 
@@ -743,3 +757,5 @@ private data class FreePlacementPreviewCandidate(
     val overlapArea: Float,
     val proximityScore: Float,
 )
+
+
