@@ -18,12 +18,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
@@ -202,43 +202,39 @@ fun DailyChallengeScreen(
                 .fillMaxSize()
                 .background(appBackgroundBrush(uiColors))
                 .statusBarsPadding()
+                .verticalScroll(rememberScrollState())
         ) {
             // Header
-            Row(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                contentAlignment = Alignment.Center
             ) {
-                TopBarActionBlockButton(
-                    tone = CellTone.Cyan,
-                    icon = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(Res.string.tutorial_back),
-                    onClick = onBack,
-                    size = 44.dp,
-                    pulse = stylePulse,
-                )
+                Box(modifier = Modifier.align(Alignment.CenterStart)) {
+                    TopBarActionBlockButton(
+                        tone = CellTone.Cyan,
+                        icon = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(Res.string.tutorial_back),
+                        onClick = onBack,
+                        size = 44.dp,
+                        pulse = stylePulse,
+                    )
+                }
+
                 Text(
                     text = stringResource(Res.string.settings_challenges),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f),
                     textAlign = TextAlign.Center
                 )
-                Spacer(modifier = Modifier.size(44.dp))
-            }
 
-            // Trophy Area
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(70.dp), // Reduced from 200.dp
-                contentAlignment = Alignment.Center
-            ) {
                 TrophyIcon(
                     fillProgress = monthProgress,
-                    modifier = Modifier.size(70.dp) // Reduced from 150.dp
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .size(40.dp)
                 )
             }
 
@@ -420,13 +416,10 @@ fun CalendarGrid(
     onDayClick: (Int) -> Unit
 ) {
     val daysInMonth = getDaysInMonth(year, month)
-
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(7),
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // Week headers
@@ -439,34 +432,58 @@ fun CalendarGrid(
             Res.string.day_saturday_short,
             Res.string.day_sunday_short
         )
-        items(7) { index ->
-            Text(
-                text = stringResource(daysOfWeek[index]),
-                style = MaterialTheme.typography.labelSmall,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-            )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            daysOfWeek.forEach { dayRes ->
+                Text(
+                    text = stringResource(dayRes),
+                    style = MaterialTheme.typography.labelSmall,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
 
-        items(daysInMonth) { index ->
-            val day = index + 1
-            val isCompleted = day in completedDays
-            val isSelected = day == selectedDay
+        // Days
+        val totalCells = daysInMonth
+        val rows = (totalCells + 6) / 7
 
-            val isFuture = when {
-                year > currentYear -> true
-                year == currentYear && month > currentMonth -> true
-                year == currentYear && month == currentMonth && day > currentDay -> true
-                else -> false
+        for (rowIndex in 0 until rows) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                for (colIndex in 0 until 7) {
+                    val dayIndex = rowIndex * 7 + colIndex
+                    if (dayIndex < daysInMonth) {
+                        val day = dayIndex + 1
+                        val isCompleted = day in completedDays
+                        val isSelected = day == selectedDay
+
+                        val isFuture = when {
+                            year > currentYear -> true
+                            year == currentYear && month > currentMonth -> true
+                            year == currentYear && month == currentMonth && day > currentDay -> true
+                            else -> false
+                        }
+
+                        Box(modifier = Modifier.weight(1f)) {
+                            DayCell(
+                                day = day,
+                                isCompleted = isCompleted,
+                                isSelected = isSelected,
+                                isEnabled = !isFuture,
+                                onClick = { onDayClick(day) }
+                            )
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
             }
-
-            DayCell(
-                day = day,
-                isCompleted = isCompleted,
-                isSelected = isSelected,
-                isEnabled = !isFuture,
-                onClick = { onDayClick(day) }
-            )
         }
     }
 }
@@ -575,17 +592,15 @@ fun ChallengeTasksCard(
                 ChallengeTaskItem(task = task)
             }
 
-            if (!challenge.isCompleted) {
-                Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-                BlockStyleActionButton(
-                    text = stringResource(Res.string.home_play_cta),
-                    onClick = onPlay,
-                    modifier = Modifier.fillMaxWidth(),
-                    tone = CellTone.Cyan,
-                    pulse = stylePulse,
-                )
-            }
+            BlockStyleActionButton(
+                text = stringResource(Res.string.home_play_cta),
+                onClick = onPlay,
+                modifier = Modifier.fillMaxWidth(),
+                tone = CellTone.Cyan,
+                pulse = stylePulse,
+            )
         }
     }
 }
@@ -841,22 +856,52 @@ fun DailyChallengeScreenPreview() {
 
 @Preview
 @Composable
-fun DailyChallengeScreenWithProgressPreview() {
+fun DailyChallengeScreenCompletedMonthPreview() {
     val settings = AppSettings(
         themeMode = AppThemeMode.Dark,
-        blockVisualStyle = BlockVisualStyle.DynamicLiquid,
-        themeColorPalette = AppColorPalette.ModernNeon
+        blockVisualStyle = BlockVisualStyle.Crystal,
+        themeColorPalette = AppColorPalette.Classic
     )
+    val year = 2025
+    val month = 12
+    val daysInMonth = getDaysInMonth(year, month)
     BlockGamesTheme(settings = settings) {
         DailyChallengeScreen(
-            currentYear = 2025,
-            currentMonth = 12,
-            currentDay = 8,
+            currentYear = year,
+            currentMonth = month,
+            currentDay = 31,
             gameplayStyle = GameplayStyle.StackShift,
             progress = ChallengeProgress(
                 completedDays = mapOf(
-                    "2025-12" to setOf(1, 2, 3, 5, 7),
-                    "2025-11" to (1..30).toSet()
+                    "$year-${month.toString().padStart(2, '0')}" to (1..daysInMonth).toSet()
+                )
+            ),
+            onBack = {},
+            onPlayChallenge = {}
+        )
+    }
+}
+
+@Preview
+@Composable
+fun DailyChallengeScreenHalfCompletedMonthPreview() {
+    val settings = AppSettings(
+        themeMode = AppThemeMode.Dark,
+        blockVisualStyle = BlockVisualStyle.Crystal,
+        themeColorPalette = AppColorPalette.Classic
+    )
+    val year = 2025
+    val month = 12
+    val daysInMonth = getDaysInMonth(year, month)
+    BlockGamesTheme(settings = settings) {
+        DailyChallengeScreen(
+            currentYear = year,
+            currentMonth = month,
+            currentDay = 15,
+            gameplayStyle = GameplayStyle.StackShift,
+            progress = ChallengeProgress(
+                completedDays = mapOf(
+                    "$year-${month.toString().padStart(2, '0')}" to (1..(daysInMonth / 2)).toSet()
                 )
             ),
             onBack = {},

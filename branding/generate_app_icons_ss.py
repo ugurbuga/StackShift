@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import base64
 import shutil
 import struct
 import subprocess
@@ -13,6 +14,7 @@ IOS_LAUNCH_LOGO = ROOT / "iosApp" / "iosApp" / "Assets.xcassets" / "LaunchLogo.i
 DESKTOP_RES = ROOT / "composeApp" / "src" / "jvmMain" / "resources"
 DESKTOP_ICONS = ROOT / "composeApp" / "desktop-icons"
 BRANDING_OUT = ROOT / "branding" / "generated"
+NUNITO_BLACK = ROOT / "composeApp" / "src" / "commonMain" / "composeResources" / "font" / "nunito_black.ttf"
 
 BOARD_SVG_FINAL = "stackshift-board.svg"
 BACKGROUND_SVG_FINAL = "stackshift-background.svg"
@@ -42,7 +44,7 @@ def main() -> None:
         )
 
         # 2. Google Play Feature Graphic
-        feature_graphic_svg = temp_path / FEATURE_GRAPHIC_SVG_NAME
+        feature_graphic_svg = BRANDING_OUT / FEATURE_GRAPHIC_SVG_NAME
         feature_graphic_svg.write_text(feature_graphic_svg_content(), encoding="utf-8")
         feature_graphic_png = BRANDING_OUT / FEATURE_GRAPHIC_PNG_NAME
         rasterize_svg(feature_graphic_svg, feature_graphic_png, 1024, height=500)
@@ -84,16 +86,32 @@ def rasterize_svg(svg_path: Path, output_png: Path, size: int, height: int | Non
     output_png.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="stackshift-svg-raster-") as temp_dir:
         temp_path = Path(temp_dir)
-        converted = temp_path / f"{svg_path.stem}.png"
-        if height is not None:
-            run("sips", "-s", "format", "png", str(svg_path), "--resampleHeightWidth", str(height), str(size), "--out", str(converted))
-        else:
-            run("sips", "-s", "format", "png", str(svg_path), "--out", str(converted))
 
-        if height is not None:
-            run("sips", "-z", str(height), str(size), str(converted), "--out", str(output_png))
+        # 1. Create a square version of the SVG with the content centered
+        # This ensures qlmanage renders it without any automatic offsets or stretching
+        target_h = height if height is not None else size
+        padding_top = (size - target_h) / 2
+
+        original_svg_content = svg_path.read_text(encoding="utf-8")
+        # Use base64 to embed the original SVG cleanly inside a square wrapper
+        svg_base64 = base64.b64encode(original_svg_content.encode('utf-8')).decode('utf-8')
+
+        square_svg_path = temp_path / "square_wrapper.svg"
+        square_svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" viewBox="0 0 {size} {size}">
+            <image x="0" y="{padding_top}" width="{size}" height="{target_h}" href="data:image/svg+xml;base64,{svg_base64}"/>
+        </svg>'''
+        square_svg_path.write_text(square_svg_content, encoding="utf-8")
+
+        # 2. Render the square SVG using QuickLook (respects embedded fonts)
+        run("qlmanage", "-t", "-s", str(size), "-o", str(temp_path), str(square_svg_path))
+        rendered_png = temp_path / f"{square_svg_path.name}.png"
+
+        if not rendered_png.exists():
+            # Fallback to direct sips if qlmanage fails
+            run("sips", "-s", "format", "png", str(svg_path), "--resampleHeightWidth", str(target_h), str(size), "--out", str(output_png))
         else:
-            run("sips", "-z", str(size), str(size), str(converted), "--out", str(output_png))
+            # 3. Precise center crop to get back to the final dimensions (1024x500)
+            run("sips", "-c", str(target_h), str(size), str(rendered_png), "--out", str(output_png))
 
 
 def resize_png(source: Path, target: Path, size: int) -> None:
@@ -274,8 +292,28 @@ def mosaic_icon_svg(
 """
 
 
+def get_nunito_font_base64() -> str:
+    print(f"Font loading attempt: {NUNITO_BLACK}")
+    if NUNITO_BLACK.exists():
+        data = NUNITO_BLACK.read_bytes()
+        encoded = base64.b64encode(data).decode('utf-8')
+        print(f"Font successfully loaded. Size: {len(data)} bytes")
+        return encoded
+    return ""
+
+
 def feature_graphic_svg_content() -> str:
+    font_base64 = get_nunito_font_base64()
+    font_style = f"""
+    <style type="text/css">
+      @font-face {{
+        font-family: 'NunitoBlack';
+        src: url(data:font/ttf;base64,{font_base64}) format('truetype');
+      }}
+    </style>""" if font_base64 else ""
+
     return f'''<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500" fill="none">
+  {font_style}
   <defs>
     <linearGradient id="featureBg" x1="132" y1="92" x2="884" y2="436" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#152434"/>
@@ -290,10 +328,19 @@ def feature_graphic_svg_content() -> str:
       <stop stop-color="#6B74FF" stop-opacity="0.14"/>
       <stop offset="1" stop-color="#6B74FF" stop-opacity="0"/>
     </radialGradient>
+    <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FF4D6D"/>
+      <stop offset="25%" stop-color="#A2FF00"/>
+      <stop offset="50%" stop-color="#00D2FF"/>
+      <stop offset="75%" stop-color="#6B74FF"/>
+      <stop offset="100%" stop-color="#FFEA00"/>
+    </linearGradient>
   </defs>
   <rect width="1024" height="500" fill="url(#featureBg)"/>
   <rect width="1024" height="500" fill="url(#featureGlowA)"/>
   <rect width="1024" height="500" fill="url(#featureGlowB)"/>
+  <text x="160" y="288" font-family="'NunitoBlack', sans-serif" font-weight="900" font-size="90" fill="url(#textGradient)" stroke="url(#textGradient)" stroke-width="4" text-anchor="middle">STACK</text>
+  <text x="864" y="288" font-family="'NunitoBlack', sans-serif" font-weight="900" font-size="90" fill="url(#textGradient)" stroke="url(#textGradient)" stroke-width="4" text-anchor="middle">SHIFT</text>
   <g transform="translate(312, 50) scale(0.390625)">
     {mosaic_icon_svg(include_background=False, logo_scale=0.8)}
   </g>
@@ -323,78 +370,71 @@ def mosaic_tiles(geometry: dict[str, int]) -> str:
     c_lime = "#A2FF00"
     c_cyan = "#00D2FF"
     c_gold = "#FFEA00"
+    c_purple = "#6B74FF"
 
     tile_layout: list[list[dict[str, str] | None]] = [
-        [
-            {"color": c_cyan},
-            {"color": c_gold},
-            None,
-            {"color": c_pink},
-        ],
-        [
-            None,
-            {"color": c_cyan},
-            {"color": c_lime},
-            {"color": c_gold},
-        ],
-        [
-            None,
-            {"color": c_pink},
-            {"color": c_cyan},
-            None,
-        ],
-        [
-            None,
-            None,
-            None,
-            None,
-        ],
+        [{"color": c_purple}, {"color": c_purple}, {"color": c_pink}, {"color": c_pink}],
+        [{"color": c_lime}, {"color": c_lime}, None, {"color": c_pink}],
+        [{"color": c_cyan}, None, None, {"color": c_pink}],
+        [{"color": c_cyan}, None, None, None],
     ]
 
     lines: list[str] = []
-    # Background slots first.
+    # Background slots
     for row in range(geometry["grid_size"]):
         for column in range(geometry["grid_size"]):
             x = geometry["logo_x"] + column * (geometry["cell_size"] + geometry["gap"])
             y = geometry["logo_y"] + row * (geometry["cell_size"] + geometry["gap"])
             lines.append(empty_slot(x=x, y=y, size=geometry["cell_size"]))
 
-    # Draw static tiles
+    # Draw static board tiles
     for row, cells in enumerate(tile_layout):
         for column, cell in enumerate(cells):
-            if cell is None:
-                continue
-            x = geometry["logo_x"] + column * (geometry["cell_size"] + geometry["gap"])
-            y = geometry["logo_y"] + row * (geometry["cell_size"] + geometry["gap"])
-            lines.append(
-                tile_block(
-                    x=x,
-                    y=y,
-                    color=cell["color"],
-                    size=geometry["cell_size"],
-                    falling=False
-                )
-            )
+            if cell:
+                x = geometry["logo_x"] + column * (geometry["cell_size"] + geometry["gap"])
+                y = geometry["logo_y"] + row * (geometry["cell_size"] + geometry["gap"])
+                lines.append(tile_block(x=x, y=y, color=cell["color"], size=geometry["cell_size"]))
 
-    falling_pieces = [
-        {"color": c_lime, "x_col": 0, "angle": 12, "row_idx": 1.4},
-        {"color": c_gold, "x_col": 3, "angle": -15, "row_idx": 2.2},
-        {"color": c_cyan, "x_col": 1, "angle": -5, "row_idx": 3.0},
+    # Define falling pieces as distinct units
+    pieces = [
+        {"color": c_gold, "blocks": [(1, 1.95), (2, 1.95), (2, 0.95)], "angle": 0},
     ]
 
-    for piece in falling_pieces:
-        x = geometry["logo_x"] + piece["x_col"] * (geometry["cell_size"] + geometry["gap"])
-        y = geometry["logo_y"] + piece["row_idx"] * (geometry["cell_size"] + geometry["gap"])
-        lines.append(
-            tile_block(
-                x=x,
-                y=y,
-                color=piece["color"],
-                size=geometry["cell_size"],
-                falling=True,
-                angle=piece["angle"],
-            )
-        )
+    for i, p in enumerate(pieces):
+        # 1. Create a mask that is the union of all shadow blocks for this piece
+        mask_id = f"shadow_mask_ss_{i}"
+        size = geometry["cell_size"]
+        gap = geometry["gap"]
+        glow = size * 0.38
+        offset_y = size * 0.25
+        corner = round(size * 0.21)
+
+        lines.append(f'  <defs><mask id="{mask_id}">')
+        for b_col, b_row in p["blocks"]:
+            x = geometry["logo_x"] + b_col * (size + gap)
+
+            # Custom starting points: 2x3 top (idx 1) and 3x2 top (idx 2)
+            if round(b_col) == 1:
+                y_start = geometry["logo_y"] + 2 * (size + gap)
+            elif round(b_col) == 2:
+                y_start = geometry["logo_y"] + 1 * (size + gap)
+            else:
+                y_start = geometry["logo_y"] + b_row * (size + gap) + offset_y
+
+            # Extend height to the bottom of the 1024x1024 canvas
+            shadow_h = 1024 - y_start
+            lines.append(f'    <rect x="{x}" y="{y_start}" width="{size}" height="{shadow_h}" rx="{corner}" fill="white"/>')
+        lines.append('  </mask></defs>')
+
+        # 2. Draw a SINGLE rectangle for the entire piece's shadow area using the mask
+        # This ensures zero internal overlaps and a perfectly flat 0.25 opacity
+        lines.append(f'  <rect x="0" y="0" width="1024" height="1024" fill="{p["color"]}" opacity="0.25" mask="url(#{mask_id})"/>')
+
+        # 3. Draw foreground blocks
+        for b_col, b_row in p["blocks"]:
+            x = geometry["logo_x"] + b_col * (size + gap)
+            y = geometry["logo_y"] + b_row * (size + gap)
+            lines.append(tile_block(x=x, y=y, color=p["color"], size=size, falling=True, angle=p["angle"], include_shadow=False))
 
     return "\n".join(lines)
 
@@ -405,7 +445,7 @@ def empty_slot(x: int, y: int, size: int = 150) -> str:
   <rect x=\"{x}\" y=\"{y}\" width=\"{size}\" height=\"{size}\" rx=\"{corner}\" fill=\"#FFFFFF\" fill-opacity=\"0.05\" stroke=\"#FFFFFF\" stroke-opacity=\"0.1\" stroke-width=\"2\"/>"""
 
 
-def tile_block(x: int, y: int, color: str, size: int = 150, special: str | None = None, falling: bool = False, angle: float = 0) -> str:
+def tile_block(x: int, y: int, color: str, size: int = 150, special: str | None = None, falling: bool = False, angle: float = 0, include_shadow: bool = True) -> str:
     corner = round(size * 0.21)
     special_art = "" if special is None else special_overlay(x=x, y=y, size=size, kind=special)
 
@@ -415,23 +455,20 @@ def tile_block(x: int, y: int, color: str, size: int = 150, special: str | None 
         cy = y + size / 2
         transform = f'transform="translate({cx}, {cy + offset_y}) rotate({angle}) translate({-size/2}, {-size/2})"'
 
-        # Trail for motion, reduced opacity to keep block vivid
-        trail = f'<rect x="0" y="{-offset_y}" width="{size}" height="{offset_y + size/2}" rx="{corner}" fill="{color}" opacity="0.4"/>'
+        # Glow/Shadow around for depth
+        glow_size = size * 0.18
+        trail = f'<rect x="{-glow_size}" y="{-glow_size}" width="{size + 2*glow_size}" height="{size + 2*glow_size}" rx="{corner*1.2}" fill="{color}" opacity="0.25"/>' if include_shadow else ""
 
         return f"""
   <g {transform}>
     {trail}
     <rect width="{size}" height="{size}" rx="{corner}" fill="{color}"/>
-    <rect width="{size}" height="{size}" rx="{corner}" fill="#FFFFFF" fill-opacity="0.12"/>
-    <rect width="{size}" height="{size}" rx="{corner}" stroke="#FFFFFF" stroke-opacity="0.8" stroke-width="3"/>
     {special_art}
   </g>"""
 
     return f"""
   <g>
     <rect x="{x}" y="{y}" width="{size}" height="{size}" rx="{corner}" fill="{color}"/>
-    <rect x="{x}" y="{y}" width="{size}" height="{size}" rx="{corner}" fill="#FFFFFF" fill-opacity="0.12"/>
-    <rect x="{x}" y="{y}" width="{size}" height="{size}" rx="{corner}" stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="2.5"/>
     {special_art}
   </g>"""
 

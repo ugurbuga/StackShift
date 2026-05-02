@@ -95,8 +95,8 @@
     <string name="score">Skor</string>
     <string name="high_score">Rekor</string>
     <string name="high_score_new_record">Yeni Rekor</string>
-    <string name="home_play_cta">Klasik</string>
-    <string name="home_classic_cta">Klasik</string>
+    <string name="home_play_cta">Oyna</string>
+    <string name="home_classic_cta">Oyna</string>
     <string name="home_time_attack_cta">Zamana Karşı</string>
     <string name="lines">Satır</string>
     <string name="time_remaining">Kalan Süre</string>

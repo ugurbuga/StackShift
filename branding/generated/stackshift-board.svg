@@ -6,11 +6,11 @@
       <stop offset="1" stop-color="#070D14"/>
     </linearGradient>
     <radialGradient id="screenGlowA" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(232 214) rotate(45) scale(448)">
-      <stop offset="0" stop-color="#48D8C8" stop-opacity="0.26"/>
+      <stop stop-color="#48D8C8" stop-opacity="0.26"/>
       <stop offset="1" stop-color="#48D8C8" stop-opacity="0"/>
     </radialGradient>
     <radialGradient id="screenGlowB" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(796 822) rotate(45) scale(404)">
-      <stop offset="0" stop-color="#6B74FF" stop-opacity="0.22"/>
+      <stop stop-color="#6B74FF" stop-opacity="0.22"/>
       <stop offset="1" stop-color="#6B74FF" stop-opacity="0"/>
     </radialGradient>
   </defs>
@@ -50,82 +50,76 @@
   <rect x="723" y="723" width="197" height="197" rx="41" fill="#FFFFFF" fill-opacity="0.05" stroke="#FFFFFF" stroke-opacity="0.1" stroke-width="2"/>
 
   <g>
-    <rect x="102" y="102" width="197" height="197" rx="41" fill="#00D2FF"/>
-    <rect x="102" y="102" width="197" height="197" rx="41" fill="#FFFFFF" fill-opacity="0.12"/>
-    <rect x="102" y="102" width="197" height="197" rx="41" stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="2.5"/>
+    <rect x="102" y="102" width="197" height="197" rx="41" fill="#6B74FF"/>
     
   </g>
 
   <g>
-    <rect x="309" y="102" width="197" height="197" rx="41" fill="#FFEA00"/>
-    <rect x="309" y="102" width="197" height="197" rx="41" fill="#FFFFFF" fill-opacity="0.12"/>
-    <rect x="309" y="102" width="197" height="197" rx="41" stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="2.5"/>
+    <rect x="309" y="102" width="197" height="197" rx="41" fill="#6B74FF"/>
+    
+  </g>
+
+  <g>
+    <rect x="516" y="102" width="197" height="197" rx="41" fill="#FF4D6D"/>
     
   </g>
 
   <g>
     <rect x="723" y="102" width="197" height="197" rx="41" fill="#FF4D6D"/>
-    <rect x="723" y="102" width="197" height="197" rx="41" fill="#FFFFFF" fill-opacity="0.12"/>
-    <rect x="723" y="102" width="197" height="197" rx="41" stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="2.5"/>
     
   </g>
 
   <g>
-    <rect x="309" y="309" width="197" height="197" rx="41" fill="#00D2FF"/>
-    <rect x="309" y="309" width="197" height="197" rx="41" fill="#FFFFFF" fill-opacity="0.12"/>
-    <rect x="309" y="309" width="197" height="197" rx="41" stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="2.5"/>
+    <rect x="102" y="309" width="197" height="197" rx="41" fill="#A2FF00"/>
     
   </g>
 
   <g>
-    <rect x="516" y="309" width="197" height="197" rx="41" fill="#A2FF00"/>
-    <rect x="516" y="309" width="197" height="197" rx="41" fill="#FFFFFF" fill-opacity="0.12"/>
-    <rect x="516" y="309" width="197" height="197" rx="41" stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="2.5"/>
+    <rect x="309" y="309" width="197" height="197" rx="41" fill="#A2FF00"/>
     
   </g>
 
   <g>
-    <rect x="723" y="309" width="197" height="197" rx="41" fill="#FFEA00"/>
-    <rect x="723" y="309" width="197" height="197" rx="41" fill="#FFFFFF" fill-opacity="0.12"/>
-    <rect x="723" y="309" width="197" height="197" rx="41" stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="2.5"/>
+    <rect x="723" y="309" width="197" height="197" rx="41" fill="#FF4D6D"/>
     
   </g>
 
   <g>
-    <rect x="309" y="516" width="197" height="197" rx="41" fill="#FF4D6D"/>
-    <rect x="309" y="516" width="197" height="197" rx="41" fill="#FFFFFF" fill-opacity="0.12"/>
-    <rect x="309" y="516" width="197" height="197" rx="41" stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="2.5"/>
+    <rect x="102" y="516" width="197" height="197" rx="41" fill="#00D2FF"/>
     
   </g>
 
   <g>
-    <rect x="516" y="516" width="197" height="197" rx="41" fill="#00D2FF"/>
-    <rect x="516" y="516" width="197" height="197" rx="41" fill="#FFFFFF" fill-opacity="0.12"/>
-    <rect x="516" y="516" width="197" height="197" rx="41" stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="2.5"/>
+    <rect x="723" y="516" width="197" height="197" rx="41" fill="#FF4D6D"/>
     
   </g>
 
-  <g transform="translate(200.5, 545.4599999999999) rotate(12) translate(-98.5, -98.5)">
-    <rect x="0" y="-55.160000000000004" width="197" height="153.66" rx="41" fill="#A2FF00" opacity="0.4"/>
-    <rect width="197" height="197" rx="41" fill="#A2FF00"/>
-    <rect width="197" height="197" rx="41" fill="#FFFFFF" fill-opacity="0.12"/>
-    <rect width="197" height="197" rx="41" stroke="#FFFFFF" stroke-opacity="0.8" stroke-width="3"/>
+  <g>
+    <rect x="102" y="723" width="197" height="197" rx="41" fill="#00D2FF"/>
     
   </g>
+  <defs><mask id="shadow_mask_ss_0">
+    <rect x="309" y="516" width="197" height="508" rx="41" fill="white"/>
+    <rect x="516" y="309" width="197" height="715" rx="41" fill="white"/>
+    <rect x="516" y="309" width="197" height="715" rx="41" fill="white"/>
+  </mask></defs>
+  <rect x="0" y="0" width="1024" height="1024" fill="#FFEA00" opacity="0.25" mask="url(#shadow_mask_ss_0)"/>
 
-  <g transform="translate(821.5, 711.0600000000001) rotate(-15) translate(-98.5, -98.5)">
-    <rect x="0" y="-55.160000000000004" width="197" height="153.66" rx="41" fill="#FFEA00" opacity="0.4"/>
+  <g transform="translate(407.5, 659.31) rotate(0) translate(-98.5, -98.5)">
+    
     <rect width="197" height="197" rx="41" fill="#FFEA00"/>
-    <rect width="197" height="197" rx="41" fill="#FFFFFF" fill-opacity="0.12"/>
-    <rect width="197" height="197" rx="41" stroke="#FFFFFF" stroke-opacity="0.8" stroke-width="3"/>
     
   </g>
 
-  <g transform="translate(407.5, 876.66) rotate(-5) translate(-98.5, -98.5)">
-    <rect x="0" y="-55.160000000000004" width="197" height="153.66" rx="41" fill="#00D2FF" opacity="0.4"/>
-    <rect width="197" height="197" rx="41" fill="#00D2FF"/>
-    <rect width="197" height="197" rx="41" fill="#FFFFFF" fill-opacity="0.12"/>
-    <rect width="197" height="197" rx="41" stroke="#FFFFFF" stroke-opacity="0.8" stroke-width="3"/>
+  <g transform="translate(614.5, 659.31) rotate(0) translate(-98.5, -98.5)">
+    
+    <rect width="197" height="197" rx="41" fill="#FFEA00"/>
+    
+  </g>
+
+  <g transform="translate(614.5, 452.31) rotate(0) translate(-98.5, -98.5)">
+    
+    <rect width="197" height="197" rx="41" fill="#FFEA00"/>
     
   </g>
 </svg>

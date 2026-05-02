@@ -34,30 +34,4 @@
       </gradient>
     </aapt:attr>
   </path>
-  <path
-      android:pathData="M0,0h1024v1024h-1024z">
-    <aapt:attr name="android:fillColor">
-      <gradient
-          android:centerX="232"
-          android:centerY="214"
-          android:gradientRadius="448"
-          android:type="radial">
-        <item android:offset="0" android:color="#4248D8C8"/>
-        <item android:offset="1" android:color="#0048D8C8"/>
-      </gradient>
-    </aapt:attr>
-  </path>
-  <path
-      android:pathData="M0,0h1024v1024h-1024z">
-    <aapt:attr name="android:fillColor">
-      <gradient
-          android:centerX="796"
-          android:centerY="822"
-          android:gradientRadius="404"
-          android:type="radial">
-        <item android:offset="0" android:color="#386B74FF"/>
-        <item android:offset="1" android:color="#006B74FF"/>
-      </gradient>
-    </aapt:attr>
-  </path>
 </vector>
