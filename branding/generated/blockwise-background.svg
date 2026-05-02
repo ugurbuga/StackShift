@@ -1,23 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
   <defs>
     <linearGradient id="screenBg" x1="132" y1="92" x2="884" y2="936" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFFFFF"/>
-      <stop offset="0.48" stop-color="#FFFFFF"/>
-      <stop offset="1" stop-color="#FFFFFF"/>
+      <stop offset="0" stop-color="#152434"/>
+      <stop offset="0.48" stop-color="#0C1621"/>
+      <stop offset="1" stop-color="#070D14"/>
     </linearGradient>
-    <radialGradient id="screenGlowA" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(232 214) rotate(45) scale(448)">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.26"/>
-      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="screenGlowB" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(796 822) rotate(45) scale(404)">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.22"/>
-      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
-    </radialGradient>
   </defs>
   
   <rect width="1024" height="1024" fill="url(#screenBg)"/>
-  <rect width="1024" height="1024" fill="url(#screenGlowA)"/>
-  <rect width="1024" height="1024" fill="url(#screenGlowB)"/>
 
   
 </svg>
