@@ -27,6 +27,7 @@ data class AppSettings(
     val hasInitializedLanguage: Boolean = false,
     val soundEnabled: Boolean = false,
     val isHighScoresClearedOnce: Boolean = false,
+    val lastActiveSlot: GameSessionSlot? = null,
 ) {
     val blockColorPalette: BlockColorPalette
         get() = when (themeColorPalette) {

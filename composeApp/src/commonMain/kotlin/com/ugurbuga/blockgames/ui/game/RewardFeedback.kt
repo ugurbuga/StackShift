@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,10 +30,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
+import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
 import com.ugurbuga.blockgames.ui.theme.blockGamesSurfaceShadow
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun RewardFeedbackCard(
@@ -44,7 +46,7 @@ fun RewardFeedbackCard(
 ) {
     LaunchedEffect(visible) {
         if (visible) {
-            delay(4000)
+            delay(4000.milliseconds)
             onDismiss()
         }
     }
@@ -73,7 +75,7 @@ fun RewardFeedbackCard(
                     ),
                 shape = panelShape,
                 colors = CardDefaults.cardColors(containerColor = uiColors.panel),
-                border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
+                border = BorderStroke(1.dp, uiColors.panelStroke),
             ) {
                 Row(
                     modifier = Modifier

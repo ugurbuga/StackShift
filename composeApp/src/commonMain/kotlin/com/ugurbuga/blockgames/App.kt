@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,6 +32,7 @@ import blockgames.composeapp.generated.resources.reward_piece_column_message
 import blockgames.composeapp.generated.resources.reward_piece_row_message
 import com.ugurbuga.blockgames.ads.AppFooterAdSlot
 import com.ugurbuga.blockgames.ads.rememberPlatformGameAdController
+import com.ugurbuga.blockgames.game.model.DailyChallenge
 import com.ugurbuga.blockgames.game.model.GameConfig
 import com.ugurbuga.blockgames.game.model.GameMode
 import com.ugurbuga.blockgames.game.model.GameState
@@ -68,14 +70,14 @@ import com.ugurbuga.blockgames.telemetry.AppTelemetry
 import com.ugurbuga.blockgames.telemetry.TelemetryActionNames
 import com.ugurbuga.blockgames.telemetry.TelemetryUserPropertyNames
 import com.ugurbuga.blockgames.telemetry.rememberAppTelemetry
-import com.ugurbuga.blockgames.ui.game.settings.AppSettingsScreen
-import com.ugurbuga.blockgames.ui.game.game.BlockGamesGameApp
-import com.ugurbuga.blockgames.ui.game.gametutorial.GameTutorialScreen
-import com.ugurbuga.blockgames.ui.game.home.HomeScreen
 import com.ugurbuga.blockgames.ui.game.RewardFeedbackCard
 import com.ugurbuga.blockgames.ui.game.ThemedConfirmDialog
 import com.ugurbuga.blockgames.ui.game.dailychallenge.DailyChallengeScreen
+import com.ugurbuga.blockgames.ui.game.game.BlockGamesGameApp
+import com.ugurbuga.blockgames.ui.game.gametutorial.GameTutorialScreen
+import com.ugurbuga.blockgames.ui.game.home.HomeScreen
 import com.ugurbuga.blockgames.ui.game.settings.AppLanguageScreen
+import com.ugurbuga.blockgames.ui.game.settings.AppSettingsScreen
 import com.ugurbuga.blockgames.ui.theme.LocalBlockGamesUiColors
 import com.ugurbuga.blockgames.ui.theme.blockGamesThemeSpec
 import com.ugurbuga.blockgames.ui.theme.blockGamesTypography
@@ -133,7 +135,7 @@ fun BlockGamesRoot(
     onRewardFeedbackDismiss: () -> Unit,
     onPlayRequested: () -> Unit,
     onTimeAttackRequested: () -> Unit,
-    onPlayChallengeRequested: (com.ugurbuga.blockgames.game.model.DailyChallenge) -> Unit,
+    onPlayChallengeRequested: (DailyChallenge) -> Unit,
     onNavigateToTheme: () -> Unit,
     onNavigateToLanguage: () -> Unit,
     onNavigateToTutorial: () -> Unit,
@@ -358,7 +360,13 @@ fun BlockGamesAppHost(
         slot: GameSessionSlot,
     ): Boolean {
         if (state.config.columns <= 0 || state.config.rows <= 0) return false
-        if (slot == GameSessionSlot.DailyChallenge && state.activeChallenge == null) return false
+        if (slot == GameSessionSlot.DailyChallenge) {
+            val activeChallenge = state.activeChallenge ?: return false
+            val today = getCurrentDate()
+            if (activeChallenge.year != today.year || activeChallenge.month != today.month || activeChallenge.day != today.day) {
+                return false
+            }
+        }
         if (state.status != GameStatus.Running) return true
         return when (state.gameplayStyle) {
             GameplayStyle.BlockWise -> state.trayPieces.isNotEmpty()
@@ -375,7 +383,12 @@ fun BlockGamesAppHost(
         return savedState
     }
 
-    val gameViewModelState = remember { mutableStateOf(createGameViewModel(initialState = null)) }
+    val gameViewModelState = remember {
+        val lastSlot = initialBootstrapResult.settings.lastActiveSlot
+        val initialSession = lastSlot?.let { loadSavedSession(it) }
+        mutableStateOf(createGameViewModel(initialState = initialSession))
+    }
+
     var gameViewModel by gameViewModelState
 
     fun restoreOrRestartSession(
@@ -383,6 +396,7 @@ fun BlockGamesAppHost(
         fallback: () -> Unit,
     ) {
         persistActiveSession.value = true
+        persistSettings(settings.copy(lastActiveSlot = slot))
         val savedState = loadSavedSession(slot)
         if (savedState != null) {
             gameViewModel.replaceState(savedState)
@@ -411,6 +425,14 @@ fun BlockGamesAppHost(
         showLeaveSessionDialog = false
         val leavingRoute = routeStack.lastOrNull()
         routeStack = routeStack.dropLast(1)
+
+        // Save immediately when leaving a game
+        if (leavingRoute == AppRoute.Game || leavingRoute == AppRoute.InteractiveOnboarding) {
+            pendingSessionState?.let { state ->
+                GameSessionStorage.save(state.sessionSlot(), state)
+            }
+        }
+
         if (leavingRoute == AppRoute.InteractiveOnboarding) {
             persistActiveSession.value = true
             pendingSessionState = null
@@ -504,12 +526,12 @@ fun BlockGamesAppHost(
     LaunchedEffect(persistActiveSession.value, pendingSessionState) {
         val state = pendingSessionState ?: return@LaunchedEffect
         if (!persistActiveSession.value) return@LaunchedEffect
-        delay(350.milliseconds)
+        delay(200.milliseconds)
         if (persistActiveSession.value && (pendingSessionState == state)) {
             GameSessionStorage.save(state.sessionSlot(), state)
         }
     }
-    androidx.compose.runtime.DisposableEffect(gameViewModel) {
+    DisposableEffect(gameViewModel) {
         onDispose(gameViewModel::dispose)
     }
 
@@ -537,7 +559,7 @@ fun BlockGamesAppHost(
         onPlayChallengeRequested = { challenge ->
             restoreOrRestartSession(slot = GameSessionSlot.DailyChallenge) {
                 gameViewModel.restart(
-                    config = GameConfig(),
+                    config = GameConfig.default(gameplayStyle),
                     challenge = challenge,
                     mode = GameMode.Classic,
                     gameplayStyle = gameplayStyle,
@@ -549,7 +571,7 @@ fun BlockGamesAppHost(
             } == true
             if (!isMatchingChallenge) {
                 gameViewModel.restart(
-                    config = GameConfig(),
+                    config = GameConfig.default(gameplayStyle),
                     challenge = challenge,
                     mode = GameMode.Classic,
                     gameplayStyle = gameplayStyle,
@@ -649,5 +671,3 @@ fun LeaveSessionConfirmDialog(
         dismissButtonIcon = Icons.Filled.Close,
     )
 }
-
-

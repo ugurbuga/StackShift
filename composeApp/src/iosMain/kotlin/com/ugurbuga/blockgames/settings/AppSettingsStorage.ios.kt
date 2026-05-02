@@ -42,6 +42,9 @@ actual object AppSettingsStorage {
                     ?: defaults.integerForKey(KeyLastAppOpenedAtEpochMillis).toLong()
             } ?: defaultSettings.lastAppOpenedAtEpochMillis,
             isHighScoresClearedOnce = defaults.boolForKey(KeyIsHighScoresClearedOnce),
+            lastActiveSlot = defaults.objectForKey(KeyLastActiveSlot)?.let {
+                GameSessionSlot.entries.getOrNull(defaults.integerForKey(KeyLastActiveSlot).toInt())
+            },
         ).sanitized()
     }
 
@@ -63,9 +66,15 @@ actual object AppSettingsStorage {
         defaults.setObject(encodeChallengeProgress(sanitized.challengeProgress), forKey = KeyChallengeProgress)
         defaults.setObject(sanitized.lastAppOpenedAtEpochMillis.toString(), forKey = KeyLastAppOpenedAtEpochMillis)
         defaults.setBool(sanitized.isHighScoresClearedOnce, forKey = KeyIsHighScoresClearedOnce)
+        if (sanitized.lastActiveSlot != null) {
+            defaults.setInteger(sanitized.lastActiveSlot.ordinal.toLong(), forKey = KeyLastActiveSlot)
+        } else {
+            defaults.removeObjectForKey(KeyLastActiveSlot)
+        }
     }
 
     private const val KeyIsHighScoresClearedOnce = "isHighScoresClearedOnce"
+    private const val KeyLastActiveSlot = "lastActiveSlot"
     private const val KeyLastAppOpenedAtEpochMillis = "lastAppOpenedAtEpochMillis"
     private const val KeyChallengeProgress = "challengeProgress"
     private const val KeyTokenBalance = "tokenBalance"

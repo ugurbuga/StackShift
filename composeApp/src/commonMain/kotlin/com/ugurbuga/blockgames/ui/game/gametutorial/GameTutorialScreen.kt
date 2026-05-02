@@ -70,6 +70,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -78,7 +79,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.lerp
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.block_properties_column_clearer_desc
 import blockgames.composeapp.generated.resources.block_properties_column_clearer_title
@@ -147,7 +150,20 @@ import com.ugurbuga.blockgames.telemetry.AppTelemetry
 import com.ugurbuga.blockgames.telemetry.LogScreen
 import com.ugurbuga.blockgames.telemetry.NoOpAppTelemetry
 import com.ugurbuga.blockgames.telemetry.TelemetryScreenNames
+import com.ugurbuga.blockgames.ui.game.BlockCellPreview
+import com.ugurbuga.blockgames.ui.game.BlockStyleActionButton
+import com.ugurbuga.blockgames.ui.game.BoardGrid
+import com.ugurbuga.blockgames.ui.game.InteractiveOnboardingCompletionDialog
+import com.ugurbuga.blockgames.ui.game.PieceBlocks
+import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
+import com.ugurbuga.blockgames.ui.game.blockStyleIconTint
+import com.ugurbuga.blockgames.ui.game.boardCellCornerRadiusDp
+import com.ugurbuga.blockgames.ui.game.boardFrameCornerRadiusDp
 import com.ugurbuga.blockgames.ui.game.game.LaunchGuideLineOverlay
+import com.ugurbuga.blockgames.ui.game.game.columnToLeft
+import com.ugurbuga.blockgames.ui.game.game.pieceSpawnTopLeft
+import com.ugurbuga.blockgames.ui.game.game.resolveSelectedColumn
+import com.ugurbuga.blockgames.ui.game.rememberBlockStylePulse
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
 import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
 import com.ugurbuga.blockgames.ui.theme.appBackgroundBrush
@@ -157,6 +173,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
+import kotlin.time.Duration.Companion.milliseconds
 
 private val TutorialMiniDockHeight = 88.dp
 private const val TutorialIntroColumns = 10
@@ -459,7 +476,7 @@ fun GameTutorialScreen(
     var showBlockWiseFinishDialog by remember { mutableStateOf(false) }
 
     if (showBlockWiseFinishDialog) {
-        _root_ide_package_.com.ugurbuga.blockgames.ui.game.InteractiveOnboardingCompletionDialog(
+        InteractiveOnboardingCompletionDialog(
             onStartGame = onFinish,
             onReturnHome = onBack,
         )
@@ -498,7 +515,7 @@ fun GameTutorialScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    _root_ide_package_.com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton(
+                    TopBarActionBlockButton(
                         tone = CellTone.Cyan,
                         icon = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = stringResource(Res.string.tutorial_back),
@@ -562,7 +579,7 @@ fun GameTutorialScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     if (currentStep > 0) {
-                        _root_ide_package_.com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton(
+                        TopBarActionBlockButton(
                             tone = CellTone.Cyan,
                             icon = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(Res.string.tutorial_back),
@@ -578,7 +595,7 @@ fun GameTutorialScreen(
                         Spacer(modifier = Modifier.size(40.dp))
                     }
                     Spacer(modifier = Modifier.weight(1f))
-                    _root_ide_package_.com.ugurbuga.blockgames.ui.game.BlockStyleActionButton(
+                    BlockStyleActionButton(
                         text = if (isLastStep) stringResource(Res.string.tutorial_finish) else stringResource(
                             Res.string.tutorial_next
                         ),
@@ -705,14 +722,14 @@ private fun TutorialMiniBoardShell(
     Card(
         modifier = modifier.blockGamesSurfaceShadow(
             shape = RoundedCornerShape(
-                _root_ide_package_.com.ugurbuga.blockgames.ui.game.boardFrameCornerRadiusDp(
+                boardFrameCornerRadiusDp(
                     boardStyle
                 )
             ),
             elevation = 10.dp,
         ),
         shape = RoundedCornerShape(
-            _root_ide_package_.com.ugurbuga.blockgames.ui.game.boardFrameCornerRadiusDp(
+            boardFrameCornerRadiusDp(
                 boardStyle
             )
         ),
@@ -963,7 +980,7 @@ private fun TutorialPracticeTrayPieceChip(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center,
         ) {
-            _root_ide_package_.com.ugurbuga.blockgames.ui.game.PieceBlocks(
+            PieceBlocks(
                 piece = piece,
                 cellSize = 16.dp
             )
@@ -1040,7 +1057,7 @@ private fun TutorialBlockWisePlacementDemo() {
     val cellSizePx = if (boardRect != Rect.Zero) boardRect.width / initialState.config.columns else 0f
     val pieceCellDp = with(density) { cellSizePx.coerceAtLeast(1f).toDp() }
     val launchCellCornerRadius =
-        _root_ide_package_.com.ugurbuga.blockgames.ui.game.boardCellCornerRadiusDp(
+        boardCellCornerRadiusDp(
             cellSize = pieceCellDp,
             style = boardStyle,
         )
@@ -1087,7 +1104,7 @@ private fun TutorialBlockWisePlacementDemo() {
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                _root_ide_package_.com.ugurbuga.blockgames.ui.game.BoardGrid(
+                BoardGrid(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(boardState.config.columns.toFloat() / boardState.config.rows.toFloat())
@@ -1134,7 +1151,7 @@ private fun TutorialBlockWisePlacementDemo() {
             }
 
             if (overlayTopLeft != null && cellSizePx > 0f) {
-                _root_ide_package_.com.ugurbuga.blockgames.ui.game.PieceBlocks(
+                PieceBlocks(
                     piece = primaryPiece,
                     cellSize = pieceCellDp,
                     cellCornerRadius = launchCellCornerRadius,
@@ -1262,7 +1279,7 @@ private fun TutorialMiniGameDemo(
     val maxColumn = activePiece?.let { (gameState.config.columns - it.width).coerceAtLeast(0) } ?: 0
     val resolvedLockedColumn = lockedColumn?.coerceIn(0, maxColumn)
     val spawnColumn = scene.spawnColumn.coerceIn(0, maxColumn)
-    val spawnTopLeft = _root_ide_package_.com.ugurbuga.blockgames.ui.game.game.pieceSpawnTopLeft(
+    val spawnTopLeft = pieceSpawnTopLeft(
         piece = activePiece,
         trayRect = trayRect,
         boardRect = boardRect,
@@ -1277,7 +1294,7 @@ private fun TutorialMiniGameDemo(
     }
     val pieceCellDp = with(density) { cellSizePx.coerceAtLeast(1f).toDp() }
     val launchCellCornerRadius =
-        _root_ide_package_.com.ugurbuga.blockgames.ui.game.boardCellCornerRadiusDp(
+        boardCellCornerRadiusDp(
             cellSize = pieceCellDp,
             style = boardStyle,
         )
@@ -1311,7 +1328,7 @@ private fun TutorialMiniGameDemo(
     val overlayPreviewTopLeft = overlayTopLeft?.let {
         Offset(x = animatedOverlayX, y = animatedOverlayY)
     }
-    val selectedColumn = resolvedLockedColumn ?: _root_ide_package_.com.ugurbuga.blockgames.ui.game.game.resolveSelectedColumn(
+    val selectedColumn = resolvedLockedColumn ?: resolveSelectedColumn(
         piece = activePiece,
         overlayTopLeft = overlayPreviewTopLeft,
         boardRect = boardRect,
@@ -1342,7 +1359,7 @@ private fun TutorialMiniGameDemo(
         if (resolvedLockedColumn != null && gameState.clearAnimationToken != scene.gameState.clearAnimationToken) {
             return@LaunchedEffect
         }
-        overlayTopLeft = _root_ide_package_.com.ugurbuga.blockgames.ui.game.game.pieceSpawnTopLeft(
+        overlayTopLeft = pieceSpawnTopLeft(
             piece = activePiece,
             trayRect = trayRect,
             boardRect = boardRect,
@@ -1361,12 +1378,12 @@ private fun TutorialMiniGameDemo(
     ) {
         if (boardRect == Rect.Zero || trayRect == Rect.Zero || cellSizePx <= 0f) return@LaunchedEffect
         if (resolvedLockedColumn != null || isDragging || activePiece == null) return@LaunchedEffect
-        delay(TutorialDemoAutoplayStartDelayMillis)
+        delay(TutorialDemoAutoplayStartDelayMillis.milliseconds)
         var autoIndex = 0
         while (isActive && !isDragging) {
             val column = autoColumns[autoIndex % autoColumns.size]
             overlayTopLeft =
-                _root_ide_package_.com.ugurbuga.blockgames.ui.game.game.pieceSpawnTopLeft(
+                pieceSpawnTopLeft(
                     piece = activePiece,
                     trayRect = trayRect,
                     boardRect = boardRect,
@@ -1374,7 +1391,7 @@ private fun TutorialMiniGameDemo(
                     column = column,
                 )
             autoIndex += 1
-            delay(TutorialDemoAutoplayStepDelayMillis)
+            delay(TutorialDemoAutoplayStepDelayMillis.milliseconds)
         }
     }
 
@@ -1388,29 +1405,29 @@ private fun TutorialMiniGameDemo(
             gameState = scene.gameState
             isHandVisible = true
             overlayTopLeft =
-                _root_ide_package_.com.ugurbuga.blockgames.ui.game.game.pieceSpawnTopLeft(
+                pieceSpawnTopLeft(
                     piece = scene.gameState.activePiece,
                     trayRect = trayRect,
                     boardRect = boardRect,
                     cellSizePx = cellSizePx,
                     column = spawnColumn,
                 )
-            delay(TutorialDemoAutoplayStartDelayMillis)
+            delay(TutorialDemoAutoplayStartDelayMillis.milliseconds)
 
             overlayTopLeft =
-                _root_ide_package_.com.ugurbuga.blockgames.ui.game.game.pieceSpawnTopLeft(
+                pieceSpawnTopLeft(
                     piece = scene.gameState.activePiece,
                     trayRect = trayRect,
                     boardRect = boardRect,
                     cellSizePx = cellSizePx,
                     column = resolvedLockedColumn,
                 )
-            delay(TutorialDemoTravelDurationMillis.toLong())
+            delay(TutorialDemoTravelDurationMillis.milliseconds)
 
             val placed = gameLogic.placePiece(scene.gameState, resolvedLockedColumn)
             val lockedPreview = placed.state.softLock?.preview
             if (lockedPreview == null) {
-                delay(TutorialDemoResetDelayMillis)
+                delay(TutorialDemoResetDelayMillis.milliseconds)
                 continue
             }
 
@@ -1419,21 +1436,21 @@ private fun TutorialMiniGameDemo(
                 boardRect = boardRect,
                 cellSizePx = cellSizePx
             )
-            delay((TutorialDemoTravelDurationMillis / 2).toLong())
+            delay((TutorialDemoTravelDurationMillis / 2).milliseconds)
             overlayTopLeft = lockedPreview.landingAnchor.toLocalTopLeft(
                 boardRect = boardRect,
                 cellSizePx = cellSizePx
             )
-            delay((TutorialDemoTravelDurationMillis / 3).toLong())
+            delay((TutorialDemoTravelDurationMillis / 3).milliseconds)
 
             gameState = placed.state
-            delay(TutorialDemoSoftLockDelayMillis)
+            delay(TutorialDemoSoftLockDelayMillis.milliseconds)
 
             val committed = gameLogic.commitSoftLock(placed.state)
             gameState = committed.state
             overlayTopLeft = null
-            delay(TutorialDemoResolutionHoldMillis)
-            delay(TutorialDemoResetDelayMillis)
+            delay(TutorialDemoResolutionHoldMillis.milliseconds)
+            delay(TutorialDemoResetDelayMillis.milliseconds)
         }
     }
 
@@ -1450,7 +1467,7 @@ private fun TutorialMiniGameDemo(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Box(modifier = Modifier.fillMaxWidth()) {
-                    _root_ide_package_.com.ugurbuga.blockgames.ui.game.BoardGrid(
+                    BoardGrid(
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(gameState.config.columns.toFloat() / gameState.config.rows.toFloat())
@@ -1485,7 +1502,7 @@ private fun TutorialMiniGameDemo(
                     )
 
                     if (badgeTone != null && badgeSpecial != SpecialBlockType.None) {
-                        _root_ide_package_.com.ugurbuga.blockgames.ui.game.BlockCellPreview(
+                        BlockCellPreview(
                             tone = badgeTone,
                             palette = settings.blockColorPalette,
                             style = boardStyle,
@@ -1507,7 +1524,7 @@ private fun TutorialMiniGameDemo(
             }
 
             if (activePiece != null && overlayTopLeft != null && cellSizePx > 0f) {
-                _root_ide_package_.com.ugurbuga.blockgames.ui.game.PieceBlocks(
+                PieceBlocks(
                     piece = activePiece,
                     cellSize = pieceCellDp,
                     cellCornerRadius = launchCellCornerRadius,
@@ -1535,7 +1552,7 @@ private fun TutorialMiniGameDemo(
                                             overlayTopLeft = if (selectedColumn != null) {
                                                 overlayTopLeft?.let { current ->
                                                     Offset(
-                                                        _root_ide_package_.com.ugurbuga.blockgames.ui.game.game.columnToLeft(
+                                                        columnToLeft(
                                                             selectedColumn,
                                                             boardRect,
                                                             cellSizePx
@@ -1593,11 +1610,11 @@ private fun TutorialMiniGameDemo(
 
 @Composable
 private fun TutorialDemoHand(
-    x: androidx.compose.ui.unit.Dp,
-    y: androidx.compose.ui.unit.Dp,
+    x: Dp,
+    y: Dp,
     pieceWidth: Int,
     pieceHeight: Int,
-    cellSize: androidx.compose.ui.unit.Dp,
+    cellSize: Dp,
     alpha: Float,
 ) {
     val isDark = isBlockGamesDarkTheme(LocalAppSettings.current)
@@ -1728,7 +1745,7 @@ private fun TutorialTrayPieceChip(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center,
         ) {
-            _root_ide_package_.com.ugurbuga.blockgames.ui.game.PieceBlocks(
+            PieceBlocks(
                 piece = piece,
                 cellSize = 16.dp
             )
@@ -1808,7 +1825,7 @@ private fun TutorialPieceCard(
                 overflow = TextOverflow.Ellipsis,
                 fontWeight = FontWeight.SemiBold,
             )
-            _root_ide_package_.com.ugurbuga.blockgames.ui.game.PieceBlocks(
+            PieceBlocks(
                 piece = piece,
                 cellSize = 22.dp,
                 alpha = alpha,
@@ -1820,17 +1837,15 @@ private fun TutorialPieceCard(
 @Composable
 private fun TutorialActionTile(
     tone: CellTone,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     title: String,
     modifier: Modifier = Modifier,
 ) {
     val uiColors = BlockGamesThemeTokens.uiColors
     val settings = LocalAppSettings.current
     val blockStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
-    val stylePulse =
-        _root_ide_package_.com.ugurbuga.blockgames.ui.game.rememberBlockStylePulse(style = blockStyle)
-    val iconTint =
-        _root_ide_package_.com.ugurbuga.blockgames.ui.game.blockStyleIconTint(style = blockStyle)
+    val stylePulse = rememberBlockStylePulse(style = blockStyle)
+    val iconTint = blockStyleIconTint(style = blockStyle)
 
     Column(
         modifier = modifier.widthIn(min = 64.dp),
@@ -1838,7 +1853,7 @@ private fun TutorialActionTile(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Box(contentAlignment = Alignment.Center) {
-            _root_ide_package_.com.ugurbuga.blockgames.ui.game.BlockCellPreview(
+            BlockCellPreview(
                 tone = tone,
                 palette = settings.blockColorPalette,
                 style = blockStyle,
@@ -1857,7 +1872,7 @@ private fun TutorialActionTile(
             style = MaterialTheme.typography.labelSmall,
             color = uiColors.subtitle,
             textAlign = TextAlign.Center,
-            maxLines = 1,
+            maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
     }
@@ -1888,7 +1903,7 @@ private fun TutorialSpecialCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            _root_ide_package_.com.ugurbuga.blockgames.ui.game.BlockCellPreview(
+            BlockCellPreview(
                 tone = tone,
                 palette = LocalAppSettings.current.blockColorPalette,
                 style = resolveBoardBlockStyle(
@@ -1968,8 +1983,8 @@ private fun lerpOffset(
     end: Offset,
     progress: Float,
 ): Offset = Offset(
-    x = androidx.compose.ui.util.lerp(start.x, end.x, progress.coerceIn(0f, 1f)),
-    y = androidx.compose.ui.util.lerp(start.y, end.y, progress.coerceIn(0f, 1f)),
+    x = lerp(start.x, end.x, progress.coerceIn(0f, 1f)),
+    y = lerp(start.y, end.y, progress.coerceIn(0f, 1f)),
 )
 
 @Preview(name = "Tutorial - Intro", widthDp = 412, heightDp = 915)
@@ -2013,6 +2028,58 @@ private fun TutorialSpecialsStepPreview() {
 private fun TutorialReadyStepPreview() {
     BlockGamesTheme(settings = AppSettings()) {
         GameTutorialScreen(
+            initialPage = 3,
+            onBack = {},
+            onFinish = {},
+        )
+    }
+}
+
+@Preview(name = "Tutorial - BlockWise - Intro", widthDp = 412, heightDp = 915)
+@Composable
+private fun TutorialBlockWiseIntroStepPreview() {
+    BlockGamesTheme(settings = AppSettings()) {
+        GameTutorialScreen(
+            gameplayStyle = GameplayStyle.BlockWise,
+            initialPage = 0,
+            onBack = {},
+            onFinish = {},
+        )
+    }
+}
+
+@Preview(name = "Tutorial - BlockWise - App Features", widthDp = 412, heightDp = 915)
+@Composable
+private fun TutorialBlockWiseAppFeaturesStepPreview() {
+    BlockGamesTheme(settings = AppSettings()) {
+        GameTutorialScreen(
+            gameplayStyle = GameplayStyle.BlockWise,
+            initialPage = 1,
+            onBack = {},
+            onFinish = {},
+        )
+    }
+}
+
+@Preview(name = "Tutorial - BlockWise - Systems", widthDp = 412, heightDp = 915)
+@Composable
+private fun TutorialBlockWiseSystemsStepPreview() {
+    BlockGamesTheme(settings = AppSettings()) {
+        GameTutorialScreen(
+            gameplayStyle = GameplayStyle.BlockWise,
+            initialPage = 2,
+            onBack = {},
+            onFinish = {},
+        )
+    }
+}
+
+@Preview(name = "Tutorial - BlockWise - Ready", widthDp = 412, heightDp = 915)
+@Composable
+private fun TutorialBlockWiseReadyStepPreview() {
+    BlockGamesTheme(settings = AppSettings()) {
+        GameTutorialScreen(
+            gameplayStyle = GameplayStyle.BlockWise,
             initialPage = 3,
             onBack = {},
             onFinish = {},

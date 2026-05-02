@@ -1,5 +1,6 @@
 package com.ugurbuga.blockgames.ui.game.dailychallenge
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -49,13 +50,17 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.calendar_month_year_format
 import blockgames.composeapp.generated.resources.challenge_info_chain_reaction
@@ -126,6 +131,7 @@ import com.ugurbuga.blockgames.game.model.paletteColor
 import com.ugurbuga.blockgames.game.model.resolveBoardBlockStyle
 import com.ugurbuga.blockgames.localization.LocalAppSettings
 import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
+import com.ugurbuga.blockgames.settings.AppSettings
 import com.ugurbuga.blockgames.ui.game.BlockStyleActionButton
 import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
 import com.ugurbuga.blockgames.ui.game.color
@@ -365,7 +371,7 @@ fun TrophyIcon(
         drawPath(
             path = trophyPath,
             color = emptyColor,
-            style = androidx.compose.ui.graphics.drawscope.Fill
+            style = Fill
         )
 
         // Draw filled trophy
@@ -378,7 +384,7 @@ fun TrophyIcon(
             drawPath(
                 path = trophyPath,
                 color = baseColor,
-                style = androidx.compose.ui.graphics.drawscope.Fill
+                style = Fill
             )
 
             // Highlight shine
@@ -397,7 +403,7 @@ fun TrophyIcon(
         drawPath(
             path = trophyPath,
             color = baseColor.copy(alpha = 0.8f),
-            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx())
+            style = Stroke(width = 2.dp.toPx())
         )
     }
 }
@@ -674,11 +680,11 @@ fun ChallengeInfoDialog(
 ) {
     val uiColors = BlockGamesThemeTokens.uiColors
 
-    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+    Dialog(onDismissRequest = onDismiss) {
         Card(
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = uiColors.gameSurface),
-            border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
+            border = BorderStroke(1.dp, uiColors.panelStroke),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
@@ -812,10 +818,10 @@ fun getDaysInMonth(year: Int, month: Int): Int {
     }
 }
 
-@androidx.compose.ui.tooling.preview.Preview
+@Preview
 @Composable
 fun DailyChallengeScreenPreview() {
-    val settings = com.ugurbuga.blockgames.settings.AppSettings(
+    val settings = AppSettings(
         themeMode = AppThemeMode.Dark,
         blockVisualStyle = BlockVisualStyle.Flat,
         themeColorPalette = AppColorPalette.Classic
@@ -833,10 +839,10 @@ fun DailyChallengeScreenPreview() {
     }
 }
 
-@androidx.compose.ui.tooling.preview.Preview
+@Preview
 @Composable
 fun DailyChallengeScreenWithProgressPreview() {
-    val settings = com.ugurbuga.blockgames.settings.AppSettings(
+    val settings = AppSettings(
         themeMode = AppThemeMode.Dark,
         blockVisualStyle = BlockVisualStyle.DynamicLiquid,
         themeColorPalette = AppColorPalette.ModernNeon
@@ -859,10 +865,10 @@ fun DailyChallengeScreenWithProgressPreview() {
     }
 }
 
-@androidx.compose.ui.tooling.preview.Preview
+@Preview
 @Composable
 fun DailyChallengeScreenLightPreview() {
-    val settings = com.ugurbuga.blockgames.settings.AppSettings(
+    val settings = AppSettings(
         themeMode = AppThemeMode.Light,
         blockVisualStyle = BlockVisualStyle.Bubble,
         themeColorPalette = AppColorPalette.SoftPastel

@@ -39,6 +39,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -63,6 +65,7 @@ import com.ugurbuga.blockgames.game.model.BoardMatrix
 import com.ugurbuga.blockgames.game.model.CellTone
 import com.ugurbuga.blockgames.game.model.GameState
 import com.ugurbuga.blockgames.game.model.GameStatus
+import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.GridPoint
 import com.ugurbuga.blockgames.game.model.Piece
 import com.ugurbuga.blockgames.game.model.PlacementPreview
@@ -74,8 +77,10 @@ import com.ugurbuga.blockgames.game.model.paletteColor
 import com.ugurbuga.blockgames.game.model.resolveBoardBlockStyle
 import com.ugurbuga.blockgames.localization.LocalAppSettings
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
+import com.ugurbuga.blockgames.ui.theme.BlockGamesUiColors
 import com.ugurbuga.blockgames.ui.theme.isBlockGamesDarkTheme
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -125,7 +130,9 @@ fun BoardGrid(
     var boardTransitionToken by remember { mutableLongStateOf(gameState.clearAnimationToken) }
     val boardShiftProgress = remember { Animatable(1f) }
     val shouldAnimateBoardShift =
-        gameState.status == GameStatus.Running && gameState.clearAnimationToken != boardTransitionToken
+        gameState.status == GameStatus.Running &&
+                gameState.gameplayStyle == GameplayStyle.StackShift &&
+                gameState.clearAnimationToken != boardTransitionToken
     val animatedBoardCells =
         remember(boardTransitionSource, gameState.board, shouldAnimateBoardShift) {
             if (shouldAnimateBoardShift) {
@@ -941,7 +948,7 @@ private fun DrawScope.drawClearEffectBand(
 
 @Composable
 private fun BoardGridBackgroundLayer(
-    uiColors: com.ugurbuga.blockgames.ui.theme.BlockGamesUiColors,
+    uiColors: BlockGamesUiColors,
     boardDecorAlphaProvider: () -> Float,
     boardCornerRadiusPx: Float,
     modifier: Modifier = Modifier,
@@ -1009,7 +1016,7 @@ private fun BoardGridSlotLayer(
     cellWidthPx: Float,
     cellHeightPx: Float,
     slotVisual: BoardCellVisual,
-    uiColors: com.ugurbuga.blockgames.ui.theme.BlockGamesUiColors,
+    uiColors: BlockGamesUiColors,
     modifier: Modifier = Modifier,
 ) {
     Canvas(modifier = modifier) {
@@ -1040,7 +1047,7 @@ private fun DrawScope.drawFlatBoardEmptySlot(
     topLeft: Offset,
     cellSize: Size,
     slotVisual: BoardCellVisual,
-    uiColors: com.ugurbuga.blockgames.ui.theme.BlockGamesUiColors,
+    uiColors: BlockGamesUiColors,
     alpha: Float = 1f,
 ) {
     val slotInset = slotVisual.fillInsetPx * 0.72f
@@ -2082,8 +2089,8 @@ private fun roundedClipPath(
     cornerRadius: CornerRadius,
 ): Path = Path().apply {
     addRoundRect(
-        androidx.compose.ui.geometry.RoundRect(
-            rect = androidx.compose.ui.geometry.Rect(topLeft, size),
+        RoundRect(
+            rect = Rect(topLeft, size),
             cornerRadius = cornerRadius,
         )
     )
@@ -3161,7 +3168,7 @@ private fun DrawScope.drawSoundWavePattern(
 
     for (i in 0 until spikeCount) {
         val x = startX + i * spikeGap
-        val distFromCenter = kotlin.math.abs(i - (spikeCount - 1) / 2f) / ((spikeCount - 1) / 2f)
+        val distFromCenter = abs(i - (spikeCount - 1) / 2f) / ((spikeCount - 1) / 2f)
         val centerWeight = 1.0f - (distFromCenter * 0.6f)
         
         val spikeSeed = seed + i * 997

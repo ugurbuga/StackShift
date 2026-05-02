@@ -30,6 +30,7 @@ import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAdLoadCallback
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 private const val BannerRefreshIntervalMillis = 60_000L
 private val AndroidAdMobAdUnitIdRegex = Regex("^ca-app-pub-\\d+/\\d+$")
@@ -260,7 +261,7 @@ private class AndroidGameAdController(
         LaunchedEffect(currentBannerAdView) {
             refreshBannerAd(currentBannerAdView)
             while (true) {
-                delay(BannerRefreshIntervalMillis)
+                delay(BannerRefreshIntervalMillis.milliseconds)
                 refreshBannerAd(currentBannerAdView)
             }
         }

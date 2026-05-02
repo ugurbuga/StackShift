@@ -4,6 +4,7 @@ import com.ugurbuga.blockgames.game.model.ChallengeTask
 import com.ugurbuga.blockgames.game.model.ChallengeTaskType
 import com.ugurbuga.blockgames.game.model.DailyChallenge
 import com.ugurbuga.blockgames.game.model.GameplayStyle
+import kotlin.random.Random
 
 object ChallengeGenerator {
     fun generate(
@@ -13,7 +14,7 @@ object ChallengeGenerator {
         gameplayStyle: GameplayStyle,
     ): DailyChallenge {
         val seed = (year * 10000 + month * 100 + day).toLong()
-        val random = kotlin.random.Random(seed)
+        val random = Random(seed)
 
         val taskCount = random.nextInt(2, 4)
         val tasks = mutableListOf<ChallengeTask>()

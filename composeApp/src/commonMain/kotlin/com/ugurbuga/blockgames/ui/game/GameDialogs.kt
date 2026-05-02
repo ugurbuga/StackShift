@@ -55,8 +55,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.ugurbuga.blockgames.game.model.BlockVisualStyle
 import com.ugurbuga.blockgames.game.model.CellTone
 import com.ugurbuga.blockgames.game.model.GameState
 import com.ugurbuga.blockgames.game.model.GameText
@@ -68,6 +70,7 @@ import com.ugurbuga.blockgames.localization.LocalAppSettings
 import com.ugurbuga.blockgames.localization.appNameResourceId
 import com.ugurbuga.blockgames.localization.formatAppString
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
+import com.ugurbuga.blockgames.ui.theme.BlockGamesUiColors
 import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
 import com.ugurbuga.blockgames.ui.theme.blockGamesSurfaceShadow
 import com.ugurbuga.blockgames.ui.theme.isBlockGamesDarkTheme
@@ -670,7 +673,7 @@ internal fun BlockStyleActionButton(
     icon: ImageVector? = null,
     textColor: Color? = null,
     tone: CellTone = if (emphasized) CellTone.Cyan else CellTone.Violet,
-    height: androidx.compose.ui.unit.Dp = 52.dp,
+    height: Dp = 52.dp,
     pulse: Float = 0f,
     iconOnRight: Boolean = false,
 ) {
@@ -1070,7 +1073,7 @@ internal fun GameTextKey.stringResourceId(): StringResource {
 
 @Composable
 internal fun dialogContainerColor(
-    uiColors: com.ugurbuga.blockgames.ui.theme.BlockGamesUiColors,
+    uiColors: BlockGamesUiColors,
 ): Color {
     val settings = LocalAppSettings.current
     return if (isBlockGamesDarkTheme(settings)) {
@@ -1082,7 +1085,7 @@ internal fun dialogContainerColor(
 
 @Composable
 internal fun dialogMessageColor(
-    uiColors: com.ugurbuga.blockgames.ui.theme.BlockGamesUiColors,
+    uiColors: BlockGamesUiColors,
 ): Color {
     val settings = LocalAppSettings.current
     return if (isBlockGamesDarkTheme(settings)) {
@@ -1094,14 +1097,14 @@ internal fun dialogMessageColor(
 
 @Composable
 internal fun rememberBlockStylePulse(
-    style: com.ugurbuga.blockgames.game.model.BlockVisualStyle,
+    style: BlockVisualStyle,
     pulse: Float = 0f,
 ): Float {
-    val needsPulse = style == com.ugurbuga.blockgames.game.model.BlockVisualStyle.DynamicLiquid ||
-            style == com.ugurbuga.blockgames.game.model.BlockVisualStyle.Tornado ||
-            style == com.ugurbuga.blockgames.game.model.BlockVisualStyle.Prism ||
-            style == com.ugurbuga.blockgames.game.model.BlockVisualStyle.SoundWave ||
-            style == com.ugurbuga.blockgames.game.model.BlockVisualStyle.Flame
+    val needsPulse = style == BlockVisualStyle.DynamicLiquid ||
+            style == BlockVisualStyle.Tornado ||
+            style == BlockVisualStyle.Prism ||
+            style == BlockVisualStyle.SoundWave ||
+            style == BlockVisualStyle.Flame
 
     if (pulse != 0f || !needsPulse) {
         return pulse
@@ -1180,7 +1183,7 @@ internal fun TopBarActionBlockButton(
     onClick: () -> Unit,
     enabled: Boolean = true,
     pulse: Float = 0f,
-    size: androidx.compose.ui.unit.Dp = TopBarActionBlockSize,
+    size: Dp = TopBarActionBlockSize,
     showAdIcon: Boolean = false,
     adIcon: ImageVector = Icons.Outlined.Videocam,
     extraAlpha: Float = 1f,

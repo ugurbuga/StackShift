@@ -16,10 +16,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 
 class GameViewModel(
     private val gameLogic: GameLogic = GameLogic.create(),
@@ -47,8 +44,8 @@ class GameViewModel(
 
     val uiState: StateFlow<GameUiState> = store.uiState
 
-    init {
-        startGameLoop()
+    fun tick() {
+        store.tick()
     }
 
     fun previewPlacement(column: Int): PlacementPreview? {
@@ -118,15 +115,6 @@ class GameViewModel(
             events = events,
             feedback = feedbackMapper.map(events),
         )
-    }
-
-    private fun startGameLoop() {
-        scope.launch {
-            while (isActive) {
-                delay(1_000)
-                store.tick()
-            }
-        }
     }
 }
 

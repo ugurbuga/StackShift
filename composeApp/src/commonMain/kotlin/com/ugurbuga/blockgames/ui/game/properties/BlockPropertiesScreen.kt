@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -103,7 +104,7 @@ fun BlockPropertiesScreen(
                 ),
                 shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
                 colors = CardDefaults.cardColors(containerColor = uiColors.panel),
-                border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke),
+                border = BorderStroke(1.dp, uiColors.panelStroke),
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             ) {
                 Row(
@@ -158,7 +159,7 @@ fun BlockPropertiesScreen(
                         ),
                     shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
                     colors = CardDefaults.cardColors(containerColor = uiColors.panelMuted),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.72f)),
+                    border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.72f)),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                 ) {
                     Column(
@@ -234,7 +235,7 @@ private fun BlockTypeRow(
             .clickable(onClick = onClick),
         shape = rowShape,
         colors = CardDefaults.cardColors(containerColor = background),
-        border = androidx.compose.foundation.BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = if (selected) 0.92f else 0.68f)),
+        border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = if (selected) 0.92f else 0.68f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Row(

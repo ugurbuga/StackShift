@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
@@ -18,9 +19,10 @@ import com.ugurbuga.blockgames.settings.MissYouReminderMinimumInactivityMillis
 import com.ugurbuga.blockgames.settings.MissYouReminderSlots
 import com.ugurbuga.blockgames.settings.NotificationReminderSchedulingHorizonDays
 import com.ugurbuga.blockgames.settings.hasCompletedChallengeForDate
-
+import kotlinx.coroutines.delay
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.milliseconds
 
 class AndroidNotificationManager(private val context: Context) : NotificationManager {
 
@@ -34,7 +36,7 @@ class AndroidNotificationManager(private val context: Context) : NotificationMan
         val workRequest = OneTimeWorkRequestBuilder<NotificationWorker>()
             .setInitialDelay(delayMillis, TimeUnit.MILLISECONDS)
             .setInputData(
-                androidx.work.Data.Builder()
+                Data.Builder()
                     .putString(NotificationWorker.DATA_KEY_TYPE, type)
                     .build()
             )
@@ -138,7 +140,7 @@ class AndroidNotificationManager(private val context: Context) : NotificationMan
     override fun sendTestNotification() {
         val workRequest = OneTimeWorkRequestBuilder<NotificationWorker>()
             .setInputData(
-                androidx.work.Data.Builder()
+                Data.Builder()
                     .putString(NotificationWorker.DATA_KEY_TYPE, NotificationWorker.TYPE_TEST)
                     .build()
             )
@@ -154,7 +156,7 @@ class AndroidNotificationManager(private val context: Context) : NotificationMan
             ) { _ -> }
 
             LaunchedEffect(Unit) {
-                kotlinx.coroutines.delay(500)
+                delay(500.milliseconds)
                 launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         }

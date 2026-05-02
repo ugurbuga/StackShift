@@ -42,10 +42,10 @@ internal class StackShiftGameLogic(
     }
 
     override fun newGame(
+        gameplayStyle: GameplayStyle,
         config: GameConfig,
         challenge: DailyChallenge?,
         mode: GameMode,
-        gameplayStyle: GameplayStyle,
     ): GameState {
         val level = 1
         val board = BoardMatrix.empty(columns = config.columns, rows = config.rows)

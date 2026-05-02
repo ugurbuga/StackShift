@@ -53,7 +53,7 @@ class GameSessionCodecTest {
 
     @Test
     fun sessionSlotFor_routesClassicTimeAttackAndChallengeSeparately() {
-        val classicState = logic.newGame(mode = GameMode.Classic)
+        val classicState = logic.newGame()
         val timeAttackState = logic.newGame(mode = GameMode.TimeAttack)
         val challenge = DailyChallenge(
             year = 2026,
@@ -61,7 +61,7 @@ class GameSessionCodecTest {
             day = 28,
             tasks = listOf(ChallengeTask(type = ChallengeTaskType.PlacePieces, target = 6)),
         )
-        val challengeState = logic.newGame(mode = GameMode.Classic, challenge = challenge)
+        val challengeState = logic.newGame(challenge = challenge)
 
         assertEquals(GameSessionSlot.Classic, classicState.sessionSlot())
         assertEquals(GameSessionSlot.TimeAttack, timeAttackState.sessionSlot())

@@ -202,7 +202,7 @@ class ComposeAppCommonTest {
         board: BoardMatrix,
         activePiece: Piece,
         nextQueue: List<Piece>,
-    ): GameState = logic.newGame(config).copy(
+    ): GameState = logic.newGame(config = config).copy(
         board = board,
         activePiece = activePiece,
         nextQueue = nextQueue,

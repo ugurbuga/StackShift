@@ -4,6 +4,7 @@ import com.ugurbuga.blockgames.game.model.BoardMatrix
 import com.ugurbuga.blockgames.game.model.CellTone
 import com.ugurbuga.blockgames.game.model.ChallengeTask
 import com.ugurbuga.blockgames.game.model.ChallengeTaskType
+import com.ugurbuga.blockgames.game.model.ColumnPressure
 import com.ugurbuga.blockgames.game.model.ComboState
 import com.ugurbuga.blockgames.game.model.DailyChallenge
 import com.ugurbuga.blockgames.game.model.GameConfig
@@ -359,7 +360,7 @@ internal object GameSessionCodec {
         )
     }
 
-    private fun encodeColumnPressure(pressures: List<com.ugurbuga.blockgames.game.model.ColumnPressure>): String = pressures.joinToString(separator = ListSeparator.toString()) { pressure ->
+    private fun encodeColumnPressure(pressures: List<ColumnPressure>): String = pressures.joinToString(separator = ListSeparator.toString()) { pressure ->
         listOf(
             pressure.column,
             pressure.filledCells,
@@ -368,13 +369,13 @@ internal object GameSessionCodec {
         ).joinToString(separator = FieldSeparator.toString())
     }
 
-    private fun decodeColumnPressure(value: String): List<com.ugurbuga.blockgames.game.model.ColumnPressure>? {
+    private fun decodeColumnPressure(value: String): List<ColumnPressure>? {
         if (value.isBlank()) return emptyList()
         return value.split(ListSeparator).mapNotNull { token ->
             val parts = token.split(FieldSeparator)
             if (parts.size != 4) return null
             val level = PressureLevel.entries.getOrNull(parts[3].toIntOrNull() ?: return null) ?: return null
-            com.ugurbuga.blockgames.game.model.ColumnPressure(
+            ColumnPressure(
                 column = parts[0].toIntOrNull() ?: return null,
                 filledCells = parts[1].toIntOrNull() ?: return null,
                 fillRatio = parts[2].toFloatOrNull() ?: return null,

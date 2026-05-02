@@ -789,9 +789,9 @@ private fun homeTitleBannerBottomWord(gameplayStyle: GameplayStyle): String = st
 
 @Composable
 private fun HomeTitleDemoHand(
-    x: androidx.compose.ui.unit.Dp,
-    y: androidx.compose.ui.unit.Dp,
-    size: androidx.compose.ui.unit.Dp,
+    x: Dp,
+    y: Dp,
+    size: Dp,
     alpha: Float,
     color: Color,
 ) {
@@ -874,10 +874,10 @@ private fun normalizedPhase(value: Float): Float {
 }
 
 private fun lerpDp(
-    start: androidx.compose.ui.unit.Dp,
-    end: androidx.compose.ui.unit.Dp,
+    start: Dp,
+    end: Dp,
     progress: Float,
-): androidx.compose.ui.unit.Dp = start + ((end - start) * progress.coerceIn(0f, 1f))
+): Dp = start + ((end - start) * progress.coerceIn(0f, 1f))
 
 @Composable
 private fun HomeTitleAnimatedCell(
@@ -887,8 +887,8 @@ private fun HomeTitleAnimatedCell(
     pulse: Float,
     alpha: Float,
     modifier: Modifier = Modifier,
-    offsetX: androidx.compose.ui.unit.Dp = 0.dp,
-    offsetY: androidx.compose.ui.unit.Dp = 0.dp,
+    offsetX: Dp = 0.dp,
+    offsetY: Dp = 0.dp,
 ) {
     if (alpha <= 0f) return
     val effectivePulse = rememberBlockStylePulse(
@@ -1024,7 +1024,7 @@ private fun HomeTitleAnimatedPiece(
     cells: List<HomeTitleCell?>,
     settings: AppSettings,
     pulse: Float,
-    cellSize: androidx.compose.ui.unit.Dp,
+    cellSize: Dp,
     modifier: Modifier = Modifier,
 ) {
     if (cells.isEmpty()) return
@@ -1048,8 +1048,8 @@ private fun HomeTitleAnimatedPiece(
 
 private fun homeTitleOccupiedCenterOffset(
     cells: List<HomeTitleCell?>,
-    cellSize: androidx.compose.ui.unit.Dp,
-): androidx.compose.ui.unit.Dp {
+    cellSize: Dp,
+): Dp {
     val occupiedIndices = cells.mapIndexedNotNull { index, cell -> index.takeIf { cell != null } }
     if (occupiedIndices.isEmpty()) return 0.dp
     val centerIndex = occupiedIndices.average().toFloat()
@@ -1060,7 +1060,7 @@ private fun homeTitleOccupiedCenterOffset(
 private fun HomeTitleRowClearOverlay(
     alpha: Float,
     rowIndex: Int,
-    cellHeight: androidx.compose.ui.unit.Dp,
+    cellHeight: Dp,
     modifier: Modifier = Modifier,
 ) {
     if (alpha <= 0f) return

@@ -14,10 +14,10 @@ import kotlin.random.Random
 interface GameLogic {
     fun restoreGame(state: GameState): GameState
     fun newGame(
-        config: GameConfig = GameConfig(),
+        gameplayStyle: GameplayStyle = GlobalPlatformConfig.gameplayStyle,
+        config: GameConfig = GameConfig.default(gameplayStyle),
         challenge: DailyChallenge? = null,
         mode: GameMode = GameMode.Classic,
-        gameplayStyle: GameplayStyle = GlobalPlatformConfig.gameplayStyle,
     ): GameState
 
     fun previewPlacement(state: GameState, column: Int): PlacementPreview?
@@ -56,11 +56,11 @@ private class AdaptiveGameLogic(
     override fun restoreGame(state: GameState) = gameLogic(state.gameplayStyle).restoreGame(state)
 
     override fun newGame(
+        gameplayStyle: GameplayStyle,
         config: GameConfig,
         challenge: DailyChallenge?,
-        mode: GameMode,
-        gameplayStyle: GameplayStyle
-    ): GameState = gameLogic(gameplayStyle).newGame(config, challenge, mode, gameplayStyle)
+        mode: GameMode
+    ): GameState = gameLogic(gameplayStyle).newGame(gameplayStyle, config, challenge, mode)
 
     override fun previewPlacement(state: GameState, column: Int) =
         gameLogic(state.gameplayStyle).previewPlacement(state, column)
