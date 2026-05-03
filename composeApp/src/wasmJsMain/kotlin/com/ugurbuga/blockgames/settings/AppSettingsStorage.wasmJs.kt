@@ -37,6 +37,7 @@ actual object AppSettingsStorage {
             unlockedBlockStyles = decodeEnumSet(parts.getOrNull(14), BlockVisualStyle.entries),
             lastAppOpenedAtEpochMillis = parts.getOrNull(15)?.toLongOrNull() ?: defaultSettings.lastAppOpenedAtEpochMillis,
             isHighScoresClearedOnce = (parts.getOrNull(16)?.toIntOrNull() ?: 0) == 1,
+            lastActiveSlot = parts.getOrNull(17)?.let { GameSessionSlot.fromKey(it) },
         ).sanitized()
     }
 
@@ -62,12 +63,13 @@ actual object AppSettingsStorage {
                 encodeEnumSet(sanitized.unlockedBlockStyles),
                 sanitized.lastAppOpenedAtEpochMillis,
                 if (sanitized.isHighScoresClearedOnce) 1 else 0,
+                sanitized.lastActiveSlot?.key ?: "",
             ).joinToString(separator = Separator.toString()),
         )
     }
 
     private const val StorageKey = "stackshift.settings"
     private const val Separator = ','
-    private val SupportedFieldCounts = 7..17
+    private val SupportedFieldCounts = 7..18
 }
 

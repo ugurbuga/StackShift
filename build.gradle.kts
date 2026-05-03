@@ -19,10 +19,10 @@ private val artifactsDirName = "artifacts"
 private val androidDebugApkSource = "androidApp/build/outputs/apk/debug/androidApp-debug.apk"
 private val androidDebugApkTarget = "artifacts/android/androidApp-debug.apk"
 private val iosArchiveTargetName = "artifacts/ios/StackShift.xcarchive"
-private val macosAppSource = "composeApp/build/compose/binaries/main/app/com.ugurbuga.blockgames.app"
-private val macosAppTarget = "artifacts/macos/app/com.ugurbuga.blockgames.app"
-private val macosDmgSource = "composeApp/build/compose/binaries/main/dmg/com.ugurbuga.blockgames-1.0.0.dmg"
-private val macosDmgTarget = "artifacts/macos/dmg/com.ugurbuga.blockgames-1.0.0.dmg"
+private val macosAppSource = "composeApp/build/compose/binaries/main/app/com.ugurbuga.stackshift"
+private val macosAppTarget = "artifacts/macos/app/com.ugurbuga.stackshift"
+private val macosDmgSource = "composeApp/build/compose/binaries/main/dmg/com.ugurbuga.stackshift-1.0.0.dmg"
+private val macosDmgTarget = "artifacts/macos/dmg/com.ugurbuga.stackshift-1.0.0.dmg"
 private val childGradleFlags = listOf("--no-configuration-cache", "--no-daemon")
 
 private fun Project.runCommand(stepName: String, command: List<String>, workingDirectory: File = projectDir): Boolean {

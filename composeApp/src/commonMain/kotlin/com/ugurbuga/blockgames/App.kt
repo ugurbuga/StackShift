@@ -349,6 +349,7 @@ fun BlockGamesAppHost(
         },
         onChallengeCompleted = { completedChallenge ->
             persistSettings(settings.awardCompletedChallenge(completedChallenge))
+            GameSessionStorage.clear(sessionSlotFor(GameMode.Classic, completedChallenge))
         },
         onGameOver = { finalState ->
             persistSettings(settings.awardScoreTokens(finalState.score))
@@ -360,12 +361,12 @@ fun BlockGamesAppHost(
         slot: GameSessionSlot,
     ): Boolean {
         if (state.config.columns <= 0 || state.config.rows <= 0) return false
-        if (slot == GameSessionSlot.DailyChallenge) {
+        if (slot is GameSessionSlot.DailyChallenge) {
             val activeChallenge = state.activeChallenge ?: return false
-            val today = getCurrentDate()
-            if (activeChallenge.year != today.year || activeChallenge.month != today.month || activeChallenge.day != today.day) {
-                return false
-            }
+            val slotDateId = "${activeChallenge.year}-${activeChallenge.month.toString().padStart(2, '0')}-${
+                activeChallenge.day.toString().padStart(2, '0')
+            }"
+            if (slot.dateId != slotDateId) return false
         }
         if (state.status != GameStatus.Running) return true
         return when (state.gameplayStyle) {
@@ -557,7 +558,7 @@ fun BlockGamesAppHost(
         },
         onNavigateToTheme = { navigateTo(AppRoute.Settings) },
         onPlayChallengeRequested = { challenge ->
-            restoreOrRestartSession(slot = GameSessionSlot.DailyChallenge) {
+            restoreOrRestartSession(slot = sessionSlotFor(GameMode.Classic, challenge)) {
                 gameViewModel.restart(
                     config = GameConfig.default(gameplayStyle),
                     challenge = challenge,

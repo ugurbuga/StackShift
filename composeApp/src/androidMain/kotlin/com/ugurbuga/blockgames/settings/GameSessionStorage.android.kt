@@ -33,13 +33,30 @@ actual object GameSessionStorage {
         prefs.edit()
             .remove(keyFor(GameSessionSlot.Classic))
             .remove(keyFor(GameSessionSlot.TimeAttack))
-            .remove(keyFor(GameSessionSlot.DailyChallenge))
             .apply()
+
+        // Clear all daily challenge sessions
+        prefs.all.keys.filter { it.startsWith("gameState_daily_challenge_") }
+            .forEach { key ->
+                prefs.edit().remove(key).apply()
+            }
+    }
+
+    actual fun cleanup(allowedDateIds: List<String>) {
+        val allowedKeys = allowedDateIds.map { "gameState_daily_challenge_$it" }.toSet()
+        val toRemove = prefs.all.keys
+            .filter { it.startsWith("gameState_daily_challenge_") && it !in allowedKeys }
+
+        if (toRemove.isNotEmpty()) {
+            val editor = prefs.edit()
+            toRemove.forEach { editor.remove(it) }
+            editor.apply()
+        }
     }
 
     private fun keyFor(slot: GameSessionSlot): String = when (slot) {
         GameSessionSlot.Classic -> "gameState_classic"
         GameSessionSlot.TimeAttack -> "gameState_time_attack"
-        GameSessionSlot.DailyChallenge -> "gameState_daily_challenge"
+        is GameSessionSlot.DailyChallenge -> "gameState_daily_challenge_${slot.dateId}"
     }
 }

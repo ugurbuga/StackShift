@@ -22,9 +22,17 @@ actual object GameSessionStorage {
     }
 
     actual fun clear() {
-        GameSessionSlot.entries.forEach { slot ->
-            prefs.remove(keyFor(slot))
-        }
+        prefs.remove(keyFor(GameSessionSlot.Classic))
+        prefs.remove(keyFor(GameSessionSlot.TimeAttack))
+        prefs.keys().filter { it.startsWith("gameState_daily_challenge_") }
+            .forEach { prefs.remove(it) }
+    }
+
+    actual fun cleanup(allowedDateIds: List<String>) {
+        val allowedKeys = allowedDateIds.map { "gameState_daily_challenge_$it" }.toSet()
+        prefs.keys()
+            .filter { it.startsWith("gameState_daily_challenge_") && it !in allowedKeys }
+            .forEach { prefs.remove(it) }
     }
 
     private const val Namespace = "com.ugurbuga.blockgames.game_session"
@@ -32,6 +40,6 @@ actual object GameSessionStorage {
     private fun keyFor(slot: GameSessionSlot): String = when (slot) {
         GameSessionSlot.Classic -> "gameState_classic"
         GameSessionSlot.TimeAttack -> "gameState_time_attack"
-        GameSessionSlot.DailyChallenge -> "gameState_daily_challenge"
+        is GameSessionSlot.DailyChallenge -> "gameState_daily_challenge_${slot.dateId}"
     }
 }

@@ -40,6 +40,9 @@ actual object AppSettingsStorage {
             challengeProgress = decodeChallengeProgress(prefs.getSafeString(KeyChallengeProgress, null)),
             lastAppOpenedAtEpochMillis = prefs.getLong(KeyLastAppOpenedAtEpochMillis, defaultSettings.lastAppOpenedAtEpochMillis),
             isHighScoresClearedOnce = prefs.getBoolean(KeyIsHighScoresClearedOnce, defaultSettings.isHighScoresClearedOnce),
+            lastActiveSlot = prefs.get(KeyLastActiveSlot, null)?.let {
+                GameSessionSlot.fromKey(it)
+            },
         ).sanitized()
     }
 
@@ -61,7 +64,14 @@ actual object AppSettingsStorage {
         prefs.put(KeyChallengeProgress, encodeChallengeProgress(sanitized.challengeProgress))
         prefs.putLong(KeyLastAppOpenedAtEpochMillis, sanitized.lastAppOpenedAtEpochMillis)
         prefs.putBoolean(KeyIsHighScoresClearedOnce, sanitized.isHighScoresClearedOnce)
+        if (sanitized.lastActiveSlot != null) {
+            prefs.put(KeyLastActiveSlot, sanitized.lastActiveSlot.key)
+        } else {
+            prefs.remove(KeyLastActiveSlot)
+        }
     }
+
+    private const val KeyLastActiveSlot = "lastActiveSlot"
 
     private const val KeyIsHighScoresClearedOnce = "isHighScoresClearedOnce"
     private const val Namespace = "com.ugurbuga.blockgames.settings"

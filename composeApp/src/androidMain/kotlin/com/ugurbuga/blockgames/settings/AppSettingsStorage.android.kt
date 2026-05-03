@@ -94,8 +94,8 @@ actual object AppSettingsStorage {
                 KeyIsHighScoresClearedOnce,
                 defaultSettings.isHighScoresClearedOnce
             ),
-            lastActiveSlot = prefs.takeIf { it.contains(KeyLastActiveSlot) }?.let {
-                GameSessionSlot.entries.getOrNull(prefs.getInt(KeyLastActiveSlot, -1))
+            lastActiveSlot = prefs.getString(KeyLastActiveSlot, null)?.let {
+                GameSessionSlot.fromKey(it)
             },
         ).sanitized()
     }
@@ -129,7 +129,7 @@ actual object AppSettingsStorage {
             .putBoolean(KeyIsHighScoresClearedOnce, sanitized.isHighScoresClearedOnce)
             .apply {
                 if (sanitized.lastActiveSlot != null) {
-                    putInt(KeyLastActiveSlot, sanitized.lastActiveSlot.ordinal)
+                    putString(KeyLastActiveSlot, sanitized.lastActiveSlot.key)
                 } else {
                     remove(KeyLastActiveSlot)
                 }

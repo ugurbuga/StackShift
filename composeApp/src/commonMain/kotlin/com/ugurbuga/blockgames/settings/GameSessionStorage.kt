@@ -23,17 +23,41 @@ import com.ugurbuga.blockgames.game.model.PressureLevel
 import com.ugurbuga.blockgames.game.model.SoftLockState
 import com.ugurbuga.blockgames.game.model.SpecialBlockType
 
-enum class GameSessionSlot {
-    Classic,
-    TimeAttack,
-    DailyChallenge,
+sealed class GameSessionSlot {
+    abstract val key: String
+
+    object Classic : GameSessionSlot() {
+        override val key: String = "classic"
+    }
+
+    object TimeAttack : GameSessionSlot() {
+        override val key: String = "time_attack"
+    }
+
+    data class DailyChallenge(val dateId: String) : GameSessionSlot() {
+        override val key: String = "daily_challenge_$dateId"
+    }
+
+    companion object {
+        fun fromKey(key: String): GameSessionSlot? = when {
+            key == "classic" -> Classic
+            key == "time_attack" -> TimeAttack
+            key.startsWith("daily_challenge_") -> DailyChallenge(key.removePrefix("daily_challenge_"))
+            else -> null
+        }
+    }
 }
 
 fun sessionSlotFor(
     mode: GameMode,
     challenge: DailyChallenge? = null,
 ): GameSessionSlot = when {
-    challenge != null -> GameSessionSlot.DailyChallenge
+    challenge != null -> GameSessionSlot.DailyChallenge(
+        "${challenge.year}-${challenge.month.toString().padStart(2, '0')}-${
+            challenge.day.toString().padStart(2, '0')
+        }"
+    )
+
     mode == GameMode.TimeAttack -> GameSessionSlot.TimeAttack
     else -> GameSessionSlot.Classic
 }
@@ -48,6 +72,7 @@ expect object GameSessionStorage {
     fun save(slot: GameSessionSlot, state: GameState)
     fun clear(slot: GameSessionSlot)
     fun clear()
+    fun cleanup(allowedDateIds: List<String>)
 }
 
 internal object GameSessionCodec {

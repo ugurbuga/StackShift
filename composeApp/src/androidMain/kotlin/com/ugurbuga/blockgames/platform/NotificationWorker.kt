@@ -13,7 +13,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.graphics.toColorInt
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.ugurbuga.blockgames.R
+import com.ugurbuga.blockgames.shared.R
 import com.ugurbuga.blockgames.settings.AppSettingsStorage
 import com.ugurbuga.blockgames.settings.shouldSendDailyChallengeReminder
 import com.ugurbuga.blockgames.settings.shouldSendMissYouReminder

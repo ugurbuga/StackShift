@@ -42,8 +42,8 @@ actual object AppSettingsStorage {
                     ?: defaults.integerForKey(KeyLastAppOpenedAtEpochMillis).toLong()
             } ?: defaultSettings.lastAppOpenedAtEpochMillis,
             isHighScoresClearedOnce = defaults.boolForKey(KeyIsHighScoresClearedOnce),
-            lastActiveSlot = defaults.objectForKey(KeyLastActiveSlot)?.let {
-                GameSessionSlot.entries.getOrNull(defaults.integerForKey(KeyLastActiveSlot).toInt())
+            lastActiveSlot = defaults.stringForKey(KeyLastActiveSlot)?.let {
+                GameSessionSlot.fromKey(it)
             },
         ).sanitized()
     }
@@ -67,7 +67,7 @@ actual object AppSettingsStorage {
         defaults.setObject(sanitized.lastAppOpenedAtEpochMillis.toString(), forKey = KeyLastAppOpenedAtEpochMillis)
         defaults.setBool(sanitized.isHighScoresClearedOnce, forKey = KeyIsHighScoresClearedOnce)
         if (sanitized.lastActiveSlot != null) {
-            defaults.setInteger(sanitized.lastActiveSlot.ordinal.toLong(), forKey = KeyLastActiveSlot)
+            defaults.setObject(sanitized.lastActiveSlot.key, forKey = KeyLastActiveSlot)
         } else {
             defaults.removeObjectForKey(KeyLastActiveSlot)
         }
