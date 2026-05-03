@@ -1,214 +1,126 @@
-# StackShift
+# BlockGames
 
 <p align="center">
   <img src="./branding/generated/stackshift-board.svg" alt="StackShift logo" width="160" />
+  <img src="./branding/generated/blockwise-board.svg" alt="BlockWise logo" width="160" />
 </p>
 
-StackShift is a reverse-Tetris inspired puzzle game built with **Kotlin** and **Compose Multiplatform** for **Android, iOS, Web, macOS, Windows, and Desktop JVM**.
+BlockGames is a collection of modern puzzle games built with **Kotlin** and **Compose Multiplatform** for **Android, iOS, Web, macOS, Windows, and Desktop JVM**. It features two unique game modes: **StackShift** and **BlockWise**.
 
 ## Quick links
 
-- [Overview](#overview)
-- [Screenshots](#screenshots)
+- [Game Modes](#game-modes)
+- [Working Logic](#working-logic)
+- [Screens](#screens)
 - [Features](#features)
-- [Controls](#controls)
-- [Project structure](#project-structure)
+- [Project Structure](#project-structure)
 - [Requirements](#requirements)
-- [Run commands](#run-commands)
-- [Downloadable builds](#downloadable-builds)
-- [Validation](#validation)
-- [Notes](#notes)
+- [Run Commands](#run-commands)
+- [Downloadable Builds](#downloadable-builds)
 
-## Overview
+## Game Modes
 
-Instead of falling from the top, pieces spawn near the bottom of the board. You drag them into place, the game snaps them to the nearest valid grid position, and completed rows are cleared for points, combos, and increasing pressure.
+### StackShift
+<p align="center">
+  <img src="./branding/generated/stackshift-feature-graphic-1024x500.svg" alt="StackShift Feature Graphic" width="600" /><br/>
+  <a href="https://play.google.com/store/apps/details?id=com.ugurbuga.stackshift">
+    <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" width="200">
+  </a>
+</p>
 
-## Screenshots
+Experience a gravity-defying twist on the classic block puzzle genre. In **StackShift**, pieces don't fall from the sky; they emerge from the bottom of your screen, waiting for your tactical touch. 
 
-Add board screenshots here when they are ready.
+*   **Reverse-Gravity Strategy**: Drag pieces from the spawn tray and place them anywhere on the grid.
+*   **Precision Placement**: Use the real-time "Footprint Preview" to see exactly where your block will land before committing.
+*   **Clear & Conquer**: Fill horizontal lines to clear them from the board. Chain multiple clears to trigger massive score multipliers.
+*   **Specialized Blocks**: Encounter unique blocks like Column Clearers, Row Clearers, and Heavy Blocks that change the flow of the game.
 
-| Theme | Screenshot path |
-| --- | --- |
-| Dark board | [`./docs/screenshots/board-dark.png`](./docs/screenshots/board-dark.png) |
-| Light board | [`./docs/screenshots/board-light.png`](./docs/screenshots/board-light.png) |
+### BlockWise
+<p align="center">
+  <img src="./branding/generated/blockwise-feature-graphic-1024x500.svg" alt="BlockWise Feature Graphic" width="600" />
+</p>
+
+A meditative yet deeply challenging spatial puzzle designed to test your logic and board management skills. **BlockWise** strips away the pressure of falling pieces, giving you the time to plan the perfect move.
+
+*   **Multi-Directional Clearing**: Unlike many puzzles, BlockWise allows you to clear lines both **horizontally and vertically**.
+*   **Strategic Selection**: You are presented with a set of pieces in your tray. Choose the order and position wisely to avoid locking the board.
+*   **Combo System**: Clear multiple lines in a single move to achieve "Mega Clears" and skyrocket your high score.
+*   **Fluid Gameplay**: Optimized for touch and mouse, providing a seamless and satisfying tactile experience as pieces snap perfectly into place.
+
+## Working Logic
+
+The application follows a clean, reactive architectural pattern powered by Compose Multiplatform:
+
+1.  **Drag-and-Drop Entry**: All gameplay starts with a touch or mouse drag. The `game/logic` layer calculates valid positions in real-time.
+2.  **Placement Preview**: Before releasing, the UI renders a high-contrast footprint showing exactly where the piece will land.
+3.  **Collision & Snapping**: The logic ensures pieces never overlap and automatically snaps them to the grid for a satisfying tactile feel.
+4.  **Clearing & Scoring**: When a line (horizontal in StackShift, both ways in BlockWise) is filled, the board triggers an animation, clears the blocks, and updates the score/multiplier state.
+5.  **Multiplatform Core**: 100% of the game logic and 95% of the UI code is shared across all platforms.
+
+## Screens
+
+-   **Home**: The central hub where you can choose between StackShift and BlockWise game modes.
+-   **Game Screen**: The main board featuring an interactive grid, piece spawn/tray area, and real-time score HUD.
+-   **Daily Challenge**: A dedicated mode with unique puzzle setups that refresh every 24 hours.
+-   **Settings**: A deep customization menu for themes (Dark/Light), block styles, haptics, and visual effects.
+-   **Onboarding**: Guided tutorials that introduce new players to the unique mechanics of each game.
 
 ## Features
 
-- **Drag-first gameplay** with touch and mouse support.
-- **Placement preview** that shows the landing footprint before release.
-- **Soft-lock placement flow** that lets you adjust the active piece before it is committed.
-- **Special block types** with dedicated icons and behavior hints.
-- **Score, combo, and line-clear feedback** with animated HUD and board effects.
-- **Theme and visual customization** for colors, block styles, and board styling.
-- **Pause, resume, restart, and hold** controls in the top HUD.
-- **Multiplatform UI** shared across Android, iOS, macOS, Windows, and Desktop JVM.
+-   **Drag-first gameplay** with high-precision touch and mouse support.
+-   **Special block types** including column clearers, row clearers, and heavy blocks.
+-   **Animated HUD** providing immediate feedback on scores, combos, and multipliers.
+-   **Multi-theme support** with vibrant color palettes and custom block designs.
+-   **Pause/Resume/Restart** controls with state persistence.
+-   **Multiplatform UI** optimized for mobile, desktop, and web screen ratios.
 
-## Controls
-
-- **Drag** the active piece onto the board.
-- **Release** to place it, or return to the spawn area if the position is invalid.
-- **Pause** / **Resume** and **Restart** are available from the top HUD.
-- **Settings** lets you adjust theme and gameplay visuals.
-
-## Project structure
+## Project Structure
 
 Shared code lives in [`composeApp/src/commonMain/kotlin`](./composeApp/src/commonMain/kotlin).
 
-- `game/model`
-  - Immutable game data such as `GameState`, `BoardMatrix`, `Piece`, and `PlacementPreview`.
-- `game/logic`
-  - Pure gameplay rules: spawning, collision, snapping, clearing, scoring, and difficulty.
-- `ui/game`
-  - Compose UI for the board, HUD, tray, settings, and in-game overlays.
-- `settings`
-  - App settings model and persistence helpers.
-- `localization`
-  - Shared localization access for UI text.
-- `ui/theme`
-  - Theme palette helpers and Compose Material theme wiring.
-
-Platform-specific entry points live in:
-
-- [`composeApp`](./composeApp/src)
-  - Shared Compose Multiplatform app code and platform hosts.
-- [`iosApp`](./iosApp/iosApp)
-  - iOS entry point used by Xcode.
+-   `game/model`: Immutable data classes (`GameState`, `BoardMatrix`, `Piece`).
+-   `game/logic`: Pure functional rules for spawning, collision, and scoring.
+-   `ui/game`: Multiplatform Compose UI components.
+-   `settings`: Persistence and preference management.
+-   `localization`: Multi-language support.
+-   `ui/theme`: Dynamic palette and Material 3 design system integration.
 
 ## Requirements
 
-- A recent **JDK** compatible with the Gradle setup.
-- **Android Studio** for Android development.
-- **Xcode** for iOS and macOS builds.
-- **Windows** support if you want to package the Windows desktop target.
+-   **JDK 17+**
+-   **Android Studio** (for Android)
+-   **Xcode** (for iOS/macOS)
+-   **Windows 10/11** (for Windows builds)
 
-## Full build prerequisites
-
-Use the full build flow when you want Gradle to attempt every supported platform and collect the successful outputs into `artifacts/`.
-
-- **Android**
-  - Android SDK must be configured in `local.properties`.
-  - Android Studio or command-line Android tooling must be available.
-- **iOS**
-  - Run on macOS with **Xcode** installed.
-  - The iOS archive step uses `xcodebuild`.
-- **macOS desktop**
-  - Run on macOS with a full **JDK** that includes `jpackage`.
-- **Windows desktop**
-  - Run on Windows or a Windows CI runner to produce the MSI package.
-
-If you are not on the target platform, the task still attempts the build and continues with the remaining platforms after failures.
-
-## Setup
-
-Clone the repository and open it in your IDE, then let Gradle sync the project.
-
-Before building, create your local config files from the examples/placeholders:
-
-- `google.properties` for Firebase platform IDs and API keys
-- `ads.properties` for AdMob IDs
-- `keystore.properties` for Android release signing values
-
-`google.properties.example` documents the Firebase keys expected by Android, iOS, and desktop.
-
-```sh
-./gradlew build
-```
-
-## Full build
-
-To generate all available artifacts in one run, use:
-
-```sh
-./gradlew buildAllArtifacts
-```
-
-This task attempts Android, iOS, macOS, and Windows builds in sequence, continues after individual failures, and copies any successful outputs into the local `artifacts/` directory.
-
-The `artifacts/` directory is ignored by Git again, so the generated files stay local unless you explicitly change that policy.
-
-## Run commands
+## Run Commands
 
 ### Android
-
 ```sh
 ./gradlew :composeApp:assembleDebug
 ```
 
 ### Desktop (JVM)
-
 ```sh
 ./gradlew :composeApp:run
 ```
 
-### Web
-
-Run the browser dev server directly:
-
-```sh
-./gradlew :composeApp:wasmJsBrowserDevelopmentRun
-```
-
-Or use the shortcut task:
-
+### Web (Wasm)
 ```sh
 ./gradlew :composeApp:runWeb
 ```
 
-Build the browser development bundle without starting the server:
+### iOS
+Open the `iosApp` folder in Xcode to run on a simulator or physical device.
 
-```sh
-./gradlew :composeApp:wasmJsBrowserDevelopmentWebpack
-```
-
-The generated web assets are placed under:
-
-- `composeApp/build/kotlin-webpack/wasmJs/developmentExecutable/`
-
-### Desktop distributable app image
-
-```sh
-./gradlew :composeApp:packageDesktopApp
-```
-
-This creates a portable desktop app image under `composeApp/build/compose/binaries/main/app/` for the current platform.
-
-### iOS simulator compile check
-
-```sh
-./gradlew :composeApp:compileKotlinIosSimulatorArm64
-```
-
-To run the full iOS app, open [`iosApp`](./iosApp) in Xcode and launch it from there.
-
-## Downloadable builds
-
-Use the commands below to generate runnable files and share them with others.
-
-For the full multi-platform flow, prefer `./gradlew buildAllArtifacts` instead of running each command manually.
+## Downloadable Builds
 
 | Platform | Command | Artifact location |
 | --- | --- | --- |
-| Android APK | `./gradlew :composeApp:assembleDebug` | [`composeApp/build/outputs/apk/debug/composeApp-debug.apk`](./composeApp/build/outputs/apk/debug/composeApp-debug.apk) |
-| Android release APK | `./gradlew :composeApp:assembleRelease` | [`composeApp/build/outputs/apk/release/`](./composeApp/build/outputs/apk/release/) |
-| iOS app / IPA | Open `iosApp` in Xcode, then use **Product > Archive** and export from Organizer | [`artifacts/ios/StackShift.xcarchive`](./artifacts/ios/StackShift.xcarchive) and `~/Library/Developer/Xcode/Archives/` for Xcode archives |
-| macOS app image | `./gradlew :composeApp:packageDesktopApp` | [`composeApp/build/compose/binaries/main/app/`](./composeApp/build/compose/binaries/main/app/) |
-| macOS DMG | `./gradlew :composeApp:packageDmg` | [`composeApp/build/compose/binaries/main/dmg/`](./composeApp/build/compose/binaries/main/dmg/) |
-| Windows MSI | `./gradlew :composeApp:packageMsi` | [`composeApp/build/compose/binaries/main/msi/`](./composeApp/build/compose/binaries/main/msi/) — requires a Windows machine or Windows CI runner |
-
-## Validation
-
-These are the commands used to verify the shared code and platform targets:
-
-```sh
-./gradlew build
-./gradlew :composeApp:compileDebugKotlinAndroid
-./gradlew :composeApp:compileKotlinJvm :composeApp:jvmTest
-./gradlew :composeApp:compileKotlinIosSimulatorArm64
-./gradlew :composeApp:compileDevelopmentExecutableKotlinWasmJs
-```
+| Android APK | `./gradlew :composeApp:assembleDebug` | `composeApp/build/outputs/apk/debug/` |
+| macOS DMG | `./gradlew :composeApp:packageDmg` | `composeApp/build/compose/binaries/main/dmg/` |
+| Windows MSI | `./gradlew :composeApp:packageMsi` | `composeApp/build/compose/binaries/main/msi/` |
 
 ## Notes
 
-- The sound and haptic layer is intentionally abstract so platform-specific implementations can be added later without changing shared game logic.
-- The board uses a compact array-backed representation to keep collision and row-clear checks efficient.
-- Gradle may still show Compose Multiplatform / KMP deprecation warnings depending on the toolchain, but the project builds successfully.
+-   The sound and haptic layer is intentionally abstract for platform-specific implementations.
+-   The board uses a compact array-backed representation for high-performance collision checks.
