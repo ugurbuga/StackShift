@@ -1,9 +1,7 @@
-package com.ugurbuga.blockgames.app
+package com.ugurbuga.blockgames
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
-import com.ugurbuga.blockgames.AndroidSystemBarsEffect
-import com.ugurbuga.blockgames.BlockGamesAppHost
 import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
 import com.ugurbuga.blockgames.ui.theme.blockGamesThemeSpec

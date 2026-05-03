@@ -1,4 +1,3 @@
-
 import java.util.Properties
 
 plugins {
@@ -34,9 +33,12 @@ private fun keystoreProperty(flavorName: String, suffix: String): String {
     val flavorScopedProperty = "keystore.$flavorName.$suffix"
     val legacyProperty = "keystore.$suffix"
     return (
-        trimmedProperty(keystoreProperties, flavorScopedProperty)
-            ?: if (flavorName == "stackshift") trimmedProperty(keystoreProperties, legacyProperty) else null
-        ) ?: ""
+            trimmedProperty(keystoreProperties, flavorScopedProperty)
+                ?: if (flavorName == "stackshift") trimmedProperty(
+                    keystoreProperties,
+                    legacyProperty
+                ) else null
+            ) ?: ""
 }
 
 private data class AndroidFlavorConfig(
@@ -51,15 +53,15 @@ private data class AndroidFlavorConfig(
 private val androidFlavorConfigs = listOf(
     AndroidFlavorConfig(
         name = "StackShift",
-        applicationId = "com.ugurbuga.blockgames",
-        versionCode = 5,
-        versionName = "1.0.4",
+        applicationId = "com.ugurbuga.stackshift",
+        versionCode = 7,
+        versionName = "1.0.5",
     ),
     AndroidFlavorConfig(
         name = "BlockWise",
         applicationId = "com.ugurbuga.blockwise",
-        versionCode = 1,
-        versionName = "1.0.0",
+        versionCode = 2,
+        versionName = "1.0.1",
     ),
 )
 
@@ -68,11 +70,7 @@ private fun trimmedProperty(properties: Properties, name: String): String? =
 
 private fun adsProperty(flavorName: String, suffix: String): String {
     val flavorScopedProperty = "ads.android.$flavorName.$suffix"
-    val legacyProperty = "ads.android.$suffix"
-    return (
-        trimmedProperty(adsProperties, flavorScopedProperty)
-            ?: if (flavorName == "stackshift") trimmedProperty(adsProperties, legacyProperty) else null
-        ) ?: ""
+    return trimmedProperty(adsProperties, flavorScopedProperty).orEmpty()
 }
 
 abstract class GenerateLocalFirebaseConfigTask : DefaultTask() {
@@ -94,7 +92,9 @@ abstract class GenerateLocalFirebaseConfigTask : DefaultTask() {
             val applicationId: String,
         )
 
-        fun Properties.trimmed(name: String): String? = getProperty(name)?.trim()?.takeIf(String::isNotEmpty)
+        fun Properties.trimmed(name: String): String? =
+            getProperty(name)?.trim()?.takeIf(String::isNotEmpty)
+
         fun Properties.requireTrimmed(flavorName: String, name: String): String? =
             trimmed("firebase.$flavorName.$name")
                 ?: if (flavorName == "stackshift") trimmed("firebase.$name") else null
@@ -131,14 +131,15 @@ abstract class GenerateLocalFirebaseConfigTask : DefaultTask() {
             val androidConfigFile = outputFile.asFile
             val projectNumber = googleProperties.requireTrimmed(flavor.flavorName, "projectNumber")
             val projectId = googleProperties.requireTrimmed(flavor.flavorName, "projectId")
-            val storageBucket = googleProperties.trimmed("firebase.${flavor.flavorName}.storageBucket")
-                ?: if (flavor.flavorName == "stackshift") googleProperties.trimmed("firebase.storageBucket") else null
+            val storageBucket =
+                googleProperties.trimmed("firebase.${flavor.flavorName}.storageBucket")
+                    ?: if (flavor.flavorName == "stackshift") googleProperties.trimmed("firebase.storageBucket") else null
             val androidAppId = googleProperties.requireTrimmed(flavor.flavorName, "android.appId")
             val androidApiKey = googleProperties.requireTrimmed(flavor.flavorName, "android.apiKey")
             val androidPackageName = (
-                googleProperties.trimmed("firebase.${flavor.flavorName}.android.packageName")
-                    ?: if (flavor.flavorName == "stackshift") googleProperties.trimmed("firebase.android.packageName") else null
-                ) ?: flavor.applicationId
+                    googleProperties.trimmed("firebase.${flavor.flavorName}.android.packageName")
+                        ?: if (flavor.flavorName == "stackshift") googleProperties.trimmed("firebase.android.packageName") else null
+                    ) ?: flavor.applicationId
 
             if ((projectNumber == null) || (projectId == null) || (androidAppId == null) || (androidApiKey == null)) {
                 return@forEach
@@ -187,7 +188,8 @@ abstract class GenerateLocalFirebaseConfigTask : DefaultTask() {
 
 val generateLocalFirebaseConfig by tasks.registering(GenerateLocalFirebaseConfigTask::class) {
     group = "build setup"
-    description = "Generates flavor-specific local Firebase config files from google.properties when available."
+    description =
+        "Generates flavor-specific local Firebase config files from google.properties when available."
     sourcePropertiesFile.set(rootProject.layout.projectDirectory.file(googlePropertiesFileName))
     flavorConfigurations.set(androidFlavorConfigs.map { flavor -> "${flavor.flavorName}|${flavor.applicationId}" })
     outputFiles.set(
@@ -204,7 +206,7 @@ tasks.matching { task ->
 }
 
 android {
-    namespace = "com.ugurbuga.blockgames.app"
+    namespace = "com.ugurbuga.blockgames"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     signingConfigs {
@@ -240,11 +242,28 @@ android {
                 versionName = flavor.versionName
                 resValue("string", "app_name", flavor.name)
                 signingConfig = signingConfigs.getByName(flavor.flavorName)
-                manifestPlaceholders["adsApplicationId"] = adsProperty(flavor.flavorName, "applicationId")
-                buildConfigField("String", "ADS_BANNER_UNIT_ID", "\"${adsProperty(flavor.flavorName, "bannerUnitId")}\"")
-                buildConfigField("String", "ADS_INTERSTITIAL_UNIT_ID", "\"${adsProperty(flavor.flavorName, "interstitialUnitId")}\"")
-                buildConfigField("String", "ADS_REWARDED_UNIT_ID", "\"${adsProperty(flavor.flavorName, "rewardedUnitId")}\"")
-                buildConfigField("String", "ADS_REWARDED_SPECIAL_UNIT_ID", "\"${adsProperty(flavor.flavorName, "rewardedSpecialUnitId")}\"")
+                manifestPlaceholders["adsApplicationId"] =
+                    adsProperty(flavor.flavorName, "applicationId")
+                buildConfigField(
+                    "String",
+                    "ADS_BANNER_UNIT_ID",
+                    "\"${adsProperty(flavor.flavorName, "bannerUnitId")}\""
+                )
+                buildConfigField(
+                    "String",
+                    "ADS_INTERSTITIAL_UNIT_ID",
+                    "\"${adsProperty(flavor.flavorName, "interstitialUnitId")}\""
+                )
+                buildConfigField(
+                    "String",
+                    "ADS_REWARDED_UNIT_ID",
+                    "\"${adsProperty(flavor.flavorName, "rewardedUnitId")}\""
+                )
+                buildConfigField(
+                    "String",
+                    "ADS_REWARDED_SPECIAL_UNIT_ID",
+                    "\"${adsProperty(flavor.flavorName, "rewardedSpecialUnitId")}\""
+                )
                 buildConfigField("String", "GAMEPLAY_STYLE", "\"${flavor.name}\"")
                 buildConfigField("String", "APP_VARIANT_NAME", "\"${flavor.flavorName}\"")
             }
@@ -258,7 +277,10 @@ android {
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
     compileOptions {

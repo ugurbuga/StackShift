@@ -1,6 +1,7 @@
-package com.ugurbuga.blockgames.app
+package com.ugurbuga.blockgames
 
 import android.content.res.Configuration
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -34,19 +35,19 @@ class MainActivity : ComponentActivity() {
         setTheme(R.style.Theme_BlockGames)
         enableEdgeToEdge(
             statusBarStyle = if (initialDarkTheme) {
-                SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+                SystemBarStyle.dark(Color.TRANSPARENT)
             } else {
                 SystemBarStyle.light(
-                    android.graphics.Color.TRANSPARENT,
-                    android.graphics.Color.TRANSPARENT,
+                    Color.TRANSPARENT,
+                    Color.TRANSPARENT,
                 )
             },
             navigationBarStyle = if (initialDarkTheme) {
-                SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+                SystemBarStyle.dark(Color.TRANSPARENT)
             } else {
                 SystemBarStyle.light(
-                    android.graphics.Color.TRANSPARENT,
-                    android.graphics.Color.TRANSPARENT,
+                    Color.TRANSPARENT,
+                    Color.TRANSPARENT,
                 )
             },
         )

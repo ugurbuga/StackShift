@@ -38,6 +38,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -132,6 +133,7 @@ import com.ugurbuga.blockgames.game.model.resolveBoardBlockStyle
 import com.ugurbuga.blockgames.localization.LocalAppSettings
 import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
 import com.ugurbuga.blockgames.settings.AppSettings
+import com.ugurbuga.blockgames.settings.GameSessionStorage
 import com.ugurbuga.blockgames.ui.game.BlockStyleActionButton
 import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
 import com.ugurbuga.blockgames.ui.game.color
@@ -192,6 +194,15 @@ fun DailyChallengeScreen(
     val settings = LocalAppSettings.current
     val blockStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
     val stylePulse = rememberBlockStylePulse(style = blockStyle)
+
+    LaunchedEffect(months) {
+        val allowedDateIds = months.flatMap { ym ->
+            (1..getDaysInMonth(ym.year, ym.month)).map { day ->
+                "${ym.year}-${ym.month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}"
+            }
+        }
+        GameSessionStorage.cleanup(allowedDateIds)
+    }
 
     Surface(
         modifier = modifier.fillMaxSize(),

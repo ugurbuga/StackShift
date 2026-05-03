@@ -36,7 +36,7 @@ val desktopJdkHome = findDesktopJdkHome()
 
 kotlin {
     android {
-        namespace = "com.ugurbuga.blockgames"
+        namespace = "com.ugurbuga.blockgames.shared"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
 
@@ -123,7 +123,7 @@ compose.desktop {
 
             nativeDistributions {
                 targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-                packageName = "com.ugurbuga.blockgames"
+                packageName = "com.ugurbuga.stackshift"
                 packageVersion = "1.0.0"
 
                 macOS {

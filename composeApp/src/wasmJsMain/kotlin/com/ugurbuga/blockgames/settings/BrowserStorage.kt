@@ -18,5 +18,11 @@ internal object BrowserStorage {
             window.localStorage.removeItem(key)
         }
     }
+
+    fun keys(): List<String> = runCatching {
+        (0 until window.localStorage.length).map { index ->
+            window.localStorage.key(index) ?: ""
+        }
+    }.getOrNull() ?: emptyList()
 }
 

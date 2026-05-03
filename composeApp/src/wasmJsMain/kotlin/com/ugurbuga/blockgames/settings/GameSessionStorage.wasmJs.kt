@@ -16,15 +16,23 @@ actual object GameSessionStorage {
     }
 
     actual fun clear() {
-        GameSessionSlot.entries.forEach { slot ->
-            BrowserStorage.remove(keyFor(slot))
-        }
+        BrowserStorage.remove(keyFor(GameSessionSlot.Classic))
+        BrowserStorage.remove(keyFor(GameSessionSlot.TimeAttack))
+        BrowserStorage.keys().filter { it.startsWith("stackshift.game.session.daily_challenge_") }
+            .forEach { BrowserStorage.remove(it) }
+    }
+
+    actual fun cleanup(allowedDateIds: List<String>) {
+        val allowedKeys = allowedDateIds.map { "stackshift.game.session.daily_challenge_$it" }.toSet()
+        BrowserStorage.keys()
+            .filter { it.startsWith("stackshift.game.session.daily_challenge_") && it !in allowedKeys }
+            .forEach { BrowserStorage.remove(it) }
     }
 
     private fun keyFor(slot: GameSessionSlot): String = when (slot) {
         GameSessionSlot.Classic -> "stackshift.game.session.classic"
         GameSessionSlot.TimeAttack -> "stackshift.game.session.time_attack"
-        GameSessionSlot.DailyChallenge -> "stackshift.game.session.daily_challenge"
+        is GameSessionSlot.DailyChallenge -> "stackshift.game.session.daily_challenge_${slot.dateId}"
     }
 }
 

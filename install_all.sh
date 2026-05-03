@@ -24,7 +24,7 @@ install_ss() {
 
     # Launch StackShift
     echo "Launching StackShift..."
-    adb shell am start -n com.ugurbuga.blockgames/com.ugurbuga.blockgames.app.MainActivity
+    adb shell am start -n com.ugurbuga.stackshift/com.ugurbuga.blockgames.MainActivity
 
     echo "StackShift Done!"
 }
@@ -36,7 +36,7 @@ install_bw() {
 
     # Launch BlockWise
     echo "Launching BlockWise..."
-    adb shell am start -n com.ugurbuga.blockwise/com.ugurbuga.blockgames.app.MainActivity
+    adb shell am start -n com.ugurbuga.blockwise/com.ugurbuga.blockgames.MainActivity
 
     echo "BlockWise Done!"
 }
