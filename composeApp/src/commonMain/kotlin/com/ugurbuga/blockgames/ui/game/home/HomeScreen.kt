@@ -73,6 +73,8 @@ import androidx.compose.ui.unit.sp
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.app_title_banner_blockwise_bottom
 import blockgames.composeapp.generated.resources.app_title_banner_blockwise_top
+import blockgames.composeapp.generated.resources.app_title_banner_mergeshift_bottom
+import blockgames.composeapp.generated.resources.app_title_banner_mergeshift_top
 import blockgames.composeapp.generated.resources.app_title_banner_stackshift_bottom
 import blockgames.composeapp.generated.resources.app_title_banner_stackshift_top
 import blockgames.composeapp.generated.resources.high_score
@@ -776,6 +778,7 @@ private fun homeTitleBannerTopWord(gameplayStyle: GameplayStyle): String = strin
     when (gameplayStyle) {
         GameplayStyle.StackShift -> Res.string.app_title_banner_stackshift_top
         GameplayStyle.BlockWise -> Res.string.app_title_banner_blockwise_top
+        GameplayStyle.MergeShift -> Res.string.app_title_banner_mergeshift_top
     }
 )
 
@@ -784,6 +787,7 @@ private fun homeTitleBannerBottomWord(gameplayStyle: GameplayStyle): String = st
     when (gameplayStyle) {
         GameplayStyle.StackShift -> Res.string.app_title_banner_stackshift_bottom
         GameplayStyle.BlockWise -> Res.string.app_title_banner_blockwise_bottom
+        GameplayStyle.MergeShift -> Res.string.app_title_banner_mergeshift_bottom
     }
 )
 

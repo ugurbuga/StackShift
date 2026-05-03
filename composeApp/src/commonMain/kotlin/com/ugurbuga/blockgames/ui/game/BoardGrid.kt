@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
@@ -54,9 +55,16 @@ import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ugurbuga.blockgames.game.model.BlockColorPalette
 import com.ugurbuga.blockgames.game.model.BlockVisualStyle
 import com.ugurbuga.blockgames.game.model.BoardBlockStyleMode
@@ -110,6 +118,7 @@ fun BoardGrid(
     val settings = LocalAppSettings.current
     val colorScheme = MaterialTheme.colorScheme
     val uiColors = BlockGamesThemeTokens.uiColors
+    val textMeasurer = rememberTextMeasurer()
     val boardBlockStyle = resolveBoardBlockStyle(
         selectedStyle = settings.blockVisualStyle,
         mode = settings.boardBlockStyleMode,
@@ -126,6 +135,8 @@ fun BoardGrid(
         impactedPreviewCells.isNotEmpty() || (preview?.clearedRows?.isNotEmpty() == true) || (preview?.clearedColumns?.isNotEmpty() == true)
     var clearFlashAlpha by remember { mutableFloatStateOf(0f) }
     var clearFlashSweepProgress by remember { mutableFloatStateOf(1f) }
+    var mergeAlpha by remember { mutableFloatStateOf(0f) }
+    var mergeScale by remember { mutableFloatStateOf(1f) }
     var boardTransitionSource by remember { mutableStateOf(gameState.board) }
     var boardTransitionToken by remember { mutableLongStateOf(gameState.clearAnimationToken) }
     val boardShiftProgress = remember { Animatable(1f) }
@@ -236,7 +247,19 @@ fun BoardGrid(
             clearFlashSweepProgress = 1f
             return@LaunchedEffect
         }
-        if (gameState.recentlyClearedRows.isEmpty() && gameState.recentlyClearedColumns.isEmpty()) return@LaunchedEffect
+        if (gameState.recentlyClearedRows.isEmpty() && gameState.recentlyClearedColumns.isEmpty()) {
+            if (gameState.recentlyMergedPoints.isNotEmpty()) {
+                animate(
+                    initialValue = 0f,
+                    targetValue = 1f,
+                    animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+                ) { value, _ ->
+                    mergeAlpha = if (value < 0.5f) value * 2 else (1f - value) * 2
+                    mergeScale = 1f + 0.3f * sin(value * PI.toFloat())
+                }
+            }
+            return@LaunchedEffect
+        }
         animate(
             initialValue = 0f,
             targetValue = 1f,
@@ -608,22 +631,65 @@ fun BoardGrid(
                     if (!shouldAnimateBoardShift) {
                         gameState.board.cellAt(column, row)?.let { cell ->
                             val isImpactedByPreview = GridPoint(column, row) in impactedPreviewCells
-                            drawCellBody(
-                                tone = cell.tone,
-                                palette = settings.blockColorPalette,
-                                style = boardBlockStyle,
-                                topLeft = topLeft + Offset(
-                                    cellVisual.fillInsetPx,
-                                    cellVisual.fillInsetPx
-                                ),
-                                size = Size(
-                                    width = cellWidthPx - (cellVisual.fillInsetPx * 2),
-                                    height = cellHeightPx - (cellVisual.fillInsetPx * 2),
-                                ),
-                                cornerRadius = cornerRadius,
-                                alpha = renderedCellAlpha,
-                                pulse = effectiveStylePulse,
-                            )
+                            val isRecentlyMerged = GridPoint(column, row) in gameState.recentlyMergedPoints
+                            val scale = if (isRecentlyMerged) mergeScale else 1f
+
+                            withTransform({
+                                if (isRecentlyMerged) {
+                                    scale(scale, scale, pivot = topLeft + Offset(cellWidthPx / 2f, cellHeightPx / 2f))
+                                }
+                            }) {
+                                drawCellBody(
+                                    tone = cell.tone,
+                                    palette = settings.blockColorPalette,
+                                    style = boardBlockStyle,
+                                    topLeft = topLeft + Offset(
+                                        cellVisual.fillInsetPx,
+                                        cellVisual.fillInsetPx
+                                    ),
+                                    size = Size(
+                                        width = cellWidthPx - (cellVisual.fillInsetPx * 2),
+                                        height = cellHeightPx - (cellVisual.fillInsetPx * 2),
+                                    ),
+                                    cornerRadius = cornerRadius,
+                                    alpha = renderedCellAlpha,
+                                    pulse = effectiveStylePulse,
+                                )
+
+                                if (gameState.gameplayStyle == GameplayStyle.MergeShift) {
+                                    val text = cell.value.toString()
+                                    val fontSize = (minOf(cellWidthPx, cellHeightPx) * 0.4f)
+                                    val textStyle = TextStyle(
+                                        color = Color.White.copy(alpha = renderedCellAlpha),
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = with(density) { fontSize.toSp() },
+                                        textAlign = TextAlign.Center
+                                    )
+                                    val measuredText = textMeasurer.measure(text, textStyle)
+                                    drawText(
+                                        textMeasurer = textMeasurer,
+                                        text = text,
+                                        style = textStyle,
+                                        topLeft = topLeft + Offset(
+                                            (cellWidthPx - measuredText.size.width) / 2f,
+                                            (cellHeightPx - measuredText.size.height) / 2f
+                                        )
+                                    )
+                                }
+
+                                if (isRecentlyMerged && mergeAlpha > 0f) {
+                                    drawRoundRect(
+                                        color = Color.White.copy(alpha = 0.45f * mergeAlpha),
+                                        topLeft = topLeft + Offset(cellVisual.fillInsetPx, cellVisual.fillInsetPx),
+                                        size = Size(
+                                            width = cellWidthPx - (cellVisual.fillInsetPx * 2),
+                                            height = cellHeightPx - (cellVisual.fillInsetPx * 2),
+                                        ),
+                                        cornerRadius = cornerRadius,
+                                        style = Stroke(width = (4f * mergeAlpha).coerceAtLeast(1f))
+                                    )
+                                }
+                            }
 
                             if (isImpactedByPreview) {
                                 val warningInset =
@@ -726,6 +792,27 @@ fun BoardGrid(
                         alpha = previewAlpha * boardDecorAlpha,
                         pulse = effectiveStylePulse,
                     )
+
+                    if (gameState.gameplayStyle == GameplayStyle.MergeShift && activePiece != null) {
+                        val text = activePiece.value.toString()
+                        val fontSize = (minOf(cellWidthPx, cellHeightPx) * 0.4f)
+                        val textStyle = TextStyle(
+                            color = Color.White.copy(alpha = previewAlpha * boardDecorAlpha),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = with(density) { fontSize.toSp() },
+                            textAlign = TextAlign.Center
+                        )
+                        val measuredText = textMeasurer.measure(text, textStyle)
+                        drawText(
+                            textMeasurer = textMeasurer,
+                            text = text,
+                            style = textStyle,
+                            topLeft = topLeft + Offset(
+                                (cellWidthPx - measuredText.size.width) / 2f,
+                                (cellHeightPx - measuredText.size.height) / 2f
+                            )
+                        )
+                    }
                 }
             }
 
@@ -790,6 +877,27 @@ fun BoardGrid(
                         alpha = boardDecorAlpha,
                         pulse = effectiveStylePulse,
                     )
+
+                    if (gameState.gameplayStyle == GameplayStyle.MergeShift) {
+                        val text = animatedCell.cell.value.toString()
+                        val fontSize = (minOf(cellWidthPx, cellHeightPx) * 0.4f)
+                        val textStyle = TextStyle(
+                            color = Color.White.copy(alpha = boardDecorAlpha),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = with(density) { fontSize.toSp() },
+                            textAlign = TextAlign.Center
+                        )
+                        val measuredText = textMeasurer.measure(text, textStyle)
+                        drawText(
+                            textMeasurer = textMeasurer,
+                            text = text,
+                            style = textStyle,
+                            topLeft = animatedTopLeft + Offset(
+                                (cellWidthPx - measuredText.size.width) / 2f,
+                                (cellHeightPx - measuredText.size.height) / 2f
+                            )
+                        )
+                    }
                 }
             }
         }
@@ -1460,6 +1568,19 @@ fun PieceBlocks(
                         pulse = pulse,
                     )
                 }
+
+                if (piece.value > 0) {
+                    Text(
+                        text = piece.value.toString(),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = with(density) { (cellSize.toPx() * 0.4f).toSp() },
+                            color = Color.White
+                        ),
+                        maxLines = 1,
+                    )
+                }
+
                 if (piece.special != SpecialBlockType.None) {
                     Icon(
                         imageVector = boardSpecialIcon(piece.special),

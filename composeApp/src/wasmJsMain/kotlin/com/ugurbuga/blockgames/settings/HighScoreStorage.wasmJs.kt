@@ -19,6 +19,10 @@ actual object HighScoreStorage {
             GameMode.Classic -> "blockwise.highscore.classic"
             GameMode.TimeAttack -> "blockwise.highscore.time_attack"
         }
+        GameplayStyle.MergeShift -> when (mode) {
+            GameMode.Classic -> "mergeshift.highscore.classic"
+            GameMode.TimeAttack -> "mergeshift.highscore.time_attack"
+        }
     }
 }
 

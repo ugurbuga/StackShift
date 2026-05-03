@@ -2,10 +2,13 @@
 <resources>
     <string name="app_title_stackshift">StackShift</string>
     <string name="app_title_blockwise">BlockWise</string>
+    <string name="app_title_mergeshift">MergeShift</string>
     <string name="app_title_banner_stackshift_top">STACK</string>
     <string name="app_title_banner_stackshift_bottom">SHIFT</string>
     <string name="app_title_banner_blockwise_top">BLOCK</string>
     <string name="app_title_banner_blockwise_bottom">WISE</string>
+    <string name="app_title_banner_mergeshift_top">MERGE</string>
+    <string name="app_title_banner_mergeshift_bottom">SHIFT</string>
     <string name="settings_title">Settings</string>
     <string name="settings_language">Language</string>
     <string name="settings_sound">Sound</string>
@@ -284,6 +287,14 @@
     <string name="tutorial_ready_block_properties_hint">Open Tutorial whenever you want to revisit free placement and simultaneous row/column clears.</string>
     <string name="tutorial_ready_tutorial_hint">Open Tutorial whenever you want to revisit free placement and simultaneous row/column clears.</string>
     <string name="tutorial_ready_settings_hint">Open Settings to change the language, theme, colors, and block style before your next run.</string>
+    <string name="tutorial_mergeshift_intro_title">Launch pieces to merge same-valued blocks</string>
+    <string name="tutorial_mergeshift_intro_body">In MergeShift, pieces are launched from the dock. When a block lands on another with the same value, they merge into a higher value. Keep merging to clear space and reach higher scores.</string>
+    <string name="tutorial_mergeshift_systems_title">Plan your mergers to prevent overflow</string>
+    <string name="tutorial_mergeshift_systems_body">Every piece you launch adds to the column height. If any column reaches the top, the game ends. Use the preview to see where your piece will land and which blocks it might merge with.</string>
+    <string name="tutorial_mergeshift_specials_title">Combine multiple merges for bigger combos</string>
+    <string name="tutorial_mergeshift_specials_body">A single launch can trigger a chain reaction of merges. These combos award more points and clear more space on the board, helping you stay in the game longer.</string>
+    <string name="tutorial_mergeshift_ready_title">You are ready for MergeShift</string>
+    <string name="tutorial_mergeshift_ready_body">Focus on keeping your columns low and setting up high-value merges. Good luck reaching the highest numbers!</string>
     <string name="interactive_onboarding_step_counter">Guide %1$d / %2$d</string>
     <string name="interactive_onboarding_drag_title">Drag a tray piece onto the board</string>
     <string name="interactive_onboarding_drag_body">Touch one of the three shapes in the tray, move it over the board, and line it up with the highlighted cells.</string>

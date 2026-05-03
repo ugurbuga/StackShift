@@ -372,6 +372,7 @@ fun BlockGamesAppHost(
         return when (state.gameplayStyle) {
             GameplayStyle.BlockWise -> state.trayPieces.isNotEmpty()
             GameplayStyle.StackShift -> state.activePiece != null
+            GameplayStyle.MergeShift -> state.activePiece != null
         }
     }
 

@@ -68,6 +68,11 @@ enum class ChallengeTaskType(
                 PlacePieces,
                 ClearBothDirections,
             ).getOrNull(ordinal)
+
+            GameplayStyle.MergeShift -> listOf(
+                ReachScore,
+                TriggerSpecial,
+            ).getOrNull(ordinal)
         }
     }
 }

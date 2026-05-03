@@ -374,6 +374,28 @@ fun BlockGamesGameApp(
                 pendingOnboardingCompletionState?.let(onInteractiveOnboardingReturnHome)
             },
         )
+
+        GameplayStyle.MergeShift -> MergeShiftGameScreen(
+            modifier = modifier,
+            gameState = displayGameState,
+            onRequestPreview = viewModel::previewPlacement,
+            onPlacePiece = { column ->
+                telemetry.logUserAction("place_piece_mergeshift")
+                viewModel.placePieceResult(column)
+            },
+            onRestart = {
+                telemetry.logUserAction(TelemetryActionNames.RestartGame)
+                viewModel.restart(
+                    config = uiState.gameState.config,
+                    gameplayStyle = GameplayStyle.MergeShift,
+                )
+            },
+            onBack = onBack,
+            telemetry = telemetry,
+            soundPlayer = soundPlayer,
+            haptics = haptics,
+            highestScore = highestScore,
+        )
     }
 }
 

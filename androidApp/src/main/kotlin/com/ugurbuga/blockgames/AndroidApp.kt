@@ -31,6 +31,7 @@ fun AndroidApp() {
 
 private fun resolveGameplayStyle(): GameplayStyle = when (BuildConfig.GAMEPLAY_STYLE) {
     GameplayStyle.BlockWise.name -> GameplayStyle.BlockWise
+    GameplayStyle.MergeShift.name -> GameplayStyle.MergeShift
     else -> GameplayStyle.StackShift
 }
 
