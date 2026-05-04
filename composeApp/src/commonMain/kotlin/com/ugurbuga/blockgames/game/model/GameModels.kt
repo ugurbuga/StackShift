@@ -247,7 +247,7 @@ data class GameConfig(
         fun default(gameplayStyle: GameplayStyle): GameConfig = when (gameplayStyle) {
             GameplayStyle.BlockWise -> GameConfig(columns = 8, rows = 10)
             GameplayStyle.StackShift -> GameConfig(columns = 10, rows = 12)
-            GameplayStyle.MergeShift -> GameConfig(columns = 5, rows = 7)
+            GameplayStyle.MergeShift -> GameConfig(columns = 3, rows = 5)
         }
     }
 }
@@ -634,6 +634,19 @@ class BoardMatrix private constructor(
 
     fun isColumnEmpty(column: Int): Boolean = topOccupiedRow(column) == null
 
+    fun resize(newColumns: Int, newRows: Int): BoardMatrix {
+        if (newColumns == columns && newRows == rows) return this
+        val next = IntArray(newColumns * newRows) { EMPTY_CELL }
+        for (r in 0 until minOf(rows, newRows)) {
+            for (c in 0 until minOf(columns, newColumns)) {
+                val oldIndex = r * columns + c
+                val newIndex = r * newColumns + c
+                next[newIndex] = cells[oldIndex]
+            }
+        }
+        return BoardMatrix(newColumns, newRows, next)
+    }
+
     val occupiedCount: Int by lazy {
         var count = 0
         for (i in cells.indices) {
@@ -769,6 +782,21 @@ class BoardMatrix private constructor(
         return BoardMatrix(columns = columns, rows = rows, cells = next)
     }
 
+    fun applyGravity(): BoardMatrix {
+        val next = IntArray(cells.size) { EMPTY_CELL }
+        for (column in 0 until columns) {
+            var targetRow = 0
+            for (sourceRow in 0 until rows) {
+                val cellValue = cells[indexOf(column, sourceRow)]
+                if (cellValue != EMPTY_CELL) {
+                    next[indexOf(column, targetRow)] = cellValue
+                    targetRow++
+                }
+            }
+        }
+        return BoardMatrix(columns = columns, rows = rows, cells = next)
+    }
+
     private fun indexOf(column: Int, row: Int): Int = row * columns + column
 
     override fun equals(other: Any?): Boolean {
@@ -900,6 +928,14 @@ fun GridPoint.toTopLeft(
     x = boardRect.left + (column * cellSizePx),
     y = boardRect.top + (row * cellSizePx),
 )
+
+fun formatMergeValue(value: Int): String {
+    return when {
+        value >= 1024 * 1024 -> "${value / (1024 * 1024)}M"
+        value >= 1024 -> "${value / 1024}K"
+        else -> value.toString()
+    }
+}
 
 fun CellTone.paletteColor(palette: BlockColorPalette): Color = when (palette) {
     BlockColorPalette.Classic -> when (this) {

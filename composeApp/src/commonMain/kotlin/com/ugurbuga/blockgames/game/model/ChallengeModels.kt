@@ -91,6 +91,7 @@ data class DailyChallenge(
     val year: Int,
     val month: Int,
     val day: Int,
+    val style: GameplayStyle,
     val tasks: List<ChallengeTask>,
 ) {
     val isCompleted: Boolean get() = tasks.all { it.isCompleted }

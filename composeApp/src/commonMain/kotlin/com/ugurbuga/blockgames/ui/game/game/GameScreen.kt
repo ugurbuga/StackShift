@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import com.ugurbuga.blockgames.ads.GameAdController
 import com.ugurbuga.blockgames.ads.NoOpGameAdController
 import com.ugurbuga.blockgames.game.logic.GameEvent
+import com.ugurbuga.blockgames.game.model.GameConfig
 import com.ugurbuga.blockgames.game.model.GameState
 import com.ugurbuga.blockgames.game.model.GameStatus
 import com.ugurbuga.blockgames.game.model.GameplayStyle
@@ -379,6 +380,7 @@ fun BlockGamesGameApp(
             modifier = modifier,
             gameState = displayGameState,
             onRequestPreview = viewModel::previewPlacement,
+            onRequestImpactPoints = viewModel::previewImpactPoints,
             onPlacePiece = { column ->
                 telemetry.logUserAction("place_piece_mergeshift")
                 viewModel.placePieceResult(column)
@@ -386,10 +388,11 @@ fun BlockGamesGameApp(
             onRestart = {
                 telemetry.logUserAction(TelemetryActionNames.RestartGame)
                 viewModel.restart(
-                    config = uiState.gameState.config,
                     gameplayStyle = GameplayStyle.MergeShift,
+                    config = GameConfig.default(GameplayStyle.MergeShift)
                 )
             },
+            onTick = viewModel::tick,
             onBack = onBack,
             telemetry = telemetry,
             soundPlayer = soundPlayer,

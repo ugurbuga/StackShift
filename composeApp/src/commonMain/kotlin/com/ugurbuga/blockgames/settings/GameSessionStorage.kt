@@ -597,6 +597,7 @@ internal object GameSessionCodec {
             year = parts[0].toIntOrNull() ?: return null,
             month = parts[1].toIntOrNull() ?: return null,
             day = parts[2].toIntOrNull() ?: return null,
+            style = gameplayStyle,
             tasks = tasks,
         )
     }

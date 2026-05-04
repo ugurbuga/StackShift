@@ -4,10 +4,8 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -38,6 +36,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -58,10 +57,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.launch_label
+import blockgames.composeapp.generated.resources.restart_cancel
+import blockgames.composeapp.generated.resources.restart_confirm
+import blockgames.composeapp.generated.resources.restart_confirm_body
+import blockgames.composeapp.generated.resources.restart_confirm_title
 import blockgames.composeapp.generated.resources.time_remaining
+import com.ugurbuga.blockgames.game.logic.GameEvent
 import com.ugurbuga.blockgames.game.model.GameState
 import com.ugurbuga.blockgames.game.model.GameStatus
+import com.ugurbuga.blockgames.game.model.GridPoint
 import com.ugurbuga.blockgames.game.model.PlacementPreview
+import com.ugurbuga.blockgames.game.model.formatMergeValue
 import com.ugurbuga.blockgames.game.model.toTopLeft
 import com.ugurbuga.blockgames.localization.LocalAppSettings
 import com.ugurbuga.blockgames.platform.feedback.GameHaptics
@@ -70,8 +76,12 @@ import com.ugurbuga.blockgames.presentation.game.GameDispatchResult
 import com.ugurbuga.blockgames.presentation.game.InteractionFeedback
 import com.ugurbuga.blockgames.telemetry.AppTelemetry
 import com.ugurbuga.blockgames.telemetry.NoOpAppTelemetry
+import com.ugurbuga.blockgames.telemetry.TelemetryActionNames
 import com.ugurbuga.blockgames.ui.game.BoardGrid
+import com.ugurbuga.blockgames.ui.game.GameOverDialog
+import com.ugurbuga.blockgames.ui.game.GameOverDialogRevealDurationMillis
 import com.ugurbuga.blockgames.ui.game.MinimalTopBar
+import com.ugurbuga.blockgames.ui.game.RestartConfirmDialog
 import com.ugurbuga.blockgames.ui.game.boardCellCornerRadiusPx
 import com.ugurbuga.blockgames.ui.game.boardFrameCornerRadiusDp
 import com.ugurbuga.blockgames.ui.game.drawCellBody
@@ -92,8 +102,10 @@ private const val EntryAnimationMillis = 70L
 fun MergeShiftGameScreen(
     gameState: GameState,
     onRequestPreview: (Int) -> PlacementPreview?,
+    onRequestImpactPoints: (PlacementPreview?) -> Set<GridPoint> = { emptySet() },
     onPlacePiece: (Int) -> GameDispatchResult,
     onRestart: () -> InteractionFeedback,
+    onTick: () -> Unit,
     onBack: () -> Unit = {},
     telemetry: AppTelemetry = NoOpAppTelemetry,
     soundPlayer: SoundEffectPlayer,
@@ -115,6 +127,36 @@ fun MergeShiftGameScreen(
     var showRestartDialog by remember { mutableStateOf(false) }
     val screenShakeX = remember { Animatable(0f) }
     val screenShakeY = remember { Animatable(0f) }
+    
+    val gameOverBoardClearProgress = remember { Animatable(0f) }
+    val gameOverDialogRevealProgress = remember { Animatable(0f) }
+    var showGameOverDialog by remember { mutableStateOf(value = false) }
+
+    LaunchedEffect(gameState.status) {
+        if (gameState.status == GameStatus.GameOver) {
+            showGameOverDialog = true
+            gameOverDialogRevealProgress.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(
+                    durationMillis = GameOverDialogRevealDurationMillis,
+                    easing = FastOutSlowInEasing,
+                ),
+            )
+        } else {
+            showGameOverDialog = false
+            gameOverDialogRevealProgress.snapTo(0f)
+        }
+    }
+
+    LaunchedEffect(gameState.status, gameState.activePiece == null) {
+        if (gameState.status == GameStatus.Running && gameState.activePiece == null) {
+            onTick() // First tick happens immediately after piece lands
+            while (gameState.status == GameStatus.Running && gameState.activePiece == null) {
+                delay(400.milliseconds)
+                onTick()
+            }
+        }
+    }
     
     val stylePulseState = rememberInfiniteTransition(label = "stylePulse")
         .animateFloat(
@@ -163,11 +205,22 @@ fun MergeShiftGameScreen(
         }
     }
 
-    LaunchedEffect(activePiece?.id, spawnTopLeft) {
-        if (spawnTopLeft != null) {
-            overlayTopLeftState.value = spawnTopLeft
-            isDragging = false
-            isLaunching = false
+    val overlayX = remember { Animatable(spawnTopLeft?.x ?: 0f) }
+    val overlayY = remember { Animatable(spawnTopLeft?.y ?: 0f) }
+    
+    var hasSnappedInitially by remember(activePiece?.id) { mutableStateOf(false) }
+
+    LaunchedEffect(activePiece?.id) {
+        isLaunching = false
+        isDragging = false
+        hasSnappedInitially = false
+        snapshotFlow { spawnTopLeft to (isLaunching || isDragging) }.collect { (spawnPos, active) ->
+            if (spawnPos != null && !active) {
+                overlayTopLeftState.value = spawnPos
+                overlayX.snapTo(spawnPos.x)
+                overlayY.snapTo(spawnPos.y)
+                hasSnappedInitially = true
+            }
         }
     }
 
@@ -185,6 +238,29 @@ fun MergeShiftGameScreen(
         derivedStateOf {
             if (gameState.status != GameStatus.Running || isLaunching) null
             else selectedColumn?.let(onRequestPreview)
+        }
+    }
+
+    val displayOverlayTopLeft by remember(
+        activePiece?.id,
+        selectedColumn,
+        boardRect,
+        cellSizePx,
+        isLaunching,
+    ) {
+        derivedStateOf {
+            val current = overlayTopLeftState.value ?: return@derivedStateOf null
+            val snappedColumn = selectedColumn
+            if (snappedColumn == null || boardRect == Rect.Zero || cellSizePx <= 0f || isLaunching) {
+                return@derivedStateOf current
+            }
+            current.copy(x = boardRect.left + (snappedColumn * cellSizePx))
+        }
+    }
+
+    val impactedPoints by remember(placementPreview, activePiece?.id) {
+        derivedStateOf {
+            onRequestImpactPoints(placementPreview)
         }
     }
 
@@ -240,7 +316,7 @@ fun MergeShiftGameScreen(
                                     .onGloballyPositioned { boardRectInRoot = it.boundsInRoot() },
                                 gameState = gameState,
                                 preview = placementPreview,
-                                impactedPreviewCells = emptySet(),
+                                impactedPreviewCells = impactedPoints,
                                 activeColumn = selectedColumn,
                                 activePiece = activePiece,
                                 isDragging = isDragging,
@@ -253,31 +329,30 @@ fun MergeShiftGameScreen(
                         // Dock area
                         MergeShiftBottomDock(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .height(cellSize * 3f)
-                                .onGloballyPositioned { trayRectInRoot = it.boundsInRoot() },
+                                        .fillMaxWidth()
+                                        .height(cellSize * 3f)
+                                        .onGloballyPositioned { trayRectInRoot = it.boundsInRoot() },
                             stylePulse = stylePulse
                         )
                     }
                 }
             }
+
+            LaunchGuideLineOverlay(
+                preview = placementPreview,
+                activePiece = activePiece,
+                pieceTopLeft = displayOverlayTopLeft,
+                boardRect = boardRect,
+                cellSizePx = cellSizePx,
+            )
             
             // Active Piece Overlay
-            if (activePiece != null && overlayTopLeftState.value != null && cellSizePx > 0f) {
-                val overlayX by animateFloatAsState(
-                    targetValue = overlayTopLeftState.value!!.x,
-                    animationSpec = if (isDragging) snap() else tween(180, easing = FastOutSlowInEasing)
-                )
-                val overlayY by animateFloatAsState(
-                    targetValue = overlayTopLeftState.value!!.y,
-                    animationSpec = if (isDragging) snap() else tween(180, easing = FastOutSlowInEasing)
-                )
-
+            if (activePiece != null && hasSnappedInitially && cellSizePx > 0f) {
                 Box(
                     modifier = Modifier
                         .graphicsLayer {
-                            translationX = overlayX
-                            translationY = overlayY
+                            translationX = overlayX.value
+                            translationY = overlayY.value
                         }
                         .size(with(LocalDensity.current) { cellSizePx.toDp() })
                         .pointerInput(activePiece.id) {
@@ -286,7 +361,12 @@ fun MergeShiftGameScreen(
                                 onDrag = { change, dragAmount ->
                                     if (!isLaunching) {
                                         change.consume()
-                                        overlayTopLeftState.value = overlayTopLeftState.value!! + Offset(dragAmount.x, 0f)
+                                        val next = overlayTopLeftState.value!! + Offset(dragAmount.x, 0f)
+                                        overlayTopLeftState.value = next
+                                        coroutineScope.launch {
+                                            overlayX.snapTo(next.x)
+                                            overlayY.snapTo(next.y)
+                                        }
                                     }
                                 },
                                 onDragEnd = {
@@ -296,21 +376,58 @@ fun MergeShiftGameScreen(
                                     if (col != null && preview != null) {
                                         isLaunching = true
                                         coroutineScope.launch {
-                                            overlayTopLeftState.value = preview.entryAnchor.toTopLeft(boardRect, cellSizePx)
+                                            val entry = preview.entryAnchor.toTopLeft(boardRect, cellSizePx)
+                                            val landing = preview.landingAnchor.toTopLeft(boardRect, cellSizePx)
+
+                                            // Animate to entry (top of the column)
+                                            launch {
+                                                overlayX.animateTo(entry.x, tween(EntryAnimationMillis.toInt(), easing = FastOutSlowInEasing))
+                                            }
+                                            launch {
+                                                overlayY.animateTo(entry.y, tween(EntryAnimationMillis.toInt(), easing = FastOutSlowInEasing))
+                                            }
                                             delay(EntryAnimationMillis.milliseconds)
-                                            overlayTopLeftState.value = preview.landingAnchor.toTopLeft(boardRect, cellSizePx)
+
+                                            // Fall down to landing
+                                            launch {
+                                                overlayX.animateTo(landing.x, tween(LaunchAnimationMillis.toInt(), easing = FastOutSlowInEasing))
+                                            }
+                                            launch {
+                                                overlayY.animateTo(landing.y, tween(LaunchAnimationMillis.toInt(), easing = FastOutSlowInEasing))
+                                            }
                                             delay(LaunchAnimationMillis.milliseconds)
+
                                             val result = onPlacePiece(col)
                                             dispatchFeedback(result.feedback, soundPlayer, haptics)
-                                            isLaunching = false
+                                            if (GameEvent.InvalidDrop in result.events) {
+                                                isLaunching = false
+                                            }
                                         }
                                     } else {
-                                        overlayTopLeftState.value = spawnTopLeft
+                                        coroutineScope.launch {
+                                            val spawnPos = spawnTopLeft
+                                            overlayTopLeftState.value = spawnPos
+                                            launch {
+                                                overlayX.animateTo(spawnPos?.x ?: 0f, tween(180, easing = FastOutSlowInEasing))
+                                            }
+                                            launch {
+                                                overlayY.animateTo(spawnPos?.y ?: 0f, tween(180, easing = FastOutSlowInEasing))
+                                            }
+                                        }
                                     }
                                 },
                                 onDragCancel = {
                                     isDragging = false
-                                    overlayTopLeftState.value = spawnTopLeft
+                                    coroutineScope.launch {
+                                        val spawnPos = spawnTopLeft
+                                        overlayTopLeftState.value = spawnPos
+                                        launch {
+                                            overlayX.animateTo(spawnPos?.x ?: 0f, tween(180, easing = FastOutSlowInEasing))
+                                        }
+                                        launch {
+                                            overlayY.animateTo(spawnPos?.y ?: 0f, tween(180, easing = FastOutSlowInEasing))
+                                        }
+                                    }
                                 }
                             )
                         }
@@ -327,7 +444,7 @@ fun MergeShiftGameScreen(
                             pulse = stylePulse
                         )
                         // Draw value
-                        val text = activePiece.value.toString()
+                        val text = formatMergeValue(activePiece.value)
                         val textStyle = TextStyle(
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
@@ -346,6 +463,37 @@ fun MergeShiftGameScreen(
                         )
                     }
                 }
+            }
+
+            if (showGameOverDialog) {
+                GameOverDialog(
+                    gameState = gameState,
+                    highestScore = highestScore,
+                    showNewHighScoreMessage = false,
+                    revealProgressProvider = { gameOverDialogRevealProgress.value },
+                    canUseExtraLife = false,
+                    isExtraLifeLoading = false,
+                    showExtraLifeButton = false,
+                    onPlayAgain = {
+                        telemetry.logUserAction(TelemetryActionNames.PlayAgain)
+                        dispatchFeedback(onRestart(), soundPlayer, haptics)
+                    },
+                    onUseExtraLife = {},
+                )
+            }
+
+            if (showRestartDialog) {
+                RestartConfirmDialog(
+                    onDismissRequest = { showRestartDialog = false },
+                    title = stringResource(Res.string.restart_confirm_title),
+                    message = stringResource(Res.string.restart_confirm_body),
+                    confirmLabel = stringResource(Res.string.restart_confirm),
+                    dismissLabel = stringResource(Res.string.restart_cancel),
+                    onConfirm = {
+                        showRestartDialog = false
+                        dispatchFeedback(onRestart(), soundPlayer, haptics)
+                    },
+                )
             }
         }
     }

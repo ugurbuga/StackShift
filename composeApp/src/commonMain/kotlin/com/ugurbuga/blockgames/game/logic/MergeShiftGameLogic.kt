@@ -17,7 +17,6 @@ import com.ugurbuga.blockgames.game.model.Piece
 import com.ugurbuga.blockgames.game.model.PieceKind
 import com.ugurbuga.blockgames.game.model.PlacementPreview
 import com.ugurbuga.blockgames.game.model.PressureLevel
-import com.ugurbuga.blockgames.game.model.SoftLockState
 import com.ugurbuga.blockgames.game.model.SpecialBlockType
 import com.ugurbuga.blockgames.game.model.gameText
 import com.ugurbuga.blockgames.settings.GameSessionCodec
@@ -31,7 +30,6 @@ internal class MergeShiftGameLogic(
 
     companion object {
         private const val QUEUE_SIZE = 3
-        private const val SOFT_LOCK_MILLIS = 260L
     }
 
     override fun restoreGame(state: GameState): GameState {
@@ -62,7 +60,7 @@ internal class MergeShiftGameLogic(
             nextQueue = nextQueue,
             holdPiece = null,
             canHold = true,
-            lastPlacementColumn = null,
+            lastPlacementColumn = config.columns / 2,
             score = 0,
             lastMoveScore = 0,
             linesCleared = 0,
@@ -89,10 +87,17 @@ internal class MergeShiftGameLogic(
         if (state.status != GameStatus.Running) return null
 
         val selectedColumn = column.coerceIn(0, state.config.columns - 1)
-        val bottomOccupied = state.board.bottomOccupiedRow(selectedColumn)
         
-        val landingRow = if (bottomOccupied == null) 0 else bottomOccupied + 1
-        if (landingRow >= state.config.rows) return null // Column full
+        // Find the lowest empty row in this column
+        var landingRow: Int? = null
+        for (r in 0 until state.config.rows) {
+            if (state.board.cellAt(selectedColumn, r) == null) {
+                landingRow = r
+                break
+            }
+        }
+        
+        if (landingRow == null) return null // Column full
 
         val landingAnchor = GridPoint(column = selectedColumn, row = landingRow)
         
@@ -111,6 +116,23 @@ internal class MergeShiftGameLogic(
     }
 
     override fun previewImpactPoints(state: GameState, preview: PlacementPreview?): Set<GridPoint> {
+        val piece = state.activePiece ?: return emptySet()
+        val p = preview ?: return emptySet()
+        val v = piece.value
+        val anchor = p.landingAnchor
+
+        // Priority 1: Vertical (Above) - in this system row-1 is older/above
+        val above = GridPoint(anchor.column, anchor.row - 1)
+        if (state.board.cellAt(above.column, above.row)?.value == v) return setOf(above)
+
+        // Priority 2: Left
+        val left = GridPoint(anchor.column - 1, anchor.row)
+        if (state.board.cellAt(left.column, left.row)?.value == v) return setOf(left)
+
+        // Priority 3: Right
+        val right = GridPoint(anchor.column + 1, anchor.row)
+        if (state.board.cellAt(right.column, right.row)?.value == v) return setOf(right)
+
         return emptySet()
     }
 
@@ -118,20 +140,71 @@ internal class MergeShiftGameLogic(
         val piece = state.activePiece ?: return invalidMove(state)
         val preview = previewPlacement(state, column) ?: return invalidMove(state)
 
-        return GameMoveResult(
-            state = state.copy(
-                softLock = SoftLockState(
-                    pieceId = piece.id,
-                    preview = preview,
-                    remainingMillis = SOFT_LOCK_MILLIS,
-                    revision = (state.softLock?.revision ?: 0L) + 1L,
+        val board = state.board.fill(preview.occupiedCells, piece.tone, value = piece.value)
+
+        // Try to perform the first merge immediately
+        val nextMerge = findMergeForPoint(board, preview.landingAnchor) ?: findNextMergeGlobal(board)
+
+        return if (nextMerge != null) {
+            val (from, to, value) = nextMerge
+            val nextValue = value * 2
+            var mergedBoard = board.clearPoints(setOf(from, to))
+            mergedBoard = mergedBoard.fill(listOf(to), getToneForValue(nextValue), value = nextValue)
+            mergedBoard = mergedBoard.applyGravity()
+
+            // Find where the result piece ended up after gravity
+            val finalPoint = findPiece(mergedBoard, to.column, nextValue) ?: to
+
+            GameMoveResult(
+                state = state.copy(
+                    board = mergedBoard,
+                    activePiece = null, // Disable input during resolution
+                    recentlyMergedPoints = setOf(finalPoint),
+                    clearAnimationToken = state.clearAnimationToken + 1,
+                    softLock = null,
+                    lastPlacementColumn = preview.selectedColumn,
+                    score = state.score + nextValue,
+                    lastMoveScore = nextValue,
                 ),
-                lastPlacementColumn = preview.selectedColumn,
-                message = gameText(GameTextKey.GameMessageSoftLock),
-            ),
-            preview = preview,
-            events = setOf(GameEvent.SoftLockStarted),
-        )
+                preview = preview,
+                events = setOf(GameEvent.PlacementAccepted),
+            )
+        } else {
+            // No merges, advance queue immediately to provide the next piece
+            val (nextActive, nextQueue, nextId) = advanceQueue(state)
+            
+            // Growth logic
+            val targetConfig = getTargetConfig(board)
+            val finalBoard = if (targetConfig.columns != board.columns || targetConfig.rows != board.rows) {
+                board.resize(targetConfig.columns, targetConfig.rows)
+            } else {
+                board
+            }
+
+            val nextPressure = computeColumnPressure(finalBoard, targetConfig)
+
+            // Game over only when ALL columns are overflowed
+            val allOverflowed = nextPressure.all { it.level == PressureLevel.Overflow }
+
+            GameMoveResult(
+                state = state.copy(
+                    board = finalBoard,
+                    config = targetConfig,
+                    activePiece = nextActive,
+                    nextQueue = nextQueue,
+                    nextPieceId = nextId,
+                    columnPressure = nextPressure,
+                    status = if (allOverflowed) GameStatus.GameOver else GameStatus.Running,
+                    recentlyMergedPoints = emptySet(),
+                    softLock = null,
+                    lastPlacementColumn = preview.selectedColumn,
+                    lastMoveScore = 0,
+                    message = if (allOverflowed) gameText(GameTextKey.GameMessageNoOpening) else state.message,
+                ),
+                preview = preview,
+                events = setOf(GameEvent.PlacementAccepted),
+            )
+        }
     }
 
     override fun placePiece(state: GameState, pieceId: Long, origin: GridPoint): GameMoveResult {
@@ -142,87 +215,214 @@ internal class MergeShiftGameLogic(
         val piece = state.activePiece ?: return invalidMove(state)
         val softLock = state.softLock ?: return invalidMove(state)
         val preview = softLock.preview
-        
-        var board = state.board.fill(preview.occupiedCells, piece.tone, value = piece.value)
-        
-        val mergeResult = resolveMerges(board, preview.landingAnchor)
-        board = mergeResult.board
 
-        val (nextActive, nextQueue, nextId) = advanceQueue(state)
-        
-        val nextPressure = computeColumnPressure(board, state.config)
-        val overflowed = nextPressure.any { it.level == PressureLevel.Overflow }
-        
-        val events = mutableSetOf<GameEvent>(GameEvent.PlacementAccepted)
-        if (mergeResult.merges > 0) events.add(GameEvent.SpecialTriggered)
-        
-        val nextStatus = if (overflowed) GameStatus.GameOver else GameStatus.Running
-        if (overflowed) events.add(GameEvent.GameOver)
+        val board = state.board.fill(preview.occupiedCells, piece.tone, value = piece.value)
 
-        val moveScore = mergeResult.score + piece.value
-        
-        return GameMoveResult(
-            state = state.copy(
-                board = board,
-                activePiece = nextActive,
-                nextQueue = nextQueue,
-                score = state.score + moveScore,
-                lastMoveScore = moveScore,
-                status = nextStatus,
-                nextPieceId = nextId,
-                softLock = null,
-                columnPressure = nextPressure,
-                recentlyMergedPoints = mergeResult.mergedPoints,
-                clearAnimationToken = if (mergeResult.merges > 0) state.clearAnimationToken + 1 else state.clearAnimationToken
-            ),
-            preview = preview,
-            events = events
-        )
+        // Try to perform the first merge immediately
+        val nextMerge = findMergeForPoint(board, preview.landingAnchor) ?: findNextMergeGlobal(board)
+
+        return if (nextMerge != null) {
+            val (from, to, value) = nextMerge
+            val nextValue = value * 2
+            var mergedBoard = board.clearPoints(setOf(from, to))
+            mergedBoard = mergedBoard.fill(listOf(to), getToneForValue(nextValue), value = nextValue)
+            mergedBoard = mergedBoard.applyGravity()
+
+            // Find where the result piece ended up after gravity
+            val finalPoint = findPiece(mergedBoard, to.column, nextValue) ?: to
+
+            GameMoveResult(
+                state = state.copy(
+                    board = mergedBoard,
+                    activePiece = null, // Disable input during resolution
+                    recentlyMergedPoints = setOf(finalPoint),
+                    clearAnimationToken = state.clearAnimationToken + 1,
+                    softLock = null,
+                    lastPlacementColumn = preview.selectedColumn,
+                    score = state.score + nextValue,
+                    lastMoveScore = nextValue,
+                ),
+                preview = preview,
+                events = setOf(GameEvent.PlacementAccepted),
+            )
+        } else {
+            // No merges, advance queue immediately to provide the next piece
+            val (nextActive, nextQueue, nextId) = advanceQueue(state)
+            
+            // Growth logic
+            val targetConfig = getTargetConfig(board)
+            val finalBoard = if (targetConfig.columns != board.columns || targetConfig.rows != board.rows) {
+                board.resize(targetConfig.columns, targetConfig.rows)
+            } else {
+                board
+            }
+
+            val nextPressure = computeColumnPressure(finalBoard, targetConfig)
+
+            // Game over only when ALL columns are overflowed
+            val allOverflowed = nextPressure.all { it.level == PressureLevel.Overflow }
+
+            GameMoveResult(
+                state = state.copy(
+                    board = finalBoard,
+                    config = targetConfig,
+                    activePiece = nextActive,
+                    nextQueue = nextQueue,
+                    nextPieceId = nextId,
+                    columnPressure = nextPressure,
+                    status = if (allOverflowed) GameStatus.GameOver else GameStatus.Running,
+                    recentlyMergedPoints = emptySet(),
+                    softLock = null,
+                    lastPlacementColumn = preview.selectedColumn,
+                    lastMoveScore = 0,
+                    message = if (allOverflowed) gameText(GameTextKey.GameMessageNoOpening) else state.message,
+                ),
+                preview = preview,
+                events = setOf(GameEvent.PlacementAccepted),
+            )
+        }
     }
 
-    private fun resolveMerges(board: BoardMatrix, startPoint: GridPoint): MergeResult {
-        var currentBoard = board
-        var totalScore = 0
-        var totalMerges = 0
-        val mergedPoints = mutableSetOf<GridPoint>()
-        
-        var currentTarget = startPoint
-        
-        while (true) {
-            val cell = currentBoard.cellAt(currentTarget.column, currentTarget.row) ?: break
-            val currentValue = cell.value
-            
-            val neighbors = listOf(
-                GridPoint(currentTarget.column - 1, currentTarget.row),
-                GridPoint(currentTarget.column + 1, currentTarget.row),
-                GridPoint(currentTarget.column, currentTarget.row - 1),
-                GridPoint(currentTarget.column, currentTarget.row + 1),
-            ).filter { it.column in 0 until board.columns && it.row in 0 until board.rows }
-            
-            val matchingNeighbors = neighbors.filter { p ->
-                currentBoard.cellAt(p.column, p.row)?.value == currentValue
+    override fun tick(state: GameState): GameState {
+        if (state.status != GameStatus.Running) return state
+
+        // If activePiece is null, we are resolving merges
+        if (state.activePiece == null) {
+            // 1. Try to find a merge starting from the recently placed/merged point
+            val activePoint = state.recentlyMergedPoints.firstOrNull()
+            val nextMerge = if (activePoint != null) {
+                findMergeForPoint(state.board, activePoint) ?: findNextMergeGlobal(state.board)
+            } else {
+                findNextMergeGlobal(state.board)
             }
-            
-            if (matchingNeighbors.isEmpty()) break
-            
-            // Merge matching neighbors into the topmost point
-            val allInvolved = matchingNeighbors + currentTarget
-            val topmost = allInvolved.minBy { it.row }
-            
-            currentBoard = currentBoard.clearPoints(allInvolved.toSet())
-            val nextValue = currentValue * 2
-            val nextTone = getToneForValue(nextValue)
-            currentBoard = currentBoard.fill(listOf(topmost), nextTone, value = nextValue)
-            
-            mergedPoints.addAll(allInvolved)
-            totalMerges += matchingNeighbors.size
-            totalScore += nextValue * matchingNeighbors.size
-            
-            currentTarget = topmost
-            // Continue merging from the new topmost point as value increased
+
+            if (nextMerge != null) {
+                val (from, to, value) = nextMerge
+                val nextValue = value * 2
+                var board = state.board.clearPoints(setOf(from, to))
+                board = board.fill(listOf(to), getToneForValue(nextValue), value = nextValue)
+                board = board.applyGravity()
+
+                // Find where the result piece ended up after gravity
+                val finalPoint = findPiece(board, to.column, nextValue) ?: to
+
+                return state.copy(
+                    board = board,
+                    recentlyMergedPoints = setOf(finalPoint),
+                    clearAnimationToken = state.clearAnimationToken + 1,
+                    score = state.score + nextValue,
+                    lastMoveScore = nextValue,
+                )
+            } else {
+                // No more merges, advance queue
+                val (nextActive, nextQueue, nextId) = advanceQueue(state)
+                
+                // Growth logic
+                val targetConfig = getTargetConfig(state.board)
+                val finalBoard = if (targetConfig.columns != state.board.columns || targetConfig.rows != state.board.rows) {
+                    state.board.resize(targetConfig.columns, targetConfig.rows)
+                } else {
+                    state.board
+                }
+
+                val nextPressure = computeColumnPressure(finalBoard, targetConfig)
+                
+                // Game over only when ALL columns are overflowed
+                val allOverflowed = nextPressure.all { it.level == PressureLevel.Overflow }
+
+                return state.copy(
+                    board = finalBoard,
+                    config = targetConfig,
+                    activePiece = nextActive,
+                    nextQueue = nextQueue,
+                    nextPieceId = nextId,
+                    columnPressure = nextPressure,
+                    status = if (allOverflowed) GameStatus.GameOver else GameStatus.Running,
+                    recentlyMergedPoints = emptySet(),
+                    message = if (allOverflowed) gameText(GameTextKey.GameMessageNoOpening) else state.message
+                )
+            }
         }
-        
-        return MergeResult(currentBoard, totalScore, totalMerges, mergedPoints)
+
+        return state
+    }
+
+    private fun getTargetConfig(board: BoardMatrix): GameConfig {
+        val maxValue = findMaxValue(board)
+        return when {
+            maxValue >= 1024 -> GameConfig(columns = 5, rows = 7)
+            maxValue >= 512 -> GameConfig(columns = 5, rows = 6)
+            maxValue >= 256 -> GameConfig(columns = 4, rows = 6)
+            maxValue >= 128 -> GameConfig(columns = 4, rows = 5)
+            maxValue >= 64 -> GameConfig(columns = 3, rows = 6)
+            else -> GameConfig(columns = 3, rows = 5)
+        }
+    }
+
+    private fun findMaxValue(board: BoardMatrix): Int {
+        var max = 0
+        for (c in 0 until board.columns) {
+            for (r in 0 until board.rows) {
+                val v = board.cellAt(c, r)?.value ?: 0
+                if (v > max) max = v
+            }
+        }
+        return max
+    }
+
+    private fun findMergeForPoint(board: BoardMatrix, p: GridPoint): Triple<GridPoint, GridPoint, Int>? {
+        val cell = board.cellAt(p.column, p.row) ?: return null
+        val v = cell.value
+
+        // 1. Above (Older)
+        val above = GridPoint(p.column, p.row - 1)
+        if (board.cellAt(above.column, above.row)?.value == v) {
+            return Triple(p, above, v)
+        }
+        // 2. Left (Older if already on board)
+        val left = GridPoint(p.column - 1, p.row)
+        if (board.cellAt(left.column, left.row)?.value == v) {
+            return Triple(p, left, v)
+        }
+        // 3. Right (Older if already on board)
+        val right = GridPoint(p.column + 1, p.row)
+        if (board.cellAt(right.column, right.row)?.value == v) {
+            return Triple(p, right, v)
+        }
+        return null
+    }
+
+    private fun findNextMergeGlobal(board: BoardMatrix): Triple<GridPoint, GridPoint, Int>? {
+        // Priority 1: Vertical (Above) - Merge into the top one (older)
+        for (r in 1 until board.rows) {
+            for (c in 0 until board.columns) {
+                val cell = board.cellAt(c, r) ?: continue
+                val above = board.cellAt(c, r - 1)
+                if (above != null && above.value == cell.value) {
+                    return Triple(GridPoint(c, r), GridPoint(c, r - 1), cell.value)
+                }
+            }
+        }
+        // Priority 2: Horizontal (Left) - Merge into the left one (older)
+        for (r in 0 until board.rows) {
+            for (c in 1 until board.columns) {
+                val cell = board.cellAt(c, r) ?: continue
+                val left = board.cellAt(c - 1, r)
+                if (left != null && left.value == cell.value) {
+                    return Triple(GridPoint(c, r), GridPoint(c - 1, r), cell.value)
+                }
+            }
+        }
+        return null
+    }
+
+    private fun findPiece(board: BoardMatrix, column: Int, value: Int): GridPoint? {
+        for (row in 0 until board.rows) {
+            if (board.cellAt(column, row)?.value == value) {
+                return GridPoint(column, row)
+            }
+        }
+        return null
     }
 
     private fun getToneForValue(value: Int): CellTone {
@@ -271,14 +471,6 @@ internal class MergeShiftGameLogic(
     override fun holdPiece(state: GameState): GameMoveResult = invalidMove(state)
     override fun replaceActivePiece(state: GameState, specialType: SpecialBlockType): GameMoveResult = invalidMove(state)
     override fun reviveFromReward(state: GameState): GameMoveResult = invalidMove(state)
-    override fun tick(state: GameState): GameState = state
 
     private fun invalidMove(state: GameState) = GameMoveResult(state, events = setOf(GameEvent.InvalidDrop))
-
-    private data class MergeResult(
-        val board: BoardMatrix,
-        val score: Int,
-        val merges: Int,
-        val mergedPoints: Set<GridPoint> = emptySet()
-    )
 }

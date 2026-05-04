@@ -40,6 +40,6 @@ object ChallengeGenerator {
             tasks.add(ChallengeTask(type, target))
         }
 
-        return DailyChallenge(year, month, day, tasks)
+        return DailyChallenge(year, month, day, gameplayStyle, tasks)
     }
 }
