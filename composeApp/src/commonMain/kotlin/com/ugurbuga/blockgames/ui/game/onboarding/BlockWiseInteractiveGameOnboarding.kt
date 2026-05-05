@@ -1,46 +1,17 @@
 package com.ugurbuga.blockgames.ui.game.onboarding
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import blockgames.composeapp.generated.resources.Res
@@ -55,23 +26,17 @@ import blockgames.composeapp.generated.resources.interactive_onboarding_heavy_bo
 import blockgames.composeapp.generated.resources.interactive_onboarding_heavy_title
 import blockgames.composeapp.generated.resources.interactive_onboarding_line_clear_body
 import blockgames.composeapp.generated.resources.interactive_onboarding_line_clear_title
-import blockgames.composeapp.generated.resources.interactive_onboarding_step_counter
 import blockgames.composeapp.generated.resources.interactive_onboarding_target_locked
 import blockgames.composeapp.generated.resources.interactive_onboarding_waiting
-import blockgames.composeapp.generated.resources.tutorial_back
 import com.ugurbuga.blockgames.BlockGamesTheme
 import com.ugurbuga.blockgames.game.logic.GameLogic
-import com.ugurbuga.blockgames.game.model.CellTone
 import com.ugurbuga.blockgames.game.model.PlacementPreview
 import com.ugurbuga.blockgames.settings.AppSettings
 import com.ugurbuga.blockgames.settings.BlockWiseOnboardingScene
 import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStage
 import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.StackShiftOnboardingTarget
-import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
-import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
-import com.ugurbuga.blockgames.ui.theme.blockGamesSurfaceShadow
 import org.jetbrains.compose.resources.stringResource
 
 @Immutable
@@ -85,7 +50,7 @@ data class BlockWiseInteractiveGameOnboardingUi(
 )
 
 private val onboardingLogic = GameLogic.create()
-private const val InteractiveOnboardingTargetPulseDurationMillis = 1880
+
 
 @Composable
 fun BlockWiseInteractiveGameOnboardingOverlay(
@@ -239,187 +204,17 @@ internal fun BlockWiseInteractiveOnboardingInfoCard(
     stylePulse: Float = 0f,
     modifier: Modifier = Modifier,
 ) {
-    val uiColors = BlockGamesThemeTokens.uiColors
-    Card(
-        modifier = modifier.blockGamesSurfaceShadow(
-            shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
-            elevation = 10.dp,
-        ),
-        shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
-        colors = CardDefaults.cardColors(containerColor = uiColors.gameSurface.copy(alpha = 0.95f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.82f)),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            uiColors.panelHighlight.copy(alpha = 0.18f),
-                            uiColors.launchGlow.copy(alpha = 0.10f),
-                            Color.Transparent,
-                        ),
-                    ),
-                )
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (onBack != null) {
-                    TopBarActionBlockButton(
-                        tone = CellTone.Cyan,
-                        icon = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(Res.string.tutorial_back),
-                        onClick = onBack,
-                        pulse = stylePulse,
-                        size = 28.dp,
-                    )
-                }
-                Surface(
-                    shape = RoundedCornerShape(GameUiShapeTokens.badgeCorner),
-                    color = visualState.guideColor.copy(alpha = 0.94f),
-                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.14f)),
-                ) {
-                    Text(
-                        text = stringResource(
-                            Res.string.interactive_onboarding_step_counter,
-                            ui.currentStep,
-                            ui.totalSteps,
-                        ),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = visualState.guideBadgeTextColor,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                    )
-                }
-            }
-            Text(
-                text = visualState.title,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold,
-            )
-            Text(
-                text = visualState.body,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.86f),
-            )
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(GameUiShapeTokens.hintCorner),
-                color = visualState.guideColor.copy(alpha = visualState.hintContainerAlpha),
-                border = BorderStroke(1.dp, visualState.guideColor.copy(alpha = visualState.hintBorderAlpha)),
-            ) {
-                Text(
-                    text = visualState.hint,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
-                    minLines = 2,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
-    }
+    InteractiveOnboardingInfoCard(
+        currentStep = ui.currentStep,
+        totalSteps = ui.totalSteps,
+        visualState = visualState,
+        onBack = onBack,
+        stylePulse = stylePulse,
+        modifier = modifier,
+    )
 }
 
-@Composable
-private fun InteractiveOnboardingTargetHighlight(
-    targetRect: Rect?,
-    guideColor: Color,
-    isSuccessState: Boolean,
-    isAwaitingPlacementCommit: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    val rect = targetRect ?: return
-    val density = LocalDensity.current
-    val shouldAnimatePulse = !isAwaitingPlacementCommit && !isSuccessState
-    val pulsePhase = if (!shouldAnimatePulse) {
-        0f
-    } else {
-        val targetPulseTransition = rememberInfiniteTransition(label = "interactiveOnboardingTargetPulse")
-        targetPulseTransition.animateFloat(
-            initialValue = 0f,
-            targetValue = 1f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(
-                    durationMillis = InteractiveOnboardingTargetPulseDurationMillis,
-                    easing = FastOutSlowInEasing,
-                ),
-            ),
-            label = "interactiveOnboardingTargetPulsePhase",
-        ).value
-    }
-    val widthDp = with(density) { rect.width.toDp() }
-    val heightDp = with(density) { rect.height.toDp() }
-    val targetCornerPx = with(density) { GameUiShapeTokens.targetCorner.toPx() }
 
-    Canvas(
-        modifier = modifier
-            .graphicsLayer(
-                translationX = rect.left,
-                translationY = rect.top,
-            )
-            .size(width = widthDp, height = heightDp),
-    ) {
-        val localTargetRect = Rect(0f, 0f, size.width, size.height)
-        val pulseScale = when {
-            isAwaitingPlacementCommit -> 1f
-            isSuccessState -> 1f
-            else -> 1.004f + (pulsePhase * 0.010f)
-        }
-        val pulseRect = localTargetRect.scaleAroundCenter(pulseScale)
-        val cornerRadius = CornerRadius(targetCornerPx, targetCornerPx)
-
-        drawRoundRect(
-            color = guideColor.copy(
-                alpha = when {
-                    isAwaitingPlacementCommit -> 0.10f
-                    isSuccessState -> 0.12f
-                    else -> 0.09f
-                },
-            ),
-            topLeft = Offset.Zero,
-            size = localTargetRect.size,
-            cornerRadius = cornerRadius,
-        )
-        drawRoundRect(
-            color = guideColor.copy(alpha = if (isSuccessState) 0.88f else 0.82f),
-            topLeft = Offset.Zero,
-            size = localTargetRect.size,
-            cornerRadius = cornerRadius,
-            style = Stroke(width = if (isSuccessState) 4f else 3.6f),
-        )
-        drawRoundRect(
-            color = Color.White.copy(alpha = if (isSuccessState) 0.12f else 0.08f),
-            topLeft = Offset(2f, 2f),
-            size = Size(
-                width = (size.width - 4f).coerceAtLeast(0f),
-                height = (size.height - 4f).coerceAtLeast(0f),
-            ),
-            cornerRadius = CornerRadius((targetCornerPx - 4f).coerceAtLeast(0f), (targetCornerPx - 4f).coerceAtLeast(0f)),
-            style = Stroke(width = 1f),
-        )
-        if (shouldAnimatePulse) {
-            drawRoundRect(
-                color = guideColor.copy(
-                    alpha = 0.08f + (pulsePhase * 0.04f),
-                ),
-                topLeft = Offset(pulseRect.left, pulseRect.top),
-                size = pulseRect.size,
-                cornerRadius = CornerRadius(targetCornerPx + 4f, targetCornerPx + 4f),
-                style = Stroke(width = 4f),
-            )
-        }
-    }
-}
 
 private fun blockWiseOnboardingTargetRect(
     scene: BlockWiseOnboardingScene,
@@ -473,17 +268,6 @@ private fun Rect.expand(horizontalPadding: Float, verticalPadding: Float): Rect 
     bottom = bottom + verticalPadding,
 )
 
-private fun Rect.scaleAroundCenter(scale: Float): Rect {
-    val safeScale = scale.coerceAtLeast(0.01f)
-    val scaledWidth = width * safeScale
-    val scaledHeight = height * safeScale
-    return Rect(
-        left = center.x - (scaledWidth / 2f),
-        top = center.y - (scaledHeight / 2f),
-        right = center.x + (scaledWidth / 2f),
-        bottom = center.y + (scaledHeight / 2f),
-    )
-}
 
 @Preview(name = "Onboarding Card - Default")
 @Composable

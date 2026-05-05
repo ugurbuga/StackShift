@@ -54,6 +54,7 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.launch_label
@@ -62,6 +63,7 @@ import blockgames.composeapp.generated.resources.restart_confirm
 import blockgames.composeapp.generated.resources.restart_confirm_body
 import blockgames.composeapp.generated.resources.restart_confirm_title
 import blockgames.composeapp.generated.resources.time_remaining
+import com.ugurbuga.blockgames.BlockGamesTheme
 import com.ugurbuga.blockgames.game.logic.GameEvent
 import com.ugurbuga.blockgames.game.model.GameState
 import com.ugurbuga.blockgames.game.model.GameStatus
@@ -71,20 +73,31 @@ import com.ugurbuga.blockgames.game.model.formatMergeValue
 import com.ugurbuga.blockgames.game.model.toTopLeft
 import com.ugurbuga.blockgames.localization.LocalAppSettings
 import com.ugurbuga.blockgames.platform.feedback.GameHaptics
+import com.ugurbuga.blockgames.platform.feedback.NoOpGameHaptics
+import com.ugurbuga.blockgames.platform.feedback.NoOpSoundEffectPlayer
 import com.ugurbuga.blockgames.platform.feedback.SoundEffectPlayer
 import com.ugurbuga.blockgames.presentation.game.GameDispatchResult
 import com.ugurbuga.blockgames.presentation.game.InteractionFeedback
+import com.ugurbuga.blockgames.settings.AppSettings
+import com.ugurbuga.blockgames.settings.MergeShiftOnboardingScene
+import com.ugurbuga.blockgames.settings.MergeShiftOnboardingStage
+import com.ugurbuga.blockgames.settings.MergeShiftOnboardingStateFactory
 import com.ugurbuga.blockgames.telemetry.AppTelemetry
 import com.ugurbuga.blockgames.telemetry.NoOpAppTelemetry
 import com.ugurbuga.blockgames.telemetry.TelemetryActionNames
 import com.ugurbuga.blockgames.ui.game.BoardGrid
 import com.ugurbuga.blockgames.ui.game.GameOverDialog
 import com.ugurbuga.blockgames.ui.game.GameOverDialogRevealDurationMillis
+import com.ugurbuga.blockgames.ui.game.InteractiveOnboardingCompletionDialog
 import com.ugurbuga.blockgames.ui.game.MinimalTopBar
 import com.ugurbuga.blockgames.ui.game.RestartConfirmDialog
 import com.ugurbuga.blockgames.ui.game.boardCellCornerRadiusPx
 import com.ugurbuga.blockgames.ui.game.boardFrameCornerRadiusDp
 import com.ugurbuga.blockgames.ui.game.drawCellBody
+import com.ugurbuga.blockgames.ui.game.onboarding.InteractiveOnboardingInfoCard
+import com.ugurbuga.blockgames.ui.game.onboarding.MergeShiftInteractiveGameOnboardingUi
+import com.ugurbuga.blockgames.ui.game.onboarding.MergeShiftOnboardingTargetOverlay
+import com.ugurbuga.blockgames.ui.game.onboarding.rememberMergeShiftInteractiveOnboardingVisualState
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
 import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
 import com.ugurbuga.blockgames.ui.theme.appBackgroundBrush
@@ -111,6 +124,13 @@ fun MergeShiftGameScreen(
     soundPlayer: SoundEffectPlayer,
     haptics: GameHaptics,
     highestScore: Int,
+    interactiveOnboardingScene: MergeShiftOnboardingScene? = null,
+    interactiveOnboardingCurrentStep: Int = 0,
+    interactiveOnboardingTotalSteps: Int = 0,
+    interactiveOnboardingAwaitingCommit: Boolean = false,
+    interactiveOnboardingCompletionDialogVisible: Boolean = false,
+    onInteractiveOnboardingStartGame: () -> Unit = {},
+    onInteractiveOnboardingReturnHome: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -169,6 +189,10 @@ fun MergeShiftGameScreen(
             label = "stylePulse",
         )
     val stylePulse = stylePulseState.value
+
+    val interactiveOnboardingEnabled = interactiveOnboardingScene != null
+    val interactiveOnboardingAcceptedColumns = interactiveOnboardingScene?.acceptedColumns.orEmpty()
+    val topBarControlsEnabled = !interactiveOnboardingEnabled
 
     val activePiece = gameState.activePiece
     var overlayHostRectInRoot by remember { mutableStateOf(Rect.Zero) }
@@ -234,11 +258,44 @@ fun MergeShiftGameScreen(
         }
     }
 
-    val placementPreview by remember(selectedColumn, activePiece?.id, gameState.status, isDragging) {
+    val placementPreview by remember(selectedColumn, activePiece?.id, gameState.status, isDragging, interactiveOnboardingAcceptedColumns) {
         derivedStateOf {
             if (gameState.status != GameStatus.Running || isLaunching) null
-            else selectedColumn?.let(onRequestPreview)
+            else {
+                if (interactiveOnboardingAcceptedColumns.isNotEmpty() && selectedColumn !in interactiveOnboardingAcceptedColumns) null
+                else selectedColumn?.let(onRequestPreview)
+            }
         }
+    }
+
+    val interactiveOnboardingTargetAligned by remember(
+        interactiveOnboardingScene,
+        interactiveOnboardingAcceptedColumns,
+        selectedColumn,
+        placementPreview,
+        isDragging,
+    ) {
+        derivedStateOf {
+            interactiveOnboardingScene != null &&
+                    isDragging &&
+                    placementPreview != null &&
+                    selectedColumn != null &&
+                    (interactiveOnboardingAcceptedColumns.isEmpty() || selectedColumn in interactiveOnboardingAcceptedColumns)
+        }
+    }
+
+    val resolvedInteractiveOnboardingUi = interactiveOnboardingScene?.let { scene ->
+        MergeShiftInteractiveGameOnboardingUi(
+            scene = scene,
+            currentStep = interactiveOnboardingCurrentStep,
+            totalSteps = interactiveOnboardingTotalSteps,
+            isTargetAligned = interactiveOnboardingTargetAligned,
+            isAwaitingPlacementCommit = interactiveOnboardingAwaitingCommit,
+        )
+    }
+
+    val resolvedInteractiveOnboardingVisualState = resolvedInteractiveOnboardingUi?.let {
+        rememberMergeShiftInteractiveOnboardingVisualState(it)
     }
 
     val displayOverlayTopLeft by remember(
@@ -280,15 +337,29 @@ fun MergeShiftGameScreen(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                MinimalTopBar(
-                    gameState = gameState,
-                    scoreHighlightStrengthProvider = { 0f },
-                    scoreHighlightScaleProvider = { 1f },
-                    remainingTimeLabel = stringResource(Res.string.time_remaining),
-                    onBack = onBack,
-                    onRestart = { showRestartDialog = true },
-                    stylePulse = stylePulse,
-                )
+                if (!interactiveOnboardingEnabled) {
+                    MinimalTopBar(
+                        gameState = gameState,
+                        scoreHighlightStrengthProvider = { 0f },
+                        scoreHighlightScaleProvider = { 1f },
+                        remainingTimeLabel = stringResource(Res.string.time_remaining),
+                        onBack = onBack,
+                        onRestart = { showRestartDialog = true },
+                        stylePulse = stylePulse,
+                    )
+                }
+
+                resolvedInteractiveOnboardingUi?.let { onboardingUi ->
+                    InteractiveOnboardingInfoCard(
+                        currentStep = onboardingUi.currentStep,
+                        totalSteps = onboardingUi.totalSteps,
+                        visualState = resolvedInteractiveOnboardingVisualState
+                            ?: rememberMergeShiftInteractiveOnboardingVisualState(onboardingUi),
+                        onBack = onBack,
+                        stylePulse = stylePulse,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
 
                 BoxWithConstraints(modifier = Modifier.fillMaxWidth().weight(1f)) {
                     val columns = gameState.config.columns
@@ -345,7 +416,15 @@ fun MergeShiftGameScreen(
                 boardRect = boardRect,
                 cellSizePx = cellSizePx,
             )
-            
+
+            resolvedInteractiveOnboardingUi?.let { onboardingUi ->
+                MergeShiftOnboardingTargetOverlay(
+                    ui = onboardingUi,
+                    boardRect = boardRect,
+                    cellSizePx = cellSizePx,
+                )
+            }
+
             // Active Piece Overlay
             if (activePiece != null && hasSnappedInitially && cellSizePx > 0f) {
                 Box(
@@ -374,6 +453,13 @@ fun MergeShiftGameScreen(
                                     val col = selectedColumn
                                     val preview = placementPreview
                                     if (col != null && preview != null) {
+                                        if (interactiveOnboardingAcceptedColumns.isNotEmpty() && col !in interactiveOnboardingAcceptedColumns) {
+                                            coroutineScope.launch {
+                                                overlayX.animateTo(spawnTopLeft!!.x)
+                                                overlayY.animateTo(spawnTopLeft!!.y)
+                                            }
+                                            return@detectDragGestures
+                                        }
                                         isLaunching = true
                                         coroutineScope.launch {
                                             val entry = preview.entryAnchor.toTopLeft(boardRect, cellSizePx)
@@ -495,6 +581,13 @@ fun MergeShiftGameScreen(
                     },
                 )
             }
+
+            if (interactiveOnboardingCompletionDialogVisible) {
+                InteractiveOnboardingCompletionDialog(
+                    onStartGame = onInteractiveOnboardingStartGame,
+                    onReturnHome = onInteractiveOnboardingReturnHome,
+                )
+            }
         }
     }
 }
@@ -536,6 +629,111 @@ private fun MergeShiftBottomDock(
                 fontWeight = FontWeight.Black
             )
         }
+    }
+}
+
+@Preview(name = "MergeShift - Game")
+@Composable
+private fun MergeShiftGameScreenPreview() {
+    BlockGamesTheme(settings = AppSettings()) {
+        MergeShiftGameScreen(
+            gameState = MergeShiftOnboardingStateFactory.initialState(),
+            onRequestPreview = { null },
+            onPlacePiece = { GameDispatchResult() },
+            onRestart = { InteractionFeedback.None },
+            onTick = {},
+            soundPlayer = NoOpSoundEffectPlayer,
+            haptics = NoOpGameHaptics,
+            highestScore = 1000,
+        )
+    }
+}
+
+@Preview(name = "MergeShift Onboarding - Launch")
+@Composable
+private fun MergeShiftOnboardingLaunchPreview() {
+    val stage = MergeShiftOnboardingStage.Launch
+    val scene = MergeShiftOnboardingStateFactory.scene(stage)
+    BlockGamesTheme(settings = AppSettings()) {
+        MergeShiftGameScreen(
+            gameState = scene.gameState,
+            onRequestPreview = { null },
+            onPlacePiece = { GameDispatchResult() },
+            onRestart = { InteractionFeedback.None },
+            onTick = {},
+            soundPlayer = NoOpSoundEffectPlayer,
+            haptics = NoOpGameHaptics,
+            highestScore = 1000,
+            interactiveOnboardingScene = scene,
+            interactiveOnboardingCurrentStep = 1,
+            interactiveOnboardingTotalSteps = 4,
+        )
+    }
+}
+
+@Preview(name = "MergeShift Onboarding - Vertical Merge")
+@Composable
+private fun MergeShiftOnboardingVerticalMergePreview() {
+    val stage = MergeShiftOnboardingStage.VerticalMerge
+    val scene = MergeShiftOnboardingStateFactory.scene(stage)
+    BlockGamesTheme(settings = AppSettings()) {
+        MergeShiftGameScreen(
+            gameState = scene.gameState,
+            onRequestPreview = { null },
+            onPlacePiece = { GameDispatchResult() },
+            onRestart = { InteractionFeedback.None },
+            onTick = {},
+            soundPlayer = NoOpSoundEffectPlayer,
+            haptics = NoOpGameHaptics,
+            highestScore = 1000,
+            interactiveOnboardingScene = scene,
+            interactiveOnboardingCurrentStep = 2,
+            interactiveOnboardingTotalSteps = 4,
+        )
+    }
+}
+
+@Preview(name = "MergeShift Onboarding - Horizontal Merge")
+@Composable
+private fun MergeShiftOnboardingHorizontalMergePreview() {
+    val stage = MergeShiftOnboardingStage.HorizontalMerge
+    val scene = MergeShiftOnboardingStateFactory.scene(stage)
+    BlockGamesTheme(settings = AppSettings()) {
+        MergeShiftGameScreen(
+            gameState = scene.gameState,
+            onRequestPreview = { null },
+            onPlacePiece = { GameDispatchResult() },
+            onRestart = { InteractionFeedback.None },
+            onTick = {},
+            soundPlayer = NoOpSoundEffectPlayer,
+            haptics = NoOpGameHaptics,
+            highestScore = 1000,
+            interactiveOnboardingScene = scene,
+            interactiveOnboardingCurrentStep = 3,
+            interactiveOnboardingTotalSteps = 4,
+        )
+    }
+}
+
+@Preview(name = "MergeShift Onboarding - Multi Merge")
+@Composable
+private fun MergeShiftOnboardingMultiMergePreview() {
+    val stage = MergeShiftOnboardingStage.MultiMerge
+    val scene = MergeShiftOnboardingStateFactory.scene(stage)
+    BlockGamesTheme(settings = AppSettings()) {
+        MergeShiftGameScreen(
+            gameState = scene.gameState,
+            onRequestPreview = { null },
+            onPlacePiece = { GameDispatchResult() },
+            onRestart = { InteractionFeedback.None },
+            onTick = {},
+            soundPlayer = NoOpSoundEffectPlayer,
+            haptics = NoOpGameHaptics,
+            highestScore = 1000,
+            interactiveOnboardingScene = scene,
+            interactiveOnboardingCurrentStep = 4,
+            interactiveOnboardingTotalSteps = 4,
+        )
     }
 }
 

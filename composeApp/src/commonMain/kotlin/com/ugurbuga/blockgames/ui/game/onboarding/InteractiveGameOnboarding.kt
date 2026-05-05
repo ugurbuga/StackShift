@@ -138,7 +138,8 @@ fun InteractiveGameOnboardingOverlay(
         )
 
         InteractiveOnboardingInfoCard(
-            ui = ui,
+            currentStep = ui.currentStep,
+            totalSteps = ui.totalSteps,
             visualState = visualState,
             modifier = Modifier
                 .align(Alignment.TopCenter)
@@ -272,8 +273,9 @@ internal fun rememberInteractiveOnboardingVisualState(
 
 @Composable
 internal fun InteractiveOnboardingInfoCard(
-    ui: GameInteractiveOnboardingUi,
-    visualState: InteractiveOnboardingVisualState = rememberInteractiveOnboardingVisualState(ui),
+    currentStep: Int,
+    totalSteps: Int,
+    visualState: InteractiveOnboardingVisualState,
     onBack: (() -> Unit)? = null,
     stylePulse: Float = 0f,
     modifier: Modifier = Modifier,
@@ -327,8 +329,8 @@ internal fun InteractiveOnboardingInfoCard(
                     Text(
                         text = stringResource(
                             Res.string.interactive_onboarding_step_counter,
-                            ui.currentStep,
-                            ui.totalSteps,
+                            currentStep,
+                            totalSteps,
                         ),
                         style = MaterialTheme.typography.labelMedium,
                         color = visualState.guideBadgeTextColor,
@@ -370,7 +372,7 @@ internal fun InteractiveOnboardingInfoCard(
 }
 
 @Composable
-private fun InteractiveOnboardingTargetHighlight(
+internal fun InteractiveOnboardingTargetHighlight(
     targetRect: Rect?,
     guideColor: Color,
     isSuccessState: Boolean,

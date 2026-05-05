@@ -55,6 +55,7 @@ import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.GameSessionSlot
 import com.ugurbuga.blockgames.settings.GameSessionStorage
 import com.ugurbuga.blockgames.settings.HighScoreStorage
+import com.ugurbuga.blockgames.settings.MergeShiftOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.RewardedTokenAdReward
 import com.ugurbuga.blockgames.settings.StackShiftGameOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.awardBonusTokens
@@ -494,10 +495,10 @@ fun BlockGamesAppHost(
     fun prepareInteractiveOnboarding() {
         persistActiveSession.value = false
         pendingSessionState = null
-        val initialState = if (GlobalPlatformConfig.gameplayStyle == GameplayStyle.BlockWise) {
-            BlockWiseOnboardingStateFactory.initialState()
-        } else {
-            StackShiftGameOnboardingStateFactory.initialState()
+        val initialState = when (GlobalPlatformConfig.gameplayStyle) {
+            GameplayStyle.BlockWise -> BlockWiseOnboardingStateFactory.initialState()
+            GameplayStyle.MergeShift -> MergeShiftOnboardingStateFactory.initialState()
+            else -> StackShiftGameOnboardingStateFactory.initialState()
         }
         gameViewModel = createGameViewModel(initialState)
     }
@@ -506,7 +507,7 @@ fun BlockGamesAppHost(
         val sessionSlot = sessionSlotFor(mode = mode)
         if (mode == GameMode.Classic && !settings.hasSeenTutorial) {
             navigateTo(AppRoute.Tutorial)
-        } else if (mode == GameMode.Classic && !settings.hasShownInteractiveOnboarding && GlobalPlatformConfig.gameplayStyle != GameplayStyle.MergeShift) {
+        } else if (mode == GameMode.Classic && !settings.hasShownInteractiveOnboarding) {
             prepareInteractiveOnboarding()
             navigateTo(AppRoute.InteractiveOnboarding)
         } else {
@@ -650,17 +651,9 @@ fun BlockGamesAppHost(
             if (!settings.hasSeenTutorial) {
                 persistSettings(settings.copy(hasSeenTutorial = true))
             }
-            if (GlobalPlatformConfig.gameplayStyle == GameplayStyle.MergeShift) {
-                telemetry.logUserAction(TelemetryActionNames.StartGameFromHome)
-                restoreOrRestartSession(slot = GameSessionSlot.Classic) {
-                    gameViewModel.restart(mode = GameMode.Classic)
-                }
-                replaceTop(AppRoute.Game)
-            } else {
-                telemetry.logUserAction(TelemetryActionNames.OpenInteractiveOnboarding)
-                prepareInteractiveOnboarding()
-                replaceTop(AppRoute.InteractiveOnboarding)
-            }
+            telemetry.logUserAction(TelemetryActionNames.OpenInteractiveOnboarding)
+            prepareInteractiveOnboarding()
+            replaceTop(AppRoute.InteractiveOnboarding)
         },
         onInteractiveOnboardingFinished = { finalState ->
             completeInteractiveOnboarding(finalState = finalState, returnHome = false)

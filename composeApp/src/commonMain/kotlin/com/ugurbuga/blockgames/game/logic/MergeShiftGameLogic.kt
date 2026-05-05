@@ -41,7 +41,8 @@ internal class MergeShiftGameLogic(
         challenge: DailyChallenge?,
         mode: GameMode,
     ): GameState {
-        val board = BoardMatrix.empty(columns = config.columns, rows = config.rows)
+        val startConfig = config.copy(columns = 3, rows = 5)
+        val board = BoardMatrix.empty(columns = startConfig.columns, rows = startConfig.rows)
         var currentNextId = 1L
         val openingBag = List(QUEUE_SIZE + 1) {
             val (piece, nextId) = createPiece(nextPieceId = currentNextId)
@@ -51,7 +52,7 @@ internal class MergeShiftGameLogic(
         val activePiece = openingBag.first()
         val nextQueue = openingBag.drop(1)
         return GameState(
-            config = config,
+            config = startConfig,
             gameMode = mode,
             gameplayStyle = GameplayStyle.MergeShift,
             board = board,
@@ -59,17 +60,17 @@ internal class MergeShiftGameLogic(
             nextQueue = nextQueue,
             holdPiece = null,
             canHold = true,
-            lastPlacementColumn = config.columns / 2,
+            lastPlacementColumn = startConfig.columns / 2,
             score = 0,
             lastMoveScore = 0,
             linesCleared = 0,
             level = 1,
             difficultyStage = 0,
-            secondsUntilDifficultyIncrease = config.difficultyIntervalSeconds,
+            secondsUntilDifficultyIncrease = startConfig.difficultyIntervalSeconds,
             combo = ComboState(),
             perfectDropStreak = 0,
             launchBar = LaunchBarState(),
-            columnPressure = computeColumnPressure(board, config),
+            columnPressure = computeColumnPressure(board, startConfig),
             softLock = null,
             status = GameStatus.Running,
             nextPieceId = currentNextId,
@@ -87,7 +88,7 @@ internal class MergeShiftGameLogic(
 
         val selectedColumn = column.coerceIn(0, state.config.columns - 1)
         
-        // Find the lowest empty row in this column
+        // Find the first empty row in this column (stacking from top)
         var landingRow: Int? = null
         for (r in 0 until state.config.rows) {
             if (state.board.cellAt(selectedColumn, r) == null) {
@@ -119,20 +120,25 @@ internal class MergeShiftGameLogic(
         val p = preview ?: return emptySet()
         val v = piece.value
         val anchor = p.landingAnchor
+        val impactPoints = mutableSetOf<GridPoint>()
 
-        // Priority 1: Vertical (Above) - in this system row-1 is older/above
+        // Check Above
         val above = GridPoint(anchor.column, anchor.row - 1)
-        if (state.board.cellAt(above.column, above.row)?.value == v) return setOf(above)
+        if (state.board.cellAt(above.column, above.row)?.value == v) impactPoints.add(above)
 
-        // Priority 2: Left
+        // Check Left
         val left = GridPoint(anchor.column - 1, anchor.row)
-        if (state.board.cellAt(left.column, left.row)?.value == v) return setOf(left)
+        if (state.board.cellAt(left.column, left.row)?.value == v) impactPoints.add(left)
 
-        // Priority 3: Right
+        // Check Right
         val right = GridPoint(anchor.column + 1, anchor.row)
-        if (state.board.cellAt(right.column, right.row)?.value == v) return setOf(right)
+        if (state.board.cellAt(right.column, right.row)?.value == v) impactPoints.add(right)
 
-        return emptySet()
+        // Check Below
+        val below = GridPoint(anchor.column, anchor.row + 1)
+        if (state.board.cellAt(below.column, below.row)?.value == v) impactPoints.add(below)
+
+        return impactPoints
     }
 
     override fun placePiece(state: GameState, column: Int): GameMoveResult {
@@ -145,9 +151,10 @@ internal class MergeShiftGameLogic(
         val nextMerge = findMergeForPoint(board, preview.landingAnchor) ?: findNextMergeGlobal(board)
 
         return if (nextMerge != null) {
-            val (from, to, value) = nextMerge
-            val nextValue = value * 2
-            var mergedBoard = board.clearPoints(setOf(from, to))
+            val (sources, to, value) = nextMerge
+            val numNeighbors = sources.size - 1
+            val nextValue = value * (1 shl numNeighbors)
+            var mergedBoard = board.clearPoints(sources)
             mergedBoard = mergedBoard.fill(listOf(to), getToneForValue(nextValue), value = nextValue)
             mergedBoard = mergedBoard.applyGravity()
 
@@ -173,7 +180,7 @@ internal class MergeShiftGameLogic(
             val (nextActive, nextQueue, nextId) = advanceQueue(state)
             
             // Growth logic
-            val targetConfig = getTargetConfig(board)
+            val targetConfig = getTargetConfig(board, state.config)
             val finalBoard = if (targetConfig.columns != board.columns || targetConfig.rows != board.rows) {
                 board.resize(targetConfig.columns, targetConfig.rows)
             } else {
@@ -221,9 +228,10 @@ internal class MergeShiftGameLogic(
         val nextMerge = findMergeForPoint(board, preview.landingAnchor) ?: findNextMergeGlobal(board)
 
         return if (nextMerge != null) {
-            val (from, to, value) = nextMerge
-            val nextValue = value * 2
-            var mergedBoard = board.clearPoints(setOf(from, to))
+            val (sources, to, value) = nextMerge
+            val numNeighbors = sources.size - 1
+            val nextValue = value * (1 shl numNeighbors)
+            var mergedBoard = board.clearPoints(sources)
             mergedBoard = mergedBoard.fill(listOf(to), getToneForValue(nextValue), value = nextValue)
             mergedBoard = mergedBoard.applyGravity()
 
@@ -249,7 +257,7 @@ internal class MergeShiftGameLogic(
             val (nextActive, nextQueue, nextId) = advanceQueue(state)
             
             // Growth logic
-            val targetConfig = getTargetConfig(board)
+            val targetConfig = getTargetConfig(board, state.config)
             val finalBoard = if (targetConfig.columns != board.columns || targetConfig.rows != board.rows) {
                 board.resize(targetConfig.columns, targetConfig.rows)
             } else {
@@ -296,9 +304,10 @@ internal class MergeShiftGameLogic(
             }
 
             if (nextMerge != null) {
-                val (from, to, value) = nextMerge
-                val nextValue = value * 2
-                var board = state.board.clearPoints(setOf(from, to))
+                val (sources, to, value) = nextMerge
+                val numNeighbors = sources.size - 1
+                val nextValue = value * (1 shl numNeighbors)
+                var board = state.board.clearPoints(sources)
                 board = board.fill(listOf(to), getToneForValue(nextValue), value = nextValue)
                 board = board.applyGravity()
 
@@ -317,7 +326,7 @@ internal class MergeShiftGameLogic(
                 val (nextActive, nextQueue, nextId) = advanceQueue(state)
                 
                 // Growth logic
-                val targetConfig = getTargetConfig(state.board)
+                val targetConfig = getTargetConfig(state.board, state.config)
                 val finalBoard = if (targetConfig.columns != state.board.columns || targetConfig.rows != state.board.rows) {
                     state.board.resize(targetConfig.columns, targetConfig.rows)
                 } else {
@@ -346,15 +355,15 @@ internal class MergeShiftGameLogic(
         return state
     }
 
-    private fun getTargetConfig(board: BoardMatrix): GameConfig {
+    private fun getTargetConfig(board: BoardMatrix, baseConfig: GameConfig): GameConfig {
         val maxValue = findMaxValue(board)
         return when {
-            maxValue >= 1024 -> GameConfig(columns = 5, rows = 7)
-            maxValue >= 512 -> GameConfig(columns = 5, rows = 6)
-            maxValue >= 256 -> GameConfig(columns = 4, rows = 6)
-            maxValue >= 128 -> GameConfig(columns = 4, rows = 5)
-            maxValue >= 64 -> GameConfig(columns = 3, rows = 6)
-            else -> GameConfig(columns = 3, rows = 5)
+            maxValue >= 32768 -> baseConfig.copy(columns = 5, rows = 7)
+            maxValue >= 8192 -> baseConfig.copy(columns = 5, rows = 6)
+            maxValue >= 2048 -> baseConfig.copy(columns = 4, rows = 6)
+            maxValue >= 512 -> baseConfig.copy(columns = 4, rows = 5)
+            maxValue >= 128 -> baseConfig.copy(columns = 3, rows = 6)
+            else -> baseConfig.copy(columns = 3, rows = 5)
         }
     }
 
@@ -369,47 +378,40 @@ internal class MergeShiftGameLogic(
         return max
     }
 
-    private fun findMergeForPoint(board: BoardMatrix, p: GridPoint): Triple<GridPoint, GridPoint, Int>? {
+    private fun findMergeForPoint(board: BoardMatrix, p: GridPoint): Triple<Set<GridPoint>, GridPoint, Int>? {
         val cell = board.cellAt(p.column, p.row) ?: return null
         val v = cell.value
+        val neighbors = mutableSetOf<GridPoint>()
 
-        // 1. Above (Older)
+        // Check Above
         val above = GridPoint(p.column, p.row - 1)
-        if (board.cellAt(above.column, above.row)?.value == v) {
-            return Triple(p, above, v)
-        }
-        // 2. Left (Older if already on board)
+        if (board.cellAt(above.column, above.row)?.value == v) neighbors.add(above)
+
+        // Check Left
         val left = GridPoint(p.column - 1, p.row)
-        if (board.cellAt(left.column, left.row)?.value == v) {
-            return Triple(p, left, v)
-        }
-        // 3. Right (Older if already on board)
+        if (board.cellAt(left.column, left.row)?.value == v) neighbors.add(left)
+
+        // Check Right
         val right = GridPoint(p.column + 1, p.row)
-        if (board.cellAt(right.column, right.row)?.value == v) {
-            return Triple(p, right, v)
-        }
-        return null
+        if (board.cellAt(right.column, right.row)?.value == v) neighbors.add(right)
+
+        // Check Below
+        val below = GridPoint(p.column, p.row + 1)
+        if (board.cellAt(below.column, below.row)?.value == v) neighbors.add(below)
+
+        if (neighbors.isEmpty()) return null
+
+        val target = p
+
+        return Triple(neighbors + p, target, v)
     }
 
-    private fun findNextMergeGlobal(board: BoardMatrix): Triple<GridPoint, GridPoint, Int>? {
-        // Priority 1: Vertical (Above) - Merge into the top one (older)
-        for (r in 1 until board.rows) {
-            for (c in 0 until board.columns) {
-                val cell = board.cellAt(c, r) ?: continue
-                val above = board.cellAt(c, r - 1)
-                if (above != null && above.value == cell.value) {
-                    return Triple(GridPoint(c, r), GridPoint(c, r - 1), cell.value)
-                }
-            }
-        }
-        // Priority 2: Horizontal (Left) - Merge into the left one (older)
+    private fun findNextMergeGlobal(board: BoardMatrix): Triple<Set<GridPoint>, GridPoint, Int>? {
         for (r in 0 until board.rows) {
-            for (c in 1 until board.columns) {
-                val cell = board.cellAt(c, r) ?: continue
-                val left = board.cellAt(c - 1, r)
-                if (left != null && left.value == cell.value) {
-                    return Triple(GridPoint(c, r), GridPoint(c - 1, r), cell.value)
-                }
+            for (c in 0 until board.columns) {
+                val p = GridPoint(c, r)
+                val merge = findMergeForPoint(board, p)
+                if (merge != null) return merge
             }
         }
         return null

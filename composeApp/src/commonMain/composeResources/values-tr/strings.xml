@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_title_stackshift">StackShift</string>
+    <string name="app_title_blockwise">BlockWise</string>
+    <string name="app_title_mergeshift">MergeShift</string>
     <string name="app_title_banner_stackshift_top">STACK</string>
     <string name="app_title_banner_stackshift_bottom">SHIFT</string>
     <string name="app_title_banner_blockwise_top">BLOCK</string>
     <string name="app_title_banner_blockwise_bottom">WISE</string>
+    <string name="app_title_banner_mergeshift_top">MERGE</string>
+    <string name="app_title_banner_mergeshift_bottom">SHIFT</string>
     <string name="settings_title">Ayarlar</string>
     <string name="settings_language">Dil</string>
     <string name="settings_sound">Ses</string>
@@ -274,6 +278,14 @@
     <string name="tutorial_ready_block_properties_hint">Serbest yerleştirme ve eşzamanlı satır/sütun temizliğini hatırlamak istediğinde rehberi yeniden aç.</string>
     <string name="tutorial_ready_tutorial_hint">Serbest yerleştirme ve eşzamanlı satır/sütun temizliğini hatırlamak istediğinde rehberi yeniden aç.</string>
     <string name="tutorial_ready_settings_hint">Bir sonraki turdan önce dil, tema, renkler ve blok stilini değiştirmek için Ayarlar ekranını aç.</string>
+    <string name="tutorial_mergeshift_intro_title">Aynı değerdeki blokları birleştirmek için parçaları fırlat</string>
+    <string name="tutorial_mergeshift_intro_body">MergeShift\'te parçalar fırlatma yuvasından fırlatılır. Bir blok aynı değere sahip başka bir bloğun üzerine düştüğünde, daha yüksek bir değerde birleşirler. Alan açmak ve daha yüksek skorlara ulaşmak için birleştirmeye devam et.</string>
+    <string name="tutorial_mergeshift_systems_title">Taşmayı önlemek için birleşmelerini planla</string>
+    <string name="tutorial_mergeshift_systems_body">Fırlattığın her parça sütun yüksekliğini artırır. Eğer herhangi bir sütun tepeye ulaşırsa oyun biter. Parçanın nereye düşeceğini ve hangi bloklarla birleşebileceğini görmek için ön izlemeyi kullan.</string>
+    <string name="tutorial_mergeshift_specials_title">Büyük kombolar için çoklu birleşmeleri birleştir</string>
+    <string name="tutorial_mergeshift_specials_body">Tek bir fırlatma zincirleme birleşme reaksiyonu tetikleyebilir. Bu kombolar daha fazla puan kazandırır ve tahtada daha fazla alan açarak oyunda daha uzun süre kalmana yardımcı olur.</string>
+    <string name="tutorial_mergeshift_ready_title">MergeShift için hazırsın</string>
+    <string name="tutorial_mergeshift_ready_body">Sütunlarını alçakta tutmaya ve yüksek değerli birleşmeler ayarlamaya odaklan. En yüksek sayılara ulaşmada bol şans!</string>
     <string name="interactive_onboarding_step_counter">Adım %1$d / %2$d</string>
     <string name="interactive_onboarding_drag_title">Havuzdaki parçayı tahtaya sürükle</string>
     <string name="interactive_onboarding_drag_body">Üç şekilden birine dokun, tahtanın üstüne taşı ve vurgulanan hücrelerle hizala.</string>
@@ -292,4 +304,19 @@
     <string name="interactive_onboarding_ghost_body">Bir şekli bırakmadan önce diğer iki parçaya da bak. İyi skorlar yalnızca bu hamleden değil, tüm parça havuzuna yer bırakmaktan gelir.</string>
     <string name="interactive_onboarding_heavy_title">İki yönü aynı anda temizle</string>
     <string name="interactive_onboarding_heavy_body">Bazı yerleşimler aynı anda bir satır ve bir sütunu bitirir. Daha büyük bir çift temizlik için yönlendirilen hedefi kullan.</string>
+
+    <string name="interactive_onboarding_mergeshift_launch_title">İlk parçanı fırlat</string>
+    <string name="interactive_onboarding_mergeshift_launch_body">Nişan almak için parçayı tahtanın altında yatay olarak sürükle, ardından bir sütuna fırlatmak için bırak.</string>
+    <string name="interactive_onboarding_mergeshift_merge_vertical_title">Aynı değerleri dikey birleştir</string>
+    <string name="interactive_onboarding_mergeshift_merge_vertical_body">Aynı değere sahip bir bloğun olduğu sütuna parça fırlat. Daha yüksek bir sayıya dönüşerek birleşecekler!</string>
+    <string name="interactive_onboarding_mergeshift_merge_horizontal_title">Aynı değerleri yatay birleştir</string>
+    <string name="interactive_onboarding_mergeshift_merge_horizontal_body">Bloklar ayrıca solundaki veya sağındaki komşularıyla da birleşebilir. Yatay birleşmeyi tetiklemek için vurgulanan noktayı hedefle.</string>
+    <string name="interactive_onboarding_mergeshift_merge_multi_title">Çoklu birleşmeleri tetikle</string>
+    <string name="interactive_onboarding_mergeshift_merge_multi_body">Tek bir yerleşim birden fazla yönde (üst, sol, sağ) birleşme tetikleyebilir. Daha fazla alan temizlemek ve büyük puanlar almak için bunu kullan!</string>
+
+    <string name="selection_title">Oyununu Seç</string>
+    <string name="selection_stackshift_desc">Satır ve sütunları temizlemek için parçaları alttan fırlatın.</string>
+    <string name="selection_blockwise_desc">Parçaları tahtanın herhangi bir yerine sürükleyip bırakın.</string>
+    <string name="selection_mergeshift_desc">Daha yüksek puanlara ulaşmak için aynı değerdeki parçaları birleştirin.</string>
+    <string name="selection_switch_game">Oyunu Değiştir</string>
 </resources>

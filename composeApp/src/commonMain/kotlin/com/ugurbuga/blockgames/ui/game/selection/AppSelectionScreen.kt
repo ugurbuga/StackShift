@@ -27,6 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.app_title_blockwise
@@ -36,12 +37,15 @@ import blockgames.composeapp.generated.resources.selection_blockwise_desc
 import blockgames.composeapp.generated.resources.selection_mergeshift_desc
 import blockgames.composeapp.generated.resources.selection_stackshift_desc
 import blockgames.composeapp.generated.resources.selection_title
+import com.ugurbuga.blockgames.BlockGamesTheme
 import com.ugurbuga.blockgames.game.model.CellTone
 import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.paletteColor
 import com.ugurbuga.blockgames.localization.appStringResource
+import com.ugurbuga.blockgames.settings.AppSettings
 import com.ugurbuga.blockgames.telemetry.AppTelemetry
 import com.ugurbuga.blockgames.telemetry.LogScreen
+import com.ugurbuga.blockgames.telemetry.NoOpAppTelemetry
 import com.ugurbuga.blockgames.telemetry.TelemetryScreenNames
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
 import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
@@ -174,5 +178,16 @@ private fun SelectionItem(
                 )
             }
         }
+    }
+}
+
+@Preview
+@Composable
+fun AppSelectionScreenPreview() {
+    BlockGamesTheme(settings = AppSettings()) {
+        AppSelectionScreen(
+            onGameplayStyleSelected = {},
+            telemetry = NoOpAppTelemetry
+        )
     }
 }
