@@ -1,6 +1,7 @@
 package com.ugurbuga.blockgames.game.model
 
 import androidx.compose.runtime.Immutable
+import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
 
 @Immutable
 enum class ChallengeTaskType(
@@ -45,7 +46,8 @@ enum class ChallengeTaskType(
     );
 
     companion object {
-        fun forStyle(gameplayStyle: GameplayStyle): List<ChallengeTaskType> = entries.filter { gameplayStyle in it.supportedStyles }
+        fun forStyle(gameplayStyle: GameplayStyle = GlobalPlatformConfig.gameplayStyle): List<ChallengeTaskType> =
+            entries.filter { gameplayStyle in it.supportedStyles }
 
         fun fromStableId(stableId: String): ChallengeTaskType? = entries.firstOrNull { it.stableId == stableId }
 
@@ -68,6 +70,11 @@ enum class ChallengeTaskType(
                 PlacePieces,
                 ClearBothDirections,
             ).getOrNull(ordinal)
+
+            GameplayStyle.MergeShift -> listOf(
+                ReachScore,
+                TriggerSpecial,
+            ).getOrNull(ordinal)
         }
     }
 }
@@ -86,6 +93,7 @@ data class DailyChallenge(
     val year: Int,
     val month: Int,
     val day: Int,
+    val style: GameplayStyle,
     val tasks: List<ChallengeTask>,
 ) {
     val isCompleted: Boolean get() = tasks.all { it.isCompleted }

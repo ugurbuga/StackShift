@@ -4,6 +4,7 @@ import com.ugurbuga.blockgames.game.model.ChallengeTask
 import com.ugurbuga.blockgames.game.model.ChallengeTaskType
 import com.ugurbuga.blockgames.game.model.DailyChallenge
 import com.ugurbuga.blockgames.game.model.GameplayStyle
+import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
 import kotlin.random.Random
 
 object ChallengeGenerator {
@@ -11,8 +12,8 @@ object ChallengeGenerator {
         year: Int,
         month: Int,
         day: Int,
-        gameplayStyle: GameplayStyle,
     ): DailyChallenge {
+        val gameplayStyle = GlobalPlatformConfig.gameplayStyle
         val seed = (year * 10000 + month * 100 + day).toLong()
         val random = Random(seed)
 
@@ -27,6 +28,7 @@ object ChallengeGenerator {
                 ChallengeTaskType.ReachScore -> when (gameplayStyle) {
                     GameplayStyle.StackShift -> (random.nextInt(5, 20) * 1000)
                     GameplayStyle.BlockWise -> random.nextInt(2, 8) * 1000
+                    GameplayStyle.MergeShift -> (random.nextInt(5, 15) * 1000)
                 }
                 ChallengeTaskType.TriggerSpecial -> random.nextInt(2, 6)
                 ChallengeTaskType.PerfectPlacement -> random.nextInt(10, 20)
@@ -39,6 +41,6 @@ object ChallengeGenerator {
             tasks.add(ChallengeTask(type, target))
         }
 
-        return DailyChallenge(year, month, day, tasks)
+        return DailyChallenge(year, month, day, gameplayStyle, tasks)
     }
 }

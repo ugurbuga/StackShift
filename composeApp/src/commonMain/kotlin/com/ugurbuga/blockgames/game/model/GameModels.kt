@@ -244,9 +244,10 @@ data class GameConfig(
     val linesPerLevel: Int = 6,
 ) {
     companion object {
-        fun default(gameplayStyle: GameplayStyle): GameConfig = when (gameplayStyle) {
+        fun default(gameplayStyle: GameplayStyle = GlobalPlatformConfig.gameplayStyle): GameConfig = when (gameplayStyle) {
             GameplayStyle.BlockWise -> GameConfig(columns = 8, rows = 10)
             GameplayStyle.StackShift -> GameConfig(columns = 10, rows = 12)
+            GameplayStyle.MergeShift -> GameConfig(columns = 3, rows = 5)
         }
     }
 }
@@ -259,6 +260,7 @@ enum class GameMode {
 enum class GameplayStyle {
     StackShift,
     BlockWise,
+    MergeShift,
 }
 
 enum class GameStatus {
@@ -387,6 +389,13 @@ enum class PieceKind(
             GridPoint(1, 0),
         ),
     ),
+    Single(
+        unlockLevel = 1,
+        tone = CellTone.Cyan,
+        template = listOf(
+            GridPoint(0, 0),
+        ),
+    ),
     TriL(
         unlockLevel = 1,
         tone = CellTone.Gold,
@@ -488,6 +497,7 @@ data class Piece(
     val width: Int,
     val height: Int,
     val special: SpecialBlockType = SpecialBlockType.None,
+    val value: Int = 0,
 ) {
     fun cellsAt(anchor: GridPoint): List<GridPoint> = cells.map(anchor::plus)
 }
@@ -538,6 +548,7 @@ data class FloatingFeedback(
 data class BoardCell(
     val tone: CellTone,
     val special: SpecialBlockType,
+    val value: Int = 0,
 )
 
 class BoardMatrix private constructor(
@@ -602,6 +613,14 @@ class BoardMatrix private constructor(
         return null
     }
 
+    fun bottomOccupiedRow(column: Int): Int? {
+        if (column !in 0 until columns) return null
+        for (row in (rows - 1) downTo 0) {
+            if (cells[indexOf(column, row)] != EMPTY_CELL) return row
+        }
+        return null
+    }
+
     fun filledCellCount(column: Int): Int {
         if (column !in 0 until columns) return 0
         var count = 0
@@ -614,6 +633,19 @@ class BoardMatrix private constructor(
     fun columnHeight(column: Int): Int = filledCellCount(column)
 
     fun isColumnEmpty(column: Int): Boolean = topOccupiedRow(column) == null
+
+    fun resize(newColumns: Int, newRows: Int): BoardMatrix {
+        if (newColumns == columns && newRows == rows) return this
+        val next = IntArray(newColumns * newRows) { EMPTY_CELL }
+        for (r in 0 until minOf(rows, newRows)) {
+            for (c in 0 until minOf(columns, newColumns)) {
+                val oldIndex = r * columns + c
+                val newIndex = r * newColumns + c
+                next[newIndex] = cells[oldIndex]
+            }
+        }
+        return BoardMatrix(newColumns, newRows, next)
+    }
 
     val occupiedCount: Int by lazy {
         var count = 0
@@ -670,9 +702,10 @@ class BoardMatrix private constructor(
         points: List<GridPoint>,
         tone: CellTone,
         special: SpecialBlockType = SpecialBlockType.None,
+        value: Int = 0,
     ): BoardMatrix {
         val next = cells.copyOf()
-        val encoded = encodeCell(tone = tone, special = special)
+        val encoded = encodeCell(tone = tone, special = special, value = value)
         points.forEach { point ->
             next[indexOf(point.column, point.row)] = encoded
         }
@@ -749,6 +782,21 @@ class BoardMatrix private constructor(
         return BoardMatrix(columns = columns, rows = rows, cells = next)
     }
 
+    fun applyGravity(): BoardMatrix {
+        val next = IntArray(cells.size) { EMPTY_CELL }
+        for (column in 0 until columns) {
+            var targetRow = 0
+            for (sourceRow in 0 until rows) {
+                val cellValue = cells[indexOf(column, sourceRow)]
+                if (cellValue != EMPTY_CELL) {
+                    next[indexOf(column, targetRow)] = cellValue
+                    targetRow++
+                }
+            }
+        }
+        return BoardMatrix(columns = columns, rows = rows, cells = next)
+    }
+
     private fun indexOf(column: Int, row: Int): Int = row * columns + column
 
     override fun equals(other: Any?): Boolean {
@@ -767,7 +815,9 @@ class BoardMatrix private constructor(
     companion object {
         private const val EMPTY_CELL = -1
         private const val TONE_BITS = 8
+        private const val SPECIAL_BITS = 8
         private const val SPECIAL_SHIFT = TONE_BITS
+        private const val VALUE_SHIFT = TONE_BITS + SPECIAL_BITS
 
         fun empty(columns: Int, rows: Int): BoardMatrix =
             BoardMatrix(
@@ -779,11 +829,13 @@ class BoardMatrix private constructor(
         private fun encodeCell(
             tone: CellTone,
             special: SpecialBlockType,
-        ): Int = tone.ordinal or (special.ordinal shl SPECIAL_SHIFT)
+            value: Int,
+        ): Int = tone.ordinal or (special.ordinal shl SPECIAL_SHIFT) or (value shl VALUE_SHIFT)
 
         private fun decodeCell(encoded: Int): BoardCell = BoardCell(
             tone = CellTone.entries[encoded and 0xFF],
             special = SpecialBlockType.entries[(encoded shr SPECIAL_SHIFT) and 0xFF],
+            value = (encoded shr VALUE_SHIFT),
         )
     }
 }
@@ -825,6 +877,7 @@ data class GameState(
     val status: GameStatus = GameStatus.Running,
     val recentlyClearedRows: Set<Int> = emptySet(),
     val recentlyClearedColumns: Set<Int> = emptySet(),
+    val recentlyMergedPoints: Set<GridPoint> = emptySet(),
     val lastResolvedLines: Int = 0,
     val lastChainDepth: Int = 0,
     val specialChainCount: Int = 0,
@@ -875,6 +928,14 @@ fun GridPoint.toTopLeft(
     x = boardRect.left + (column * cellSizePx),
     y = boardRect.top + (row * cellSizePx),
 )
+
+fun formatMergeValue(value: Int): String {
+    return when {
+        value >= 1024 * 1024 -> "${value / (1024 * 1024)}M"
+        value >= 1024 -> "${value / 1024}K"
+        else -> value.toString()
+    }
+}
 
 fun CellTone.paletteColor(palette: BlockColorPalette): Color = when (palette) {
     BlockColorPalette.Classic -> when (this) {

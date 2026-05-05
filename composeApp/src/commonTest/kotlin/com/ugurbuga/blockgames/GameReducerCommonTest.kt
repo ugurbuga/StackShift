@@ -11,6 +11,7 @@ import com.ugurbuga.blockgames.game.model.LaunchBarState
 import com.ugurbuga.blockgames.game.model.Piece
 import com.ugurbuga.blockgames.game.model.PieceKind
 import com.ugurbuga.blockgames.game.model.SpecialBlockType
+import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
 import com.ugurbuga.blockgames.presentation.game.GameAction
 import com.ugurbuga.blockgames.presentation.game.GameEffect
 import com.ugurbuga.blockgames.presentation.game.GameFeedbackMapper
@@ -83,58 +84,70 @@ class GameReducerCommonTest {
 
     @Test
     fun reducer_placePiece_startsSoftLockTimerForStackShift() {
-        val state = logic.newGame(
-            gameplayStyle = GameplayStyle.StackShift,
-            config = GameConfig(columns = 6, rows = 8)
-        )
-        val preview = logic.previewPlacement(state = state, column = state.config.columns / 2)
+        withGameplayStyle(GameplayStyle.StackShift) {
+            val state = logic.newGame(config = GameConfig(columns = 6, rows = 8))
+            val preview = logic.previewPlacement(state = state, column = state.config.columns / 2)
 
-        assertNotNull(preview)
+            assertNotNull(preview)
 
-        val result = reducer.reduce(
-            state = state,
-            action = GameAction.PlacePiece(
-                pieceId = state.activePiece?.id ?: -1L,
-                origin = GridPoint(preview.selectedColumn, 0),
-            ),
-        )
+            val result = reducer.reduce(
+                state = state,
+                action = GameAction.PlacePiece(
+                    pieceId = state.activePiece?.id ?: -1L,
+                    origin = GridPoint(preview.selectedColumn, 0),
+                ),
+            )
 
-        assertNotNull(result.state.softLock)
-        assertTrue(GameEvent.SoftLockStarted in result.events || GameEvent.SoftLockAdjusted in result.events)
-        assertTrue(result.effects.any { it is GameEffect.CancelSoftLockTimer })
-        assertTrue(result.effects.any { it is GameEffect.StartSoftLockTimer })
+            assertNotNull(result.state.softLock)
+            assertTrue(GameEvent.SoftLockStarted in result.events || GameEvent.SoftLockAdjusted in result.events)
+            assertTrue(result.effects.any { it is GameEffect.CancelSoftLockTimer })
+            assertTrue(result.effects.any { it is GameEffect.StartSoftLockTimer })
+        }
     }
 
     @Test
     fun reducer_commitSoftLock_placesStackShiftPieceAndAdvancesQueue() {
-        val state = logic.newGame(
-            gameplayStyle = GameplayStyle.StackShift,
-            config = GameConfig(columns = 6, rows = 8)
-        )
-        val preview = logic.previewPlacement(state = state, column = state.config.columns / 2)
+        withGameplayStyle(GameplayStyle.StackShift) {
+            val state = logic.newGame(config = GameConfig(columns = 6, rows = 8))
+            val preview = logic.previewPlacement(state = state, column = state.config.columns / 2)
 
-        assertNotNull(preview)
+            assertNotNull(preview)
 
-        val placed = reducer.reduce(
-            state = state,
-            action = GameAction.PlacePiece(
-                pieceId = state.activePiece?.id ?: -1L,
-                origin = GridPoint(preview.selectedColumn, 0),
-            ),
-        )
-        val softLockedPieceId = placed.state.activePiece?.id
+            val placed = reducer.reduce(
+                state = state,
+                action = GameAction.PlacePiece(
+                    pieceId = state.activePiece?.id ?: -1L,
+                    origin = GridPoint(preview.selectedColumn, 0),
+                ),
+            )
+            val softLockedPieceId = placed.state.activePiece?.id
 
-        val committed = reducer.reduce(
-            state = placed.state,
-            action = GameAction.CommitSoftLock,
-        )
+            val committed = reducer.reduce(
+                state = placed.state,
+                action = GameAction.CommitSoftLock,
+            )
 
-        assertTrue(GameEvent.PlacementAccepted in committed.events)
-        assertEquals(null, committed.state.softLock)
-        assertTrue(committed.effects.any { it is GameEffect.CancelSoftLockTimer })
-        assertTrue(committed.state.board.occupiedCount > state.board.occupiedCount)
-        assertNotNull(committed.state.activePiece)
-        assertTrue(committed.state.activePiece.id != softLockedPieceId)
+            assertTrue(GameEvent.PlacementAccepted in committed.events)
+            assertEquals(null, committed.state.softLock)
+            assertTrue(committed.effects.any { it is GameEffect.CancelSoftLockTimer })
+            assertTrue(committed.state.board.occupiedCount > state.board.occupiedCount)
+            assertNotNull(committed.state.activePiece)
+            assertTrue(committed.state.activePiece.id != softLockedPieceId)
+        }
+    }
+
+    @Test
+    fun reducer_restart_usesCurrentGlobalGameplayStyle() {
+        withGameplayStyle(GameplayStyle.BlockWise) {
+            val result = reducer.reduce(
+                state = testState(),
+                action = GameAction.Restart(config = GameConfig.default()),
+            )
+
+            assertEquals(GameplayStyle.BlockWise, result.state.gameplayStyle)
+            assertEquals(GameConfig.default(), result.state.config)
+            assertTrue(GameEvent.Restarted in result.events)
+        }
     }
 
     @Test
@@ -168,15 +181,30 @@ class GameReducerCommonTest {
 
     private fun testState(
         activePiece: Piece = dominoPiece(id = 1),
-    ) = logic.newGame(config = GameConfig(columns = 4, rows = 4)).copy(
-        board = BoardMatrix.empty(columns = 4, rows = 4).fill(
-            points = listOf(GridPoint(0, 0), GridPoint(1, 0)),
-            tone = CellTone.Blue,
-        ),
-        activePiece = activePiece,
-        nextQueue = listOf(dominoPiece(id = 2), dominoPiece(id = 3), dominoPiece(id = 4)),
-        launchBar = LaunchBarState(),
-    )
+    ) = withGameplayStyle(GameplayStyle.BlockWise) {
+        logic.newGame(config = GameConfig(columns = 4, rows = 4)).copy(
+            board = BoardMatrix.empty(columns = 4, rows = 4).fill(
+                points = listOf(GridPoint(0, 0), GridPoint(1, 0)),
+                tone = CellTone.Blue,
+            ),
+            activePiece = activePiece,
+            nextQueue = listOf(dominoPiece(id = 2), dominoPiece(id = 3), dominoPiece(id = 4)),
+            launchBar = LaunchBarState(),
+        )
+    }
+
+    private inline fun <T> withGameplayStyle(
+        gameplayStyle: GameplayStyle,
+        block: () -> T,
+    ): T {
+        val previousGameplayStyle = GlobalPlatformConfig.gameplayStyle
+        GlobalPlatformConfig.gameplayStyle = gameplayStyle
+        return try {
+            block()
+        } finally {
+            GlobalPlatformConfig.gameplayStyle = previousGameplayStyle
+        }
+    }
 
     private fun dominoPiece(id: Long): Piece = Piece(
         id = id,

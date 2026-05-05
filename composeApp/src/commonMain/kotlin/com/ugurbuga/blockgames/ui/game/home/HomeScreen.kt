@@ -1,14 +1,5 @@
 package com.ugurbuga.blockgames.ui.game.home
 
-import com.ugurbuga.blockgames.ui.game.rememberBlockStylePulse
-import com.ugurbuga.blockgames.ui.game.specialBlockIconTint
-import com.ugurbuga.blockgames.ui.game.BlockCellPreview
-import com.ugurbuga.blockgames.ui.game.boardCellCornerRadiusDp
-import com.ugurbuga.blockgames.ui.game.boardCellInsetDp
-import com.ugurbuga.blockgames.ui.game.blockStyleIconTint
-import com.ugurbuga.blockgames.ui.game.boardCellCornerRadiusPx
-import com.ugurbuga.blockgames.ui.game.drawCellBody
-
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -73,6 +64,8 @@ import androidx.compose.ui.unit.sp
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.app_title_banner_blockwise_bottom
 import blockgames.composeapp.generated.resources.app_title_banner_blockwise_top
+import blockgames.composeapp.generated.resources.app_title_banner_mergeshift_bottom
+import blockgames.composeapp.generated.resources.app_title_banner_mergeshift_top
 import blockgames.composeapp.generated.resources.app_title_banner_stackshift_bottom
 import blockgames.composeapp.generated.resources.app_title_banner_stackshift_top
 import blockgames.composeapp.generated.resources.high_score
@@ -90,6 +83,7 @@ import com.ugurbuga.blockgames.game.model.CellTone
 import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.localization.appNameStringResource
 import com.ugurbuga.blockgames.localization.appStringResource
+import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
 import com.ugurbuga.blockgames.platform.NotificationManager
 import com.ugurbuga.blockgames.platform.isDebugBuild
 import com.ugurbuga.blockgames.platform.rememberNotificationManager
@@ -121,7 +115,6 @@ fun HomeScreen(
     settings: AppSettings,
     classicHighScore: Int,
     timeAttackHighScore: Int,
-    gameplayStyle: GameplayStyle,
     telemetry: AppTelemetry,
     onPlay: () -> Unit,
     onPlayTimeAttack: () -> Unit,
@@ -182,7 +175,6 @@ fun HomeScreen(
                 )
                 HomeTitleBanner(
                     settings = settings,
-                    gameplayStyle = gameplayStyle,
                     pulse = stylePulse,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -300,10 +292,10 @@ fun HomeScreen(
 @Composable
 private fun HomeTitleBanner(
     settings: AppSettings,
-    gameplayStyle: GameplayStyle,
     pulse: Float,
     modifier: Modifier = Modifier,
 ) {
+    val gameplayStyle = GlobalPlatformConfig.gameplayStyle
     val uiColors = BlockGamesThemeTokens.uiColors
     val bannerMotionTransition = rememberInfiniteTransition(label = "homeTitleBannerMotion")
     val sequenceClock by bannerMotionTransition.animateFloat(
@@ -348,9 +340,9 @@ private fun HomeTitleBanner(
     val shiftLaunch = segmentProgress(sequencePhase, 0.88f, 0.96f)
     val wiseWordTravel = segmentProgress(sequencePhase, 0.82f, 0.96f)
 
-    val topRow = rememberHomeTitleRow(word = homeTitleBannerTopWord(gameplayStyle), startColumn = 0)
+    val topRow = rememberHomeTitleRow(word = homeTitleBannerTopWord(), startColumn = 0)
     val bottomRow = rememberHomeTitleRow(
-        word = homeTitleBannerBottomWord(gameplayStyle),
+        word = homeTitleBannerBottomWord(),
         startColumn = if (isBlockWiseBanner) 2 else 1,
     )
     val animatedTopWordCells = if (isBlockWiseBanner) topRow else topRow.filterNotNull()
@@ -772,20 +764,30 @@ private fun HomeTitleBanner(
 }
 
 @Composable
-private fun homeTitleBannerTopWord(gameplayStyle: GameplayStyle): String = stringResource(
-    when (gameplayStyle) {
-        GameplayStyle.StackShift -> Res.string.app_title_banner_stackshift_top
-        GameplayStyle.BlockWise -> Res.string.app_title_banner_blockwise_top
-    }
-)
+private fun homeTitleBannerTopWord(): String {
+    val gameplayStyle = GlobalPlatformConfig.gameplayStyle
+    return stringResource(
+        when (gameplayStyle) {
+            GameplayStyle.StackShift -> Res.string.app_title_banner_stackshift_top
+            GameplayStyle.BlockWise -> Res.string.app_title_banner_blockwise_top
+            GameplayStyle.MergeShift -> Res.string.app_title_banner_mergeshift_top
+            else -> Res.string.app_title_banner_stackshift_top
+        }
+    )
+}
 
 @Composable
-private fun homeTitleBannerBottomWord(gameplayStyle: GameplayStyle): String = stringResource(
-    when (gameplayStyle) {
-        GameplayStyle.StackShift -> Res.string.app_title_banner_stackshift_bottom
-        GameplayStyle.BlockWise -> Res.string.app_title_banner_blockwise_bottom
-    }
-)
+private fun homeTitleBannerBottomWord(): String {
+    val gameplayStyle = GlobalPlatformConfig.gameplayStyle
+    return stringResource(
+        when (gameplayStyle) {
+            GameplayStyle.StackShift -> Res.string.app_title_banner_stackshift_bottom
+            GameplayStyle.BlockWise -> Res.string.app_title_banner_blockwise_bottom
+            GameplayStyle.MergeShift -> Res.string.app_title_banner_mergeshift_bottom
+            else -> Res.string.app_title_banner_stackshift_bottom
+        }
+    )
+}
 
 @Composable
 private fun HomeTitleDemoHand(
@@ -1272,7 +1274,6 @@ fun HomeScreenLightPreview() {
             settings = settings,
             classicHighScore = 1250,
             timeAttackHighScore = 860,
-            gameplayStyle = GameplayStyle.StackShift,
             telemetry = NoOpAppTelemetry,
             onPlay = {},
             onPlayTimeAttack = {},
@@ -1298,7 +1299,6 @@ fun HomeScreenDarkPreview() {
             settings = settings,
             classicHighScore = 1250,
             timeAttackHighScore = 860,
-            gameplayStyle = GameplayStyle.StackShift,
             telemetry = NoOpAppTelemetry,
             onPlay = {},
             onPlayTimeAttack = {},

@@ -1,13 +1,12 @@
 package com.ugurbuga.blockgames.settings
 
 import androidx.compose.runtime.Immutable
-import com.ugurbuga.blockgames.game.logic.GameLogic
+import com.ugurbuga.blockgames.game.logic.BlockWiseGameLogic
 import com.ugurbuga.blockgames.game.model.BoardMatrix
 import com.ugurbuga.blockgames.game.model.CellTone
 import com.ugurbuga.blockgames.game.model.GameConfig
 import com.ugurbuga.blockgames.game.model.GameState
 import com.ugurbuga.blockgames.game.model.GameTextKey
-import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.GridPoint
 import com.ugurbuga.blockgames.game.model.Piece
 import com.ugurbuga.blockgames.game.model.PieceKind
@@ -32,7 +31,7 @@ enum class BlockWiseOnboardingStage : OnboardingStage {
 }
 
 object BlockWiseOnboardingStateFactory {
-    private val guideLogic = GameLogic.create()
+    private val guideLogic = BlockWiseGameLogic()
     private val config = GameConfig(
         columns = 8,
         rows = 10,
@@ -54,7 +53,7 @@ object BlockWiseOnboardingStateFactory {
         scene(stages.first()).gameState
 
     fun cleanGameState(): GameState =
-        guideLogic.newGame(gameplayStyle = GameplayStyle.BlockWise, config = config)
+        guideLogic.newGame(config = config)
 
     fun scene(stage: BlockWiseOnboardingStage): BlockWiseOnboardingScene = sceneCache.getValue(stage)
 
@@ -142,7 +141,7 @@ object BlockWiseOnboardingStateFactory {
         board: BoardMatrix,
         trayPieces: List<Piece>,
     ): GameState {
-        val baseState = guideLogic.newGame(gameplayStyle = GameplayStyle.BlockWise, config = config)
+        val baseState = guideLogic.newGame(config = config)
         return baseState.copy(
             board = board,
             activePiece = trayPieces.firstOrNull(),

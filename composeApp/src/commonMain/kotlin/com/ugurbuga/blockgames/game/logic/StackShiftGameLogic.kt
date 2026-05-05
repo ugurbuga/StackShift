@@ -42,7 +42,6 @@ internal class StackShiftGameLogic(
     }
 
     override fun newGame(
-        gameplayStyle: GameplayStyle,
         config: GameConfig,
         challenge: DailyChallenge?,
         mode: GameMode,
@@ -60,7 +59,7 @@ internal class StackShiftGameLogic(
         val state = GameState(
             config = config,
             gameMode = mode,
-            gameplayStyle = gameplayStyle,
+            gameplayStyle = GameplayStyle.StackShift,
             board = board,
             activePiece = activePiece,
             nextQueue = nextQueue,

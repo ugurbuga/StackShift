@@ -6,7 +6,6 @@ import com.ugurbuga.blockgames.game.model.DailyChallenge
 import com.ugurbuga.blockgames.game.model.GameConfig
 import com.ugurbuga.blockgames.game.model.GameMode
 import com.ugurbuga.blockgames.game.model.GameState
-import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.GridPoint
 import com.ugurbuga.blockgames.game.model.PlacementPreview
 import com.ugurbuga.blockgames.game.model.SpecialBlockType
@@ -89,9 +88,8 @@ class GameViewModel(
         config: GameConfig = uiState.value.gameState.config,
         challenge: DailyChallenge? = uiState.value.gameState.activeChallenge,
         mode: GameMode = uiState.value.gameState.gameMode,
-        gameplayStyle: GameplayStyle = uiState.value.gameState.gameplayStyle,
     ): InteractionFeedback {
-        return dispatch(GameIntent.Restart(config, challenge, mode, gameplayStyle))
+        return dispatch(GameIntent.Restart(config, challenge, mode))
     }
 
     fun replaceState(state: GameState) {

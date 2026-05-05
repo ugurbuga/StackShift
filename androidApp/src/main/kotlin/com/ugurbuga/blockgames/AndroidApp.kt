@@ -13,7 +13,6 @@ fun AndroidApp() {
     GlobalPlatformConfig.gameplayStyle = gameplayStyle
     BlockGamesAppHost(
         bootstrapLogSource = "android_app_${BuildConfig.APP_VARIANT_NAME}",
-        gameplayStyle = gameplayStyle,
     ) { settings, canNavigateBack, onRequestBack ->
         val darkTheme = isBlockGamesDarkTheme(settings)
         val themeSpec = blockGamesThemeSpec(
@@ -31,6 +30,7 @@ fun AndroidApp() {
 
 private fun resolveGameplayStyle(): GameplayStyle = when (BuildConfig.GAMEPLAY_STYLE) {
     GameplayStyle.BlockWise.name -> GameplayStyle.BlockWise
+    GameplayStyle.MergeShift.name -> GameplayStyle.MergeShift
     else -> GameplayStyle.StackShift
 }
 

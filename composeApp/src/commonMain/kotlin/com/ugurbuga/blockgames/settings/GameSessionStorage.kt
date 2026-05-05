@@ -22,6 +22,7 @@ import com.ugurbuga.blockgames.game.model.PlacementPreview
 import com.ugurbuga.blockgames.game.model.PressureLevel
 import com.ugurbuga.blockgames.game.model.SoftLockState
 import com.ugurbuga.blockgames.game.model.SpecialBlockType
+import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
 
 sealed class GameSessionSlot {
     abstract val key: String
@@ -140,7 +141,7 @@ internal object GameSessionCodec {
         } else {
             ActivityState(gameplayStyle = inferredGameplayStyle)
         }
-        val activeChallenge = if (version >= 3) decodeChallenge(parts[19], activity.gameplayStyle) else null
+        val activeChallenge = if (version >= 3) decodeChallenge(parts[19]) else null
 
         return GameState(
             config = config,
@@ -215,7 +216,7 @@ internal object GameSessionCodec {
                 val cell = board.cellAt(column, row)
                 add(
                     cell?.let {
-                        "${it.tone.ordinal}$CellSeparator${it.special.ordinal}"
+                        "${it.tone.ordinal}$CellSeparator${it.special.ordinal}$CellSeparator${it.value}"
                     } ?: EmptyToken,
                 )
             }
@@ -237,10 +238,11 @@ internal object GameSessionCodec {
                 val token = parts[index++]
                 if (token == EmptyToken) continue
                 val cellParts = token.split(CellSeparator)
-                if (cellParts.size != 2) return null
+                if (cellParts.size < 2) return null
                 val tone = CellTone.entries.getOrNull(cellParts[0].toIntOrNull() ?: return null) ?: return null
                 val special = SpecialBlockType.entries.getOrNull(cellParts[1].toIntOrNull() ?: return null) ?: return null
-                board = board.fill(listOf(GridPoint(column = column, row = row)), tone = tone, special = special)
+                val cellValue = cellParts.getOrNull(2)?.toIntOrNull() ?: 0
+                board = board.fill(listOf(GridPoint(column = column, row = row)), tone = tone, special = special, value = cellValue)
             }
         }
         return board
@@ -257,6 +259,7 @@ internal object GameSessionCodec {
             piece.tone.ordinal.toString(),
             piece.special.ordinal.toString(),
             cells,
+            piece.value.toString(),
         ).joinToString(separator = FieldSeparator.toString())
     }
 
@@ -275,12 +278,13 @@ internal object GameSessionCodec {
 
     private fun decodePiece(value: String): Piece? {
         val parts = value.split(FieldSeparator)
-        if (parts.size != 5) return null
+        if (parts.size < 5) return null
         val id = parts[0].toLongOrNull() ?: return null
         val kind = PieceKind.entries.getOrNull(parts[1].toIntOrNull() ?: return null) ?: return null
         val tone = CellTone.entries.getOrNull(parts[2].toIntOrNull() ?: return null) ?: return null
         val special = SpecialBlockType.entries.getOrNull(parts[3].toIntOrNull() ?: return null) ?: return null
         val cells = decodePoints(parts[4]) ?: return null
+        val pieceValue = parts.getOrNull(5)?.toIntOrNull() ?: 0
         val width = cells.maxOfOrNull(GridPoint::column)?.plus(1) ?: 0
         val height = cells.maxOfOrNull(GridPoint::row)?.plus(1) ?: 0
         return Piece(
@@ -291,6 +295,7 @@ internal object GameSessionCodec {
             width = width,
             height = height,
             special = special,
+            value = pieceValue,
         )
     }
 
@@ -571,8 +576,8 @@ internal object GameSessionCodec {
 
     private fun decodeChallenge(
         value: String,
-        gameplayStyle: GameplayStyle,
     ): DailyChallenge? {
+        val gameplayStyle = GlobalPlatformConfig.gameplayStyle
         if (value == EmptyToken || value.isBlank()) return null
         val parts = value.split(FieldSeparator, limit = 4)
         if (parts.size != 4) return null
@@ -583,7 +588,7 @@ internal object GameSessionCodec {
                 val taskParts = token.split(PointSeparator)
                 if (taskParts.size != 3) return null
                 ChallengeTask(
-                    type = decodeChallengeTaskType(taskParts[0], gameplayStyle) ?: return null,
+                    type = decodeChallengeTaskType(taskParts[0]) ?: return null,
                     target = taskParts[1].toIntOrNull() ?: return null,
                     current = taskParts[2].toIntOrNull() ?: return null,
                 )
@@ -593,14 +598,15 @@ internal object GameSessionCodec {
             year = parts[0].toIntOrNull() ?: return null,
             month = parts[1].toIntOrNull() ?: return null,
             day = parts[2].toIntOrNull() ?: return null,
+            style = gameplayStyle,
             tasks = tasks,
         )
     }
 
     private fun decodeChallengeTaskType(
         token: String,
-        gameplayStyle: GameplayStyle,
     ): ChallengeTaskType? {
+        val gameplayStyle = GlobalPlatformConfig.gameplayStyle
         return ChallengeTaskType.fromStableId(token)
             ?: token.toIntOrNull()?.let { ChallengeTaskType.fromLegacyOrdinal(gameplayStyle, it) }
     }

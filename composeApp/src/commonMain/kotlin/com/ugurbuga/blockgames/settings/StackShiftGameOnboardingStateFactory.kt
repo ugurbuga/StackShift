@@ -7,7 +7,6 @@ import com.ugurbuga.blockgames.game.model.CellTone
 import com.ugurbuga.blockgames.game.model.GameConfig
 import com.ugurbuga.blockgames.game.model.GameState
 import com.ugurbuga.blockgames.game.model.GameTextKey
-import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.GridPoint
 import com.ugurbuga.blockgames.game.model.Piece
 import com.ugurbuga.blockgames.game.model.PieceKind
@@ -60,11 +59,9 @@ object StackShiftGameOnboardingStateFactory {
     private val sceneCache: Map<StackShiftOnboardingStage, StackShiftOnboardingScene> =
         stages.associateWith(::buildScene)
 
-    fun initialState(gameplayStyle: GameplayStyle = GameplayStyle.StackShift): GameState =
-        scene(stages.first()).gameState.copy(gameplayStyle = gameplayStyle)
+    fun initialState(): GameState = scene(stages.first()).gameState
 
-    fun cleanGameState(gameplayStyle: GameplayStyle): GameState =
-        guideLogic.newGame(gameplayStyle = gameplayStyle, config = config)
+    fun cleanGameState(): GameState = guideLogic.newGame(config = config)
 
     fun scene(stage: StackShiftOnboardingStage): StackShiftOnboardingScene = sceneCache.getValue(stage)
 
@@ -371,10 +368,7 @@ object StackShiftGameOnboardingStateFactory {
         nextQueue: List<Piece>,
         lastPlacementColumn: Int,
     ): GameState {
-        val baseState = guideLogic.newGame(
-            gameplayStyle = GameplayStyle.StackShift,
-            config = config
-        )
+        val baseState = guideLogic.newGame(config = config)
         return baseState.copy(
             board = board,
             activePiece = activePiece,

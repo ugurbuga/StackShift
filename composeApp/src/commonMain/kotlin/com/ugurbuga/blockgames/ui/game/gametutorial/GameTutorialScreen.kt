@@ -91,10 +91,13 @@ import blockgames.composeapp.generated.resources.block_properties_heavy_desc
 import blockgames.composeapp.generated.resources.block_properties_heavy_title
 import blockgames.composeapp.generated.resources.block_properties_row_clearer_desc
 import blockgames.composeapp.generated.resources.block_properties_row_clearer_title
+import blockgames.composeapp.generated.resources.game_message_select_column
 import blockgames.composeapp.generated.resources.game_message_special_chain_board
+import blockgames.composeapp.generated.resources.game_message_special_lines
 import blockgames.composeapp.generated.resources.game_message_tempo_up
 import blockgames.composeapp.generated.resources.launch_drag_hint
 import blockgames.composeapp.generated.resources.launch_drag_hint_blockwise
+import blockgames.composeapp.generated.resources.launch_soft_lock_message
 import blockgames.composeapp.generated.resources.piece_properties_active
 import blockgames.composeapp.generated.resources.queue_next_short
 import blockgames.composeapp.generated.resources.restart
@@ -106,6 +109,14 @@ import blockgames.composeapp.generated.resources.tutorial_back
 import blockgames.composeapp.generated.resources.tutorial_finish
 import blockgames.composeapp.generated.resources.tutorial_intro_body
 import blockgames.composeapp.generated.resources.tutorial_intro_title
+import blockgames.composeapp.generated.resources.tutorial_mergeshift_intro_body
+import blockgames.composeapp.generated.resources.tutorial_mergeshift_intro_title
+import blockgames.composeapp.generated.resources.tutorial_mergeshift_ready_body
+import blockgames.composeapp.generated.resources.tutorial_mergeshift_ready_title
+import blockgames.composeapp.generated.resources.tutorial_mergeshift_specials_body
+import blockgames.composeapp.generated.resources.tutorial_mergeshift_specials_title
+import blockgames.composeapp.generated.resources.tutorial_mergeshift_systems_body
+import blockgames.composeapp.generated.resources.tutorial_mergeshift_systems_title
 import blockgames.composeapp.generated.resources.tutorial_next
 import blockgames.composeapp.generated.resources.tutorial_ready_body
 import blockgames.composeapp.generated.resources.tutorial_ready_settings_hint
@@ -264,6 +275,10 @@ private enum class TutorialPage {
     BlockWiseSystems,
     BlockWiseSpecials,
     BlockWiseReady,
+    MergeShiftIntro,
+    MergeShiftSystems,
+    MergeShiftSpecials,
+    MergeShiftReady,
 }
 
 private data class TutorialDemoScene(
@@ -443,11 +458,11 @@ fun GameTutorialScreen(
     modifier: Modifier = Modifier,
     telemetry: AppTelemetry = NoOpAppTelemetry,
     adController: GameAdController = NoOpGameAdController,
-    gameplayStyle: GameplayStyle = GlobalPlatformConfig.gameplayStyle,
     initialPage: Int = 0,
     onBack: () -> Unit,
     onFinish: () -> Unit,
 ) {
+    val gameplayStyle = GlobalPlatformConfig.gameplayStyle
     LogScreen(telemetry, TelemetryScreenNames.Tutorial)
     val tutorialPages = remember(gameplayStyle) {
         when (gameplayStyle) {
@@ -463,6 +478,13 @@ fun GameTutorialScreen(
                 TutorialPage.StackShiftSystems,
                 TutorialPage.BlockWiseSystems,
                 TutorialPage.BlockWiseReady,
+            )
+
+            GameplayStyle.MergeShift -> listOf(
+                TutorialPage.MergeShiftIntro,
+                TutorialPage.MergeShiftSystems,
+                TutorialPage.MergeShiftSpecials,
+                TutorialPage.MergeShiftReady,
             )
         }
     }
@@ -567,6 +589,10 @@ fun GameTutorialScreen(
                                 TutorialPage.BlockWiseSystems -> TutorialBlockWiseSystemsStep()
                                 TutorialPage.BlockWiseSpecials -> TutorialBlockWiseSpecialsStep()
                                 TutorialPage.BlockWiseReady -> TutorialBlockWiseReadyStep()
+                                TutorialPage.MergeShiftIntro -> TutorialMergeShiftIntroStep()
+                                TutorialPage.MergeShiftSystems -> TutorialMergeShiftSystemsStep()
+                                TutorialPage.MergeShiftSpecials -> TutorialMergeShiftSpecialsStep()
+                                TutorialPage.MergeShiftReady -> TutorialMergeShiftReadyStep()
                             }
                         }
                     }
@@ -939,6 +965,46 @@ private fun TutorialBlockWiseReadyStep() {
         body = stringResource(Res.string.tutorial_ready_body),
     ) {
         TutorialHintCard(text = stringResource(Res.string.tutorial_ready_tutorial_hint))
+        TutorialHintCard(text = stringResource(Res.string.tutorial_ready_settings_hint))
+    }
+}
+
+@Composable
+private fun TutorialMergeShiftIntroStep() {
+    TutorialSection(
+        title = stringResource(Res.string.tutorial_mergeshift_intro_title),
+        body = stringResource(Res.string.tutorial_mergeshift_intro_body),
+    ) {
+        TutorialHintCard(text = stringResource(Res.string.game_message_select_column))
+    }
+}
+
+@Composable
+private fun TutorialMergeShiftSystemsStep() {
+    TutorialSection(
+        title = stringResource(Res.string.tutorial_mergeshift_systems_title),
+        body = stringResource(Res.string.tutorial_mergeshift_systems_body),
+    ) {
+        TutorialHintCard(text = stringResource(Res.string.launch_soft_lock_message))
+    }
+}
+
+@Composable
+private fun TutorialMergeShiftSpecialsStep() {
+    TutorialSection(
+        title = stringResource(Res.string.tutorial_mergeshift_specials_title),
+        body = stringResource(Res.string.tutorial_mergeshift_specials_body),
+    ) {
+        TutorialHintCard(text = stringResource(Res.string.game_message_special_lines, "2"))
+    }
+}
+
+@Composable
+private fun TutorialMergeShiftReadyStep() {
+    TutorialSection(
+        title = stringResource(Res.string.tutorial_mergeshift_ready_title),
+        body = stringResource(Res.string.tutorial_mergeshift_ready_body),
+    ) {
         TutorialHintCard(text = stringResource(Res.string.tutorial_ready_settings_hint))
     }
 }
@@ -2040,7 +2106,6 @@ private fun TutorialReadyStepPreview() {
 private fun TutorialBlockWiseIntroStepPreview() {
     BlockGamesTheme(settings = AppSettings()) {
         GameTutorialScreen(
-            gameplayStyle = GameplayStyle.BlockWise,
             initialPage = 0,
             onBack = {},
             onFinish = {},
@@ -2053,7 +2118,6 @@ private fun TutorialBlockWiseIntroStepPreview() {
 private fun TutorialBlockWiseAppFeaturesStepPreview() {
     BlockGamesTheme(settings = AppSettings()) {
         GameTutorialScreen(
-            gameplayStyle = GameplayStyle.BlockWise,
             initialPage = 1,
             onBack = {},
             onFinish = {},
@@ -2066,7 +2130,6 @@ private fun TutorialBlockWiseAppFeaturesStepPreview() {
 private fun TutorialBlockWiseSystemsStepPreview() {
     BlockGamesTheme(settings = AppSettings()) {
         GameTutorialScreen(
-            gameplayStyle = GameplayStyle.BlockWise,
             initialPage = 2,
             onBack = {},
             onFinish = {},
@@ -2079,7 +2142,6 @@ private fun TutorialBlockWiseSystemsStepPreview() {
 private fun TutorialBlockWiseReadyStepPreview() {
     BlockGamesTheme(settings = AppSettings()) {
         GameTutorialScreen(
-            gameplayStyle = GameplayStyle.BlockWise,
             initialPage = 3,
             onBack = {},
             onFinish = {},
@@ -2103,7 +2165,6 @@ private fun GameTutorialScreenPreview() {
 private fun GameTutorialScreenStartPreview() {
     BlockGamesTheme(settings = AppSettings()) {
         GameTutorialScreen(
-            gameplayStyle = GameplayStyle.BlockWise,
             onBack = {},
             onFinish = {},
         )

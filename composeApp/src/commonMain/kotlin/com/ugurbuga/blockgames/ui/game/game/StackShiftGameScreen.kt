@@ -113,6 +113,7 @@ import com.ugurbuga.blockgames.game.model.paletteColor
 import com.ugurbuga.blockgames.game.model.toTopLeft
 import com.ugurbuga.blockgames.localization.LocalAppSettings
 import com.ugurbuga.blockgames.localization.appNameStringResource
+import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
 import com.ugurbuga.blockgames.platform.feedback.GameHaptic
 import com.ugurbuga.blockgames.platform.feedback.GameHaptics
 import com.ugurbuga.blockgames.platform.feedback.GameSound
@@ -277,7 +278,6 @@ fun StackShiftGameScreen(
 
         if (overlayVisible) {
             GameLaunchOverlay(
-                gameplayStyle = gameState.gameplayStyle,
                 uiColors = uiColors,
                 onFinished = {
                     overlayVisible = false
@@ -290,11 +290,11 @@ fun StackShiftGameScreen(
 
 @Composable
 fun GameLaunchOverlay(
-    gameplayStyle: GameplayStyle,
     uiColors: BlockGamesUiColors,
     onFinished: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val gameplayStyle = GlobalPlatformConfig.gameplayStyle
     LaunchedEffect(Unit) {
         delay(LaunchOverlayDisplayDelayMillis.milliseconds)
         onFinished()

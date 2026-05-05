@@ -63,6 +63,12 @@ private val androidFlavorConfigs = listOf(
         versionCode = 2,
         versionName = "1.0.1",
     ),
+    AndroidFlavorConfig(
+        name = "MergeShift",
+        applicationId = "com.ugurbuga.mergeshift",
+        versionCode = 1,
+        versionName = "1.0.0",
+    ),
 )
 
 private fun trimmedProperty(properties: Properties, name: String): String? =
