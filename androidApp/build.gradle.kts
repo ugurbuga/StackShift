@@ -69,6 +69,12 @@ private val androidFlavorConfigs = listOf(
         versionCode = 1,
         versionName = "1.0.0",
     ),
+    AndroidFlavorConfig(
+        name = "BlockGames",
+        applicationId = "com.ugurbuga.blockgames",
+        versionCode = 1,
+        versionName = "1.0.0",
+    ),
 )
 
 private fun trimmedProperty(properties: Properties, name: String): String? =

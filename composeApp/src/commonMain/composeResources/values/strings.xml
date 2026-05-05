@@ -313,5 +313,11 @@
     <string name="interactive_onboarding_ghost_body">Before you place a shape, glance at the other two pieces. Good runs come from leaving room for the whole tray, not just the current move.</string>
     <string name="interactive_onboarding_heavy_title">Clear both directions together</string>
     <string name="interactive_onboarding_heavy_body">Some placements finish a row and a column at the same time. Use the guided spot to trigger a bigger double clear.</string>
+
+    <string name="selection_title">Choose Your Game</string>
+    <string name="selection_stackshift_desc">Launch pieces from the bottom to clear rows and columns.</string>
+    <string name="selection_blockwise_desc">Drag and drop pieces anywhere on the board.</string>
+    <string name="selection_mergeshift_desc">Merge pieces of the same value to reach higher scores.</string>
+    <string name="selection_switch_game">Switch Game</string>
 </resources>
 

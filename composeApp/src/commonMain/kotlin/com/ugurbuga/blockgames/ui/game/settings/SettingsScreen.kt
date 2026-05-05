@@ -96,6 +96,7 @@ import blockgames.composeapp.generated.resources.block_style_tornado
 import blockgames.composeapp.generated.resources.block_style_wood
 import blockgames.composeapp.generated.resources.cancel
 import blockgames.composeapp.generated.resources.rewarded_tokens_button
+import blockgames.composeapp.generated.resources.selection_switch_game
 import blockgames.composeapp.generated.resources.settings_block_style
 import blockgames.composeapp.generated.resources.settings_color_palette
 import blockgames.composeapp.generated.resources.settings_language
@@ -166,6 +167,8 @@ fun AppSettingsScreen(
     onRewardedTokensRequested: () -> Unit,
     onBack: () -> Unit,
     adController: GameAdController? = null,
+    isMultiGameVariant: Boolean = false,
+    onSelectionRequested: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     LogScreen(telemetry, TelemetryScreenNames.Theme)
@@ -241,7 +244,18 @@ fun AppSettingsScreen(
                         modifier = Modifier.weight(1f),
                         textAlign = TextAlign.Center
                     )
-                    Spacer(modifier = Modifier.size(44.dp))
+                    if (isMultiGameVariant) {
+                        TopBarActionBlockButton(
+                            tone = CellTone.Violet,
+                            icon = Icons.Default.Layers,
+                            contentDescription = stringResource(Res.string.selection_switch_game),
+                            onClick = onSelectionRequested,
+                            size = 44.dp,
+                            pulse = stylePulse,
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.size(44.dp))
+                    }
                 }
 
                 TokenBalanceCard(
@@ -1177,4 +1191,3 @@ private fun AppLanguageScreenPreview() {
         onBack = {},
     )
 }
-

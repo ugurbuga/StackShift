@@ -7,6 +7,7 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.app_title_blockwise
+import blockgames.composeapp.generated.resources.app_title_mergeshift
 import blockgames.composeapp.generated.resources.app_title_stackshift
 
 @Composable
@@ -20,10 +21,10 @@ fun appNameStringResource(): String {
 }
 
 fun appNameResourceId(): StringResource {
-    return if (GlobalPlatformConfig.gameplayStyle == GameplayStyle.BlockWise) {
-        Res.string.app_title_blockwise
-    } else {
-        Res.string.app_title_stackshift
+    return when (GlobalPlatformConfig.gameplayStyle) {
+        GameplayStyle.BlockWise -> Res.string.app_title_blockwise
+        GameplayStyle.MergeShift -> Res.string.app_title_mergeshift
+        else -> Res.string.app_title_stackshift
     }
 }
 
