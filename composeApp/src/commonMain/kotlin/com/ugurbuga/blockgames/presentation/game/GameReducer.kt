@@ -10,7 +10,6 @@ import com.ugurbuga.blockgames.game.model.GameStatus
 import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.GridPoint
 import com.ugurbuga.blockgames.game.model.SpecialBlockType
-import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
 
 internal class GameReducer(
     private val gameLogic: GameLogic,
@@ -83,7 +82,6 @@ internal class GameReducer(
 
         is GameAction.Restart -> ReduceResult(
             state = gameLogic.newGame(
-                gameplayStyle = action.gameplayStyle,
                 config = action.config,
                 challenge = action.challenge,
                 mode = action.mode,
@@ -125,7 +123,6 @@ sealed interface GameIntent {
         val config: GameConfig,
         val challenge: DailyChallenge? = null,
         val mode: GameMode = GameMode.Classic,
-        val gameplayStyle: GameplayStyle = GlobalPlatformConfig.gameplayStyle,
     ) : GameIntent
     data class ReplaceActivePiece(val specialType: SpecialBlockType) : GameIntent
     data object TogglePause : GameIntent
@@ -140,7 +137,6 @@ internal sealed interface GameAction {
         val config: GameConfig,
         val challenge: DailyChallenge? = null,
         val mode: GameMode = GameMode.Classic,
-        val gameplayStyle: GameplayStyle = GlobalPlatformConfig.gameplayStyle,
     ) : GameAction
     data object Tick : GameAction
     data class ReplaceActivePiece(val specialType: SpecialBlockType) : GameAction
@@ -167,7 +163,7 @@ internal fun GameIntent.toAction(): GameAction = when (this) {
     GameIntent.CommitSoftLock -> GameAction.CommitSoftLock
     GameIntent.HoldPiece -> GameAction.HoldPiece
     GameIntent.ReviveFromReward -> GameAction.ReviveFromReward
-    is GameIntent.Restart -> GameAction.Restart(config, challenge, mode, gameplayStyle)
+    is GameIntent.Restart -> GameAction.Restart(config, challenge, mode)
     is GameIntent.ReplaceActivePiece -> GameAction.ReplaceActivePiece(specialType)
     GameIntent.TogglePause -> GameAction.TogglePause
 }

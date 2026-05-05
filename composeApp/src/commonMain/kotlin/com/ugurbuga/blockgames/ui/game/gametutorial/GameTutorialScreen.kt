@@ -458,11 +458,11 @@ fun GameTutorialScreen(
     modifier: Modifier = Modifier,
     telemetry: AppTelemetry = NoOpAppTelemetry,
     adController: GameAdController = NoOpGameAdController,
-    gameplayStyle: GameplayStyle = GlobalPlatformConfig.gameplayStyle,
     initialPage: Int = 0,
     onBack: () -> Unit,
     onFinish: () -> Unit,
 ) {
+    val gameplayStyle = GlobalPlatformConfig.gameplayStyle
     LogScreen(telemetry, TelemetryScreenNames.Tutorial)
     val tutorialPages = remember(gameplayStyle) {
         when (gameplayStyle) {
@@ -2106,7 +2106,6 @@ private fun TutorialReadyStepPreview() {
 private fun TutorialBlockWiseIntroStepPreview() {
     BlockGamesTheme(settings = AppSettings()) {
         GameTutorialScreen(
-            gameplayStyle = GameplayStyle.BlockWise,
             initialPage = 0,
             onBack = {},
             onFinish = {},
@@ -2119,7 +2118,6 @@ private fun TutorialBlockWiseIntroStepPreview() {
 private fun TutorialBlockWiseAppFeaturesStepPreview() {
     BlockGamesTheme(settings = AppSettings()) {
         GameTutorialScreen(
-            gameplayStyle = GameplayStyle.BlockWise,
             initialPage = 1,
             onBack = {},
             onFinish = {},
@@ -2132,7 +2130,6 @@ private fun TutorialBlockWiseAppFeaturesStepPreview() {
 private fun TutorialBlockWiseSystemsStepPreview() {
     BlockGamesTheme(settings = AppSettings()) {
         GameTutorialScreen(
-            gameplayStyle = GameplayStyle.BlockWise,
             initialPage = 2,
             onBack = {},
             onFinish = {},
@@ -2145,7 +2142,6 @@ private fun TutorialBlockWiseSystemsStepPreview() {
 private fun TutorialBlockWiseReadyStepPreview() {
     BlockGamesTheme(settings = AppSettings()) {
         GameTutorialScreen(
-            gameplayStyle = GameplayStyle.BlockWise,
             initialPage = 3,
             onBack = {},
             onFinish = {},
@@ -2169,7 +2165,6 @@ private fun GameTutorialScreenPreview() {
 private fun GameTutorialScreenStartPreview() {
     BlockGamesTheme(settings = AppSettings()) {
         GameTutorialScreen(
-            gameplayStyle = GameplayStyle.BlockWise,
             onBack = {},
             onFinish = {},
         )

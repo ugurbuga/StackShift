@@ -127,11 +127,9 @@ import com.ugurbuga.blockgames.game.model.ChallengeProgress
 import com.ugurbuga.blockgames.game.model.ChallengeTask
 import com.ugurbuga.blockgames.game.model.ChallengeTaskType
 import com.ugurbuga.blockgames.game.model.DailyChallenge
-import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.paletteColor
 import com.ugurbuga.blockgames.game.model.resolveBoardBlockStyle
 import com.ugurbuga.blockgames.localization.LocalAppSettings
-import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
 import com.ugurbuga.blockgames.settings.AppSettings
 import com.ugurbuga.blockgames.settings.GameSessionStorage
 import com.ugurbuga.blockgames.ui.game.BlockStyleActionButton
@@ -154,7 +152,6 @@ fun DailyChallengeScreen(
     progress: ChallengeProgress,
     onBack: () -> Unit,
     onPlayChallenge: (DailyChallenge) -> Unit,
-    gameplayStyle: GameplayStyle = GlobalPlatformConfig.gameplayStyle,
     modifier: Modifier = Modifier
 ) {
     val uiColors = BlockGamesThemeTokens.uiColors
@@ -174,7 +171,6 @@ fun DailyChallengeScreen(
                 year = currentMonthYear.year,
                 month = currentMonthYear.month,
                 day = selectedDay,
-                gameplayStyle = gameplayStyle,
             )
         val key = "${currentMonthYear.year}-${currentMonthYear.month.toString().padStart(2, '0')}"
         val isCompleted = progress.completedDays[key]?.contains(selectedDay) == true
@@ -331,7 +327,6 @@ fun DailyChallengeScreen(
 
         if (showInfoDialog) {
             ChallengeInfoDialog(
-                gameplayStyle = gameplayStyle,
                 stylePulse = stylePulse,
                 onDismiss = { showInfoDialog = false }
             )
@@ -700,7 +695,6 @@ fun taskDescription(task: ChallengeTask): String {
 
 @Composable
 fun ChallengeInfoDialog(
-    gameplayStyle: GameplayStyle,
     stylePulse: Float,
     onDismiss: () -> Unit
 ) {
@@ -727,7 +721,7 @@ fun ChallengeInfoDialog(
                 )
 
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    ChallengeTaskType.forStyle(gameplayStyle).forEach { taskType ->
+                    ChallengeTaskType.forStyle().forEach { taskType ->
                         ChallengeInfoItem(
                             title = challengeInfoTitle(taskType),
                             description = challengeInfoDescription(taskType),
@@ -857,7 +851,6 @@ fun DailyChallengeScreenPreview() {
             currentYear = 2025,
             currentMonth = 12,
             currentDay = 8,
-            gameplayStyle = GameplayStyle.StackShift,
             progress = ChallengeProgress(),
             onBack = {},
             onPlayChallenge = {}
@@ -881,7 +874,6 @@ fun DailyChallengeScreenCompletedMonthPreview() {
             currentYear = year,
             currentMonth = month,
             currentDay = 31,
-            gameplayStyle = GameplayStyle.StackShift,
             progress = ChallengeProgress(
                 completedDays = mapOf(
                     "$year-${month.toString().padStart(2, '0')}" to (1..daysInMonth).toSet()
@@ -909,7 +901,6 @@ fun DailyChallengeScreenHalfCompletedMonthPreview() {
             currentYear = year,
             currentMonth = month,
             currentDay = 15,
-            gameplayStyle = GameplayStyle.StackShift,
             progress = ChallengeProgress(
                 completedDays = mapOf(
                     "$year-${month.toString().padStart(2, '0')}" to (1..(daysInMonth / 2)).toSet()
@@ -934,7 +925,6 @@ fun DailyChallengeScreenLightPreview() {
             currentYear = 2025,
             currentMonth = 12,
             currentDay = 8,
-            gameplayStyle = GameplayStyle.StackShift,
             progress = ChallengeProgress(),
             onBack = {},
             onPlayChallenge = {}

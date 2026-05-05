@@ -148,7 +148,6 @@ fun BlockGamesRoot(
     onInteractiveOnboardingFinished: (GameState) -> Unit,
     onInteractiveOnboardingReturnHome: (GameState) -> Unit,
     currentRoute: AppRoute = AppRoute.Home,
-    gameplayStyle: GameplayStyle = GlobalPlatformConfig.gameplayStyle,
     showLeaveSessionDialog: Boolean = false,
     onDismissLeaveSessionDialog: () -> Unit = {},
     onConfirmLeaveSessionDialog: () -> Unit = {},
@@ -191,7 +190,6 @@ fun BlockGamesRoot(
                                     settings = settings,
                                     classicHighScore = classicHighScore,
                                     timeAttackHighScore = timeAttackHighScore,
-                                    gameplayStyle = gameplayStyle,
                                     telemetry = telemetry,
                                     onPlay = onPlayRequested,
                                     onPlayTimeAttack = onTimeAttackRequested,
@@ -220,7 +218,6 @@ fun BlockGamesRoot(
                                     currentYear = date.year,
                                     currentMonth = date.month,
                                     currentDay = date.day,
-                                    gameplayStyle = gameplayStyle,
                                     progress = settings.challengeProgress,
                                     onBack = onNavigateBack,
                                     onPlayChallenge = onPlayChallengeRequested,
@@ -253,7 +250,6 @@ fun BlockGamesRoot(
                                 GameTutorialScreen(
                                     modifier = Modifier.fillMaxSize(),
                                     telemetry = telemetry,
-                                    gameplayStyle = gameplayStyle,
                                     onBack = onNavigateBack,
                                     onFinish = onTutorialFinishRequested,
                                     adController = adController,
@@ -316,7 +312,6 @@ fun App() {
 @Composable
 fun BlockGamesAppHost(
     bootstrapLogSource: String,
-    gameplayStyle: GameplayStyle = GlobalPlatformConfig.gameplayStyle,
     beforeRoot: @Composable (settings: AppSettings, canNavigateBack: Boolean, onRequestBack: () -> Unit) -> Unit = { _, _, _ -> },
 ) {
     val telemetry = rememberAppTelemetry()
@@ -377,9 +372,9 @@ fun BlockGamesAppHost(
         }
     }
 
-    fun loadSavedSession(slot: GameSessionSlot, style: GameplayStyle): GameState? {
+    fun loadSavedSession(slot: GameSessionSlot): GameState? {
         val savedState = GameSessionStorage.load(slot) ?: return null
-        if (savedState.gameplayStyle != style || !isUsableSavedSession(savedState, slot)) {
+        if (savedState.gameplayStyle != GlobalPlatformConfig.gameplayStyle || !isUsableSavedSession(savedState, slot)) {
             GameSessionStorage.clear(slot)
             return null
         }
@@ -388,7 +383,7 @@ fun BlockGamesAppHost(
 
     val gameViewModelState = remember {
         val lastSlot = initialBootstrapResult.settings.lastActiveSlot
-        val initialSession = lastSlot?.let { loadSavedSession(it, gameplayStyle) }
+        val initialSession = lastSlot?.let { loadSavedSession(it) }
         mutableStateOf(createGameViewModel(initialState = initialSession))
     }
 
@@ -400,7 +395,7 @@ fun BlockGamesAppHost(
     ) {
         persistActiveSession.value = true
         persistSettings(settings.copy(lastActiveSlot = slot))
-        val savedState = loadSavedSession(slot, gameplayStyle)
+        val savedState = loadSavedSession(slot)
         if (savedState != null) {
             gameViewModel.replaceState(savedState)
         } else {
@@ -440,7 +435,7 @@ fun BlockGamesAppHost(
             persistActiveSession.value = true
             pendingSessionState = null
             gameViewModel =
-                createGameViewModel(loadSavedSession(GameSessionSlot.Classic, gameplayStyle))
+                createGameViewModel(loadSavedSession(GameSessionSlot.Classic))
         }
     }
 
@@ -458,28 +453,27 @@ fun BlockGamesAppHost(
         }
     }
 
-    fun prepareInteractiveOnboarding(style: GameplayStyle) {
+    fun prepareInteractiveOnboarding() {
         persistActiveSession.value = false
         pendingSessionState = null
-        val initialState = if (style == GameplayStyle.BlockWise) {
+        val initialState = if (GlobalPlatformConfig.gameplayStyle == GameplayStyle.BlockWise) {
             BlockWiseOnboardingStateFactory.initialState()
         } else {
-            StackShiftGameOnboardingStateFactory.initialState(style)
+            StackShiftGameOnboardingStateFactory.initialState()
         }
         gameViewModel = createGameViewModel(initialState)
     }
 
     fun startPlayFlow(mode: GameMode = GameMode.Classic) {
-        val style = GlobalPlatformConfig.gameplayStyle
         val sessionSlot = sessionSlotFor(mode = mode)
         if (mode == GameMode.Classic && !settings.hasSeenTutorial) {
             navigateTo(AppRoute.Tutorial)
-        } else if (mode == GameMode.Classic && !settings.hasShownInteractiveOnboarding && style != GameplayStyle.MergeShift) {
-            prepareInteractiveOnboarding(style)
+        } else if (mode == GameMode.Classic && !settings.hasShownInteractiveOnboarding && GlobalPlatformConfig.gameplayStyle != GameplayStyle.MergeShift) {
+            prepareInteractiveOnboarding()
             navigateTo(AppRoute.InteractiveOnboarding)
         } else {
             restoreOrRestartSession(slot = sessionSlot) {
-                gameViewModel.restart(mode = mode, gameplayStyle = style)
+                gameViewModel.restart(mode = mode)
             }
             navigateTo(AppRoute.Game)
         }
@@ -496,7 +490,7 @@ fun BlockGamesAppHost(
         } else {
             telemetry.logUserAction(TelemetryActionNames.StartGameFromHome)
             restoreOrRestartSession(slot = GameSessionSlot.Classic) {
-                gameViewModel.restart(mode = GameMode.Classic, gameplayStyle = gameplayStyle)
+                gameViewModel.restart(mode = GameMode.Classic)
             }
             replaceTop(AppRoute.Game)
         }
@@ -508,10 +502,8 @@ fun BlockGamesAppHost(
 
     LaunchedEffect(initialBootstrapResult, telemetry) {
         if (!isResetReady) {
-            GameplayStyle.entries.forEach { gs ->
-                HighScoreStorage.save(0, GameMode.Classic, gs)
-                HighScoreStorage.save(0, GameMode.TimeAttack, gs)
-            }
+            HighScoreStorage.save(0, GameMode.Classic)
+            HighScoreStorage.save(0, GameMode.TimeAttack)
             GameSessionStorage.clear()
             persistSettings(settings.copy(isHighScoresClearedOnce = true))
             isResetReady = true
@@ -546,8 +538,8 @@ fun BlockGamesAppHost(
         settings = settings,
         telemetry = telemetry,
         gameViewModel = gameViewModel,
-        classicHighScore = HighScoreStorage.load(GameMode.Classic, gameplayStyle),
-        timeAttackHighScore = HighScoreStorage.load(GameMode.TimeAttack, gameplayStyle),
+        classicHighScore = HighScoreStorage.load(GameMode.Classic),
+        timeAttackHighScore = HighScoreStorage.load(GameMode.TimeAttack),
         rewardFeedback = rewardFeedback,
         onRewardFeedbackDismiss = { rewardFeedback = rewardFeedback.copy(visible = false) },
         onPlayRequested = {
@@ -562,10 +554,9 @@ fun BlockGamesAppHost(
         onPlayChallengeRequested = { challenge ->
             restoreOrRestartSession(slot = sessionSlotFor(GameMode.Classic, challenge)) {
                 gameViewModel.restart(
-                    config = GameConfig.default(gameplayStyle),
+                    config = GameConfig.default(),
                     challenge = challenge,
                     mode = GameMode.Classic,
-                    gameplayStyle = gameplayStyle,
                 )
             }
             val restoredChallenge = gameViewModel.snapshotState().activeChallenge
@@ -577,7 +568,6 @@ fun BlockGamesAppHost(
                     config = GameConfig.default(challenge.style),
                     challenge = challenge,
                     mode = GameMode.Classic,
-                    gameplayStyle = challenge.style,
                 )
             }
             navigateTo(AppRoute.Game)
@@ -622,18 +612,15 @@ fun BlockGamesAppHost(
             if (!settings.hasSeenTutorial) {
                 persistSettings(settings.copy(hasSeenTutorial = true))
             }
-            if (gameplayStyle == GameplayStyle.MergeShift) {
+            if (GlobalPlatformConfig.gameplayStyle == GameplayStyle.MergeShift) {
                 telemetry.logUserAction(TelemetryActionNames.StartGameFromHome)
                 restoreOrRestartSession(slot = GameSessionSlot.Classic) {
-                    gameViewModel.restart(
-                        mode = GameMode.Classic,
-                        gameplayStyle = gameplayStyle
-                    )
+                    gameViewModel.restart(mode = GameMode.Classic)
                 }
                 replaceTop(AppRoute.Game)
             } else {
                 telemetry.logUserAction(TelemetryActionNames.OpenInteractiveOnboarding)
-                prepareInteractiveOnboarding(gameplayStyle)
+                prepareInteractiveOnboarding()
                 replaceTop(AppRoute.InteractiveOnboarding)
             }
         },
@@ -644,7 +631,6 @@ fun BlockGamesAppHost(
             completeInteractiveOnboarding(finalState = finalState, returnHome = true)
         },
         currentRoute = currentRoute,
-        gameplayStyle = gameplayStyle,
         showLeaveSessionDialog = showLeaveSessionDialog,
         onDismissLeaveSessionDialog = { showLeaveSessionDialog = false },
         onConfirmLeaveSessionDialog = ::navigateBack,

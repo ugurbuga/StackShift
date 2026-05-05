@@ -6,6 +6,7 @@ import com.ugurbuga.blockgames.game.model.ChallengeTaskType
 import com.ugurbuga.blockgames.game.model.DailyChallenge
 import com.ugurbuga.blockgames.game.model.GameConfig
 import com.ugurbuga.blockgames.game.model.GameMode
+import com.ugurbuga.blockgames.game.model.GameplayStyle
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -21,6 +22,7 @@ class GameSessionCodecTest {
             year = 2026,
             month = 4,
             day = 28,
+            style = GameplayStyle.BlockWise,
             tasks = listOf(
                 ChallengeTask(type = ChallengeTaskType.ClearRows, target = 4, current = 2),
                 ChallengeTask(type = ChallengeTaskType.ReachScore, target = 1200, current = 450),
@@ -59,13 +61,14 @@ class GameSessionCodecTest {
             year = 2026,
             month = 4,
             day = 28,
+            style = GameplayStyle.BlockWise,
             tasks = listOf(ChallengeTask(type = ChallengeTaskType.PlacePieces, target = 6)),
         )
         val challengeState = logic.newGame(challenge = challenge)
 
         assertEquals(GameSessionSlot.Classic, classicState.sessionSlot())
         assertEquals(GameSessionSlot.TimeAttack, timeAttackState.sessionSlot())
-        assertEquals(GameSessionSlot.DailyChallenge, challengeState.sessionSlot())
+        assertEquals(GameSessionSlot.DailyChallenge("2026-04-28"), challengeState.sessionSlot())
     }
 }
 

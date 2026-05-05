@@ -37,7 +37,6 @@ internal class MergeShiftGameLogic(
     }
 
     override fun newGame(
-        gameplayStyle: GameplayStyle,
         config: GameConfig,
         challenge: DailyChallenge?,
         mode: GameMode,
@@ -54,7 +53,7 @@ internal class MergeShiftGameLogic(
         return GameState(
             config = config,
             gameMode = mode,
-            gameplayStyle = gameplayStyle,
+            gameplayStyle = GameplayStyle.MergeShift,
             board = board,
             activePiece = activePiece,
             nextQueue = nextQueue,

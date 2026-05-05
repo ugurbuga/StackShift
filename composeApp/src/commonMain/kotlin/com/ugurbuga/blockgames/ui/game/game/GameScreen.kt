@@ -14,7 +14,6 @@ import androidx.compose.ui.Modifier
 import com.ugurbuga.blockgames.ads.GameAdController
 import com.ugurbuga.blockgames.ads.NoOpGameAdController
 import com.ugurbuga.blockgames.game.logic.GameEvent
-import com.ugurbuga.blockgames.game.model.GameConfig
 import com.ugurbuga.blockgames.game.model.GameState
 import com.ugurbuga.blockgames.game.model.GameStatus
 import com.ugurbuga.blockgames.game.model.GameplayStyle
@@ -52,7 +51,6 @@ fun BlockGamesGameApp(
     adController: GameAdController = NoOpGameAdController,
     viewModel: GameViewModel = remember { GameViewModel() },
     interactiveOnboardingEnabled: Boolean = false,
-    gameplayStyle: GameplayStyle = GlobalPlatformConfig.gameplayStyle,
     onInteractiveOnboardingFinished: (GameState) -> Unit = {},
     onInteractiveOnboardingReturnHome: (GameState) -> Unit = {},
     onReplaceActivePieceRewarded: (SpecialBlockType) -> Unit = {},
@@ -60,6 +58,7 @@ fun BlockGamesGameApp(
     onOpenSettings: () -> Unit = {},
     onOpenTutorial: () -> Unit = {},
 ) {
+    val gameplayStyle = GlobalPlatformConfig.gameplayStyle
     val haptics = rememberGameHaptics()
     val uiState by viewModel.uiState.collectAsState()
     val uiColors = BlockGamesThemeTokens.uiColors
@@ -165,7 +164,7 @@ fun BlockGamesGameApp(
             pendingOnboardingCompletionState = if (gameplayStyle == GameplayStyle.BlockWise) {
                 BlockWiseOnboardingStateFactory.cleanGameState()
             } else {
-                StackShiftGameOnboardingStateFactory.cleanGameState(uiState.gameState.gameplayStyle)
+                StackShiftGameOnboardingStateFactory.cleanGameState()
             }
             showOnboardingCompletionDialog = true
             onboardingStage = null
@@ -209,8 +208,7 @@ fun BlockGamesGameApp(
     var highestScore by remember(uiState.gameState.gameMode, uiState.gameState.gameplayStyle) {
         mutableIntStateOf(
             HighScoreStorage.load(
-                uiState.gameState.gameMode,
-                uiState.gameState.gameplayStyle
+                uiState.gameState.gameMode
             )
         )
     }
@@ -231,8 +229,7 @@ fun BlockGamesGameApp(
             highestScore = uiState.gameState.score
             HighScoreStorage.save(
                 highestScore,
-                uiState.gameState.gameMode,
-                uiState.gameState.gameplayStyle
+                uiState.gameState.gameMode
             )
             newHighScoreReached = true
         }
@@ -276,7 +273,6 @@ fun BlockGamesGameApp(
                 dispatchFeedback(
                     viewModel.restart(
                         config = uiState.gameState.config,
-                        gameplayStyle = GlobalPlatformConfig.gameplayStyle,
                     ),
                     soundPlayer,
                     haptics,
@@ -344,7 +340,6 @@ fun BlockGamesGameApp(
                 telemetry.logUserAction(TelemetryActionNames.RestartGame)
                 viewModel.restart(
                     config = uiState.gameState.config,
-                    gameplayStyle = GameplayStyle.StackShift,
                 )
             },
             onRewardedRevive = {
@@ -387,10 +382,7 @@ fun BlockGamesGameApp(
             },
             onRestart = {
                 telemetry.logUserAction(TelemetryActionNames.RestartGame)
-                viewModel.restart(
-                    gameplayStyle = GameplayStyle.MergeShift,
-                    config = GameConfig.default(GameplayStyle.MergeShift)
-                )
+                viewModel.restart()
             },
             onTick = viewModel::tick,
             onBack = onBack,

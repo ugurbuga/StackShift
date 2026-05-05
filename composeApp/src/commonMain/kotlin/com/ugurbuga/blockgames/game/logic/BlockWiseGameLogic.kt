@@ -38,7 +38,6 @@ internal class BlockWiseGameLogic(
     }
 
     override fun newGame(
-        gameplayStyle: GameplayStyle,
         config: GameConfig,
         challenge: DailyChallenge?,
         mode: GameMode,
@@ -53,7 +52,7 @@ internal class BlockWiseGameLogic(
         val state = GameState(
             config = config,
             gameMode = mode,
-            gameplayStyle = gameplayStyle,
+            gameplayStyle = GameplayStyle.BlockWise,
             board = board,
             activePiece = tray.firstOrNull(),
             nextQueue = tray.drop(1),

@@ -22,6 +22,7 @@ import com.ugurbuga.blockgames.game.model.PlacementPreview
 import com.ugurbuga.blockgames.game.model.PressureLevel
 import com.ugurbuga.blockgames.game.model.SoftLockState
 import com.ugurbuga.blockgames.game.model.SpecialBlockType
+import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
 
 sealed class GameSessionSlot {
     abstract val key: String
@@ -140,7 +141,7 @@ internal object GameSessionCodec {
         } else {
             ActivityState(gameplayStyle = inferredGameplayStyle)
         }
-        val activeChallenge = if (version >= 3) decodeChallenge(parts[19], activity.gameplayStyle) else null
+        val activeChallenge = if (version >= 3) decodeChallenge(parts[19]) else null
 
         return GameState(
             config = config,
@@ -575,8 +576,8 @@ internal object GameSessionCodec {
 
     private fun decodeChallenge(
         value: String,
-        gameplayStyle: GameplayStyle,
     ): DailyChallenge? {
+        val gameplayStyle = GlobalPlatformConfig.gameplayStyle
         if (value == EmptyToken || value.isBlank()) return null
         val parts = value.split(FieldSeparator, limit = 4)
         if (parts.size != 4) return null
@@ -587,7 +588,7 @@ internal object GameSessionCodec {
                 val taskParts = token.split(PointSeparator)
                 if (taskParts.size != 3) return null
                 ChallengeTask(
-                    type = decodeChallengeTaskType(taskParts[0], gameplayStyle) ?: return null,
+                    type = decodeChallengeTaskType(taskParts[0]) ?: return null,
                     target = taskParts[1].toIntOrNull() ?: return null,
                     current = taskParts[2].toIntOrNull() ?: return null,
                 )
@@ -604,8 +605,8 @@ internal object GameSessionCodec {
 
     private fun decodeChallengeTaskType(
         token: String,
-        gameplayStyle: GameplayStyle,
     ): ChallengeTaskType? {
+        val gameplayStyle = GlobalPlatformConfig.gameplayStyle
         return ChallengeTaskType.fromStableId(token)
             ?: token.toIntOrNull()?.let { ChallengeTaskType.fromLegacyOrdinal(gameplayStyle, it) }
     }

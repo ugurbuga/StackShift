@@ -1,6 +1,7 @@
 package com.ugurbuga.blockgames.game.model
 
 import androidx.compose.runtime.Immutable
+import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
 
 @Immutable
 enum class ChallengeTaskType(
@@ -45,7 +46,8 @@ enum class ChallengeTaskType(
     );
 
     companion object {
-        fun forStyle(gameplayStyle: GameplayStyle): List<ChallengeTaskType> = entries.filter { gameplayStyle in it.supportedStyles }
+        fun forStyle(gameplayStyle: GameplayStyle = GlobalPlatformConfig.gameplayStyle): List<ChallengeTaskType> =
+            entries.filter { gameplayStyle in it.supportedStyles }
 
         fun fromStableId(stableId: String): ChallengeTaskType? = entries.firstOrNull { it.stableId == stableId }
 

@@ -244,7 +244,7 @@ data class GameConfig(
     val linesPerLevel: Int = 6,
 ) {
     companion object {
-        fun default(gameplayStyle: GameplayStyle): GameConfig = when (gameplayStyle) {
+        fun default(gameplayStyle: GameplayStyle = GlobalPlatformConfig.gameplayStyle): GameConfig = when (gameplayStyle) {
             GameplayStyle.BlockWise -> GameConfig(columns = 8, rows = 10)
             GameplayStyle.StackShift -> GameConfig(columns = 10, rows = 12)
             GameplayStyle.MergeShift -> GameConfig(columns = 3, rows = 5)
