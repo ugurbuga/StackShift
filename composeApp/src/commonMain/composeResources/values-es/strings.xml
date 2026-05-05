@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_title_stackshift">StackShift</string>
+    <string name="app_title_blockwise">BlockWise</string>
+    <string name="app_title_mergeshift">MergeShift</string>
     <string name="app_title_banner_stackshift_top">STACK</string>
     <string name="app_title_banner_stackshift_bottom">SHIFT</string>
     <string name="app_title_banner_blockwise_top">BLOCK</string>
     <string name="app_title_banner_blockwise_bottom">WISE</string>
+    <string name="app_title_banner_mergeshift_top">MERGE</string>
+    <string name="app_title_banner_mergeshift_bottom">SHIFT</string>
     <string name="settings_title">Ajustes</string>
     <string name="settings_language">Idioma</string>
     <string name="settings_sound">Sound</string>
@@ -265,6 +269,14 @@
     <string name="tutorial_ready_body">Eso es todo: planifica la siguiente columna, vigila la barra de lanzamiento y usa los especiales en el momento justo. Puedes volver a abrir este tutorial desde Ajustes cuando quieras.</string>
     <string name="tutorial_ready_block_properties_hint">Abre Propiedades del bloque siempre que quieras recordar rápidamente qué hace cada icono especial.</string>
     <string name="tutorial_ready_settings_hint">Abre Ajustes para cambiar el idioma, el tema, los colores y el estilo de los bloques antes de tu próxima partida.</string>
+    <string name="tutorial_mergeshift_intro_title">Lanza piezas para combinar bloques del mismo valor</string>
+    <string name="tutorial_mergeshift_intro_body">En MergeShift, las piezas se lanzan desde el dock. Cuando un bloque aterriza sobre otro con el mismo valor, se combinan en un valor superior. Sigue combinando para liberar espacio y alcanzar puntuaciones más altas.</string>
+    <string name="tutorial_mergeshift_systems_title">Planifica tus combinaciones para evitar el desbordamiento</string>
+    <string name="tutorial_mergeshift_systems_body">Cada pieza que lanzas aumenta la altura de la columna. Si alguna columna llega a la parte superior, el juego termina. Usa la vista previa para ver dónde aterrizará tu pieza y con qué bloques podría combinarse.</string>
+    <string name="tutorial_mergeshift_specials_title">Combina múltiples fusiones para combos más grandes</string>
+    <string name="tutorial_mergeshift_specials_body">Un solo lanzamiento puede desencadenar una reacción en cadena de combinaciones. Estos combos otorgan más puntos y liberan más espacio en el tablero, ayudándote a permanecer en el juego por más tiempo.</string>
+    <string name="tutorial_mergeshift_ready_title">Ya estás listo para MergeShift</string>
+    <string name="tutorial_mergeshift_ready_body">Concéntrate en mantener tus columnas bajas y en configurar combinaciones de alto valor. ¡Buena suerte alcanzando los números más altos!</string>
     <string name="settings_tutorial">Tutorial</string>
     <string name="settings_tutorial_body">Abre el tutorial o la práctica guiada en cualquier momento para repasar los controles, los bloques especiales y el flujo de lanzamiento.</string>
     <string name="settings_tutorial_replay">Práctica</string>
@@ -287,10 +299,26 @@
     <string name="interactive_onboarding_ghost_body">Los bloques Fantasma pueden pasar a través de celdas existentes. Déjalo caer en la columna marcada para ver cómo alcanza espacios a los que las piezas normales no llegan.</string>
     <string name="interactive_onboarding_heavy_title">Pesado cambia el tablero con fuerza</string>
     <string name="interactive_onboarding_heavy_body">Los bloques Pesados remodelan el área después de aterrizar. Haz la caída guiada y luego sigue la partida con normalidad.</string>
+
+    <string name="interactive_onboarding_mergeshift_launch_title">Lanza tu primera pieza</string>
+    <string name="interactive_onboarding_mergeshift_launch_body">Arrastra la pieza horizontalmente bajo el tablero para apuntar, luego suéltala para lanzarla a una columna.</string>
+    <string name="interactive_onboarding_mergeshift_merge_vertical_title">Combina mismos valores verticalmente</string>
+    <string name="interactive_onboarding_mergeshift_merge_vertical_body">Lanza una pieza a una columna que ya tenga un bloque con el mismo valor. ¡Se combinarán en un número superior!</string>
+    <string name="interactive_onboarding_mergeshift_merge_horizontal_title">Combina mismos valores horizontalmente</string>
+    <string name="interactive_onboarding_mergeshift_merge_horizontal_body">Los bloques también pueden combinarse con sus vecinos a la izquierda o derecha. Apunta al lugar resaltado para activar una combinación horizontal. </string>
+    <string name="interactive_onboarding_mergeshift_merge_multi_title">Activa múltiples combinaciones</string>
+    <string name="interactive_onboarding_mergeshift_merge_multi_body">Una sola colocación puede activar combinaciones en múltiples direcciones (arriba, izquierda, derecha). ¡Usa esto para liberar más espacio y puntuar a lo grande!</string>
+
     <string name="settings_color_palette">Paleta de colores</string>
     <string name="block_style_electric">Eléctrico</string>
     <string name="block_style_flame">Llama</string>
     <string name="block_style_gears">Engranajes</string>
     <string name="block_style_pixel">Píxel</string>
+
+    <string name="selection_title">Elige Tu Juego</string>
+    <string name="selection_stackshift_desc">Lanza piezas desde abajo para limpiar filas y columnas.</string>
+    <string name="selection_blockwise_desc">Arrastra y suelta piezas en cualquier lugar del tablero.</string>
+    <string name="selection_mergeshift_desc">Combina piezas del mismo valor para alcanzar puntuaciones más altas.</string>
+    <string name="selection_switch_game">Cambiar Juego</string>
 </resources>
 

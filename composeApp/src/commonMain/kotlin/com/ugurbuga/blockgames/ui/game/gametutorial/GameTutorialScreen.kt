@@ -292,8 +292,10 @@ private fun tutorialPreviewGameState(
     activePiece: Piece,
     nextQueue: List<Piece> = listOf(TutorialNextPiece),
     spawnColumn: Int,
+    gameplayStyle: GameplayStyle = GlobalPlatformConfig.gameplayStyle,
 ): GameState = GameState(
     config = GameConfig(columns = board.columns, rows = board.rows),
+    gameplayStyle = gameplayStyle,
     board = board,
     activePiece = activePiece,
     nextQueue = nextQueue,

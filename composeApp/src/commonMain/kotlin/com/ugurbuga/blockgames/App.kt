@@ -55,6 +55,7 @@ import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.GameSessionSlot
 import com.ugurbuga.blockgames.settings.GameSessionStorage
 import com.ugurbuga.blockgames.settings.HighScoreStorage
+import com.ugurbuga.blockgames.settings.MergeShiftOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.RewardedTokenAdReward
 import com.ugurbuga.blockgames.settings.StackShiftGameOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.awardBonusTokens
@@ -76,6 +77,7 @@ import com.ugurbuga.blockgames.ui.game.dailychallenge.DailyChallengeScreen
 import com.ugurbuga.blockgames.ui.game.game.BlockGamesGameApp
 import com.ugurbuga.blockgames.ui.game.gametutorial.GameTutorialScreen
 import com.ugurbuga.blockgames.ui.game.home.HomeScreen
+import com.ugurbuga.blockgames.ui.game.selection.AppSelectionScreen
 import com.ugurbuga.blockgames.ui.game.settings.AppLanguageScreen
 import com.ugurbuga.blockgames.ui.game.settings.AppSettingsScreen
 import com.ugurbuga.blockgames.ui.theme.LocalBlockGamesUiColors
@@ -94,6 +96,7 @@ enum class AppRoute {
     Language,
     Tutorial,
     DailyChallenges,
+    Selection,
 }
 
 @Composable
@@ -147,6 +150,9 @@ fun BlockGamesRoot(
     onTutorialFinishRequested: () -> Unit,
     onInteractiveOnboardingFinished: (GameState) -> Unit,
     onInteractiveOnboardingReturnHome: (GameState) -> Unit,
+    onGameplayStyleSelected: (GameplayStyle) -> Unit,
+    onNavigateToSelection: () -> Unit,
+    isMultiGameVariant: Boolean = false,
     currentRoute: AppRoute = AppRoute.Home,
     showLeaveSessionDialog: Boolean = false,
     onDismissLeaveSessionDialog: () -> Unit = {},
@@ -233,6 +239,8 @@ fun BlockGamesRoot(
                                     onRewardedTokensRequested = onRewardedTokensEarned,
                                     onBack = onNavigateBack,
                                     adController = adController,
+                                    isMultiGameVariant = isMultiGameVariant,
+                                    onSelectionRequested = onNavigateToSelection,
                                 )
                             }
 
@@ -274,6 +282,14 @@ fun BlockGamesRoot(
                                     soundPlayer = soundPlayer,
                                 )
                             }
+
+                            AppRoute.Selection -> {
+                                AppSelectionScreen(
+                                    onGameplayStyleSelected = onGameplayStyleSelected,
+                                    telemetry = telemetry,
+                                    modifier = Modifier.fillMaxSize(),
+                                )
+                            }
                         }
                     }
 
@@ -312,20 +328,43 @@ fun App() {
 @Composable
 fun BlockGamesAppHost(
     bootstrapLogSource: String,
+    isMultiGameVariant: Boolean = false,
     beforeRoot: @Composable (settings: AppSettings, canNavigateBack: Boolean, onRequestBack: () -> Unit) -> Unit = { _, _, _ -> },
 ) {
     val telemetry = rememberAppTelemetry()
     val initialBootstrapResult = remember {
+        val loadedSettings = AppSettingsStorage.load()
+        if (isMultiGameVariant) {
+            loadedSettings.selectedGameplayStyle?.let {
+                GlobalPlatformConfig.gameplayStyle = it
+            }
+        }
         initializeAppSettingsForFirstLaunch(
-            settings = AppSettingsStorage.load(),
+            settings = loadedSettings,
             deviceLocaleTag = currentDeviceLocaleTag(),
         )
     }
     var settings by remember(initialBootstrapResult) { mutableStateOf(initialBootstrapResult.settings.sanitized()) }
 
+    LaunchedEffect(settings.selectedGameplayStyle) {
+        if (isMultiGameVariant) {
+            settings.selectedGameplayStyle?.let {
+                GlobalPlatformConfig.gameplayStyle = it
+            }
+        }
+    }
+
     var rewardFeedback by remember { mutableStateOf(RewardFeedbackState()) }
 
-    var routeStack by remember { mutableStateOf(listOf(AppRoute.Home)) }
+    var routeStack by remember(initialBootstrapResult) {
+        mutableStateOf(
+            if (isMultiGameVariant && initialBootstrapResult.settings.selectedGameplayStyle == null) {
+                listOf(AppRoute.Selection)
+            } else {
+                listOf(AppRoute.Home)
+            }
+        )
+    }
     var showLeaveSessionDialog by remember { mutableStateOf(false) }
     val persistActiveSession = remember { mutableStateOf(true) }
     var pendingSessionState by remember { mutableStateOf<GameState?>(null) }
@@ -381,8 +420,8 @@ fun BlockGamesAppHost(
         return savedState
     }
 
-    val gameViewModelState = remember {
-        val lastSlot = initialBootstrapResult.settings.lastActiveSlot
+    val gameViewModelState = remember(settings.selectedGameplayStyle) {
+        val lastSlot = settings.lastActiveSlot
         val initialSession = lastSlot?.let { loadSavedSession(it) }
         mutableStateOf(createGameViewModel(initialState = initialSession))
     }
@@ -456,10 +495,10 @@ fun BlockGamesAppHost(
     fun prepareInteractiveOnboarding() {
         persistActiveSession.value = false
         pendingSessionState = null
-        val initialState = if (GlobalPlatformConfig.gameplayStyle == GameplayStyle.BlockWise) {
-            BlockWiseOnboardingStateFactory.initialState()
-        } else {
-            StackShiftGameOnboardingStateFactory.initialState()
+        val initialState = when (GlobalPlatformConfig.gameplayStyle) {
+            GameplayStyle.BlockWise -> BlockWiseOnboardingStateFactory.initialState()
+            GameplayStyle.MergeShift -> MergeShiftOnboardingStateFactory.initialState()
+            else -> StackShiftGameOnboardingStateFactory.initialState()
         }
         gameViewModel = createGameViewModel(initialState)
     }
@@ -468,7 +507,7 @@ fun BlockGamesAppHost(
         val sessionSlot = sessionSlotFor(mode = mode)
         if (mode == GameMode.Classic && !settings.hasSeenTutorial) {
             navigateTo(AppRoute.Tutorial)
-        } else if (mode == GameMode.Classic && !settings.hasShownInteractiveOnboarding && GlobalPlatformConfig.gameplayStyle != GameplayStyle.MergeShift) {
+        } else if (mode == GameMode.Classic && !settings.hasShownInteractiveOnboarding) {
             prepareInteractiveOnboarding()
             navigateTo(AppRoute.InteractiveOnboarding)
         } else {
@@ -612,17 +651,9 @@ fun BlockGamesAppHost(
             if (!settings.hasSeenTutorial) {
                 persistSettings(settings.copy(hasSeenTutorial = true))
             }
-            if (GlobalPlatformConfig.gameplayStyle == GameplayStyle.MergeShift) {
-                telemetry.logUserAction(TelemetryActionNames.StartGameFromHome)
-                restoreOrRestartSession(slot = GameSessionSlot.Classic) {
-                    gameViewModel.restart(mode = GameMode.Classic)
-                }
-                replaceTop(AppRoute.Game)
-            } else {
-                telemetry.logUserAction(TelemetryActionNames.OpenInteractiveOnboarding)
-                prepareInteractiveOnboarding()
-                replaceTop(AppRoute.InteractiveOnboarding)
-            }
+            telemetry.logUserAction(TelemetryActionNames.OpenInteractiveOnboarding)
+            prepareInteractiveOnboarding()
+            replaceTop(AppRoute.InteractiveOnboarding)
         },
         onInteractiveOnboardingFinished = { finalState ->
             completeInteractiveOnboarding(finalState = finalState, returnHome = false)
@@ -630,11 +661,21 @@ fun BlockGamesAppHost(
         onInteractiveOnboardingReturnHome = { finalState ->
             completeInteractiveOnboarding(finalState = finalState, returnHome = true)
         },
+        onGameplayStyleSelected = { style ->
+            GlobalPlatformConfig.gameplayStyle = style
+            persistSettings(settings.copy(selectedGameplayStyle = style))
+            replaceTop(AppRoute.Home)
+        },
+        onNavigateToSelection = {
+            navigateTo(AppRoute.Selection)
+        },
+        isMultiGameVariant = isMultiGameVariant,
         currentRoute = currentRoute,
         showLeaveSessionDialog = showLeaveSessionDialog,
         onDismissLeaveSessionDialog = { showLeaveSessionDialog = false },
         onConfirmLeaveSessionDialog = ::navigateBack,
     )
+
     LaunchedEffect(settings) {
         telemetry.logUserProperty(TelemetryUserPropertyNames.Language, settings.language.localeTag)
         telemetry.logUserProperty(TelemetryUserPropertyNames.ThemeMode, settings.themeMode.name)

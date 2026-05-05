@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_title_stackshift">StackShift</string>
+    <string name="app_title_blockwise">BlockWise</string>
+    <string name="app_title_mergeshift">MergeShift</string>
     <string name="app_title_banner_stackshift_top">STACK</string>
     <string name="app_title_banner_stackshift_bottom">SHIFT</string>
     <string name="app_title_banner_blockwise_top">BLOCK</string>
     <string name="app_title_banner_blockwise_bottom">WISE</string>
+    <string name="app_title_banner_mergeshift_top">MERGE</string>
+    <string name="app_title_banner_mergeshift_bottom">SHIFT</string>
     <string name="settings_title">Einstellungen</string>
     <string name="settings_language">Sprache</string>
     <string name="settings_sound">Sound</string>
@@ -265,6 +269,14 @@
     <string name="tutorial_ready_body">Das ist alles: Plane die nächste Spalte, beobachte die Startleiste und setze Specials im richtigen Moment ein. Du kannst dieses Tutorial jederzeit über Einstellungen erneut öffnen.</string>
     <string name="tutorial_ready_block_properties_hint">Öffne Blockeigenschaften, wenn du schnell nachsehen möchtest, was jedes Spezialsymbol bedeutet.</string>
     <string name="tutorial_ready_settings_hint">Öffne Einstellungen, um Sprache, Thema, Farben und Blockstil vor deiner nächsten Runde anzupassen.</string>
+    <string name="tutorial_mergeshift_intro_title">Starte Teile, um Blöcke mit gleichem Wert zu verschmelzen</string>
+    <string name="tutorial_mergeshift_intro_body">In MergeShift werden Teile aus dem Dock gestartet. Wenn ein Block auf einem anderen mit demselben Wert landet, verschmelzen sie zu einem höheren Wert. Verschmilz weiter, um Platz zu schaffen und höhere Punktzahlen zu erreichen.</string>
+    <string name="tutorial_mergeshift_systems_title">Plane deine Verschmelzungen, um ein Überlaufen zu verhindern</string>
+    <string name="tutorial_mergeshift_systems_body">Jedes Teil, das du startest, erhöht die Spaltenhöhe. Wenn eine Spalte den oberen Rand erreicht, endet das Spiel. Nutze die Vorschau, um zu sehen, wo dein Teil landen wird und mit welchen Blöcken es verschmelzen könnte.</string>
+    <string name="tutorial_mergeshift_specials_title">Kombiniere mehrere Verschmelzungen für größere Combos</string>
+    <string name="tutorial_mergeshift_specials_body">Ein einziger Start kann eine Kettenreaktion von Verschmelzungen auslösen. Diese Combos geben mehr Punkte und schaffen mehr Platz auf dem Spielfeld, was dir hilft, länger im Spiel zu bleiben.</string>
+    <string name="tutorial_mergeshift_ready_title">Du bist bereit für MergeShift</string>
+    <string name="tutorial_mergeshift_ready_body">Konzentriere dich darauf, deine Spalten niedrig zu halten und Verschmelzungen mit hohem Wert vorzubereiten. Viel Glück beim Erreichen der höchsten Zahlen!</string>
     <string name="settings_tutorial">Anleitung</string>
     <string name="settings_tutorial_body">Öffne das Tutorial oder die geführte Übung jederzeit, um Steuerung, Spezialsteine und den Abschussablauf erneut anzusehen.</string>
     <string name="settings_tutorial_replay">Übung</string>
@@ -287,10 +299,26 @@
     <string name="interactive_onboarding_ghost_body">Geist-Blöcke können durch vorhandene Zellen hindurchgehen. Lass ihn in die markierte Spalte fallen, um zu sehen, wie er Stellen erreicht, die normale Teile nicht erreichen.</string>
     <string name="interactive_onboarding_heavy_title">Schwer verändert das Brett aggressiv</string>
     <string name="interactive_onboarding_heavy_body">Schwere Blöcke formen den Bereich nach der Landung deutlich um. Nutze den geführten Drop und spiele danach normal weiter.</string>
+
+    <string name="interactive_onboarding_mergeshift_launch_title">Starte dein erstes Teil</string>
+    <string name="interactive_onboarding_mergeshift_launch_body">Ziehe das Teil horizontal unter das Spielfeld, um zu zielen, und lass es dann los, um es in eine Spalte zu schießen.</string>
+    <string name="interactive_onboarding_mergeshift_merge_vertical_title">Verschmilz gleiche Werte vertikal</string>
+    <string name="interactive_onboarding_mergeshift_merge_vertical_body">Starte ein Teil in eine Spalte, die bereits einen Block mit demselben Wert enthält. Sie verschmelzen zu einer höheren Zahl!</string>
+    <string name="interactive_onboarding_mergeshift_merge_horizontal_title">Verschmilz gleiche Werte horizontal</string>
+    <string name="interactive_onboarding_mergeshift_merge_horizontal_body">Blöcke können auch mit ihren Nachbarn links oder rechts verschmelzen. Ziele auf die markierte Stelle, um eine horizontale Verschmelzung auszulösen.</string>
+    <string name="interactive_onboarding_mergeshift_merge_multi_title">Löse mehrere Verschmelzungen aus</string>
+    <string name="interactive_onboarding_mergeshift_merge_multi_body">Eine einzige Platzierung kann Verschmelzungen in mehrere Richtungen (oben, links, rechts) auslösen. Nutze dies, um mehr Platz zu schaffen und groß zu punkten!</string>
+
     <string name="settings_color_palette">Farbpalette</string>
     <string name="block_style_electric">Elektrisch</string>
     <string name="block_style_flame">Flamme</string>
     <string name="block_style_gears">Zahnräder</string>
     <string name="block_style_pixel">Pixel</string>
+
+    <string name="selection_title">Wähle Dein Spiel</string>
+    <string name="selection_stackshift_desc">Starte Teile von unten, um Reihen und Spalten zu löschen.</string>
+    <string name="selection_blockwise_desc">Ziehe Teile an eine beliebige Stelle auf dem Spielfeld.</string>
+    <string name="selection_mergeshift_desc">Verschmilz Teile mit gleichem Wert, um höhere Punktzahlen zu erreichen.</string>
+    <string name="selection_switch_game">Spiel wechseln</string>
 </resources>
 

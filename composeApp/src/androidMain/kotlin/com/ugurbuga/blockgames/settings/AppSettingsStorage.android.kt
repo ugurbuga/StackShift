@@ -8,6 +8,7 @@ import com.ugurbuga.blockgames.game.model.AppThemeMode
 import com.ugurbuga.blockgames.game.model.BlockColorPalette
 import com.ugurbuga.blockgames.game.model.BlockVisualStyle
 import com.ugurbuga.blockgames.game.model.BoardBlockStyleMode
+import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.resolveUnifiedThemePalette
 
 actual object AppSettingsStorage {
@@ -97,6 +98,9 @@ actual object AppSettingsStorage {
             lastActiveSlot = prefs.getString(KeyLastActiveSlot, null)?.let {
                 GameSessionSlot.fromKey(it)
             },
+            selectedGameplayStyle = prefs.getString(KeySelectedGameplayStyle, null)?.let {
+                GameplayStyle.valueOf(it)
+            },
         ).sanitized()
     }
 
@@ -133,12 +137,18 @@ actual object AppSettingsStorage {
                 } else {
                     remove(KeyLastActiveSlot)
                 }
+                if (sanitized.selectedGameplayStyle != null) {
+                    putString(KeySelectedGameplayStyle, sanitized.selectedGameplayStyle.name)
+                } else {
+                    remove(KeySelectedGameplayStyle)
+                }
             }
             .apply()
     }
 
     private const val KeyIsHighScoresClearedOnce = "isHighScoresClearedOnce"
     private const val KeyLastActiveSlot = "lastActiveSlot"
+    private const val KeySelectedGameplayStyle = "selectedGameplayStyle"
     private const val KeyLastAppOpenedAtEpochMillis = "lastAppOpenedAtEpochMillis"
     private const val KeyChallengeProgress = "challengeProgress"
     private const val KeyTokenBalance = "tokenBalance"

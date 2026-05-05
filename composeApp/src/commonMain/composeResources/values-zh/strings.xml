@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_title_stackshift">StackShift</string>
+    <string name="app_title_blockwise">BlockWise</string>
+    <string name="app_title_mergeshift">MergeShift</string>
     <string name="app_title_banner_stackshift_top">STACK</string>
     <string name="app_title_banner_stackshift_bottom">SHIFT</string>
     <string name="app_title_banner_blockwise_top">BLOCK</string>
     <string name="app_title_banner_blockwise_bottom">WISE</string>
+    <string name="app_title_banner_mergeshift_top">MERGE</string>
+    <string name="app_title_banner_mergeshift_bottom">SHIFT</string>
     <string name="settings_title">设置</string>
     <string name="settings_language">语言</string>
     <string name="settings_sound">声音</string>
@@ -274,6 +278,14 @@
     <string name="tutorial_ready_body">就是这些——规划下一列，留意发射条，并在合适的时机使用特殊效果。你随时都可以从设置重新打开这个教程。</string>
     <string name="tutorial_ready_block_properties_hint">如果你想快速回顾每个特殊图标的作用，可以打开方块属性。</string>
     <string name="tutorial_ready_settings_hint">在下一局开始前，你可以打开设置来调整语言、主题、颜色和方块风格。</string>
+    <string name="tutorial_mergeshift_intro_title">发射方块以合并相同数值的方块</string>
+    <string name="tutorial_mergeshift_intro_body">在 MergeShift 中，方块从底座发射。当一个方块落在另一个具有相同数值的方块上时，它们会合并成一个更高的数值。继续合并以腾出空间并获得更高分数。</string>
+    <string name="tutorial_mergeshift_systems_title">规划你的合并以防止溢出</string>
+    <string name="tutorial_mergeshift_systems_body">你发射的每一个方块都会增加列的高度。如果任何列到达顶部，游戏结束。使用预览查看你的方块将落在哪里，以及它可能与哪些方块合并。</string>
+    <string name="tutorial_mergeshift_specials_title">组合多次合并以获得更大的连击</string>
+    <string name="tutorial_mergeshift_specials_body">单次发射可以触发合并的连锁反应。这些连击会奖励更多分数，并在棋盘上腾出更多空间，帮助你在游戏中坚持更久。</string>
+    <string name="tutorial_mergeshift_ready_title">你已准备好玩 MergeShift</string>
+    <string name="tutorial_mergeshift_ready_body">专注于保持你的列高度较低，并准备高数值的合并。祝你好运，挑战最高数字！</string>
     <string name="settings_tutorial">教程</string>
     <string name="settings_tutorial_body">你可以随时打开教程或引导练习，重新查看操作方式、特殊方块和发射流程。</string>
     <string name="settings_tutorial_replay">练习</string>
@@ -295,10 +307,25 @@
     <string name="interactive_onboarding_ghost_title">幽灵块可以穿过拥挤堆叠</string>
     <string name="interactive_onboarding_ghost_body">幽灵方块可以穿过已有格子。把它落到标记的列里，看看它如何到达普通方块无法进入的位置。</string>
     <string name="interactive_onboarding_heavy_title">重型块会猛烈改变棋盘</string>
-    <string name="interactive_onboarding_heavy_body">重型方块落地后会更强烈地改变周围区域。完成这次引导投放后，游戏就会从这里继续正常进行。</string>
-    <string name="settings_color_palette">调色板</string>
+    <string name="interactive_onboarding_heavy_body">重型块会猛烈改变棋盘。完成这次引导投放后，游戏就会从这里继续正常进行。</string>
+
+    <string name="interactive_onboarding_mergeshift_launch_title">发射你的第一个方块</string>
+    <string name="interactive_onboarding_mergeshift_launch_body">在棋盘下方水平拖动方块进行瞄准，然后松手将其发射到一列中。</string>
+    <string name="interactive_onboarding_mergeshift_merge_vertical_title">垂直合并相同数值</string>
+    <string name="interactive_onboarding_mergeshift_merge_vertical_body">将方块发射到已经包含相同数值方块的列中。它们将合并成一个更大的数字！</string>
+    <string name="interactive_onboarding_mergeshift_merge_horizontal_title">水平合并相同数值</string>
+    <string name="interactive_onboarding_mergeshift_merge_horizontal_body">方块也可以与其左侧或右侧的相邻方块合并。瞄准高亮位置以触发水平合并。</string>
+    <string name="interactive_onboarding_mergeshift_merge_multi_title">触发多次合并</string>
+    <string name="interactive_onboarding_mergeshift_merge_multi_body">单次放置可以触发多个方向（上方、左侧、右侧）的合并。利用这一点腾出更多空间并获得高分！</string>
+
     <string name="block_style_electric">电力</string>
     <string name="block_style_flame">火焰</string>
     <string name="block_style_gears">齿轮</string>
     <string name="block_style_pixel">像素</string>
+
+    <string name="selection_title">选择游戏</string>
+    <string name="selection_stackshift_desc">从底部发射方块以清除行和列。</string>
+    <string name="selection_blockwise_desc">在棋盘的任何位置拖放方块。</string>
+    <string name="selection_mergeshift_desc">合并相同数值的方块以获得更高分数。</string>
+    <string name="selection_switch_game">切换游戏</string>
 </resources>

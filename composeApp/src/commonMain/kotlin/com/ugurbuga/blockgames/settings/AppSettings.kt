@@ -8,6 +8,7 @@ import com.ugurbuga.blockgames.game.model.BlockColorPalette
 import com.ugurbuga.blockgames.game.model.BlockVisualStyle
 import com.ugurbuga.blockgames.game.model.BoardBlockStyleMode
 import com.ugurbuga.blockgames.game.model.ChallengeProgress
+import com.ugurbuga.blockgames.game.model.GameplayStyle
 
 @Immutable
 data class AppSettings(
@@ -28,6 +29,7 @@ data class AppSettings(
     val soundEnabled: Boolean = false,
     val isHighScoresClearedOnce: Boolean = false,
     val lastActiveSlot: GameSessionSlot? = null,
+    val selectedGameplayStyle: GameplayStyle? = null,
 ) {
     val blockColorPalette: BlockColorPalette
         get() = when (themeColorPalette) {

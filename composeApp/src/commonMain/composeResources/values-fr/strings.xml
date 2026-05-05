@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_title_stackshift">StackShift</string>
+    <string name="app_title_blockwise">BlockWise</string>
+    <string name="app_title_mergeshift">MergeShift</string>
     <string name="app_title_banner_stackshift_top">STACK</string>
     <string name="app_title_banner_stackshift_bottom">SHIFT</string>
     <string name="app_title_banner_blockwise_top">BLOCK</string>
     <string name="app_title_banner_blockwise_bottom">WISE</string>
+    <string name="app_title_banner_mergeshift_top">MERGE</string>
+    <string name="app_title_banner_mergeshift_bottom">SHIFT</string>
     <string name="settings_title">Paramètres</string>
     <string name="settings_language">Langue</string>
     <string name="settings_sound">Sound</string>
@@ -265,6 +269,14 @@
     <string name="tutorial_ready_body">C’est tout : préparez la prochaine colonne, surveillez la barre de lancement et utilisez les spéciaux au bon moment. Vous pouvez rouvrir ce tutoriel à tout moment depuis Réglages.</string>
     <string name="tutorial_ready_block_properties_hint">Ouvrez Propriétés du bloc dès que vous voulez revoir rapidement le rôle de chaque icône spéciale.</string>
     <string name="tutorial_ready_settings_hint">Ouvrez Réglages pour modifier la langue, le thème, les couleurs et le style des blocs avant votre prochaine partie.</string>
+    <string name="tutorial_mergeshift_intro_title">Lancez des pièces pour fusionner des blocs de même valeur</string>
+    <string name="tutorial_mergeshift_intro_body">Dans MergeShift, les pièces sont lancées depuis le dock. Lorsqu\'un bloc atterrit sur un autre ayant la même valeur, ils fusionnent en une valeur supérieure. Continuez à fusionner pour libérer de l\'espace et atteindre des scores plus élevés.</string>
+    <string name="tutorial_mergeshift_systems_title">Planifiez vos fusions pour éviter le débordement</string>
+    <string name="tutorial_mergeshift_systems_body">Chaque pièce que vous lancez augmente la hauteur de la colonne. Si une colonne atteint le sommet, la partie se termine. Utilisez l\'aperçu pour voir où votre pièce va atterrir et avec quels blocs elle pourrait fusionner.</string>
+    <string name="tutorial_mergeshift_specials_title">Combinez plusieurs fusions pour de plus gros combos</string>
+    <string name="tutorial_mergeshift_specials_body">Un seul lancer peut déclencher une réaction en chaîne de fusions. Ces combos rapportent plus de points et libèrent plus d\'espace sur le plateau, vous aidant à rester en jeu plus longtemps.</string>
+    <string name="tutorial_mergeshift_ready_title">Vous êtes prêt pour MergeShift</string>
+    <string name="tutorial_mergeshift_ready_body">Concentrez-vous sur le maintien de vos colonnes à un niveau bas et sur la mise en place de fusions de grande valeur. Bonne chance pour atteindre les nombres les plus élevés !</string>
     <string name="settings_tutorial">Tutoriel</string>
     <string name="settings_tutorial_body">Ouvrez le tutoriel ou l’exercice guidé à tout moment pour revoir les commandes, les blocs spéciaux et le déroulement du lancement.</string>
     <string name="settings_tutorial_replay">Exercice</string>
@@ -287,10 +299,26 @@
     <string name="interactive_onboarding_ghost_body">Les blocs Ghost peuvent traverser les cellules déjà occupées. Lâchez-le dans la colonne marquée pour voir comment il atteint des espaces impossibles pour les pièces normales.</string>
     <string name="interactive_onboarding_heavy_title">Heavy transforme le plateau de façon agressive</string>
     <string name="interactive_onboarding_heavy_body">Les blocs Heavy remodèlent la zone après l’atterrissage. Effectuez le drop guidé, puis continuez la partie normalement.</string>
+
+    <string name="interactive_onboarding_mergeshift_launch_title">Lancez votre première pièce</string>
+    <string name="interactive_onboarding_mergeshift_launch_body">Faites glisser la pièce horizontalement sous le plateau pour viser, puis relâchez pour la lancer dans une colonne.</string>
+    <string name="interactive_onboarding_mergeshift_merge_vertical_title">Fusionnez verticalement les mêmes valeurs</string>
+    <string name="interactive_onboarding_mergeshift_merge_vertical_body">Lancez une pièce dans une colonne qui contient déjà un bloc de même valeur. Ils fusionneront en un nombre supérieur !</string>
+    <string name="interactive_onboarding_mergeshift_merge_horizontal_title">Fusionnez horizontalement les mêmes valeurs</string>
+    <string name="interactive_onboarding_mergeshift_merge_horizontal_body">Les blocs peuvent également fusionner avec leurs voisins de gauche ou de droite. Visez l\'emplacement mis en évidence pour déclencher une fusion horizontale.</string>
+    <string name="interactive_onboarding_mergeshift_merge_multi_title">Déclenchez des fusions multiples</string>
+    <string name="interactive_onboarding_mergeshift_merge_multi_body">Un seul placement peut déclencher des fusions dans plusieurs directions (haut, gauche, droite). Utilisez cela pour libérer plus d\'espace et marquer gros !</string>
+
     <string name="settings_color_palette">Palette de couleurs</string>
     <string name="block_style_electric">Électrique</string>
     <string name="block_style_flame">Flamme</string>
     <string name="block_style_gears">Engrenages</string>
     <string name="block_style_pixel">Pixel</string>
+
+    <string name="selection_title">Choisissez Votre Jeu</string>
+    <string name="selection_stackshift_desc">Lancez des pièces depuis le bas pour effacer des lignes et des colonnes.</string>
+    <string name="selection_blockwise_desc">Faites glisser et déposez des pièces n\'importe où sur le plateau.</string>
+    <string name="selection_mergeshift_desc">Fusionnez des pièces de même valeur pour atteindre des scores plus élevés.</string>
+    <string name="selection_switch_game">Changer de Jeu</string>
 </resources>
 

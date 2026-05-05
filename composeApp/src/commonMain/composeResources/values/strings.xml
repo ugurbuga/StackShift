@@ -313,5 +313,20 @@
     <string name="interactive_onboarding_ghost_body">Before you place a shape, glance at the other two pieces. Good runs come from leaving room for the whole tray, not just the current move.</string>
     <string name="interactive_onboarding_heavy_title">Clear both directions together</string>
     <string name="interactive_onboarding_heavy_body">Some placements finish a row and a column at the same time. Use the guided spot to trigger a bigger double clear.</string>
+
+    <string name="interactive_onboarding_mergeshift_launch_title">Launch your first piece</string>
+    <string name="interactive_onboarding_mergeshift_launch_body">Drag the piece horizontally under the board to aim, then release to launch it into a column.</string>
+    <string name="interactive_onboarding_mergeshift_merge_vertical_title">Merge same values vertically</string>
+    <string name="interactive_onboarding_mergeshift_merge_vertical_body">Launch a piece into a column that already has a block with the same value. They will merge into a higher number!</string>
+    <string name="interactive_onboarding_mergeshift_merge_horizontal_title">Merge same values horizontally</string>
+    <string name="interactive_onboarding_mergeshift_merge_horizontal_body">Blocks can also merge with their neighbors to the left or right. Aim for the highlighted spot to trigger a horizontal merge.</string>
+    <string name="interactive_onboarding_mergeshift_merge_multi_title">Trigger multiple merges</string>
+    <string name="interactive_onboarding_mergeshift_merge_multi_body">A single placement can trigger merges in multiple directions (above, left, right). Use this to clear more space and score big!</string>
+
+    <string name="selection_title">Choose Your Game</string>
+    <string name="selection_stackshift_desc">Launch pieces from the bottom to clear rows and columns.</string>
+    <string name="selection_blockwise_desc">Drag and drop pieces anywhere on the board.</string>
+    <string name="selection_mergeshift_desc">Merge pieces of the same value to reach higher scores.</string>
+    <string name="selection_switch_game">Switch Game</string>
 </resources>
 

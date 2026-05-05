@@ -1,13 +1,14 @@
 package com.ugurbuga.blockgames.localization
 
 import androidx.compose.runtime.Composable
+import blockgames.composeapp.generated.resources.Res
+import blockgames.composeapp.generated.resources.app_title_blockwise
+import blockgames.composeapp.generated.resources.app_title_mergeshift
+import blockgames.composeapp.generated.resources.app_title_stackshift
 import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
-import blockgames.composeapp.generated.resources.Res
-import blockgames.composeapp.generated.resources.app_title_blockwise
-import blockgames.composeapp.generated.resources.app_title_stackshift
 
 @Composable
 fun appStringResource(resource: StringResource, vararg args: Any): String {
@@ -20,21 +21,25 @@ fun appNameStringResource(): String {
 }
 
 fun appNameResourceId(): StringResource {
-    return if (GlobalPlatformConfig.gameplayStyle == GameplayStyle.BlockWise) {
-        Res.string.app_title_blockwise
-    } else {
-        Res.string.app_title_stackshift
+    return when (GlobalPlatformConfig.gameplayStyle) {
+        GameplayStyle.BlockWise -> Res.string.app_title_blockwise
+        GameplayStyle.MergeShift -> Res.string.app_title_mergeshift
+        else -> Res.string.app_title_stackshift
     }
 }
 
 @Composable
 fun formatAppString(raw: String): String {
-    return if (GlobalPlatformConfig.gameplayStyle == GameplayStyle.BlockWise) {
-        raw.replace(
-            stringResource(Res.string.app_title_stackshift),
-            stringResource(Res.string.app_title_blockwise)
-        )
-    } else {
-        raw
+    val style = GlobalPlatformConfig.gameplayStyle
+    val stackShiftTitle = stringResource(Res.string.app_title_stackshift)
+    
+    return when (style) {
+        GameplayStyle.BlockWise -> {
+            raw.replace(stackShiftTitle, stringResource(Res.string.app_title_blockwise))
+        }
+        GameplayStyle.MergeShift -> {
+            raw.replace(stackShiftTitle, stringResource(Res.string.app_title_mergeshift))
+        }
+        else -> raw
     }
 }

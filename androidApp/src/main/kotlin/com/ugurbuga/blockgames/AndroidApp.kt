@@ -13,6 +13,7 @@ fun AndroidApp() {
     GlobalPlatformConfig.gameplayStyle = gameplayStyle
     BlockGamesAppHost(
         bootstrapLogSource = "android_app_${BuildConfig.APP_VARIANT_NAME}",
+        isMultiGameVariant = BuildConfig.APP_VARIANT_NAME == "blockgames",
     ) { settings, canNavigateBack, onRequestBack ->
         val darkTheme = isBlockGamesDarkTheme(settings)
         val themeSpec = blockGamesThemeSpec(

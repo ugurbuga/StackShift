@@ -779,7 +779,8 @@ fun GameScreen(
 
                     resolvedInteractiveOnboardingUi?.let { onboardingUi ->
                         InteractiveOnboardingInfoCard(
-                            ui = onboardingUi,
+                            currentStep = onboardingUi.currentStep,
+                            totalSteps = onboardingUi.totalSteps,
                             visualState = resolvedInteractiveOnboardingVisualState
                                 ?: rememberInteractiveOnboardingVisualState(onboardingUi),
                             onBack = onBack,

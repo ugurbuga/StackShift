@@ -26,6 +26,8 @@ import com.ugurbuga.blockgames.presentation.game.InteractionFeedback
 import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStage
 import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.HighScoreStorage
+import com.ugurbuga.blockgames.settings.MergeShiftOnboardingStage
+import com.ugurbuga.blockgames.settings.MergeShiftOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.OnboardingStage
 import com.ugurbuga.blockgames.settings.StackShiftGameOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.StackShiftOnboardingStage
@@ -63,10 +65,10 @@ fun BlockGamesGameApp(
     val uiState by viewModel.uiState.collectAsState()
     val uiColors = BlockGamesThemeTokens.uiColors
     val onboardingStages: List<OnboardingStage> = remember(gameplayStyle) {
-        if (gameplayStyle == GameplayStyle.BlockWise) {
-            BlockWiseOnboardingStateFactory.stages
-        } else {
-            StackShiftGameOnboardingStateFactory.stages
+        when (gameplayStyle) {
+            GameplayStyle.BlockWise -> BlockWiseOnboardingStateFactory.stages
+            GameplayStyle.MergeShift -> MergeShiftOnboardingStateFactory.stages
+            else -> StackShiftGameOnboardingStateFactory.stages
         }
     }
     var onboardingStage by remember(interactiveOnboardingEnabled, gameplayStyle) {
@@ -107,7 +109,15 @@ fun BlockGamesGameApp(
         } else null
     }
 
-    val onboardingSceneGameState = stackShiftOnboardingScene?.gameState ?: blockWiseOnboardingScene?.gameState
+    val mergeShiftOnboardingScene = remember(interactiveOnboardingEnabled, onboardingStage) {
+        if (interactiveOnboardingEnabled && onboardingStage is MergeShiftOnboardingStage) {
+            MergeShiftOnboardingStateFactory.scene(onboardingStage as MergeShiftOnboardingStage)
+        } else null
+    }
+
+    val onboardingSceneGameState = stackShiftOnboardingScene?.gameState
+        ?: blockWiseOnboardingScene?.gameState
+        ?: mergeShiftOnboardingScene?.gameState
 
     val displayGameState by remember(
         uiState.gameState,
@@ -161,10 +171,10 @@ fun BlockGamesGameApp(
         if (request.nextStage != null) {
             onboardingStage = request.nextStage
         } else {
-            pendingOnboardingCompletionState = if (gameplayStyle == GameplayStyle.BlockWise) {
-                BlockWiseOnboardingStateFactory.cleanGameState()
-            } else {
-                StackShiftGameOnboardingStateFactory.cleanGameState()
+            pendingOnboardingCompletionState = when (gameplayStyle) {
+                GameplayStyle.BlockWise -> BlockWiseOnboardingStateFactory.cleanGameState()
+                GameplayStyle.MergeShift -> MergeShiftOnboardingStateFactory.cleanGameState()
+                else -> StackShiftGameOnboardingStateFactory.cleanGameState()
             }
             showOnboardingCompletionDialog = true
             onboardingStage = null
@@ -378,7 +388,20 @@ fun BlockGamesGameApp(
             onRequestImpactPoints = viewModel::previewImpactPoints,
             onPlacePiece = { column ->
                 telemetry.logUserAction("place_piece_mergeshift")
-                viewModel.placePieceResult(column)
+                viewModel.placePieceResult(column).also { result ->
+                    val scene = mergeShiftOnboardingScene
+                    if (!interactiveOnboardingEnabled || scene == null) return@also
+
+                    if (GameEvent.PlacementAccepted in result.events) {
+                        onboardingAdvanceRequest = InteractiveOnboardingAdvanceRequest(
+                            completedStage = scene.stage,
+                            nextStage = nextInteractiveOnboardingStage(
+                                scene.stage,
+                                onboardingStages
+                            ),
+                        )
+                    }
+                }
             },
             onRestart = {
                 telemetry.logUserAction(TelemetryActionNames.RestartGame)
@@ -390,6 +413,18 @@ fun BlockGamesGameApp(
             soundPlayer = soundPlayer,
             haptics = haptics,
             highestScore = highestScore,
+            interactiveOnboardingScene = mergeShiftOnboardingScene,
+            interactiveOnboardingCurrentStep = onboardingStages.indexOf(onboardingStage)
+                .takeIf { it >= 0 }?.plus(1) ?: 0,
+            interactiveOnboardingTotalSteps = onboardingStages.size,
+            interactiveOnboardingAwaitingCommit = onboardingAwaitingCommit,
+            interactiveOnboardingCompletionDialogVisible = showOnboardingCompletionDialog,
+            onInteractiveOnboardingStartGame = {
+                pendingOnboardingCompletionState?.let(onInteractiveOnboardingFinished)
+            },
+            onInteractiveOnboardingReturnHome = {
+                pendingOnboardingCompletionState?.let(onInteractiveOnboardingReturnHome)
+            },
         )
     }
 }
