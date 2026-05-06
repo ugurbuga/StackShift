@@ -70,6 +70,12 @@ private val androidFlavorConfigs = listOf(
         versionName = "1.0.0",
     ),
     AndroidFlavorConfig(
+        name = "BoomBlocks",
+        applicationId = "com.ugurbuga.boomblocks",
+        versionCode = 1,
+        versionName = "1.0.0",
+    ),
+    AndroidFlavorConfig(
         name = "BlockGames",
         applicationId = "com.ugurbuga.blockgames",
         versionCode = 1,

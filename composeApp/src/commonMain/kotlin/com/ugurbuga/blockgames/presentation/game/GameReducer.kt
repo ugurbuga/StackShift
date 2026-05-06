@@ -25,7 +25,8 @@ internal class GameReducer(
                 origin = action.origin,
             )
             val effects = when (state.gameplayStyle) {
-                GameplayStyle.BlockWise -> emptyList()
+                GameplayStyle.BlockWise,
+                GameplayStyle.BoomBlocks -> emptyList()
                 GameplayStyle.StackShift,
                 GameplayStyle.MergeShift -> result.state.softLock?.let { softLock ->
                     listOf(

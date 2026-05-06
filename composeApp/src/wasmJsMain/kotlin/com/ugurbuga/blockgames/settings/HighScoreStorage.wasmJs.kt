@@ -26,6 +26,10 @@ actual object HighScoreStorage {
             GameMode.Classic -> "mergeshift.highscore.classic"
             GameMode.TimeAttack -> "mergeshift.highscore.time_attack"
         }
+        GameplayStyle.BoomBlocks -> when (mode) {
+            GameMode.Classic -> "boomblocks.highscore.classic"
+            GameMode.TimeAttack -> "boomblocks.highscore.time_attack"
+        }
         }
     }
 }

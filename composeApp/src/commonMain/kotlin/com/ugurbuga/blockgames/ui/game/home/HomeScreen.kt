@@ -298,6 +298,7 @@ private fun HomeTitleBanner(
         GameplayStyle.StackShift -> StackShiftHomeTitleBanner(settings, pulse, modifier)
         GameplayStyle.BlockWise -> BlockWiseHomeTitleBanner(settings, pulse, modifier)
         GameplayStyle.MergeShift -> MergeShiftHomeTitleBanner(settings, pulse, modifier)
+        GameplayStyle.BoomBlocks -> BlockWiseHomeTitleBanner(settings, pulse, modifier) // Use BlockWise demo for BoomBlocks too
     }
 }
 

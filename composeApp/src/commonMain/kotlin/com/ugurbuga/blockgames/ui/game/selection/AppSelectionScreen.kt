@@ -31,9 +31,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.app_title_blockwise
+import blockgames.composeapp.generated.resources.app_title_boomblocks
 import blockgames.composeapp.generated.resources.app_title_mergeshift
 import blockgames.composeapp.generated.resources.app_title_stackshift
 import blockgames.composeapp.generated.resources.selection_blockwise_desc
+import blockgames.composeapp.generated.resources.selection_boomblocks_desc
 import blockgames.composeapp.generated.resources.selection_mergeshift_desc
 import blockgames.composeapp.generated.resources.selection_stackshift_desc
 import blockgames.composeapp.generated.resources.selection_title
@@ -113,6 +115,12 @@ fun AppSelectionScreen(
                         description = Res.string.selection_mergeshift_desc,
                         tone = CellTone.Violet,
                         onClick = { onGameplayStyleSelected(GameplayStyle.MergeShift) }
+                    )
+                    SelectionItem(
+                        title = Res.string.app_title_boomblocks,
+                        description = Res.string.selection_boomblocks_desc,
+                        tone = CellTone.Coral,
+                        onClick = { onGameplayStyleSelected(GameplayStyle.BoomBlocks) }
                     )
                 }
             }

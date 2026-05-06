@@ -178,6 +178,7 @@ internal object GameSessionCodec {
             feedbackToken = visual.feedbackToken,
             rewardedReviveUsed = activity.rewardedReviveUsed,
             remainingTimeMillis = progress.remainingTimeMillis,
+            nextPieceId = activity.nextPieceId,
             message = message,
             activeChallenge = activeChallenge,
         )
@@ -188,6 +189,13 @@ internal object GameSessionCodec {
         state.holdPiece?.let { add(it.id) }
         addAll(state.nextQueue.map(Piece::id))
         state.softLock?.let { add(it.pieceId) }
+        
+        // Include board cell values for modes like BoomBlocks/MergeShift
+        for (row in 0 until state.board.rows) {
+            for (col in 0 until state.board.columns) {
+                state.board.cellAt(col, row)?.let { add(it.value.toLong()) }
+            }
+        }
     }.maxOrNull() ?: 0L
 
     private fun encodeConfig(config: GameConfig): String = listOf(
@@ -507,6 +515,7 @@ internal object GameSessionCodec {
         val recentlyClearedColumns: Set<Int> = emptySet(),
         val rewardedReviveUsed: Boolean = false,
         val gameplayStyle: GameplayStyle = GameplayStyle.StackShift,
+        val nextPieceId: Long = 1L,
     )
 
     private fun encodeVisualState(state: GameState): String = listOf(
@@ -533,15 +542,17 @@ internal object GameSessionCodec {
         encodeIntSet(state.recentlyClearedColumns),
         state.rewardedReviveUsed,
         state.gameplayStyle.ordinal,
+        state.nextPieceId.toString(),
     ).joinToString(separator = FieldSeparator.toString())
 
     private fun decodeActivityState(value: String): ActivityState? {
         val parts = value.split(FieldSeparator)
-        if (parts.size != 3) return null
+        if (parts.size != 3 && parts.size != 4) return null
         return ActivityState(
             recentlyClearedColumns = decodeIntSet(parts[0]) ?: return null,
             rewardedReviveUsed = parts[1].toBooleanStrictOrNull() ?: return null,
             gameplayStyle = GameplayStyle.entries.getOrNull(parts[2].toIntOrNull() ?: return null) ?: return null,
+            nextPieceId = if (parts.size >= 4) parts[3].toLongOrNull() ?: 1L else 1L,
         )
     }
 

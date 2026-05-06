@@ -394,7 +394,9 @@ fun BlockGamesAppHost(
         state: GameState,
         slot: GameSessionSlot,
     ): Boolean {
-        if (state.config.columns <= 0 || state.config.rows <= 0) return false
+        val defaultConfig = GameConfig.default(state.gameplayStyle)
+        if (state.config.columns != defaultConfig.columns || state.config.rows != defaultConfig.rows) return false
+
         if (slot is GameSessionSlot.DailyChallenge) {
             val activeChallenge = state.activeChallenge ?: return false
             val slotDateId =
@@ -408,6 +410,7 @@ fun BlockGamesAppHost(
             GameplayStyle.BlockWise -> state.trayPieces.isNotEmpty()
             GameplayStyle.StackShift -> state.activePiece != null
             GameplayStyle.MergeShift -> state.activePiece != null
+            GameplayStyle.BoomBlocks -> true
         }
     }
 
@@ -498,6 +501,7 @@ fun BlockGamesAppHost(
         val initialState = when (GlobalPlatformConfig.gameplayStyle) {
             GameplayStyle.BlockWise -> BlockWiseOnboardingStateFactory.initialState()
             GameplayStyle.MergeShift -> MergeShiftOnboardingStateFactory.initialState()
+            GameplayStyle.BoomBlocks -> StackShiftGameOnboardingStateFactory.initialState() // TODO: Implement BoomBlocks onboarding
             else -> StackShiftGameOnboardingStateFactory.initialState()
         }
         gameViewModel = createGameViewModel(initialState)

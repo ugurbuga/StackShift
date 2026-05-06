@@ -75,6 +75,11 @@ enum class ChallengeTaskType(
                 ReachScore,
                 TriggerSpecial,
             ).getOrNull(ordinal)
+
+            GameplayStyle.BoomBlocks -> listOf(
+                ReachScore,
+                PlacePieces,
+            ).getOrNull(ordinal)
         }
     }
 }
