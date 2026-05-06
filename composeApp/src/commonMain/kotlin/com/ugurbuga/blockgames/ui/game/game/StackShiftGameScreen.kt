@@ -110,6 +110,7 @@ import com.ugurbuga.blockgames.game.model.PlacementPreview
 import com.ugurbuga.blockgames.game.model.SpecialBlockType
 import com.ugurbuga.blockgames.game.model.gameText
 import com.ugurbuga.blockgames.game.model.paletteColor
+import com.ugurbuga.blockgames.game.model.resolveBoardBlockStyle
 import com.ugurbuga.blockgames.game.model.toTopLeft
 import com.ugurbuga.blockgames.localization.LocalAppSettings
 import com.ugurbuga.blockgames.localization.appNameStringResource
@@ -146,7 +147,6 @@ import com.ugurbuga.blockgames.ui.game.onboarding.GameInteractiveOnboardingUi
 import com.ugurbuga.blockgames.ui.game.onboarding.InteractiveOnboardingInfoCard
 import com.ugurbuga.blockgames.ui.game.onboarding.InteractiveOnboardingTargetOverlay
 import com.ugurbuga.blockgames.ui.game.onboarding.rememberInteractiveOnboardingVisualState
-import com.ugurbuga.blockgames.ui.game.resolveBoardBlockStyle
 import com.ugurbuga.blockgames.ui.game.resolveGameText
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
 import com.ugurbuga.blockgames.ui.theme.BlockGamesUiColors

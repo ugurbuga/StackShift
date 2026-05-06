@@ -54,29 +54,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.ugurbuga.blockgames.game.model.BlockVisualStyle
-import com.ugurbuga.blockgames.game.model.CellTone
-import com.ugurbuga.blockgames.game.model.GameState
-import com.ugurbuga.blockgames.game.model.GameText
-import com.ugurbuga.blockgames.game.model.GameTextKey
-import com.ugurbuga.blockgames.game.model.SpecialBlockType
-import com.ugurbuga.blockgames.game.model.gameText
-import com.ugurbuga.blockgames.game.model.paletteColor
-import com.ugurbuga.blockgames.localization.LocalAppSettings
-import com.ugurbuga.blockgames.localization.appNameResourceId
-import com.ugurbuga.blockgames.localization.formatAppString
-import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
-import com.ugurbuga.blockgames.ui.theme.BlockGamesUiColors
-import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
-import com.ugurbuga.blockgames.ui.theme.blockGamesSurfaceShadow
-import com.ugurbuga.blockgames.ui.theme.isBlockGamesDarkTheme
-import kotlinx.coroutines.isActive
-import org.jetbrains.compose.resources.StringResource
-import org.jetbrains.compose.resources.stringResource
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.boost
 import blockgames.composeapp.generated.resources.challenge_completed
@@ -150,6 +131,26 @@ import blockgames.composeapp.generated.resources.tutorial_back
 import blockgames.composeapp.generated.resources.tutorial_finish
 import blockgames.composeapp.generated.resources.tutorial_ready_body
 import blockgames.composeapp.generated.resources.tutorial_ready_title
+import com.ugurbuga.blockgames.game.model.BlockVisualStyle
+import com.ugurbuga.blockgames.game.model.CellTone
+import com.ugurbuga.blockgames.game.model.GameState
+import com.ugurbuga.blockgames.game.model.GameText
+import com.ugurbuga.blockgames.game.model.GameTextKey
+import com.ugurbuga.blockgames.game.model.SpecialBlockType
+import com.ugurbuga.blockgames.game.model.gameText
+import com.ugurbuga.blockgames.game.model.paletteColor
+import com.ugurbuga.blockgames.game.model.resolveBoardBlockStyle
+import com.ugurbuga.blockgames.localization.LocalAppSettings
+import com.ugurbuga.blockgames.localization.appNameResourceId
+import com.ugurbuga.blockgames.localization.formatAppString
+import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
+import com.ugurbuga.blockgames.ui.theme.BlockGamesUiColors
+import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
+import com.ugurbuga.blockgames.ui.theme.blockGamesSurfaceShadow
+import com.ugurbuga.blockgames.ui.theme.isBlockGamesDarkTheme
+import kotlinx.coroutines.isActive
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 
 private val GameOverDialogWidth = 420.dp
 private val GameOverDialogRevealOffsetDp = 12.dp
@@ -1163,7 +1164,11 @@ internal fun rememberActionButtonColors(
         )
 
         CellTone.Gold, CellTone.Amber -> Triple(uiColors.warning, colorScheme.tertiary, Color.White)
-        CellTone.Coral, CellTone.Rose -> Triple(uiColors.danger, colorScheme.secondary, Color.White)
+        CellTone.Coral, CellTone.Rose -> Triple(
+            uiColors.danger,
+            colorScheme.secondary,
+            Color.White
+        )
     }
     return ActionButtonColors(
         container = lerp(

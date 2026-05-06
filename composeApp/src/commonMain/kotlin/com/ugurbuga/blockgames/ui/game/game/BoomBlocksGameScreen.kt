@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,10 +36,13 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.time_remaining
+import com.ugurbuga.blockgames.BlockGamesTheme
 import com.ugurbuga.blockgames.game.model.BoardMatrix
 import com.ugurbuga.blockgames.game.model.CellTone
 import com.ugurbuga.blockgames.game.model.GameState
@@ -48,10 +52,17 @@ import com.ugurbuga.blockgames.game.model.paletteColor
 import com.ugurbuga.blockgames.game.model.resolveBoardBlockStyle
 import com.ugurbuga.blockgames.localization.LocalAppSettings
 import com.ugurbuga.blockgames.platform.currentEpochMillis
+import com.ugurbuga.blockgames.settings.AppSettings
+import com.ugurbuga.blockgames.settings.BoomBlocksOnboardingScene
+import com.ugurbuga.blockgames.settings.BoomBlocksOnboardingStage
+import com.ugurbuga.blockgames.settings.BoomBlocksOnboardingStateFactory
 import com.ugurbuga.blockgames.ui.game.GameOverDialog
+import com.ugurbuga.blockgames.ui.game.InteractiveOnboardingCompletionDialog
 import com.ugurbuga.blockgames.ui.game.MinimalTopBar
 import com.ugurbuga.blockgames.ui.game.boardCellCornerRadiusPx
 import com.ugurbuga.blockgames.ui.game.drawCellBody
+import com.ugurbuga.blockgames.ui.game.onboarding.BoomBlocksInteractiveGameOnboardingOverlay
+import com.ugurbuga.blockgames.ui.game.onboarding.BoomBlocksInteractiveGameOnboardingUi
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
 import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
 import com.ugurbuga.blockgames.ui.theme.blockGamesSurfaceShadow
@@ -72,10 +83,19 @@ fun BoomBlocksGameScreen(
     onRestart: () -> Unit,
     onBack: () -> Unit,
     highestScore: Int,
+    interactiveOnboardingScene: BoomBlocksOnboardingScene? = null,
+    interactiveOnboardingCurrentStep: Int = 0,
+    interactiveOnboardingTotalSteps: Int = 0,
+    interactiveOnboardingAwaitingCommit: Boolean = false,
+    interactiveOnboardingCompletionDialogVisible: Boolean = false,
+    onInteractiveOnboardingStartGame: () -> Unit = {},
+    onInteractiveOnboardingReturnHome: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val uiColors = BlockGamesThemeTokens.uiColors
     var cellSize by remember { mutableStateOf(0f) }
+    var boardRectInRoot by remember { mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
+    var hostRectInRoot by remember { mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
 
     var currentTime by remember { mutableStateOf(currentEpochMillis()) }
     LaunchedEffect(gameState.status) {
@@ -118,62 +138,115 @@ fun BoomBlocksGameScreen(
                         uiColors.screenGradientBottom,
                     ),
                 ),
-            )
-            .safeDrawingPadding(),
+            ),
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .safeDrawingPadding()
+                .onGloballyPositioned { coordinates ->
+                    hostRectInRoot = coordinates.boundsInRoot()
+                }
         ) {
-            MinimalTopBar(
-                gameState = gameState,
-                scoreHighlightStrengthProvider = { 0f },
-                scoreHighlightScaleProvider = { 1f },
-                remainingTimeLabel = stringResource(Res.string.time_remaining),
-                onBack = onBack,
-                onRestart = onRestart,
-            )
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            Box(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(gameState.config.columns.toFloat() / gameState.config.rows.toFloat())
-                    .blockGamesSurfaceShadow(
-                        shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
-                        elevation = 8.dp,
-                    )
-                    .clip(RoundedCornerShape(GameUiShapeTokens.panelCorner))
-                    .background(uiColors.gameSurface.copy(alpha = 0.8f))
-                    .onGloballyPositioned { coordinates ->
-                        cellSize = coordinates.size.width.toFloat() / gameState.config.columns
-                    }
-                    .pointerInput(gameState.status) {
-                        if (gameState.status == GameStatus.Running) {
-                            detectTapGestures { offset ->
-                                val col = (offset.x / cellSize).toInt()
-                                val row = (offset.y / cellSize).toInt()
-                                if (col in 0 until gameState.config.columns && row in 0 until gameState.config.rows) {
-                                    onTapCell(GridPoint(col, row))
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                MinimalTopBar(
+                    gameState = gameState,
+                    scoreHighlightStrengthProvider = { 0f },
+                    scoreHighlightScaleProvider = { 1f },
+                    remainingTimeLabel = stringResource(Res.string.time_remaining),
+                    onBack = onBack,
+                    onRestart = onRestart,
+                    controlsEnabled = interactiveOnboardingScene == null,
+                )
+
+                Spacer(modifier = Modifier.weight(1f).heightIn(min = 64.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(gameState.config.columns.toFloat() / gameState.config.rows.toFloat())
+                        .blockGamesSurfaceShadow(
+                            shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
+                            elevation = 8.dp,
+                        )
+                        .clip(RoundedCornerShape(GameUiShapeTokens.panelCorner))
+                        .background(uiColors.gameSurface.copy(alpha = 0.8f))
+                        .onGloballyPositioned { coordinates ->
+                            cellSize = coordinates.size.width.toFloat() / gameState.config.columns
+                            boardRectInRoot = coordinates.boundsInRoot()
+                        }
+                        .pointerInput(gameState.status, interactiveOnboardingScene) {
+                            if (gameState.status == GameStatus.Running) {
+                                detectTapGestures { offset ->
+                                    val col = (offset.x / cellSize).toInt()
+                                    val row = (offset.y / cellSize).toInt()
+                                    if (col in 0 until gameState.config.columns && row in 0 until gameState.config.rows) {
+                                        val tappedPoint = GridPoint(col, row)
+                                        if (interactiveOnboardingScene != null) {
+                                            val guidePoint = interactiveOnboardingScene.guidePoint
+                                            if (guidePoint != null) {
+                                                val group = findConnectedGroup(gameState.board, guidePoint)
+                                                if (tappedPoint in group) {
+                                                    onTapCell(tappedPoint)
+                                                }
+                                            }
+                                        } else {
+                                            onTapCell(tappedPoint)
+                                        }
+                                    }
                                 }
                             }
-                        }
-                    },
-            ) {
-                GameGrid(
-                    gameState = gameState,
-                    modifier = Modifier.fillMaxSize(),
-                    hintEnabled = isIdle,
-                    hintPhase = hintPhase,
-                    stylePulse = stylePulse,
-                )
+                        },
+                ) {
+                    GameGrid(
+                        gameState = gameState,
+                        modifier = Modifier.fillMaxSize(),
+                        hintEnabled = isIdle,
+                        hintPhase = hintPhase,
+                        stylePulse = stylePulse,
+                    )
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.height(64.dp))
             }
 
-            Spacer(modifier = Modifier.weight(1f))
-            Spacer(modifier = Modifier.height(64.dp))
+            if (interactiveOnboardingScene != null) {
+                val boardRect = remember(boardRectInRoot, hostRectInRoot) {
+                    if (boardRectInRoot == androidx.compose.ui.geometry.Rect.Zero || hostRectInRoot == androidx.compose.ui.geometry.Rect.Zero) {
+                        androidx.compose.ui.geometry.Rect.Zero
+                    } else {
+                        androidx.compose.ui.geometry.Rect(
+                            left = boardRectInRoot.left - hostRectInRoot.left,
+                            top = boardRectInRoot.top - hostRectInRoot.top,
+                            right = boardRectInRoot.right - hostRectInRoot.left,
+                            bottom = boardRectInRoot.bottom - hostRectInRoot.top,
+                        )
+                    }
+                }
+                BoomBlocksInteractiveGameOnboardingOverlay(
+                    ui = BoomBlocksInteractiveGameOnboardingUi(
+                        scene = interactiveOnboardingScene,
+                        currentStep = interactiveOnboardingCurrentStep,
+                        totalSteps = interactiveOnboardingTotalSteps,
+                        isAwaitingPlacementCommit = interactiveOnboardingAwaitingCommit,
+                    ),
+                    boardRect = boardRect,
+                    cellSizePx = cellSize,
+                )
+            }
+        }
+
+        if (interactiveOnboardingCompletionDialogVisible) {
+            InteractiveOnboardingCompletionDialog(
+                onStartGame = onInteractiveOnboardingStartGame,
+                onReturnHome = onInteractiveOnboardingReturnHome,
+            )
         }
 
         if (gameState.status == GameStatus.GameOver) {
@@ -204,7 +277,7 @@ private data class VisualBlock(
 )
 
 @Composable
-private fun GameGrid(
+internal fun GameGrid(
     gameState: GameState,
     modifier: Modifier = Modifier,
     hintEnabled: Boolean = false,
@@ -497,3 +570,80 @@ private fun findConnectedGroup(
     }
     return group
 }
+
+@Preview
+@Composable
+private fun BoomBlocksOnboardingBasicPreview() {
+    BlockGamesTheme(settings = AppSettings()) {
+        val stage = BoomBlocksOnboardingStage.BasicExplosion
+        val scene = BoomBlocksOnboardingStateFactory.scene(stage)
+        BoomBlocksGameScreen(
+            gameState = scene.gameState,
+            onTapCell = {},
+            onRestart = {},
+            onBack = {},
+            highestScore = 0,
+            interactiveOnboardingScene = scene,
+            interactiveOnboardingCurrentStep = 1,
+            interactiveOnboardingTotalSteps = 3,
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun BoomBlocksOnboardingLargePreview() {
+    BlockGamesTheme(settings = AppSettings()) {
+        val stage = BoomBlocksOnboardingStage.LargeExplosion
+        val scene = BoomBlocksOnboardingStateFactory.scene(stage)
+        BoomBlocksGameScreen(
+            gameState = scene.gameState,
+            onTapCell = {},
+            onRestart = {},
+            onBack = {},
+            highestScore = 0,
+            interactiveOnboardingScene = scene,
+            interactiveOnboardingCurrentStep = 2,
+            interactiveOnboardingTotalSteps = 3,
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun BoomBlocksOnboardingGravityPreview() {
+    BlockGamesTheme(settings = AppSettings()) {
+        val stage = BoomBlocksOnboardingStage.GravityShift
+        val scene = BoomBlocksOnboardingStateFactory.scene(stage)
+        BoomBlocksGameScreen(
+            gameState = scene.gameState,
+            onTapCell = {},
+            onRestart = {},
+            onBack = {},
+            highestScore = 0,
+            interactiveOnboardingScene = scene,
+            interactiveOnboardingCurrentStep = 3,
+            interactiveOnboardingTotalSteps = 4,
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun BoomBlocksOnboardingStrategicPreview() {
+    BlockGamesTheme(settings = AppSettings()) {
+        val stage = BoomBlocksOnboardingStage.StrategicClears
+        val scene = BoomBlocksOnboardingStateFactory.scene(stage)
+        BoomBlocksGameScreen(
+            gameState = scene.gameState,
+            onTapCell = {},
+            onRestart = {},
+            onBack = {},
+            highestScore = 0,
+            interactiveOnboardingScene = scene,
+            interactiveOnboardingCurrentStep = 4,
+            interactiveOnboardingTotalSteps = 4,
+        )
+    }
+}
+

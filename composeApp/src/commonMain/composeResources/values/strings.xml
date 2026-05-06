@@ -298,7 +298,16 @@
     <string name="tutorial_mergeshift_specials_body">A single launch can trigger a chain reaction of merges. These combos award more points and clear more space on the board, helping you stay in the game longer.</string>
     <string name="tutorial_mergeshift_ready_title">You are ready for MergeShift</string>
     <string name="tutorial_mergeshift_ready_body">Focus on keeping your columns low and setting up high-value merges. Good luck reaching the highest numbers!</string>
+
+    <string name="tutorial_boomblocks_intro_title">Explode matching groups</string>
+    <string name="tutorial_boomblocks_intro_body">In BoomBlocks, you don\'t launch or drag pieces. Instead, look for three or more touching blocks of the same color and tap any of them to clear the whole group.</string>
+    <string name="tutorial_boomblocks_gravity_title">Dynamic board movement</string>
+    <string name="tutorial_boomblocks_gravity_body">When a group explodes, it creates a vacuum that pulls surrounding blocks in. New blocks then refill the board from the nearest edge, keeping the action dynamic.</string>
+    <string name="tutorial_boomblocks_ready_title">You are ready for BoomBlocks</string>
+    <string name="tutorial_boomblocks_ready_body">Focus on finding large groups for maximum score and watch how each explosion reshapes the board. Good luck!</string>
+
     <string name="interactive_onboarding_step_counter">Guide %1$d / %2$d</string>
+
     <string name="interactive_onboarding_drag_title">Drag a tray piece onto the board</string>
     <string name="interactive_onboarding_drag_body">Touch one of the three shapes in the tray, move it over the board, and line it up with the highlighted cells.</string>
     <string name="interactive_onboarding_drag_to_board">Drag the highlighted tray piece into the glowing target area.</string>
@@ -326,7 +335,18 @@
     <string name="interactive_onboarding_mergeshift_merge_multi_title">Trigger multiple merges</string>
     <string name="interactive_onboarding_mergeshift_merge_multi_body">A single placement can trigger merges in multiple directions (above, left, right). Use this to clear more space and score big!</string>
 
+    <string name="interactive_onboarding_boomblocks_basic_title">Tap to explode</string>
+    <string name="interactive_onboarding_boomblocks_basic_body">Find a group of three or more same-colored blocks and tap them to clear them from the board.</string>
+    <string name="interactive_onboarding_boomblocks_large_title">Bigger groups, more points</string>
+    <string name="interactive_onboarding_boomblocks_large_body">Larger groups give more points and clear more space. Tap the highlighted large group!</string>
+    <string name="interactive_onboarding_boomblocks_gravity_title">Gravity shifts</string>
+    <string name="interactive_onboarding_boomblocks_gravity_body">When you explode blocks, new ones fall in from the opposite side of the explosion. Watch how the board shifts!</string>
+    <string name="interactive_onboarding_boomblocks_strategic_title">Strategic refills</string>
+    <string name="interactive_onboarding_boomblocks_strategic_body">New blocks refill the board based on the explosion center. Use this to set up even bigger groups!</string>
+    <string name="interactive_onboarding_boomblocks_tap_hint">Tap the highlighted group to continue.</string>
+
     <string name="selection_title">Choose Your Game</string>
+
     <string name="selection_stackshift_desc">Launch pieces from the bottom to clear rows and columns.</string>
     <string name="selection_blockwise_desc">Drag and drop pieces anywhere on the board.</string>
     <string name="selection_mergeshift_desc">Merge pieces of the same value to reach higher scores.</string>

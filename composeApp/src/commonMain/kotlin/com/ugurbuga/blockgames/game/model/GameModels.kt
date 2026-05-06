@@ -380,12 +380,10 @@ enum class CellTone {
 
 enum class PieceKind(
     val unlockLevel: Int,
-    val tone: CellTone,
     val template: List<GridPoint>,
 ) {
     Domino(
         unlockLevel = 1,
-        tone = CellTone.Cyan,
         template = listOf(
             GridPoint(0, 0),
             GridPoint(1, 0),
@@ -393,14 +391,12 @@ enum class PieceKind(
     ),
     Single(
         unlockLevel = 1,
-        tone = CellTone.Cyan,
         template = listOf(
             GridPoint(0, 0),
         ),
     ),
     TriL(
         unlockLevel = 1,
-        tone = CellTone.Gold,
         template = listOf(
             GridPoint(0, 0),
             GridPoint(0, 1),
@@ -409,7 +405,6 @@ enum class PieceKind(
     ),
     Square(
         unlockLevel = 1,
-        tone = CellTone.Violet,
         template = listOf(
             GridPoint(0, 0),
             GridPoint(1, 0),
@@ -419,7 +414,6 @@ enum class PieceKind(
     ),
     T(
         unlockLevel = 2,
-        tone = CellTone.Emerald,
         template = listOf(
             GridPoint(0, 0),
             GridPoint(1, 0),
@@ -429,7 +423,6 @@ enum class PieceKind(
     ),
     L(
         unlockLevel = 2,
-        tone = CellTone.Coral,
         template = listOf(
             GridPoint(0, 0),
             GridPoint(0, 1),
@@ -439,7 +432,6 @@ enum class PieceKind(
     ),
     J(
         unlockLevel = 2,
-        tone = CellTone.Blue,
         template = listOf(
             GridPoint(1, 0),
             GridPoint(1, 1),
@@ -449,7 +441,6 @@ enum class PieceKind(
     ),
     S(
         unlockLevel = 3,
-        tone = CellTone.Rose,
         template = listOf(
             GridPoint(1, 0),
             GridPoint(2, 0),
@@ -459,7 +450,6 @@ enum class PieceKind(
     ),
     Z(
         unlockLevel = 3,
-        tone = CellTone.Lime,
         template = listOf(
             GridPoint(0, 0),
             GridPoint(1, 0),
@@ -469,7 +459,6 @@ enum class PieceKind(
     ),
     I(
         unlockLevel = 4,
-        tone = CellTone.Amber,
         template = listOf(
             GridPoint(0, 0),
             GridPoint(1, 0),
@@ -479,7 +468,6 @@ enum class PieceKind(
     ),
     Plus(
         unlockLevel = 5,
-        tone = CellTone.Cyan,
         template = listOf(
             GridPoint(1, 0),
             GridPoint(0, 1),
@@ -988,6 +976,8 @@ fun formatMergeValue(value: Int): String {
         else -> value.toString()
     }
 }
+
+fun CellTone.color(): Color = paletteColor(BlockColorPalette.Classic)
 
 fun CellTone.paletteColor(palette: BlockColorPalette): Color = when (palette) {
     BlockColorPalette.Classic -> when (this) {

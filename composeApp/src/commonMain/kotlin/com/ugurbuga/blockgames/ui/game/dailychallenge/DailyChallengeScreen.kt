@@ -128,13 +128,13 @@ import com.ugurbuga.blockgames.game.model.ChallengeTask
 import com.ugurbuga.blockgames.game.model.ChallengeTaskType
 import com.ugurbuga.blockgames.game.model.DailyChallenge
 import com.ugurbuga.blockgames.game.model.paletteColor
+import com.ugurbuga.blockgames.game.model.color
 import com.ugurbuga.blockgames.game.model.resolveBoardBlockStyle
 import com.ugurbuga.blockgames.localization.LocalAppSettings
 import com.ugurbuga.blockgames.settings.AppSettings
 import com.ugurbuga.blockgames.settings.GameSessionStorage
 import com.ugurbuga.blockgames.ui.game.BlockStyleActionButton
 import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
-import com.ugurbuga.blockgames.ui.game.color
 import com.ugurbuga.blockgames.ui.game.rememberBlockStylePulse
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
 import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens

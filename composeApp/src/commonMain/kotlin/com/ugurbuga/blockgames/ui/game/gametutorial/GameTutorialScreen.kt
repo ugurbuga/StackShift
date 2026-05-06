@@ -1,6 +1,7 @@
 package com.ugurbuga.blockgames.ui.game.gametutorial
 
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -95,6 +96,7 @@ import blockgames.composeapp.generated.resources.game_message_select_column
 import blockgames.composeapp.generated.resources.game_message_special_chain_board
 import blockgames.composeapp.generated.resources.game_message_special_lines
 import blockgames.composeapp.generated.resources.game_message_tempo_up
+import blockgames.composeapp.generated.resources.interactive_onboarding_boomblocks_tap_hint
 import blockgames.composeapp.generated.resources.launch_drag_hint
 import blockgames.composeapp.generated.resources.launch_drag_hint_blockwise
 import blockgames.composeapp.generated.resources.launch_soft_lock_message
@@ -106,6 +108,12 @@ import blockgames.composeapp.generated.resources.settings_language
 import blockgames.composeapp.generated.resources.settings_theme
 import blockgames.composeapp.generated.resources.settings_tutorial
 import blockgames.composeapp.generated.resources.tutorial_back
+import blockgames.composeapp.generated.resources.tutorial_boomblocks_gravity_body
+import blockgames.composeapp.generated.resources.tutorial_boomblocks_gravity_title
+import blockgames.composeapp.generated.resources.tutorial_boomblocks_intro_body
+import blockgames.composeapp.generated.resources.tutorial_boomblocks_intro_title
+import blockgames.composeapp.generated.resources.tutorial_boomblocks_ready_body
+import blockgames.composeapp.generated.resources.tutorial_boomblocks_ready_title
 import blockgames.composeapp.generated.resources.tutorial_finish
 import blockgames.composeapp.generated.resources.tutorial_intro_body
 import blockgames.composeapp.generated.resources.tutorial_intro_title
@@ -170,6 +178,7 @@ import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
 import com.ugurbuga.blockgames.ui.game.blockStyleIconTint
 import com.ugurbuga.blockgames.ui.game.boardCellCornerRadiusDp
 import com.ugurbuga.blockgames.ui.game.boardFrameCornerRadiusDp
+import com.ugurbuga.blockgames.ui.game.game.GameGrid
 import com.ugurbuga.blockgames.ui.game.game.LaunchGuideLineOverlay
 import com.ugurbuga.blockgames.ui.game.game.columnToLeft
 import com.ugurbuga.blockgames.ui.game.game.pieceSpawnTopLeft
@@ -279,6 +288,74 @@ private enum class TutorialPage {
     MergeShiftSystems,
     MergeShiftSpecials,
     MergeShiftReady,
+    BoomBlocksIntro,
+    BoomBlocksGravity,
+    BoomBlocksReady,
+}
+
+private fun tutorialBoomBlocksIntroScene(): TutorialDemoScene {
+    val board = BoardMatrix.empty(columns = 5, rows = 5)
+        .fillAll(CellTone.Blue)
+        .fill(GridPoint(2, 2), CellTone.Cyan)
+        .fill(GridPoint(1, 2), CellTone.Cyan)
+        .fill(GridPoint(3, 2), CellTone.Cyan)
+    return TutorialDemoScene(
+        gameState = tutorialPreviewGameState(
+            board = board,
+            activePiece = Piece(
+                id = -401,
+                kind = PieceKind.Single,
+                tone = CellTone.Cyan,
+                cells = listOf(GridPoint(0, 0)),
+                width = 1,
+                height = 1
+            ),
+            spawnColumn = 2,
+            gameplayStyle = GameplayStyle.BoomBlocks,
+        ),
+        spawnColumn = 2,
+        autoColumns = listOf(2),
+    )
+}
+
+private fun tutorialBoomBlocksGravityScene(): TutorialDemoScene {
+    val board = BoardMatrix.empty(columns = 5, rows = 5)
+        .fillAll(CellTone.Blue)
+        .fill(GridPoint(0, 0), CellTone.Coral)
+        .fill(GridPoint(1, 0), CellTone.Coral)
+        .fill(GridPoint(0, 1), CellTone.Coral)
+    return TutorialDemoScene(
+        gameState = tutorialPreviewGameState(
+            board = board,
+            activePiece = Piece(
+                id = -402,
+                kind = PieceKind.Single,
+                tone = CellTone.Coral,
+                cells = listOf(GridPoint(0, 0)),
+                width = 1,
+                height = 1
+            ),
+            spawnColumn = 0,
+            gameplayStyle = GameplayStyle.BoomBlocks,
+        ),
+        spawnColumn = 0,
+        autoColumns = listOf(0),
+    )
+}
+
+private fun BoardMatrix.fillAll(tone: CellTone): BoardMatrix {
+    var result = this
+    var id = 1000
+    for (c in 0 until columns) {
+        for (r in 0 until rows) {
+            result = result.fill(listOf(GridPoint(c, r)), tone, value = id++)
+        }
+    }
+    return result
+}
+
+private fun BoardMatrix.fill(point: GridPoint, tone: CellTone): BoardMatrix {
+    return this.fill(listOf(point), tone, value = (point.column * 100 + point.row + 5000))
 }
 
 private data class TutorialDemoScene(
@@ -490,10 +567,10 @@ fun GameTutorialScreen(
             )
 
             GameplayStyle.BoomBlocks -> listOf(
-                TutorialPage.BlockWiseIntro,
+                TutorialPage.BoomBlocksIntro,
+                TutorialPage.BoomBlocksGravity,
                 TutorialPage.StackShiftSystems,
-                TutorialPage.BlockWiseSystems,
-                TutorialPage.BlockWiseReady,
+                TutorialPage.BoomBlocksReady,
             )
         }
     }
@@ -602,6 +679,9 @@ fun GameTutorialScreen(
                                 TutorialPage.MergeShiftSystems -> TutorialMergeShiftSystemsStep()
                                 TutorialPage.MergeShiftSpecials -> TutorialMergeShiftSpecialsStep()
                                 TutorialPage.MergeShiftReady -> TutorialMergeShiftReadyStep()
+                                TutorialPage.BoomBlocksIntro -> TutorialBoomBlocksIntroStep()
+                                TutorialPage.BoomBlocksGravity -> TutorialBoomBlocksGravityStep()
+                                TutorialPage.BoomBlocksReady -> TutorialBoomBlocksReadyStep()
                             }
                         }
                     }
@@ -1015,6 +1095,107 @@ private fun TutorialMergeShiftReadyStep() {
         body = stringResource(Res.string.tutorial_mergeshift_ready_body),
     ) {
         TutorialHintCard(text = stringResource(Res.string.tutorial_ready_settings_hint))
+    }
+}
+
+@Composable
+private fun TutorialBoomBlocksIntroStep() {
+    TutorialSection(
+        title = stringResource(Res.string.tutorial_boomblocks_intro_title),
+        body = stringResource(Res.string.tutorial_boomblocks_intro_body),
+    ) {
+        TutorialBoomBlocksDemo(scene = remember { tutorialBoomBlocksIntroScene() })
+        TutorialHintCard(text = stringResource(Res.string.interactive_onboarding_boomblocks_tap_hint))
+    }
+}
+
+@Composable
+private fun TutorialBoomBlocksGravityStep() {
+    TutorialSection(
+        title = stringResource(Res.string.tutorial_boomblocks_gravity_title),
+        body = stringResource(Res.string.tutorial_boomblocks_gravity_body),
+    ) {
+        TutorialBoomBlocksDemo(scene = remember { tutorialBoomBlocksGravityScene() })
+        TutorialHintCard(text = stringResource(Res.string.launch_soft_lock_message))
+    }
+}
+
+@Composable
+private fun TutorialBoomBlocksReadyStep() {
+    TutorialSection(
+        title = stringResource(Res.string.tutorial_boomblocks_ready_title),
+        body = stringResource(Res.string.tutorial_boomblocks_ready_body),
+    ) {
+        TutorialHintCard(text = stringResource(Res.string.tutorial_ready_settings_hint))
+    }
+}
+
+@Composable
+private fun TutorialBoomBlocksDemo(
+    scene: TutorialDemoScene,
+    modifier: Modifier = Modifier,
+) {
+    val gameLogic = remember { GameLogic.create() }
+    var gameState by remember(scene) { mutableStateOf(scene.gameState) }
+
+    val infiniteTransition = rememberInfiniteTransition(label = "boomBlocksTutorial")
+    val hintPhase by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1100, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "hintPhase",
+    )
+    val stylePulse by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 3200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "stylePulse",
+    )
+
+    val targetPoint = remember(scene) {
+        var found: GridPoint? = null
+        for (c in 0 until scene.gameState.board.columns) {
+            for (r in 0 until scene.gameState.board.rows) {
+                if (scene.gameState.board.toneAt(c, r) != CellTone.Blue) {
+                    found = GridPoint(c, r)
+                    break
+                }
+            }
+            if (found != null) break
+        }
+        found ?: GridPoint(2, 2)
+    }
+
+    LaunchedEffect(scene) {
+        while (isActive) {
+            gameState = scene.gameState
+            delay(1500)
+            val result = gameLogic.placePiece(gameState, 0L, targetPoint)
+            gameState = result.state
+            delay(2500)
+        }
+    }
+
+    TutorialMiniBoardShell(modifier = modifier) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(gameState.config.columns.toFloat() / gameState.config.rows.toFloat())
+        ) {
+            GameGrid(
+                gameState = gameState,
+                modifier = Modifier.fillMaxSize(),
+                hintEnabled = true,
+                hintPhase = hintPhase,
+                stylePulse = stylePulse,
+            )
+        }
     }
 }
 
@@ -2169,11 +2350,39 @@ private fun GameTutorialScreenPreview() {
     }
 }
 
-@Preview(name = "Tutorial - BlockWise", widthDp = 412, heightDp = 915)
+@Preview(name = "Tutorial - BoomBlocks - Intro", widthDp = 412, heightDp = 915)
 @Composable
-private fun GameTutorialScreenStartPreview() {
+private fun TutorialBoomBlocksIntroStepPreview() {
+    GlobalPlatformConfig.gameplayStyle = GameplayStyle.BoomBlocks
     BlockGamesTheme(settings = AppSettings()) {
         GameTutorialScreen(
+            initialPage = 0,
+            onBack = {},
+            onFinish = {},
+        )
+    }
+}
+
+@Preview(name = "Tutorial - BoomBlocks - Gravity", widthDp = 412, heightDp = 915)
+@Composable
+private fun TutorialBoomBlocksGravityStepPreview() {
+    GlobalPlatformConfig.gameplayStyle = GameplayStyle.BoomBlocks
+    BlockGamesTheme(settings = AppSettings()) {
+        GameTutorialScreen(
+            initialPage = 1,
+            onBack = {},
+            onFinish = {},
+        )
+    }
+}
+
+@Preview(name = "Tutorial - BoomBlocks - Ready", widthDp = 412, heightDp = 915)
+@Composable
+private fun TutorialBoomBlocksReadyStepPreview() {
+    GlobalPlatformConfig.gameplayStyle = GameplayStyle.BoomBlocks
+    BlockGamesTheme(settings = AppSettings()) {
+        GameTutorialScreen(
+            initialPage = 3,
             onBack = {},
             onFinish = {},
         )

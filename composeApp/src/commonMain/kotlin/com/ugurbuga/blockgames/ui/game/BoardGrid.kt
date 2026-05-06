@@ -17,12 +17,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.HelpOutline
-import androidx.compose.material.icons.filled.Hub
-import androidx.compose.material.icons.filled.Layers
-import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -55,7 +49,6 @@ import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
@@ -64,10 +57,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.ugurbuga.blockgames.game.model.BlockColorPalette
 import com.ugurbuga.blockgames.game.model.BlockVisualStyle
-import com.ugurbuga.blockgames.game.model.BoardBlockStyleMode
 import com.ugurbuga.blockgames.game.model.BoardCell
 import com.ugurbuga.blockgames.game.model.BoardMatrix
 import com.ugurbuga.blockgames.game.model.CellTone
@@ -79,9 +70,8 @@ import com.ugurbuga.blockgames.game.model.Piece
 import com.ugurbuga.blockgames.game.model.PlacementPreview
 import com.ugurbuga.blockgames.game.model.PressureLevel
 import com.ugurbuga.blockgames.game.model.SpecialBlockType
-import com.ugurbuga.blockgames.game.model.formatMergeValue
 import com.ugurbuga.blockgames.game.model.boardSpecialIcon
-import com.ugurbuga.blockgames.game.model.normalizeBlockVisualStyle
+import com.ugurbuga.blockgames.game.model.formatMergeValue
 import com.ugurbuga.blockgames.game.model.paletteColor
 import com.ugurbuga.blockgames.game.model.resolveBoardBlockStyle
 import com.ugurbuga.blockgames.localization.LocalAppSettings
@@ -3634,119 +3624,3 @@ internal fun boardCellCornerRadiusPx(
 ): Float = (cellSizePx * 0.16f * style.cornerScale()).coerceAtLeast(0f)
 
 internal fun boardFrameCornerRadiusDp(style: BlockVisualStyle): Dp = style.frameCornerRadius()
-
-internal fun CellTone.color(): Color = paletteColor(BlockColorPalette.Classic)
-
-internal fun CellTone.paletteColor(palette: BlockColorPalette): Color = when (palette) {
-    BlockColorPalette.Classic -> when (this) {
-        CellTone.Cyan -> Color(0xFF4FC3F7)
-        CellTone.Gold -> Color(0xFFFFD166)
-        CellTone.Violet -> Color(0xFF9B8CFF)
-        CellTone.Emerald -> Color(0xFF57E389)
-        CellTone.Coral -> Color(0xFFFF7A90)
-        CellTone.Blue -> Color(0xFF6AA7FF)
-        CellTone.Rose -> Color(0xFFFF8FAB)
-        CellTone.Lime -> Color(0xFFB8F15F)
-        CellTone.Amber -> Color(0xFFFFB74D)
-    }
-
-    BlockColorPalette.Candy -> when (this) {
-        CellTone.Cyan -> Color(0xFFFF7A90)
-        CellTone.Gold -> Color(0xFFFFD166)
-        CellTone.Violet -> Color(0xFFC77DFF)
-        CellTone.Emerald -> Color(0xFF7AE582)
-        CellTone.Coral -> Color(0xFF9B8CFF)
-        CellTone.Blue -> Color(0xFF5BC0EB)
-        CellTone.Rose -> Color(0xFFFFB5E8)
-        CellTone.Lime -> Color(0xFFFEE440)
-        CellTone.Amber -> Color(0xFFF7B267)
-    }
-
-    BlockColorPalette.Neon -> when (this) {
-        CellTone.Cyan -> Color(0xFF00F5D4)
-        CellTone.Gold -> Color(0xFFFFE66D)
-        CellTone.Violet -> Color(0xFF9B5DE5)
-        CellTone.Emerald -> Color(0xFF00F5A0)
-        CellTone.Coral -> Color(0xFFFF5C8A)
-        CellTone.Blue -> Color(0xFF00BBF9)
-        CellTone.Rose -> Color(0xFFFF4D6D)
-        CellTone.Lime -> Color(0xFFB9F700)
-        CellTone.Amber -> Color(0xFFFFBE0B)
-    }
-
-    BlockColorPalette.Earth -> when (this) {
-        CellTone.Cyan -> Color(0xFF4D908E)
-        CellTone.Gold -> Color(0xFFE9C46A)
-        CellTone.Violet -> Color(0xFF8D6A9F)
-        CellTone.Emerald -> Color(0xFF7A9E7E)
-        CellTone.Coral -> Color(0xFFCE8460)
-        CellTone.Blue -> Color(0xFF5E7CE2)
-        CellTone.Rose -> Color(0xFFB56B83)
-        CellTone.Lime -> Color(0xFFA7C957)
-        CellTone.Amber -> Color(0xFFDDA15E)
-    }
-
-    BlockColorPalette.Monochrome -> when (this) {
-        CellTone.Cyan -> Color(0xFFF1F5F9)
-        CellTone.Gold -> Color(0xFFDCE3EA)
-        CellTone.Violet -> Color(0xFFC4CDD6)
-        CellTone.Emerald -> Color(0xFFADB7C2)
-        CellTone.Coral -> Color(0xFF97A1AC)
-        CellTone.Blue -> Color(0xFF818B96)
-        CellTone.Rose -> Color(0xFF6C7682)
-        CellTone.Lime -> Color(0xFF59616E)
-        CellTone.Amber -> Color(0xFF464D59)
-    }
-
-    BlockColorPalette.Aurora -> when (this) {
-        CellTone.Cyan -> Color(0xFF69DCF6)
-        CellTone.Gold -> Color(0xFF9FE7FF)
-        CellTone.Violet -> Color(0xFFAB9BFF)
-        CellTone.Emerald -> Color(0xFF63E1BE)
-        CellTone.Coral -> Color(0xFFFF88B4)
-        CellTone.Blue -> Color(0xFF61A8FF)
-        CellTone.Rose -> Color(0xFFD7A6FF)
-        CellTone.Lime -> Color(0xFF8BF0D0)
-        CellTone.Amber -> Color(0xFFFFD57D)
-    }
-
-    BlockColorPalette.Sunset -> when (this) {
-        CellTone.Cyan -> Color(0xFFFFA77B)
-        CellTone.Gold -> Color(0xFFFFC95C)
-        CellTone.Violet -> Color(0xFFC79BFF)
-        CellTone.Emerald -> Color(0xFFFF9B72)
-        CellTone.Coral -> Color(0xFFFF6E7C)
-        CellTone.Blue -> Color(0xFF8E7CFF)
-        CellTone.Rose -> Color(0xFFFF93B5)
-        CellTone.Lime -> Color(0xFFFFB85F)
-        CellTone.Amber -> Color(0xFFFF8C42)
-    }
-
-    BlockColorPalette.SoftPastel -> when (this) {
-        CellTone.Cyan -> Color(0xFF9EDFF2)
-        CellTone.Gold -> Color(0xFFF6D8A8)
-        CellTone.Violet -> Color(0xFFCABCF7)
-        CellTone.Emerald -> Color(0xFFB7E6D2)
-        CellTone.Coral -> Color(0xFFF2AFC0)
-        CellTone.Blue -> Color(0xFFAFC8F4)
-        CellTone.Rose -> Color(0xFFF7C6D9)
-        CellTone.Lime -> Color(0xFFD6EDB5)
-        CellTone.Amber -> Color(0xFFF3C9A6)
-    }
-}
-
-internal fun resolveBoardBlockStyle(
-    selectedStyle: BlockVisualStyle,
-    mode: BoardBlockStyleMode,
-): BlockVisualStyle = when (mode) {
-    BoardBlockStyleMode.AlwaysFlat -> BlockVisualStyle.Flat
-    BoardBlockStyleMode.MatchSelectedBlockStyle -> normalizeBlockVisualStyle(selectedStyle)
-}
-
-private fun boardSpecialIcon(type: SpecialBlockType) = when (type) {
-    SpecialBlockType.ColumnClearer -> Icons.Filled.SwapVert
-    SpecialBlockType.RowClearer -> Icons.Filled.SwapHoriz
-    SpecialBlockType.Ghost -> Icons.Filled.Layers
-    SpecialBlockType.Heavy -> Icons.Filled.Hub
-    SpecialBlockType.None -> Icons.AutoMirrored.Filled.HelpOutline
-}

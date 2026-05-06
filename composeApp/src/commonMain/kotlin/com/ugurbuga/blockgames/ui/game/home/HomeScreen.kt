@@ -1,6 +1,7 @@
 package com.ugurbuga.blockgames.ui.game.home
 
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -64,6 +65,8 @@ import androidx.compose.ui.unit.sp
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.app_title_banner_blockwise_bottom
 import blockgames.composeapp.generated.resources.app_title_banner_blockwise_top
+import blockgames.composeapp.generated.resources.app_title_banner_boomblocks_bottom
+import blockgames.composeapp.generated.resources.app_title_banner_boomblocks_top
 import blockgames.composeapp.generated.resources.app_title_banner_stackshift_bottom
 import blockgames.composeapp.generated.resources.app_title_banner_stackshift_top
 import blockgames.composeapp.generated.resources.high_score
@@ -74,7 +77,6 @@ import blockgames.composeapp.generated.resources.settings_language
 import blockgames.composeapp.generated.resources.settings_theme
 import blockgames.composeapp.generated.resources.settings_tutorial
 import com.ugurbuga.blockgames.BlockGamesTheme
-import com.ugurbuga.blockgames.game.model.AppColorPalette
 import com.ugurbuga.blockgames.game.model.AppThemeMode
 import com.ugurbuga.blockgames.game.model.BlockVisualStyle
 import com.ugurbuga.blockgames.game.model.CellTone
@@ -298,9 +300,253 @@ private fun HomeTitleBanner(
         GameplayStyle.StackShift -> StackShiftHomeTitleBanner(settings, pulse, modifier)
         GameplayStyle.BlockWise -> BlockWiseHomeTitleBanner(settings, pulse, modifier)
         GameplayStyle.MergeShift -> MergeShiftHomeTitleBanner(settings, pulse, modifier)
-        GameplayStyle.BoomBlocks -> BlockWiseHomeTitleBanner(settings, pulse, modifier) // Use BlockWise demo for BoomBlocks too
+        GameplayStyle.BoomBlocks -> BoomBlocksHomeTitleBanner(settings, pulse, modifier)
     }
 }
+
+@Composable
+private fun BoomBlocksHomeTitleBanner(
+    settings: AppSettings,
+    pulse: Float,
+    modifier: Modifier = Modifier,
+) {
+    val uiColors = BlockGamesThemeTokens.uiColors
+    val columns = 6
+    val rows = 4
+
+    val bannerMotionTransition = rememberInfiniteTransition(label = "boomBlocksBannerMotion")
+    val sequenceClock by bannerMotionTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 8000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "boomBlocksBannerSequenceClock",
+    )
+    val sequencePhase = normalizedPhase(sequenceClock)
+
+    // Sequential Explosions: TL, BR, TR, BL
+    // Each phase takes 0.25 of the total timeline
+    val p1 = segmentProgress(sequencePhase, 0.00f, 0.25f)
+    val p2 = segmentProgress(sequencePhase, 0.25f, 0.50f)
+    val p3 = segmentProgress(sequencePhase, 0.50f, 0.75f)
+    val p4 = segmentProgress(sequencePhase, 0.75f, 1.00f)
+
+    // Sub-phases for each sequence (relative to each 0.25 segment)
+    fun subMove(p: Float) = segmentProgress(p, 0.00f, 0.48f)
+    fun subTap(p: Float) = segmentProgress(p, 0.48f, 0.60f)
+    fun subExplode(p: Float) = segmentProgress(p, 0.60f, 0.80f)
+    fun subSettle(p: Float) = segmentProgress(p, 0.80f, 1.00f)
+
+    val topWord = stringResource(Res.string.app_title_banner_boomblocks_top)
+    val bottomWord = stringResource(Res.string.app_title_banner_boomblocks_bottom)
+
+    val tones = listOf(
+        CellTone.Cyan,
+        CellTone.Gold,
+        CellTone.Violet,
+        CellTone.Emerald,
+        CellTone.Coral,
+        CellTone.Blue
+    )
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .blockGamesSurfaceShadow(
+                shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
+                elevation = 10.dp,
+            ),
+        shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
+        colors = CardDefaults.cardColors(containerColor = uiColors.gameSurface.copy(alpha = 0.94f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.82f)),
+    ) {
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(6f / 4.2f)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            uiColors.panelHighlight.copy(alpha = 0.22f),
+                            uiColors.launchGlow.copy(alpha = 0.10f),
+                            Color.Transparent,
+                        ),
+                    ),
+                ),
+        ) {
+            val cellWidth = maxWidth / columns
+            val boardCellHeight = cellWidth
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(vertical = 8.dp),
+                verticalArrangement = Arrangement.Center
+            ) {
+                for (r in 0 until rows) {
+                    Row(
+                        modifier = Modifier
+                            .height(boardCellHeight)
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        for (c in 0 until columns) {
+                            val letter = when (r) {
+                                1 -> if (c in 1..4) topWord[c - 1].toString() else null
+                                2 -> if (c in 0..5) bottomWord[c].toString() else null
+                                else -> null
+                            }
+
+                            val tone = when (r) {
+                                0 -> if (c < 3) tones[0] else tones[1]
+                                3 -> if (c < 3) tones[2] else tones[3]
+                                1 -> when (c) {
+                                    0 -> tones[(0 + 2) % tones.size] // Swapped with Row 2, Col 0
+                                    2 -> tones[(3 + 4) % tones.size] // Swapped with Col 3
+                                    3 -> tones[(2 + 4) % tones.size] // Swapped with Col 2
+                                    else -> tones[(c + 4) % tones.size]
+                                }
+                                2 -> when (c) {
+                                    0 -> tones[(0 + 4) % tones.size] // Swapped with Row 1, Col 0
+                                    else -> tones[(c + 2) % tones.size]
+                                }
+                                else -> tones[0]
+                            }
+
+                            // Explosion logic for each quadrant
+                            val isTL = r == 0 && c < 3
+                            val isBR = r == 3 && c >= 3
+                            val isTR = r == 0 && c >= 3
+                            val isBL = r == 3 && c < 3
+
+                            val (cellAlpha, cellOffsetY) = when {
+                                isTL -> {
+                                    val alpha = if (p1 < 0.60f) 1f else if (p1 < 0.80f) 1f - subExplode(p1) else subSettle(p1)
+                                    val y = if (p1 >= 0.80f) lerpDp(-boardCellHeight * 2, 0.dp, subSettle(p1)) else 0.dp
+                                    alpha to y
+                                }
+                                isBR -> {
+                                    val alpha = if (p2 < 0.60f) 1f else if (p2 < 0.80f) 1f - subExplode(p2) else subSettle(p2)
+                                    val y = if (p2 >= 0.80f) lerpDp(boardCellHeight * 3, 0.dp, subSettle(p2)) else 0.dp
+                                    alpha to y
+                                }
+                                isTR -> {
+                                    val alpha = if (p3 < 0.60f) 1f else if (p3 < 0.80f) 1f - subExplode(p3) else subSettle(p3)
+                                    val y = if (p3 >= 0.80f) lerpDp(-boardCellHeight * 2, 0.dp, subSettle(p3)) else 0.dp
+                                    alpha to y
+                                }
+                                isBL -> {
+                                    val alpha = if (p4 < 0.60f) 1f else if (p4 < 0.80f) 1f - subExplode(p4) else subSettle(p4)
+                                    val y = if (p4 >= 0.80f) lerpDp(boardCellHeight * 3, 0.dp, subSettle(p4)) else 0.dp
+                                    alpha to y
+                                }
+                                else -> 1f to 0.dp
+                            }
+
+                            HomeTitleAnimatedCell(
+                                letter = letter,
+                                tone = tone,
+                                settings = settings,
+                                pulse = pulse,
+                                alpha = cellAlpha,
+                                modifier = Modifier.size(boardCellHeight),
+                                offsetY = cellOffsetY
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Flaş efektleri
+            if (subExplode(p1) in 0.01f..0.99f) {
+                HomeTitleRowClearOverlay(
+                    alpha = (1f - subExplode(p1)) * 0.6f,
+                    rowIndex = 0,
+                    cellHeight = boardCellHeight,
+                    modifier = Modifier.matchParentSize().padding(end = maxWidth / 2)
+                )
+            }
+            if (subExplode(p2) in 0.01f..0.99f) {
+                HomeTitleRowClearOverlay(
+                    alpha = (1f - subExplode(p2)) * 0.6f,
+                    rowIndex = 3,
+                    cellHeight = boardCellHeight,
+                    modifier = Modifier.matchParentSize().padding(start = maxWidth / 2)
+                )
+            }
+            if (subExplode(p3) in 0.01f..0.99f) {
+                HomeTitleRowClearOverlay(
+                    alpha = (1f - subExplode(p3)) * 0.6f,
+                    rowIndex = 0,
+                    cellHeight = boardCellHeight,
+                    modifier = Modifier.matchParentSize().padding(start = maxWidth / 2)
+                )
+            }
+            if (subExplode(p4) in 0.01f..0.99f) {
+                HomeTitleRowClearOverlay(
+                    alpha = (1f - subExplode(p4)) * 0.6f,
+                    rowIndex = 3,
+                    cellHeight = boardCellHeight,
+                    modifier = Modifier.matchParentSize().padding(end = maxWidth / 2)
+                )
+            }
+
+            // El İkonu Animasyonu
+            val (handX, handY, handAlpha, handP) = when {
+                sequencePhase < 0.25f -> {
+                    val x = lerpDp(maxWidth * 0.8f, cellWidth * 1.5f, subMove(p1))
+                    val y = lerpDp(maxHeight, boardCellHeight * 0.5f, subMove(p1))
+                    val alpha = if (p1 < 0.60f) 1f else 0f
+                    val tap = subTap(p1)
+                    val pVal = if (p1 in 0.48f..0.60f) tap else 0f
+                    listOf(x, y, alpha, pVal)
+                }
+                sequencePhase < 0.50f -> {
+                    val x = lerpDp(cellWidth * 1.5f, cellWidth * 4.5f, subMove(p2))
+                    val y = lerpDp(boardCellHeight * 0.5f, boardCellHeight * 3.5f, subMove(p2))
+                    val alpha = if (p2 < 0.60f) 1f else 0f
+                    val tap = subTap(p2)
+                    val pVal = if (p2 in 0.48f..0.60f) tap else 0f
+                    listOf(x, y, alpha, pVal)
+                }
+                sequencePhase < 0.75f -> {
+                    val x = lerpDp(cellWidth * 4.5f, cellWidth * 4.5f, subMove(p3))
+                    val y = lerpDp(boardCellHeight * 3.5f, boardCellHeight * 0.5f, subMove(p3))
+                    val alpha = if (p3 < 0.60f) 1f else 0f
+                    val tap = subTap(p3)
+                    val pVal = if (p3 in 0.48f..0.60f) tap else 0f
+                    listOf(x, y, alpha, pVal)
+                }
+                else -> {
+                    val x = lerpDp(cellWidth * 4.5f, cellWidth * 1.5f, subMove(p4))
+                    val y = lerpDp(boardCellHeight * 0.5f, boardCellHeight * 3.5f, subMove(p4))
+                    val alpha = if (p4 < 0.60f) 1f else 0f
+                    val tap = subTap(p4)
+                    val pVal = if (p4 in 0.48f..0.60f) tap else 0f
+                    listOf(x, y, alpha, pVal)
+                }
+            }
+
+            if ((handAlpha as Float) > 0f) {
+                val isDark = isBlockGamesDarkTheme(settings)
+                val handColor = if (isDark) Color.White else Color.Black.copy(alpha = 0.85f)
+                val tapScale = 1f - ((handP as Float) * 0.25f)
+
+                HomeTitleDemoHand(
+                    x = handX as Dp,
+                    y = handY as Dp,
+                    size = boardCellHeight * tapScale,
+                    alpha = handAlpha,
+                    color = handColor,
+                )
+            }
+        }
+    }
+}
+
 
 @Composable
 private fun StackShiftHomeTitleBanner(
@@ -1599,7 +1845,9 @@ private fun HomeQuickActionButton(
 @Composable
 fun HomeScreenStackShiftPreview() {
     GlobalPlatformConfig.gameplayStyle = GameplayStyle.StackShift
-    val settings = AppSettings()
+    val settings = AppSettings(
+        blockVisualStyle = BlockVisualStyle.Sharp3D
+    )
     BlockGamesTheme(settings = settings) {
         HomeScreen(
             settings = settings,
@@ -1621,7 +1869,10 @@ fun HomeScreenStackShiftPreview() {
 @Composable
 fun HomeScreenBlockWisePreview() {
     GlobalPlatformConfig.gameplayStyle = GameplayStyle.BlockWise
-    val settings = AppSettings()
+    val settings = AppSettings(
+        themeMode = AppThemeMode.Dark,
+        blockVisualStyle = BlockVisualStyle.Bubble
+    )
     BlockGamesTheme(settings = settings) {
         HomeScreen(
             settings = settings,
@@ -1643,31 +1894,8 @@ fun HomeScreenBlockWisePreview() {
 @Composable
 fun HomeScreenMergeShiftPreview() {
     GlobalPlatformConfig.gameplayStyle = GameplayStyle.MergeShift
-    val settings = AppSettings()
-    BlockGamesTheme(settings = settings) {
-        HomeScreen(
-            settings = settings,
-            classicHighScore = 1250,
-            timeAttackHighScore = 860,
-            telemetry = NoOpAppTelemetry,
-            onPlay = {},
-            onPlayTimeAttack = {},
-            onOpenTutorial = {},
-            onOpenTheme = {},
-            onOpenLanguage = {},
-            onOpenChallenges = {},
-            notificationManager = rememberNotificationManager(),
-        )
-    }
-}
-
-@Preview(name = "Light Mode", showBackground = true)
-@Composable
-fun HomeScreenLightPreview() {
     val settings = AppSettings(
-        themeMode = AppThemeMode.Light,
-        blockVisualStyle = BlockVisualStyle.Prism,
-        themeColorPalette = AppColorPalette.ModernNeon
+        blockVisualStyle = BlockVisualStyle.NeonGlow
     )
     BlockGamesTheme(settings = settings) {
         HomeScreen(
@@ -1686,13 +1914,13 @@ fun HomeScreenLightPreview() {
     }
 }
 
-@Preview(name = "Dark Mode", showBackground = true)
+@Preview(name = "BoomBlocks", showBackground = true)
 @Composable
-fun HomeScreenDarkPreview() {
+fun HomeScreenBoomBlocksPreview() {
+    GlobalPlatformConfig.gameplayStyle = GameplayStyle.BoomBlocks
     val settings = AppSettings(
         themeMode = AppThemeMode.Dark,
-        blockVisualStyle = BlockVisualStyle.Flat,
-        themeColorPalette = AppColorPalette.Classic
+        blockVisualStyle = BlockVisualStyle.Crystal
     )
     BlockGamesTheme(settings = settings) {
         HomeScreen(
