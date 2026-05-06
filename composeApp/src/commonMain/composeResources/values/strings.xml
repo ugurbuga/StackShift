@@ -3,12 +3,15 @@
     <string name="app_title_stackshift">StackShift</string>
     <string name="app_title_blockwise">BlockWise</string>
     <string name="app_title_mergeshift">MergeShift</string>
+    <string name="app_title_boomblocks">BoomBlocks</string>
     <string name="app_title_banner_stackshift_top">STACK</string>
     <string name="app_title_banner_stackshift_bottom">SHIFT</string>
     <string name="app_title_banner_blockwise_top">BLOCK</string>
     <string name="app_title_banner_blockwise_bottom">WISE</string>
     <string name="app_title_banner_mergeshift_top">MERGE</string>
     <string name="app_title_banner_mergeshift_bottom">SHIFT</string>
+    <string name="app_title_banner_boomblocks_top">BOOM</string>
+    <string name="app_title_banner_boomblocks_bottom">BLOCKS</string>
     <string name="settings_title">Settings</string>
     <string name="settings_language">Language</string>
     <string name="settings_sound">Sound</string>
@@ -327,6 +330,7 @@
     <string name="selection_stackshift_desc">Launch pieces from the bottom to clear rows and columns.</string>
     <string name="selection_blockwise_desc">Drag and drop pieces anywhere on the board.</string>
     <string name="selection_mergeshift_desc">Merge pieces of the same value to reach higher scores.</string>
+    <string name="selection_boomblocks_desc">Tap groups of 3 or more blocks to explode them.</string>
     <string name="selection_switch_game">Switch Game</string>
 </resources>
 

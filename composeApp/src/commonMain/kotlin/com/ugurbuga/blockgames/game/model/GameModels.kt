@@ -248,6 +248,7 @@ data class GameConfig(
             GameplayStyle.BlockWise -> GameConfig(columns = 8, rows = 10)
             GameplayStyle.StackShift -> GameConfig(columns = 10, rows = 12)
             GameplayStyle.MergeShift -> GameConfig(columns = 3, rows = 5)
+            GameplayStyle.BoomBlocks -> GameConfig(columns = 6, rows = 10)
         }
     }
 }
@@ -261,6 +262,7 @@ enum class GameplayStyle {
     StackShift,
     BlockWise,
     MergeShift,
+    BoomBlocks,
 }
 
 enum class GameStatus {
@@ -782,7 +784,7 @@ class BoardMatrix private constructor(
         return BoardMatrix(columns = columns, rows = rows, cells = next)
     }
 
-    fun applyGravity(): BoardMatrix {
+    fun applyGravityUp(): BoardMatrix {
         val next = IntArray(cells.size) { EMPTY_CELL }
         for (column in 0 until columns) {
             var targetRow = 0
@@ -796,6 +798,54 @@ class BoardMatrix private constructor(
         }
         return BoardMatrix(columns = columns, rows = rows, cells = next)
     }
+
+    fun applyGravityDown(): BoardMatrix {
+        val next = IntArray(cells.size) { EMPTY_CELL }
+        for (column in 0 until columns) {
+            var targetRow = rows - 1
+            for (sourceRow in rows - 1 downTo 0) {
+                val cellValue = cells[indexOf(column, sourceRow)]
+                if (cellValue != EMPTY_CELL) {
+                    next[indexOf(column, targetRow)] = cellValue
+                    targetRow--
+                }
+            }
+        }
+        return BoardMatrix(columns = columns, rows = rows, cells = next)
+    }
+
+    fun applyGravityLeft(): BoardMatrix {
+        val next = IntArray(cells.size) { EMPTY_CELL }
+        for (row in 0 until rows) {
+            var targetCol = 0
+            for (sourceCol in 0 until columns) {
+                val cellValue = cells[indexOf(sourceCol, row)]
+                if (cellValue != EMPTY_CELL) {
+                    next[indexOf(targetCol, row)] = cellValue
+                    targetCol++
+                }
+            }
+        }
+        return BoardMatrix(columns = columns, rows = rows, cells = next)
+    }
+
+    fun applyGravityRight(): BoardMatrix {
+        val next = IntArray(cells.size) { EMPTY_CELL }
+        for (row in 0 until rows) {
+            var targetCol = columns - 1
+            for (sourceCol in columns - 1 downTo 0) {
+                val cellValue = cells[indexOf(sourceCol, row)]
+                if (cellValue != EMPTY_CELL) {
+                    next[indexOf(targetCol, row)] = cellValue
+                    targetCol--
+                }
+            }
+        }
+        return BoardMatrix(columns = columns, rows = rows, cells = next)
+    }
+
+    @Deprecated("Use applyGravityUp()", ReplaceWith("applyGravityUp()"))
+    fun applyGravity(): BoardMatrix = applyGravityUp()
 
     private fun indexOf(column: Int, row: Int): Int = row * columns + column
 
@@ -878,6 +928,8 @@ data class GameState(
     val recentlyClearedRows: Set<Int> = emptySet(),
     val recentlyClearedColumns: Set<Int> = emptySet(),
     val recentlyMergedPoints: Set<GridPoint> = emptySet(),
+    val recentlyExplodedPoints: Set<GridPoint> = emptySet(),
+    val recentlyExplodedTones: Map<GridPoint, CellTone> = emptyMap(),
     val lastResolvedLines: Int = 0,
     val lastChainDepth: Int = 0,
     val specialChainCount: Int = 0,

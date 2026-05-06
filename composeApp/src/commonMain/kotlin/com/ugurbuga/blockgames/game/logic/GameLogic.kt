@@ -51,6 +51,7 @@ private class AdaptiveGameLogic(
         GameplayStyle.BlockWise -> BlockWiseGameLogic(random, scoreCalculator)
         GameplayStyle.StackShift -> StackShiftGameLogic(random, scoreCalculator)
         GameplayStyle.MergeShift -> MergeShiftGameLogic(random, scoreCalculator)
+        GameplayStyle.BoomBlocks -> BoomBlocksGameLogic(random, scoreCalculator)
     }
 
     override fun restoreGame(state: GameState) = gameLogic(state.gameplayStyle).restoreGame(state)

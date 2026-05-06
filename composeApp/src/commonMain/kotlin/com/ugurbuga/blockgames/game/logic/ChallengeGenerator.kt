@@ -29,6 +29,7 @@ object ChallengeGenerator {
                     GameplayStyle.StackShift -> (random.nextInt(5, 20) * 1000)
                     GameplayStyle.BlockWise -> random.nextInt(2, 8) * 1000
                     GameplayStyle.MergeShift -> (random.nextInt(5, 15) * 1000)
+                    GameplayStyle.BoomBlocks -> random.nextInt(5, 15) * 1000
                 }
                 ChallengeTaskType.TriggerSpecial -> random.nextInt(2, 6)
                 ChallengeTaskType.PerfectPlacement -> random.nextInt(10, 20)

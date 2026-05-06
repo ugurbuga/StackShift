@@ -488,6 +488,13 @@ fun GameTutorialScreen(
                 TutorialPage.MergeShiftSpecials,
                 TutorialPage.MergeShiftReady,
             )
+
+            GameplayStyle.BoomBlocks -> listOf(
+                TutorialPage.BlockWiseIntro,
+                TutorialPage.StackShiftSystems,
+                TutorialPage.BlockWiseSystems,
+                TutorialPage.BlockWiseReady,
+            )
         }
     }
     val totalSteps = tutorialPages.size

@@ -68,6 +68,7 @@ fun BlockGamesGameApp(
         when (gameplayStyle) {
             GameplayStyle.BlockWise -> BlockWiseOnboardingStateFactory.stages
             GameplayStyle.MergeShift -> MergeShiftOnboardingStateFactory.stages
+            GameplayStyle.BoomBlocks -> emptyList()
             else -> StackShiftGameOnboardingStateFactory.stages
         }
     }
@@ -256,6 +257,23 @@ fun BlockGamesGameApp(
 
     LogScreen(telemetry, TelemetryScreenNames.Game)
     when (gameplayStyle) {
+        GameplayStyle.BoomBlocks -> BoomBlocksGameScreen(
+            modifier = modifier,
+            gameState = displayGameState,
+            onTapCell = { origin ->
+                telemetry.logUserAction("tap_cell_boomblocks")
+                // We use placePieceResult with a dummy pieceId for BoomBlocks
+                val result = viewModel.placePieceResult(0L, origin)
+                dispatchFeedback(result.feedback, soundPlayer, haptics)
+            },
+            onRestart = {
+                telemetry.logUserAction(TelemetryActionNames.RestartGame)
+                viewModel.restart()
+            },
+            onBack = onBack,
+            highestScore = highestScore,
+        )
+
         GameplayStyle.BlockWise -> BlockWiseGameScreen(
             modifier = modifier,
             gameState = displayGameState,

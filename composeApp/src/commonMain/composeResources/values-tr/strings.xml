@@ -3,12 +3,15 @@
     <string name="app_title_stackshift">StackShift</string>
     <string name="app_title_blockwise">BlockWise</string>
     <string name="app_title_mergeshift">MergeShift</string>
+    <string name="app_title_boomblocks">BoomBlocks</string>
     <string name="app_title_banner_stackshift_top">STACK</string>
     <string name="app_title_banner_stackshift_bottom">SHIFT</string>
     <string name="app_title_banner_blockwise_top">BLOCK</string>
     <string name="app_title_banner_blockwise_bottom">WISE</string>
     <string name="app_title_banner_mergeshift_top">MERGE</string>
     <string name="app_title_banner_mergeshift_bottom">SHIFT</string>
+    <string name="app_title_banner_boomblocks_top">BOOM</string>
+    <string name="app_title_banner_boomblocks_bottom">BLOCKS</string>
     <string name="settings_title">Ayarlar</string>
     <string name="settings_language">Dil</string>
     <string name="settings_sound">Ses</string>
@@ -318,5 +321,6 @@
     <string name="selection_stackshift_desc">Satır ve sütunları temizlemek için parçaları alttan fırlatın.</string>
     <string name="selection_blockwise_desc">Parçaları tahtanın herhangi bir yerine sürükleyip bırakın.</string>
     <string name="selection_mergeshift_desc">Daha yüksek puanlara ulaşmak için aynı değerdeki parçaları birleştirin.</string>
+    <string name="selection_boomblocks_desc">Patlatmak için 3 veya daha fazla bloktan oluşan gruplara dokunun.</string>
     <string name="selection_switch_game">Oyunu Değiştir</string>
 </resources>
