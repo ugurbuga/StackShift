@@ -25,6 +25,8 @@ import com.ugurbuga.blockgames.presentation.game.GameViewModel
 import com.ugurbuga.blockgames.presentation.game.InteractionFeedback
 import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStage
 import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStateFactory
+import com.ugurbuga.blockgames.settings.BoomBlocksOnboardingStage
+import com.ugurbuga.blockgames.settings.BoomBlocksOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.HighScoreStorage
 import com.ugurbuga.blockgames.settings.MergeShiftOnboardingStage
 import com.ugurbuga.blockgames.settings.MergeShiftOnboardingStateFactory
@@ -68,7 +70,7 @@ fun BlockGamesGameApp(
         when (gameplayStyle) {
             GameplayStyle.BlockWise -> BlockWiseOnboardingStateFactory.stages
             GameplayStyle.MergeShift -> MergeShiftOnboardingStateFactory.stages
-            GameplayStyle.BoomBlocks -> emptyList()
+            GameplayStyle.BoomBlocks -> BoomBlocksOnboardingStateFactory.stages
             else -> StackShiftGameOnboardingStateFactory.stages
         }
     }
@@ -116,9 +118,16 @@ fun BlockGamesGameApp(
         } else null
     }
 
+    val boomBlocksOnboardingScene = remember(interactiveOnboardingEnabled, onboardingStage) {
+        if (interactiveOnboardingEnabled && onboardingStage is BoomBlocksOnboardingStage) {
+            BoomBlocksOnboardingStateFactory.scene(onboardingStage as BoomBlocksOnboardingStage)
+        } else null
+    }
+
     val onboardingSceneGameState = stackShiftOnboardingScene?.gameState
         ?: blockWiseOnboardingScene?.gameState
         ?: mergeShiftOnboardingScene?.gameState
+        ?: boomBlocksOnboardingScene?.gameState
 
     val displayGameState by remember(
         uiState.gameState,
@@ -175,6 +184,7 @@ fun BlockGamesGameApp(
             pendingOnboardingCompletionState = when (gameplayStyle) {
                 GameplayStyle.BlockWise -> BlockWiseOnboardingStateFactory.cleanGameState()
                 GameplayStyle.MergeShift -> MergeShiftOnboardingStateFactory.cleanGameState()
+                GameplayStyle.BoomBlocks -> BoomBlocksOnboardingStateFactory.cleanGameState()
                 else -> StackShiftGameOnboardingStateFactory.cleanGameState()
             }
             showOnboardingCompletionDialog = true
@@ -265,6 +275,18 @@ fun BlockGamesGameApp(
                 // We use placePieceResult with a dummy pieceId for BoomBlocks
                 val result = viewModel.placePieceResult(0L, origin)
                 dispatchFeedback(result.feedback, soundPlayer, haptics)
+
+                if (interactiveOnboardingEnabled && boomBlocksOnboardingScene != null) {
+                    if (GameEvent.PlacementAccepted in result.events) {
+                        onboardingAdvanceRequest = InteractiveOnboardingAdvanceRequest(
+                            completedStage = boomBlocksOnboardingScene.stage,
+                            nextStage = nextInteractiveOnboardingStage(
+                                boomBlocksOnboardingScene.stage,
+                                onboardingStages
+                            ),
+                        )
+                    }
+                }
             },
             onRestart = {
                 telemetry.logUserAction(TelemetryActionNames.RestartGame)
@@ -272,6 +294,18 @@ fun BlockGamesGameApp(
             },
             onBack = onBack,
             highestScore = highestScore,
+            interactiveOnboardingScene = boomBlocksOnboardingScene,
+            interactiveOnboardingCurrentStep = onboardingStages.indexOf(onboardingStage)
+                .takeIf { it >= 0 }?.plus(1) ?: 0,
+            interactiveOnboardingTotalSteps = onboardingStages.size,
+            interactiveOnboardingAwaitingCommit = onboardingAwaitingCommit,
+            interactiveOnboardingCompletionDialogVisible = showOnboardingCompletionDialog,
+            onInteractiveOnboardingStartGame = {
+                pendingOnboardingCompletionState?.let(onInteractiveOnboardingFinished)
+            },
+            onInteractiveOnboardingReturnHome = {
+                pendingOnboardingCompletionState?.let(onInteractiveOnboardingReturnHome)
+            },
         )
 
         GameplayStyle.BlockWise -> BlockWiseGameScreen(

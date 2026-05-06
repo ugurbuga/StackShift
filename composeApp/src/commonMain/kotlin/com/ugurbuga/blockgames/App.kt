@@ -52,6 +52,7 @@ import com.ugurbuga.blockgames.presentation.game.GameViewModel
 import com.ugurbuga.blockgames.settings.AppSettings
 import com.ugurbuga.blockgames.settings.AppSettingsStorage
 import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStateFactory
+import com.ugurbuga.blockgames.settings.BoomBlocksOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.GameSessionSlot
 import com.ugurbuga.blockgames.settings.GameSessionStorage
 import com.ugurbuga.blockgames.settings.HighScoreStorage
@@ -501,7 +502,7 @@ fun BlockGamesAppHost(
         val initialState = when (GlobalPlatformConfig.gameplayStyle) {
             GameplayStyle.BlockWise -> BlockWiseOnboardingStateFactory.initialState()
             GameplayStyle.MergeShift -> MergeShiftOnboardingStateFactory.initialState()
-            GameplayStyle.BoomBlocks -> StackShiftGameOnboardingStateFactory.initialState() // TODO: Implement BoomBlocks onboarding
+            GameplayStyle.BoomBlocks -> BoomBlocksOnboardingStateFactory.initialState()
             else -> StackShiftGameOnboardingStateFactory.initialState()
         }
         gameViewModel = createGameViewModel(initialState)

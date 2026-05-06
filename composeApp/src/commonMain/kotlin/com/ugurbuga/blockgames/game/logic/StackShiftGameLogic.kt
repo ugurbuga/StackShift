@@ -1,6 +1,7 @@
 package com.ugurbuga.blockgames.game.logic
 
 import com.ugurbuga.blockgames.game.model.BoardMatrix
+import com.ugurbuga.blockgames.game.model.CellTone
 import com.ugurbuga.blockgames.game.model.ChallengeTaskType
 import com.ugurbuga.blockgames.game.model.ColumnPressure
 import com.ugurbuga.blockgames.game.model.ComboState
@@ -1052,7 +1053,7 @@ internal class StackShiftGameLogic(
                 val candidate = Piece(
                     id = nextPieceId,
                     kind = kind,
-                    tone = kind.tone,
+                    tone = CellTone.entries.random(random),
                     cells = rotatedCells,
                     width = rotatedCells.maxOf { it.column } + 1,
                     height = rotatedCells.maxOf { it.row } + 1,
@@ -1067,7 +1068,7 @@ internal class StackShiftGameLogic(
         return Piece(
             id = nextPieceId,
             kind = PieceKind.Domino,
-            tone = PieceKind.Domino.tone,
+            tone = CellTone.entries.random(random),
             cells = listOf(GridPoint(0, 0), GridPoint(1, 0)),
             width = 2,
             height = 1,
@@ -1139,7 +1140,7 @@ internal class StackShiftGameLogic(
         return Piece(
             id = nextPieceId,
             kind = kind,
-            tone = kind.tone,
+            tone = CellTone.entries.random(random),
             cells = rotatedCells,
             width = rotatedCells.maxOf { it.column } + 1,
             height = rotatedCells.maxOf { it.row } + 1,
