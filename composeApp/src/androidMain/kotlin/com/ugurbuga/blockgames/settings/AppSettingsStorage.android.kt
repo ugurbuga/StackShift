@@ -84,9 +84,9 @@ actual object AppSettingsStorage {
                 prefs.getSafeString(KeyUnlockedBlockStyles, null),
                 BlockVisualStyle.entries,
             ),
-            challengeProgress = decodeChallengeProgress(
-                prefs.getSafeString(KeyChallengeProgress, null)
-            ),
+            styleChallengeProgress = GameplayStyle.entries.associateWith { style ->
+                decodeChallengeProgress(prefs.getSafeString(KeyChallengeProgressPrefix + style.name.lowercase(), null))
+            }.filterValues { it.completedDays.isNotEmpty() },
             lastAppOpenedAtEpochMillis = prefs.getLong(
                 KeyLastAppOpenedAtEpochMillis,
                 defaultSettings.lastAppOpenedAtEpochMillis,
@@ -128,7 +128,11 @@ actual object AppSettingsStorage {
             .putString(KeyUnlockedThemeModes, encodeEnumSet(sanitized.unlockedThemeModes))
             .putString(KeyUnlockedThemePalettes, encodeEnumSet(sanitized.unlockedThemePalettes))
             .putString(KeyUnlockedBlockStyles, encodeEnumSet(sanitized.unlockedBlockStyles))
-            .putString(KeyChallengeProgress, encodeChallengeProgress(sanitized.challengeProgress))
+            .apply {
+                sanitized.styleChallengeProgress.forEach { (style, progress) ->
+                    putString(KeyChallengeProgressPrefix + style.name.lowercase(), encodeChallengeProgress(progress))
+                }
+            }
             .putLong(KeyLastAppOpenedAtEpochMillis, sanitized.lastAppOpenedAtEpochMillis)
             .putBoolean(KeyIsHighScoresClearedOnce, sanitized.isHighScoresClearedOnce)
             .apply {
@@ -150,7 +154,7 @@ actual object AppSettingsStorage {
     private const val KeyLastActiveSlot = "lastActiveSlot"
     private const val KeySelectedGameplayStyle = "selectedGameplayStyle"
     private const val KeyLastAppOpenedAtEpochMillis = "lastAppOpenedAtEpochMillis"
-    private const val KeyChallengeProgress = "challengeProgress"
+    private const val KeyChallengeProgressPrefix = "challengeProgress_"
     private const val KeyTokenBalance = "tokenBalance"
     private const val KeyUnlockedThemeModes = "unlockedThemeModes"
     private const val KeyUnlockedThemePalettes = "unlockedThemePalettes"

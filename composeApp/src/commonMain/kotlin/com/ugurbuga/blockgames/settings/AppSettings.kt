@@ -21,7 +21,7 @@ data class AppSettings(
     val unlockedThemeModes: Set<AppThemeMode> = AppThemeMode.entries.toSet(),
     val unlockedThemePalettes: Set<AppColorPalette> = setOf(AppColorPalette.Classic),
     val unlockedBlockStyles: Set<BlockVisualStyle> = setOf(BlockVisualStyle.Flat),
-    val challengeProgress: ChallengeProgress = ChallengeProgress(),
+    val styleChallengeProgress: Map<GameplayStyle, ChallengeProgress> = emptyMap(),
     val lastAppOpenedAtEpochMillis: Long = 0L,
     val hasSeenTutorial: Boolean = false,
     val hasShownInteractiveOnboarding: Boolean = false,
@@ -31,6 +31,9 @@ data class AppSettings(
     val lastActiveSlot: GameSessionSlot? = null,
     val selectedGameplayStyle: GameplayStyle? = null,
 ) {
+    val challengeProgress: ChallengeProgress
+        get() = styleChallengeProgress[selectedGameplayStyle ?: GameplayStyle.StackShift] ?: ChallengeProgress()
+
     val blockColorPalette: BlockColorPalette
         get() = when (themeColorPalette) {
             AppColorPalette.Classic -> BlockColorPalette.Classic

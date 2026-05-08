@@ -33,10 +33,10 @@ actual object AppSettingsStorage {
             tokenBalance = defaults.integerForKey(KeyTokenBalance).toInt(),
             unlockedThemeModes = decodeEnumSet(defaults.getSafeString(KeyUnlockedThemeModes), AppThemeMode.entries),
             unlockedThemePalettes = decodeEnumSet(defaults.getSafeString(KeyUnlockedThemePalettes), AppColorPalette.entries),
-            unlockedBlockStyles = decodeEnumSet(defaults.getSafeString(KeyUnlockedBlockStyles), BlockVisualStyle.entries),
-            challengeProgress = decodeChallengeProgress(
-                defaults.getSafeString(KeyChallengeProgress),
-            ),
+            unlockedBlockStyles = decodeEnumSet(defaults.getSafeString(KeyUnlockedBlockStyles), com.ugurbuga.blockgames.game.model.BlockVisualStyle.entries),
+            styleChallengeProgress = com.ugurbuga.blockgames.game.model.GameplayStyle.entries.associateWith { style ->
+                decodeChallengeProgress(defaults.getSafeString(KeyChallengeProgressPrefix + style.name.lowercase()))
+            }.filterValues { it.completedDays.isNotEmpty() },
             lastAppOpenedAtEpochMillis = defaults.objectForKey(KeyLastAppOpenedAtEpochMillis)?.let {
                 defaults.stringForKey(KeyLastAppOpenedAtEpochMillis)?.toLongOrNull()
                     ?: defaults.integerForKey(KeyLastAppOpenedAtEpochMillis).toLong()
@@ -44,6 +44,9 @@ actual object AppSettingsStorage {
             isHighScoresClearedOnce = defaults.boolForKey(KeyIsHighScoresClearedOnce),
             lastActiveSlot = defaults.stringForKey(KeyLastActiveSlot)?.let {
                 GameSessionSlot.fromKey(it)
+            },
+            selectedGameplayStyle = defaults.stringForKey(KeySelectedGameplayStyle)?.let {
+                com.ugurbuga.blockgames.game.model.GameplayStyle.valueOf(it)
             },
         ).sanitized()
     }
@@ -63,7 +66,9 @@ actual object AppSettingsStorage {
         defaults.setObject(encodeEnumSet(sanitized.unlockedThemeModes), forKey = KeyUnlockedThemeModes)
         defaults.setObject(encodeEnumSet(sanitized.unlockedThemePalettes), forKey = KeyUnlockedThemePalettes)
         defaults.setObject(encodeEnumSet(sanitized.unlockedBlockStyles), forKey = KeyUnlockedBlockStyles)
-        defaults.setObject(encodeChallengeProgress(sanitized.challengeProgress), forKey = KeyChallengeProgress)
+        sanitized.styleChallengeProgress.forEach { (style, progress) ->
+            defaults.setObject(encodeChallengeProgress(progress), forKey = KeyChallengeProgressPrefix + style.name.lowercase())
+        }
         defaults.setObject(sanitized.lastAppOpenedAtEpochMillis.toString(), forKey = KeyLastAppOpenedAtEpochMillis)
         defaults.setBool(sanitized.isHighScoresClearedOnce, forKey = KeyIsHighScoresClearedOnce)
         if (sanitized.lastActiveSlot != null) {
@@ -71,12 +76,18 @@ actual object AppSettingsStorage {
         } else {
             defaults.removeObjectForKey(KeyLastActiveSlot)
         }
+        if (sanitized.selectedGameplayStyle != null) {
+            defaults.setObject(sanitized.selectedGameplayStyle.name, forKey = KeySelectedGameplayStyle)
+        } else {
+            defaults.removeObjectForKey(KeySelectedGameplayStyle)
+        }
     }
 
+    private const val KeySelectedGameplayStyle = "selectedGameplayStyle"
     private const val KeyIsHighScoresClearedOnce = "isHighScoresClearedOnce"
     private const val KeyLastActiveSlot = "lastActiveSlot"
     private const val KeyLastAppOpenedAtEpochMillis = "lastAppOpenedAtEpochMillis"
-    private const val KeyChallengeProgress = "challengeProgress"
+    private const val KeyChallengeProgressPrefix = "challengeProgress_"
     private const val KeyTokenBalance = "tokenBalance"
     private const val KeyUnlockedThemeModes = "unlockedThemeModes"
     private const val KeyUnlockedThemePalettes = "unlockedThemePalettes"

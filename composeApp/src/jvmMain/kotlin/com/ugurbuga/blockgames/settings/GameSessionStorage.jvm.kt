@@ -1,6 +1,7 @@
 package com.ugurbuga.blockgames.settings
 
 import com.ugurbuga.blockgames.game.model.GameState
+import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
 import java.util.prefs.Preferences
 
 actual object GameSessionStorage {
@@ -29,17 +30,24 @@ actual object GameSessionStorage {
     }
 
     actual fun cleanup(allowedDateIds: List<String>) {
-        val allowedKeys = allowedDateIds.map { "gameState_daily_challenge_$it" }.toSet()
+        val style = GlobalPlatformConfig.gameplayStyle.name.lowercase()
+        val allowedKeys = allowedDateIds.map { "gameState_daily_challenge_${style}_$it" }.toSet()
+        val prefix = "gameState_daily_challenge_${style}_"
         prefs.keys()
-            .filter { it.startsWith("gameState_daily_challenge_") && it !in allowedKeys }
+            .filter { it.startsWith(prefix) && it !in allowedKeys }
             .forEach { prefs.remove(it) }
+    }
+
+    actual fun getSavedDailyChallengeDays(yearMonth: String): Set<Int> {
+        val style = GlobalPlatformConfig.gameplayStyle.name.lowercase()
+        val prefix = "gameState_daily_challenge_${style}_$yearMonth-"
+        return prefs.keys()
+            .filter { it.startsWith(prefix) }
+            .mapNotNull { it.substringAfterLast("-").toIntOrNull() }
+            .toSet()
     }
 
     private const val Namespace = "com.ugurbuga.blockgames.game_session"
 
-    private fun keyFor(slot: GameSessionSlot): String = when (slot) {
-        GameSessionSlot.Classic -> "gameState_classic"
-        GameSessionSlot.TimeAttack -> "gameState_time_attack"
-        is GameSessionSlot.DailyChallenge -> "gameState_daily_challenge_${slot.dateId}"
-    }
+    private fun keyFor(slot: GameSessionSlot): String = "gameState_${slot.key}"
 }

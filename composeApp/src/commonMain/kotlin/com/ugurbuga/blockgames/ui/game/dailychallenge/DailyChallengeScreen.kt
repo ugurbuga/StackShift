@@ -132,6 +132,7 @@ import com.ugurbuga.blockgames.game.model.color
 import com.ugurbuga.blockgames.game.model.resolveBoardBlockStyle
 import com.ugurbuga.blockgames.localization.LocalAppSettings
 import com.ugurbuga.blockgames.settings.AppSettings
+import com.ugurbuga.blockgames.settings.GameSessionSlot
 import com.ugurbuga.blockgames.settings.GameSessionStorage
 import com.ugurbuga.blockgames.ui.game.BlockStyleActionButton
 import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
@@ -166,18 +167,29 @@ fun DailyChallengeScreen(
     val currentMonthYear = months[pagerState.currentPage]
 
     val selectedChallenge = remember(currentMonthYear, selectedDay, progress) {
-        val base =
-            ChallengeGenerator.generate(
+        val key = "${currentMonthYear.year}-${currentMonthYear.month.toString().padStart(2, '0')}"
+        val dateId = "$key-${selectedDay.toString().padStart(2, '0')}"
+        val isCompleted = progress.completedDays[key]?.contains(selectedDay) == true
+
+        if (isCompleted) {
+            val base = ChallengeGenerator.generate(
                 year = currentMonthYear.year,
                 month = currentMonthYear.month,
                 day = selectedDay,
             )
-        val key = "${currentMonthYear.year}-${currentMonthYear.month.toString().padStart(2, '0')}"
-        val isCompleted = progress.completedDays[key]?.contains(selectedDay) == true
-        if (isCompleted) {
             base.copy(tasks = base.tasks.map { it.copy(current = it.target) })
         } else {
-            base
+            val savedState = GameSessionStorage.load(
+                GameSessionSlot.DailyChallenge(
+                    dateId = dateId,
+                    style = com.ugurbuga.blockgames.platform.GlobalPlatformConfig.gameplayStyle
+                )
+            )
+            savedState?.activeChallenge ?: ChallengeGenerator.generate(
+                year = currentMonthYear.year,
+                month = currentMonthYear.month,
+                day = selectedDay,
+            )
         }
     }
 
@@ -297,6 +309,11 @@ fun DailyChallengeScreen(
                 modifier = Modifier.fillMaxWidth()
             ) { page ->
                 val monthYear = months[page]
+                val inProgressDays = remember(monthYear) {
+                    GameSessionStorage.getSavedDailyChallengeDays(
+                        "${monthYear.year}-${monthYear.month.toString().padStart(2, '0')}"
+                    )
+                }
                 CalendarGrid(
                     year = monthYear.year,
                     month = monthYear.month,
@@ -306,6 +323,7 @@ fun DailyChallengeScreen(
                     completedDays = progress.completedDays["${monthYear.year}-${
                         monthYear.month.toString().padStart(2, '0')
                     }"] ?: emptySet(),
+                    inProgressDays = inProgressDays,
                     selectedDay = if (page == pagerState.currentPage) selectedDay else null,
                     onDayClick = { selectedDay = it }
                 )
@@ -418,6 +436,7 @@ fun CalendarGrid(
     currentMonth: Int,
     currentDay: Int,
     completedDays: Set<Int>,
+    inProgressDays: Set<Int>,
     selectedDay: Int?,
     onDayClick: (Int) -> Unit
 ) {
@@ -480,6 +499,7 @@ fun CalendarGrid(
                             DayCell(
                                 day = day,
                                 isCompleted = isCompleted,
+                                isInProgress = day in inProgressDays,
                                 isSelected = isSelected,
                                 isEnabled = !isFuture,
                                 onClick = { onDayClick(day) }
@@ -498,6 +518,7 @@ fun CalendarGrid(
 fun DayCell(
     day: Int,
     isCompleted: Boolean,
+    isInProgress: Boolean,
     isSelected: Boolean,
     isEnabled: Boolean,
     onClick: () -> Unit
@@ -513,6 +534,12 @@ fun DayCell(
         else -> uiColors.panelMuted.copy(alpha = 0.5f)
     }
 
+    val borderColor = when {
+        isSelected -> Color.White
+        isInProgress && !isCompleted -> CellTone.Amber.paletteColor(palette)
+        else -> Color.Transparent
+    }
+
     Box(
         modifier = Modifier
             .aspectRatio(1f)
@@ -520,8 +547,8 @@ fun DayCell(
             .background(baseColor)
             .clickable(enabled = isEnabled, onClick = onClick)
             .border(
-                width = if (isSelected) 2.dp else 0.dp,
-                color = if (isSelected) Color.White else Color.Transparent,
+                width = if (isSelected || (isInProgress && !isCompleted)) 2.dp else 0.dp,
+                color = borderColor,
                 shape = RoundedCornerShape(8.dp)
             ),
         contentAlignment = Alignment.Center

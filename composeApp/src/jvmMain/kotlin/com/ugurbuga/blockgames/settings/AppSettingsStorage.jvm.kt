@@ -37,11 +37,16 @@ actual object AppSettingsStorage {
             unlockedThemeModes = decodeEnumSet(prefs.getSafeString(KeyUnlockedThemeModes, null), AppThemeMode.entries),
             unlockedThemePalettes = decodeEnumSet(prefs.getSafeString(KeyUnlockedThemePalettes, null), AppColorPalette.entries),
             unlockedBlockStyles = decodeEnumSet(prefs.getSafeString(KeyUnlockedBlockStyles, null), BlockVisualStyle.entries),
-            challengeProgress = decodeChallengeProgress(prefs.getSafeString(KeyChallengeProgress, null)),
+            styleChallengeProgress = com.ugurbuga.blockgames.game.model.GameplayStyle.entries.associateWith { style ->
+                decodeChallengeProgress(prefs.getSafeString(KeyChallengeProgressPrefix + style.name.lowercase(), null))
+            }.filterValues { it.completedDays.isNotEmpty() },
             lastAppOpenedAtEpochMillis = prefs.getLong(KeyLastAppOpenedAtEpochMillis, defaultSettings.lastAppOpenedAtEpochMillis),
             isHighScoresClearedOnce = prefs.getBoolean(KeyIsHighScoresClearedOnce, defaultSettings.isHighScoresClearedOnce),
             lastActiveSlot = prefs.get(KeyLastActiveSlot, null)?.let {
                 GameSessionSlot.fromKey(it)
+            },
+            selectedGameplayStyle = prefs.get(KeySelectedGameplayStyle, null)?.let {
+                com.ugurbuga.blockgames.game.model.GameplayStyle.valueOf(it)
             },
         ).sanitized()
     }
@@ -61,7 +66,9 @@ actual object AppSettingsStorage {
         prefs.put(KeyUnlockedThemeModes, encodeEnumSet(sanitized.unlockedThemeModes))
         prefs.put(KeyUnlockedThemePalettes, encodeEnumSet(sanitized.unlockedThemePalettes))
         prefs.put(KeyUnlockedBlockStyles, encodeEnumSet(sanitized.unlockedBlockStyles))
-        prefs.put(KeyChallengeProgress, encodeChallengeProgress(sanitized.challengeProgress))
+        sanitized.styleChallengeProgress.forEach { (style, progress) ->
+            prefs.put(KeyChallengeProgressPrefix + style.name.lowercase(), encodeChallengeProgress(progress))
+        }
         prefs.putLong(KeyLastAppOpenedAtEpochMillis, sanitized.lastAppOpenedAtEpochMillis)
         prefs.putBoolean(KeyIsHighScoresClearedOnce, sanitized.isHighScoresClearedOnce)
         if (sanitized.lastActiveSlot != null) {
@@ -69,14 +76,20 @@ actual object AppSettingsStorage {
         } else {
             prefs.remove(KeyLastActiveSlot)
         }
+        if (sanitized.selectedGameplayStyle != null) {
+            prefs.put(KeySelectedGameplayStyle, sanitized.selectedGameplayStyle.name)
+        } else {
+            prefs.remove(KeySelectedGameplayStyle)
+        }
     }
 
+    private const val KeySelectedGameplayStyle = "selectedGameplayStyle"
     private const val KeyLastActiveSlot = "lastActiveSlot"
 
     private const val KeyIsHighScoresClearedOnce = "isHighScoresClearedOnce"
     private const val Namespace = "com.ugurbuga.blockgames.settings"
     private const val KeyLastAppOpenedAtEpochMillis = "lastAppOpenedAtEpochMillis"
-    private const val KeyChallengeProgress = "challengeProgress"
+    private const val KeyChallengeProgressPrefix = "challengeProgress_"
     private const val KeyTokenBalance = "tokenBalance"
     private const val KeyUnlockedThemeModes = "unlockedThemeModes"
     private const val KeyUnlockedThemePalettes = "unlockedThemePalettes"
