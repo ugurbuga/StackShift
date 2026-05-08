@@ -35,15 +35,22 @@ sealed class GameSessionSlot {
         override val key: String = "time_attack"
     }
 
-    data class DailyChallenge(val dateId: String) : GameSessionSlot() {
-        override val key: String = "daily_challenge_$dateId"
+    data class DailyChallenge(val dateId: String, val style: GameplayStyle) : GameSessionSlot() {
+        override val key: String = "daily_challenge_${style.name.lowercase()}_$dateId"
     }
 
     companion object {
         fun fromKey(key: String): GameSessionSlot? = when {
             key == "classic" -> Classic
             key == "time_attack" -> TimeAttack
-            key.startsWith("daily_challenge_") -> DailyChallenge(key.removePrefix("daily_challenge_"))
+            key.startsWith("daily_challenge_") -> {
+                val parts = key.removePrefix("daily_challenge_").split("_", limit = 2)
+                if (parts.size == 2) {
+                    val style = GameplayStyle.entries.firstOrNull { it.name.lowercase() == parts[0] }
+                    if (style != null) DailyChallenge(parts[1], style) else null
+                } else null
+            }
+
             else -> null
         }
     }
@@ -54,9 +61,10 @@ fun sessionSlotFor(
     challenge: DailyChallenge? = null,
 ): GameSessionSlot = when {
     challenge != null -> GameSessionSlot.DailyChallenge(
-        "${challenge.year}-${challenge.month.toString().padStart(2, '0')}-${
+        dateId = "${challenge.year}-${challenge.month.toString().padStart(2, '0')}-${
             challenge.day.toString().padStart(2, '0')
-        }"
+        }",
+        style = challenge.style,
     )
 
     mode == GameMode.TimeAttack -> GameSessionSlot.TimeAttack
@@ -74,6 +82,7 @@ expect object GameSessionStorage {
     fun clear(slot: GameSessionSlot)
     fun clear()
     fun cleanup(allowedDateIds: List<String>)
+    fun getSavedDailyChallengeDays(yearMonth: String): Set<Int>
 }
 
 internal object GameSessionCodec {

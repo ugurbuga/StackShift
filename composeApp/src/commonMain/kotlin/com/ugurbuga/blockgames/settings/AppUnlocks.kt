@@ -144,13 +144,18 @@ fun AppSettings.hasCompletedChallenge(challenge: DailyChallenge): Boolean =
 
 fun AppSettings.awardCompletedChallenge(challenge: DailyChallenge): AppSettings {
     if (hasCompletedChallenge(challenge)) return sanitized()
+    val style = challenge.style
     val key = completedChallengeDaysKey(challenge.year, challenge.month)
-    val currentDays = this.challengeProgress.completedDays[key].orEmpty()
+    val progress = styleChallengeProgress[style] ?: ChallengeProgress()
+    val currentDays = progress.completedDays[key].orEmpty()
+    
+    val updatedProgress = ChallengeProgress(
+        completedDays = progress.completedDays + (key to (currentDays + challenge.day)),
+    )
+    
     return this.copy(
         tokenBalance = this.tokenBalance + DailyChallengeTokenReward,
-        challengeProgress = ChallengeProgress(
-            completedDays = this.challengeProgress.completedDays + (key to (currentDays + challenge.day)),
-        ),
+        styleChallengeProgress = this.styleChallengeProgress + (style to updatedProgress),
     ).sanitized()
 }
 

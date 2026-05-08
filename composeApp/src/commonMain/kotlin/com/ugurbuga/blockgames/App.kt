@@ -215,6 +215,7 @@ fun BlockGamesRoot(
                                     onOpenChallenges = {
                                         onNavigateToChallenges()
                                     },
+                                    onSwitchGame = onNavigateToSelection,
                                     notificationManager = notificationManager,
                                 )
                             }
@@ -240,8 +241,6 @@ fun BlockGamesRoot(
                                     onRewardedTokensRequested = onRewardedTokensEarned,
                                     onBack = onNavigateBack,
                                     adController = adController,
-                                    isMultiGameVariant = isMultiGameVariant,
-                                    onSelectionRequested = onNavigateToSelection,
                                 )
                             }
 
@@ -288,6 +287,7 @@ fun BlockGamesRoot(
                                 AppSelectionScreen(
                                     onGameplayStyleSelected = onGameplayStyleSelected,
                                     telemetry = telemetry,
+                                    onBack = onNavigateBack,
                                     modifier = Modifier.fillMaxSize(),
                                 )
                             }

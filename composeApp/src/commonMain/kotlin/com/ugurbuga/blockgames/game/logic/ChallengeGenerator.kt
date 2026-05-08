@@ -17,10 +17,13 @@ object ChallengeGenerator {
         val seed = (year * 10000 + month * 100 + day).toLong()
         val random = Random(seed)
 
-        val taskCount = random.nextInt(2, 4)
+        val types = ChallengeTaskType.forStyle(gameplayStyle).toMutableList()
+        if (types.isEmpty()) {
+            return DailyChallenge(year, month, day, gameplayStyle, emptyList())
+        }
+        val taskCount = random.nextInt(2, 4).coerceAtMost(types.size)
         val tasks = mutableListOf<ChallengeTask>()
 
-        val types = ChallengeTaskType.forStyle(gameplayStyle).toMutableList()
         repeat(taskCount) {
             val type = types.removeAt(random.nextInt(types.size))
             val target = when (type) {

@@ -18,7 +18,7 @@ enum class ChallengeTaskType(
     ),
     TriggerSpecial(
         stableId = "trigger_special",
-        supportedStyles = setOf(GameplayStyle.StackShift),
+        supportedStyles = setOf(GameplayStyle.StackShift, GameplayStyle.MergeShift),
     ),
     PerfectPlacement(
         stableId = "perfect_placement",
@@ -38,7 +38,7 @@ enum class ChallengeTaskType(
     ),
     PlacePieces(
         stableId = "place_pieces",
-        supportedStyles = setOf(GameplayStyle.BlockWise),
+        supportedStyles = setOf(GameplayStyle.BlockWise, GameplayStyle.BoomBlocks),
     ),
     ClearBothDirections(
         stableId = "clear_both_directions",

@@ -96,7 +96,6 @@ import blockgames.composeapp.generated.resources.block_style_tornado
 import blockgames.composeapp.generated.resources.block_style_wood
 import blockgames.composeapp.generated.resources.cancel
 import blockgames.composeapp.generated.resources.rewarded_tokens_button
-import blockgames.composeapp.generated.resources.selection_switch_game
 import blockgames.composeapp.generated.resources.settings_block_style
 import blockgames.composeapp.generated.resources.settings_color_palette
 import blockgames.composeapp.generated.resources.settings_language
@@ -157,6 +156,7 @@ private val ScreenContentMaxWidth = 920.dp
 private enum class SettingsTab {
     Theme,
     BlockStyle,
+    Language,
 }
 
 @Composable
@@ -167,8 +167,7 @@ fun AppSettingsScreen(
     onRewardedTokensRequested: () -> Unit,
     onBack: () -> Unit,
     adController: GameAdController? = null,
-    isMultiGameVariant: Boolean = false,
-    onSelectionRequested: () -> Unit = {},
+    initialTabIndex: Int = 0,
     modifier: Modifier = Modifier,
 ) {
     LogScreen(telemetry, TelemetryScreenNames.Theme)
@@ -176,7 +175,7 @@ fun AppSettingsScreen(
     val uiColors = BlockGamesThemeTokens.uiColors
     val darkTheme = isBlockGamesDarkTheme(settings)
     val selectedBlockStyle = settings.blockVisualStyle
-    var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
+    var selectedTabIndex by rememberSaveable { mutableIntStateOf(initialTabIndex) }
     var pendingUnlockRequest by remember { mutableStateOf<UnlockRequest?>(null) }
     val transition = rememberInfiniteTransition(label = "settingsStylePulse")
     val stylePulse by transition.animateFloat(
@@ -244,18 +243,7 @@ fun AppSettingsScreen(
                         modifier = Modifier.weight(1f),
                         textAlign = TextAlign.Center
                     )
-                    if (isMultiGameVariant) {
-                        TopBarActionBlockButton(
-                            tone = CellTone.Violet,
-                            icon = Icons.Default.Layers,
-                            contentDescription = stringResource(Res.string.selection_switch_game),
-                            onClick = onSelectionRequested,
-                            size = 44.dp,
-                            pulse = stylePulse,
-                        )
-                    } else {
-                        Spacer(modifier = Modifier.size(44.dp))
-                    }
+                    Spacer(modifier = Modifier.size(44.dp))
                 }
 
                 TokenBalanceCard(
@@ -275,12 +263,20 @@ fun AppSettingsScreen(
                     contentColor = MaterialTheme.colorScheme.primary,
                 ) {
                     listOf(
-                        SettingsTab.Theme to stringResource(Res.string.settings_theme),
-                        SettingsTab.BlockStyle to stringResource(Res.string.settings_block_style),
-                    ).forEachIndexed { index, (_, title) ->
+                        Triple(SettingsTab.Theme, stringResource(Res.string.settings_theme), Icons.Filled.Palette),
+                        Triple(SettingsTab.BlockStyle, stringResource(Res.string.settings_block_style), Icons.Filled.Layers),
+                        Triple(SettingsTab.Language, stringResource(Res.string.settings_language), Icons.Filled.Translate),
+                    ).forEachIndexed { index, (_, title, icon) ->
                         Tab(
                             selected = selectedTabIndex == index,
                             onClick = { selectedTabIndex = index },
+                            icon = {
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            },
                             text = {
                                 Text(
                                     text = title,
@@ -304,7 +300,6 @@ fun AppSettingsScreen(
                         0 -> {
                             SettingsSectionCard(
                                 title = stringResource(Res.string.settings_theme),
-                                icon = Icons.Filled.Palette,
                             ) {
                                 SettingsGroup(
                                     title = stringResource(Res.string.settings_theme),
@@ -330,10 +325,9 @@ fun AppSettingsScreen(
                             }
                         }
 
-                        else -> {
+                        1 -> {
                             SettingsSectionCard(
                                 title = stringResource(Res.string.settings_block_style),
-                                icon = Icons.Filled.Layers,
                                 trailingContent = {
                                     StyleFourBlockPreview(
                                         settings = settings,
@@ -360,6 +354,19 @@ fun AppSettingsScreen(
                                             currentSettings.unlockBlockStyle(option.value)
                                         }
                                     },
+                                )
+                            }
+                        }
+
+                        else -> {
+                            SettingsSectionCard(
+                                title = stringResource(Res.string.settings_language),
+                            ) {
+                                SettingsGroup(
+                                    title = stringResource(Res.string.settings_language),
+                                    selectedValue = settings.language,
+                                    options = languageOptions(settings.language),
+                                    onSelected = { onSettingsChange(settings.copy(language = it)) },
                                 )
                             }
                         }
@@ -445,7 +452,6 @@ fun AppLanguageScreen(
                 ) {
                     SettingsSectionCard(
                         title = stringResource(Res.string.settings_language),
-                        icon = Icons.Filled.Translate,
                     ) {
                         SettingsGroup(
                             title = stringResource(Res.string.settings_language),
@@ -463,12 +469,10 @@ fun AppLanguageScreen(
 @Composable
 private fun SettingsSectionCard(
     title: String,
-    icon: ImageVector,
     trailingContent: (@Composable (() -> Unit))? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val uiColors = BlockGamesThemeTokens.uiColors
-    val optionShape = RoundedCornerShape(GameUiShapeTokens.chipCorner)
     val panelShape = RoundedCornerShape(GameUiShapeTokens.panelCorner)
     Card(
         modifier = Modifier
@@ -492,7 +496,6 @@ private fun SettingsSectionCard(
         ) {
             SectionHeader(
                 title = title,
-                icon = icon,
                 trailingContent = trailingContent,
             )
             content()
@@ -503,37 +506,13 @@ private fun SettingsSectionCard(
 @Composable
 private fun SectionHeader(
     title: String,
-    icon: ImageVector,
     trailingContent: (@Composable (() -> Unit))? = null,
 ) {
-    val uiColors = BlockGamesThemeTokens.uiColors
-    val surfaceShape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner)
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Surface(
-            modifier = Modifier
-                .size(40.dp)
-                .blockGamesSurfaceShadow(
-                    shape = surfaceShape,
-                    elevation = 5.dp,
-                ),
-            shape = surfaceShape,
-            color = uiColors.panelHighlight,
-            shadowElevation = 0.dp,
-            border = BorderStroke(1.dp, uiColors.panelStroke),
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-        }
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(2.dp),

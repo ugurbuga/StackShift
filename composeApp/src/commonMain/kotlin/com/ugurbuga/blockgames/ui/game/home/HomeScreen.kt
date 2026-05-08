@@ -32,9 +32,9 @@ import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.TouchApp
-import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -72,8 +72,8 @@ import blockgames.composeapp.generated.resources.app_title_banner_stackshift_top
 import blockgames.composeapp.generated.resources.high_score
 import blockgames.composeapp.generated.resources.home_classic_cta
 import blockgames.composeapp.generated.resources.home_time_attack_cta
+import blockgames.composeapp.generated.resources.selection_switch_game
 import blockgames.composeapp.generated.resources.settings_challenges
-import blockgames.composeapp.generated.resources.settings_language
 import blockgames.composeapp.generated.resources.settings_theme
 import blockgames.composeapp.generated.resources.settings_tutorial
 import com.ugurbuga.blockgames.BlockGamesTheme
@@ -123,6 +123,7 @@ fun HomeScreen(
     onOpenTheme: () -> Unit,
     onOpenLanguage: () -> Unit,
     onOpenChallenges: () -> Unit,
+    onSwitchGame: () -> Unit,
     notificationManager: NotificationManager,
     modifier: Modifier = Modifier,
 ) {
@@ -267,6 +268,15 @@ fun HomeScreen(
                         onClick = onOpenTutorial,
                     )
                     HomeQuickActionButton(
+                        text = stringResource(Res.string.selection_switch_game),
+                        icon = Icons.Default.SwapHoriz,
+                        tone = CellTone.Blue,
+                        settings = settings,
+                        pulse = stylePulse,
+                        modifier = Modifier.weight(1f),
+                        onClick = onSwitchGame,
+                    )
+                    HomeQuickActionButton(
                         text = appStringResource(Res.string.settings_theme),
                         icon = Icons.Filled.Palette,
                         tone = CellTone.Violet,
@@ -274,15 +284,6 @@ fun HomeScreen(
                         pulse = stylePulse,
                         modifier = Modifier.weight(1f),
                         onClick = onOpenTheme,
-                    )
-                    HomeQuickActionButton(
-                        text = appStringResource(Res.string.settings_language),
-                        icon = Icons.Filled.Translate,
-                        tone = CellTone.Coral,
-                        settings = settings,
-                        pulse = stylePulse,
-                        modifier = Modifier.weight(1f),
-                        onClick = onOpenLanguage,
                     )
                 }
             }
@@ -1860,6 +1861,7 @@ fun HomeScreenStackShiftPreview() {
             onOpenTheme = {},
             onOpenLanguage = {},
             onOpenChallenges = {},
+            onSwitchGame = {},
             notificationManager = rememberNotificationManager(),
         )
     }
@@ -1885,6 +1887,7 @@ fun HomeScreenBlockWisePreview() {
             onOpenTheme = {},
             onOpenLanguage = {},
             onOpenChallenges = {},
+            onSwitchGame = {},
             notificationManager = rememberNotificationManager(),
         )
     }
@@ -1909,6 +1912,7 @@ fun HomeScreenMergeShiftPreview() {
             onOpenTheme = {},
             onOpenLanguage = {},
             onOpenChallenges = {},
+            onSwitchGame = {},
             notificationManager = rememberNotificationManager(),
         )
     }
@@ -1934,6 +1938,7 @@ fun HomeScreenBoomBlocksPreview() {
             onOpenTheme = {},
             onOpenLanguage = {},
             onOpenChallenges = {},
+            onSwitchGame = {},
             notificationManager = rememberNotificationManager(),
         )
     }

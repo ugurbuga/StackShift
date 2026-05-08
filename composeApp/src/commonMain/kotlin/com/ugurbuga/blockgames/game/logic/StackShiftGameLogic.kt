@@ -322,7 +322,10 @@ internal class StackShiftGameLogic(
                 tilesPlaced = piece.cells.size,
                 linesCleared = resolution.totalLinesCleared,
                 currentStreak = nextComboChain,
-                specialBlocksTriggered = specialResult.initialTriggeredSpecials.map { it.special },
+                specialBlocksTriggered = buildList {
+                    if (piece.special != SpecialBlockType.None) add(piece.special)
+                    addAll(specialResult.initialTriggeredSpecials.map { it.special })
+                },
                 areaTilesCleared = resolution.specialBlocksCleared,
                 isBoardCleared = resolution.board.isEmpty(),
                 isPerfectPlacement = perfectDrop,
@@ -696,7 +699,7 @@ internal class StackShiftGameLogic(
         var totalBlocksCleared = initiallyBlocksCleared
         var specialBlocksCleared = initiallyBlocksCleared
         var chainDepth = 0
-        var triggeredSpecialCells = 0
+        var triggeredSpecialCells = if (specialTriggered) 1 else 0
         var pendingTriggers = initialTriggeredSpecials
         var didTriggerSpecial = specialTriggered
 
