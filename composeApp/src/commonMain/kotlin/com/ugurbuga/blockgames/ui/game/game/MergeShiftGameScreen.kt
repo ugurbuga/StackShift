@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -39,11 +40,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
@@ -64,6 +67,8 @@ import blockgames.composeapp.generated.resources.restart_confirm_body
 import blockgames.composeapp.generated.resources.restart_confirm_title
 import blockgames.composeapp.generated.resources.time_remaining
 import com.ugurbuga.blockgames.BlockGamesTheme
+import com.ugurbuga.blockgames.ads.GameAdController
+import com.ugurbuga.blockgames.ads.NoOpGameAdController
 import com.ugurbuga.blockgames.game.logic.GameEvent
 import com.ugurbuga.blockgames.game.model.GameState
 import com.ugurbuga.blockgames.game.model.GameStatus
@@ -104,6 +109,7 @@ import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
 import com.ugurbuga.blockgames.ui.theme.appBackgroundBrush
 import com.ugurbuga.blockgames.ui.theme.blockGamesSurfaceShadow
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
@@ -111,6 +117,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 private const val LaunchAnimationMillis = 140L
 private const val EntryAnimationMillis = 70L
+private const val MergeShiftGameOverBoardRowClearDurationMillis = 92
 
 @Composable
 fun MergeShiftGameScreen(
@@ -119,8 +126,11 @@ fun MergeShiftGameScreen(
     onRequestImpactPoints: (PlacementPreview?) -> Set<GridPoint> = { emptySet() },
     onPlacePiece: (Int) -> GameDispatchResult,
     onRestart: () -> InteractionFeedback,
+    onRewardedRevive: () -> InteractionFeedback = { InteractionFeedback.None },
     onTick: () -> Unit,
     onBack: () -> Unit = {},
+    showNewHighScoreMessage: Boolean = false,
+    adController: GameAdController = NoOpGameAdController,
     telemetry: AppTelemetry = NoOpAppTelemetry,
     soundPlayer: SoundEffectPlayer,
     haptics: GameHaptics,
@@ -138,7 +148,9 @@ fun MergeShiftGameScreen(
     val uiColors = BlockGamesThemeTokens.uiColors
     val settings = LocalAppSettings.current
     val textMeasurer = rememberTextMeasurer()
-    
+    val updatedRestart by rememberUpdatedState(onRestart)
+    val updatedRewardedRevive by rememberUpdatedState(onRewardedRevive)
+
     val density = LocalDensity.current
     val resolvedStyle = com.ugurbuga.blockgames.game.model.resolveBoardBlockStyle(
         selectedStyle = settings.blockVisualStyle,
@@ -146,15 +158,21 @@ fun MergeShiftGameScreen(
     )
     
     var showRestartDialog by remember { mutableStateOf(false) }
-    val screenShakeX = remember { Animatable(0f) }
-    val screenShakeY = remember { Animatable(0f) }
-    
+
     val gameOverBoardClearProgress = remember { Animatable(0f) }
     val gameOverDialogRevealProgress = remember { Animatable(0f) }
     var showGameOverDialog by remember { mutableStateOf(value = false) }
+    var rewardedReviveLoading by remember { mutableStateOf(value = false) }
 
     LaunchedEffect(gameState.status) {
         if (gameState.status == GameStatus.GameOver) {
+            gameOverBoardClearProgress.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(
+                    durationMillis = (MergeShiftGameOverBoardRowClearDurationMillis * gameState.config.rows).coerceAtLeast(1200),
+                    easing = FastOutSlowInEasing,
+                ),
+            )
             showGameOverDialog = true
             gameOverDialogRevealProgress.animateTo(
                 targetValue = 1f,
@@ -164,6 +182,7 @@ fun MergeShiftGameScreen(
                 ),
             )
         } else {
+            gameOverBoardClearProgress.snapTo(0f)
             showGameOverDialog = false
             gameOverDialogRevealProgress.snapTo(0f)
         }
@@ -172,7 +191,7 @@ fun MergeShiftGameScreen(
     LaunchedEffect(gameState.status, gameState.activePiece == null) {
         if (gameState.status == GameStatus.Running && gameState.activePiece == null) {
             onTick() // First tick happens immediately after piece lands
-            while (gameState.status == GameStatus.Running && gameState.activePiece == null) {
+            while (isActive) {
                 delay(400.milliseconds)
                 onTick()
             }
@@ -193,7 +212,6 @@ fun MergeShiftGameScreen(
 
     val interactiveOnboardingEnabled = interactiveOnboardingScene != null
     val interactiveOnboardingAcceptedColumns = interactiveOnboardingScene?.acceptedColumns.orEmpty()
-    val topBarControlsEnabled = !interactiveOnboardingEnabled
 
     val activePiece = gameState.activePiece
     var overlayHostRectInRoot by remember { mutableStateOf(Rect.Zero) }
@@ -377,13 +395,15 @@ fun MergeShiftGameScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
+                        val boardShape = RoundedCornerShape(boardFrameCornerRadiusDp(resolvedStyle))
+
                         Box(
                             modifier = Modifier
                                 .size(width = cellSize * columns, height = cellSize * rows)
                                 .blockGamesSurfaceShadow(
-                                    shape = RoundedCornerShape(boardFrameCornerRadiusDp(resolvedStyle)),
+                                    shape = boardShape,
                                     elevation = 10.dp,
-                                ),
+                                )
                         ) {
                             BoardGrid(
                                 modifier = Modifier
@@ -395,20 +415,30 @@ fun MergeShiftGameScreen(
                                 activeColumn = selectedColumn,
                                 activePiece = activePiece,
                                 isDragging = isDragging,
+                                gameOverClearProgressProvider = { gameOverBoardClearProgress.value },
                                 stylePulse = stylePulse,
                             )
+
+                            if (gameState.status == GameStatus.GameOver || gameOverBoardClearProgress.value > 0f) {
+                                GameOverBoardClearOverlay(
+                                    revealProgress = gameOverBoardClearProgress.value,
+                                    rowCount = gameState.config.rows,
+                                    modifier = Modifier
+                                        .matchParentSize()
+                                        .clip(boardShape),
+                                )
+                            }
                         }
 
                         Spacer(modifier = Modifier.weight(1f))
 
-                        // Dock area
                         MergeShiftBottomDock(
                             gameState = gameState,
                             modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(cellSize * 3f)
-                                        .onGloballyPositioned { trayRectInRoot = it.boundsInRoot() },
-                            stylePulse = stylePulse
+                                .fillMaxWidth()
+                                .height(cellSize * 3f)
+                                .onGloballyPositioned { trayRectInRoot = it.boundsInRoot() },
+                            stylePulse = stylePulse,
                         )
                     }
                 }
@@ -538,9 +568,14 @@ fun MergeShiftGameScreen(
                         val text = formatMergeValue(activePiece.value)
                         val textStyle = TextStyle(
                             color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = with(density) { (this@Canvas.size.width * 0.4f).toSp() },
-                            textAlign = TextAlign.Center
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = with(density) { (this@Canvas.size.width * 0.44f).toSp() },
+                            textAlign = TextAlign.Center,
+                            shadow = Shadow(
+                                color = Color.Black.copy(alpha = 0.6f),
+                                offset = Offset(2f, 2f),
+                                blurRadius = 2f
+                            )
                         )
                         val measuredText = textMeasurer.measure(text, textStyle)
                         drawText(
@@ -560,16 +595,29 @@ fun MergeShiftGameScreen(
                 GameOverDialog(
                     gameState = gameState,
                     highestScore = highestScore,
-                    showNewHighScoreMessage = false,
+                    showNewHighScoreMessage = showNewHighScoreMessage,
                     revealProgressProvider = { gameOverDialogRevealProgress.value },
-                    canUseExtraLife = false,
-                    isExtraLifeLoading = false,
-                    showExtraLifeButton = false,
+                    canUseExtraLife = !gameState.rewardedReviveUsed,
+                    isExtraLifeLoading = rewardedReviveLoading,
+                    showExtraLifeButton = adController !== NoOpGameAdController,
                     onPlayAgain = {
-                        telemetry.logUserAction(TelemetryActionNames.PlayAgain)
-                        dispatchFeedback(onRestart(), soundPlayer, haptics)
+                        if (gameState.activeChallenge?.isCompleted == true) {
+                            onBack()
+                        } else {
+                            telemetry.logUserAction(TelemetryActionNames.PlayAgain)
+                            dispatchFeedback(updatedRestart(), soundPlayer, haptics)
+                        }
                     },
-                    onUseExtraLife = {},
+                    onUseExtraLife = {
+                        if (rewardedReviveLoading || gameState.rewardedReviveUsed) return@GameOverDialog
+                        rewardedReviveLoading = true
+                        adController.showRewardedRevive { rewarded ->
+                            rewardedReviveLoading = false
+                            if (rewarded) {
+                                dispatchFeedback(updatedRewardedRevive(), soundPlayer, haptics)
+                            }
+                        }
+                    },
                 )
             }
 
@@ -656,6 +704,7 @@ private fun MergeShiftGameScreenPreview() {
             onRequestPreview = { null },
             onPlacePiece = { GameDispatchResult() },
             onRestart = { InteractionFeedback.None },
+            onRewardedRevive = { InteractionFeedback.None },
             onTick = {},
             soundPlayer = NoOpSoundEffectPlayer,
             haptics = NoOpGameHaptics,
@@ -675,6 +724,7 @@ private fun MergeShiftOnboardingLaunchPreview() {
             onRequestPreview = { null },
             onPlacePiece = { GameDispatchResult() },
             onRestart = { InteractionFeedback.None },
+            onRewardedRevive = { InteractionFeedback.None },
             onTick = {},
             soundPlayer = NoOpSoundEffectPlayer,
             haptics = NoOpGameHaptics,
@@ -697,6 +747,7 @@ private fun MergeShiftOnboardingVerticalMergePreview() {
             onRequestPreview = { null },
             onPlacePiece = { GameDispatchResult() },
             onRestart = { InteractionFeedback.None },
+            onRewardedRevive = { InteractionFeedback.None },
             onTick = {},
             soundPlayer = NoOpSoundEffectPlayer,
             haptics = NoOpGameHaptics,
@@ -719,6 +770,7 @@ private fun MergeShiftOnboardingHorizontalMergePreview() {
             onRequestPreview = { null },
             onPlacePiece = { GameDispatchResult() },
             onRestart = { InteractionFeedback.None },
+            onRewardedRevive = { InteractionFeedback.None },
             onTick = {},
             soundPlayer = NoOpSoundEffectPlayer,
             haptics = NoOpGameHaptics,
@@ -741,6 +793,7 @@ private fun MergeShiftOnboardingMultiMergePreview() {
             onRequestPreview = { null },
             onPlacePiece = { GameDispatchResult() },
             onRestart = { InteractionFeedback.None },
+            onRewardedRevive = { InteractionFeedback.None },
             onTick = {},
             soundPlayer = NoOpSoundEffectPlayer,
             haptics = NoOpGameHaptics,

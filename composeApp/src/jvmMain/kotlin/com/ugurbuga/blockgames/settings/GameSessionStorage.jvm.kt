@@ -23,9 +23,14 @@ actual object GameSessionStorage {
     }
 
     actual fun clear() {
-        prefs.remove(keyFor(GameSessionSlot.Classic))
-        prefs.remove(keyFor(GameSessionSlot.TimeAttack))
-        prefs.keys().filter { it.startsWith("gameState_daily_challenge_") }
+        prefs.keys()
+            .filter {
+                it == "gameState_classic" ||
+                    it.startsWith("gameState_classic_") ||
+                    it == "gameState_time_attack" ||
+                    it.startsWith("gameState_time_attack_") ||
+                    it.startsWith("gameState_daily_challenge_")
+            }
             .forEach { prefs.remove(it) }
     }
 

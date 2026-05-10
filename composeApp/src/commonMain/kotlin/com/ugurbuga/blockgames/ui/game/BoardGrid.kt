@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
@@ -653,12 +654,17 @@ fun BoardGrid(
 
                                 if (gameState.gameplayStyle == GameplayStyle.MergeShift) {
                                     val text = formatMergeValue(cell.value)
-                                    val fontSize = (minOf(cellWidthPx, cellHeightPx) * 0.4f)
+                                    val fontSize = (minOf(cellWidthPx, cellHeightPx) * 0.44f)
                                     val textStyle = TextStyle(
                                         color = Color.White.copy(alpha = renderedCellAlpha),
-                                        fontWeight = FontWeight.Bold,
+                                        fontWeight = FontWeight.ExtraBold,
                                         fontSize = with(density) { fontSize.toSp() },
-                                        textAlign = TextAlign.Center
+                                        textAlign = TextAlign.Center,
+                                        shadow = Shadow(
+                                            color = Color.Black.copy(alpha = 0.6f * renderedCellAlpha),
+                                            offset = Offset(2f, 2f),
+                                            blurRadius = 2f
+                                        )
                                     )
                                     val measuredText = textMeasurer.measure(text, textStyle)
                                     drawText(
@@ -801,12 +807,17 @@ fun BoardGrid(
 
                     if (gameState.gameplayStyle == GameplayStyle.MergeShift && activePiece != null) {
                         val text = formatMergeValue(activePiece.value)
-                        val fontSize = (minOf(cellWidthPx, cellHeightPx) * 0.4f)
+                        val fontSize = (minOf(cellWidthPx, cellHeightPx) * 0.44f)
                         val textStyle = TextStyle(
                             color = Color.White.copy(alpha = previewAlpha * boardDecorAlpha),
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.ExtraBold,
                             fontSize = with(density) { fontSize.toSp() },
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
+                            shadow = Shadow(
+                                color = Color.Black.copy(alpha = 0.4f * previewAlpha * boardDecorAlpha),
+                                offset = Offset(1f, 1f),
+                                blurRadius = 1f
+                            )
                         )
                         val measuredText = textMeasurer.measure(text, textStyle)
                         drawText(
@@ -886,12 +897,17 @@ fun BoardGrid(
 
                     if (gameState.gameplayStyle == GameplayStyle.MergeShift) {
                         val text = formatMergeValue(animatedCell.cell.value)
-                        val fontSize = (minOf(cellWidthPx, cellHeightPx) * 0.4f)
+                        val fontSize = (minOf(cellWidthPx, cellHeightPx) * 0.44f)
                         val textStyle = TextStyle(
                             color = Color.White.copy(alpha = boardDecorAlpha),
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.ExtraBold,
                             fontSize = with(density) { fontSize.toSp() },
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
+                            shadow = Shadow(
+                                color = Color.Black.copy(alpha = 0.6f * boardDecorAlpha),
+                                offset = Offset(2f, 2f),
+                                blurRadius = 2f
+                            )
                         )
                         val measuredText = textMeasurer.measure(text, textStyle)
                         drawText(

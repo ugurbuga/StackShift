@@ -34,6 +34,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
@@ -43,6 +44,8 @@ import androidx.compose.ui.unit.dp
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.time_remaining
 import com.ugurbuga.blockgames.BlockGamesTheme
+import com.ugurbuga.blockgames.ads.GameAdController
+import com.ugurbuga.blockgames.ads.NoOpGameAdController
 import com.ugurbuga.blockgames.game.model.BoardMatrix
 import com.ugurbuga.blockgames.game.model.CellTone
 import com.ugurbuga.blockgames.game.model.GameState
@@ -57,6 +60,7 @@ import com.ugurbuga.blockgames.settings.BoomBlocksOnboardingScene
 import com.ugurbuga.blockgames.settings.BoomBlocksOnboardingStage
 import com.ugurbuga.blockgames.settings.BoomBlocksOnboardingStateFactory
 import com.ugurbuga.blockgames.ui.game.GameOverDialog
+import com.ugurbuga.blockgames.ui.game.GameOverDialogRevealDurationMillis
 import com.ugurbuga.blockgames.ui.game.InteractiveOnboardingCompletionDialog
 import com.ugurbuga.blockgames.ui.game.MinimalTopBar
 import com.ugurbuga.blockgames.ui.game.boardCellCornerRadiusPx
@@ -76,14 +80,18 @@ private const val BOOM_BLOCKS_HINT_CYCLE_MILLIS = 1_100
 private const val BOOM_BLOCKS_EXPLOSION_DURATION_MILLIS = 350
 private const val BOOM_BLOCKS_FALL_DELAY_MILLIS = 220L
 private const val BOOM_BLOCKS_FALL_DURATION_MILLIS = 450
+private const val BOOM_BLOCKS_GAME_OVER_ROW_CLEAR_DURATION_MILLIS = 92
 
 @Composable
 fun BoomBlocksGameScreen(
     gameState: GameState,
     onTapCell: (GridPoint) -> Unit,
     onRestart: () -> Unit,
+    onRewardedRevive: () -> Unit = {},
     onBack: () -> Unit,
     highestScore: Int,
+    showNewHighScoreMessage: Boolean = false,
+    adController: GameAdController = NoOpGameAdController,
     interactiveOnboardingScene: BoomBlocksOnboardingScene? = null,
     interactiveOnboardingCurrentStep: Int = 0,
     interactiveOnboardingTotalSteps: Int = 0,
@@ -97,12 +105,40 @@ fun BoomBlocksGameScreen(
     var cellSize by remember { mutableStateOf(0f) }
     var boardRectInRoot by remember { mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
     var hostRectInRoot by remember { mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
+    val gameOverBoardClearProgress = remember { Animatable(0f) }
+    val gameOverDialogRevealProgress = remember { Animatable(0f) }
+    var showGameOverDialog by remember { mutableStateOf(false) }
+    var rewardedReviveLoading by remember { mutableStateOf(false) }
 
     var currentTime by remember { mutableStateOf(currentEpochMillis()) }
     LaunchedEffect(gameState.status) {
         while (gameState.status == GameStatus.Running) {
             kotlinx.coroutines.delay(500)
             currentTime = currentEpochMillis()
+        }
+    }
+
+    LaunchedEffect(gameState.status) {
+        if (gameState.status == GameStatus.GameOver) {
+            gameOverBoardClearProgress.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(
+                    durationMillis = (BOOM_BLOCKS_GAME_OVER_ROW_CLEAR_DURATION_MILLIS * gameState.config.rows).coerceAtLeast(1200),
+                    easing = FastOutSlowInEasing,
+                ),
+            )
+            showGameOverDialog = true
+            gameOverDialogRevealProgress.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(
+                    durationMillis = GameOverDialogRevealDurationMillis,
+                    easing = FastOutSlowInEasing,
+                ),
+            )
+        } else {
+            gameOverBoardClearProgress.snapTo(0f)
+            gameOverDialogRevealProgress.snapTo(0f)
+            showGameOverDialog = false
         }
     }
 
@@ -211,6 +247,14 @@ fun BoomBlocksGameScreen(
                         hintPhase = hintPhase,
                         stylePulse = stylePulse,
                     )
+
+                    if (gameState.status == GameStatus.GameOver || gameOverBoardClearProgress.value > 0f) {
+                        GameOverBoardClearOverlay(
+                            revealProgress = gameOverBoardClearProgress.value,
+                            rowCount = gameState.config.rows,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
@@ -247,6 +291,7 @@ fun BoomBlocksGameScreen(
                     ),
                     boardRect = boardRect,
                     cellSizePx = cellSize,
+                    onBack = onBack,
                 )
             }
         }
@@ -258,17 +303,34 @@ fun BoomBlocksGameScreen(
             )
         }
 
-        if (gameState.status == GameStatus.GameOver) {
+        if (showGameOverDialog) {
             GameOverDialog(
                 gameState = gameState,
                 highestScore = highestScore,
-                showNewHighScoreMessage = gameState.score > highestScore,
-                revealProgressProvider = { 1f },
-                canUseExtraLife = false,
-                isExtraLifeLoading = false,
-                showExtraLifeButton = false,
-                onPlayAgain = onRestart,
-                onUseExtraLife = {},
+                showNewHighScoreMessage = showNewHighScoreMessage,
+                revealProgressProvider = { gameOverDialogRevealProgress.value },
+                canUseExtraLife = !gameState.rewardedReviveUsed,
+                isExtraLifeLoading = rewardedReviveLoading,
+                showExtraLifeButton = adController !== NoOpGameAdController,
+                onPlayAgain = {
+                    if (gameState.activeChallenge?.isCompleted == true) {
+                        onBack()
+                    } else {
+                        adController.showRestartInterstitial {
+                            onRestart()
+                        }
+                    }
+                },
+                onUseExtraLife = {
+                    if (rewardedReviveLoading || gameState.rewardedReviveUsed) return@GameOverDialog
+                    rewardedReviveLoading = true
+                    adController.showRewardedRevive { rewarded ->
+                        rewardedReviveLoading = false
+                        if (rewarded) {
+                            onRewardedRevive()
+                        }
+                    }
+                },
             )
         }
     }
@@ -484,7 +546,12 @@ internal fun GameGrid(
                 val hintOffset = ((block.targetCol * 0.13f) + (block.targetRow * 0.07f)) % 1f
                 val cellHintPhase = (hintPhase + hintOffset) % 1f
                 val shimmer = ((sin(cellHintPhase * 2.0 * PI).toFloat()) + 1f) / 2f
-                val scale = if (hintEnabled && isExplodable) 1.02f + (0.04f * shimmer) else 1f
+                val emphasis = when {
+                    !isExplodable -> 0f
+                    hintEnabled -> 1f
+                    else -> 0.45f
+                }
+                val scale = if (isExplodable) 1.01f + ((0.018f + (0.032f * emphasis)) * shimmer) else 1f
                 val drawSize = cellWidth * 0.92f * scale
                 val offsetX = (cellWidth - drawSize) / 2
                 val offsetY = (cellHeight - drawSize) / 2
@@ -493,19 +560,26 @@ internal fun GameGrid(
                     y = currentRow * cellHeight + offsetY,
                 )
 
-                if (hintEnabled && isExplodable) {
+                if (isExplodable) {
                     val toneColor = block.tone.paletteColor(settings.blockColorPalette)
-                    val glowSize = drawSize * 1.12f
+                    val glowSize = drawSize * (1.10f + (0.06f * emphasis))
                     val glowTopLeft = Offset(
                         x = blockTopLeft.x - (glowSize - drawSize) / 2f,
                         y = blockTopLeft.y - (glowSize - drawSize) / 2f,
                     )
                     val cornerRadiusPx = boardCellCornerRadiusPx(glowSize, resolvedStyle)
                     drawRoundRect(
-                        color = toneColor.copy(alpha = 0.15f + (0.20f * shimmer)),
+                        color = toneColor.copy(alpha = 0.10f + (0.14f * emphasis) + (0.10f * shimmer)),
                         topLeft = glowTopLeft,
                         size = Size(glowSize, glowSize),
                         cornerRadius = CornerRadius(cornerRadiusPx, cornerRadiusPx),
+                    )
+                    drawRoundRect(
+                        color = toneColor.copy(alpha = 0.10f + (0.16f * emphasis) + (0.12f * shimmer)),
+                        topLeft = blockTopLeft,
+                        size = Size(drawSize, drawSize),
+                        cornerRadius = CornerRadius(boardCellCornerRadiusPx(drawSize, resolvedStyle)),
+                        style = Stroke(width = cellWidth * (0.035f + (0.02f * emphasis))),
                     )
                 }
 
@@ -596,6 +670,7 @@ private fun BoomBlocksOnboardingBasicPreview() {
             gameState = scene.gameState,
             onTapCell = {},
             onRestart = {},
+            onRewardedRevive = {},
             onBack = {},
             highestScore = 0,
             interactiveOnboardingScene = scene,
@@ -615,6 +690,7 @@ private fun BoomBlocksOnboardingLargePreview() {
             gameState = scene.gameState,
             onTapCell = {},
             onRestart = {},
+            onRewardedRevive = {},
             onBack = {},
             highestScore = 0,
             interactiveOnboardingScene = scene,
@@ -634,6 +710,7 @@ private fun BoomBlocksOnboardingGravityPreview() {
             gameState = scene.gameState,
             onTapCell = {},
             onRestart = {},
+            onRewardedRevive = {},
             onBack = {},
             highestScore = 0,
             interactiveOnboardingScene = scene,
@@ -653,6 +730,7 @@ private fun BoomBlocksOnboardingStrategicPreview() {
             gameState = scene.gameState,
             onTapCell = {},
             onRestart = {},
+            onRewardedRevive = {},
             onBack = {},
             highestScore = 0,
             interactiveOnboardingScene = scene,

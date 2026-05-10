@@ -6,6 +6,8 @@ import com.ugurbuga.blockgames.game.model.ChallengeTaskType
 import com.ugurbuga.blockgames.game.model.ColumnPressure
 import com.ugurbuga.blockgames.game.model.ComboState
 import com.ugurbuga.blockgames.game.model.DailyChallenge
+import com.ugurbuga.blockgames.game.model.FeedbackEmphasis
+import com.ugurbuga.blockgames.game.model.FloatingFeedback
 import com.ugurbuga.blockgames.game.model.GameConfig
 import com.ugurbuga.blockgames.game.model.GameMode
 import com.ugurbuga.blockgames.game.model.GameState
@@ -26,11 +28,12 @@ import kotlin.random.Random
 
 internal class MergeShiftGameLogic(
     private val random: Random = Random.Default,
-    private val scoreCalculator: ScoreCalculator = ScoreCalculator(),
+    scoreCalculator: ScoreCalculator = ScoreCalculator(),
 ) : GameLogic {
 
     companion object {
         private const val QUEUE_SIZE = 3
+        private const val REWARDED_REVIVE_CELL_COUNT = 6
     }
 
     override fun restoreGame(state: GameState): GameState {
@@ -84,7 +87,7 @@ internal class MergeShiftGameLogic(
     }
 
     override fun previewPlacement(state: GameState, column: Int): PlacementPreview? {
-        val piece = state.activePiece ?: return null
+        state.activePiece ?: return null
         if (state.status != GameStatus.Running) return null
 
         val selectedColumn = column.coerceIn(0, state.config.columns - 1)
@@ -157,7 +160,7 @@ internal class MergeShiftGameLogic(
             val nextValue = value * (1 shl numNeighbors)
             var mergedBoard = board.clearPoints(sources)
             mergedBoard = mergedBoard.fill(listOf(to), getToneForValue(nextValue), value = nextValue)
-            mergedBoard = mergedBoard.applyGravity()
+            mergedBoard = mergedBoard.applyGravityUp()
 
             // Find where the result piece ended up after gravity
             val finalPoint = findPiece(mergedBoard, to.column, nextValue) ?: to
@@ -260,7 +263,7 @@ internal class MergeShiftGameLogic(
             val nextValue = value * (1 shl numNeighbors)
             var mergedBoard = board.clearPoints(sources)
             mergedBoard = mergedBoard.fill(listOf(to), getToneForValue(nextValue), value = nextValue)
-            mergedBoard = mergedBoard.applyGravity()
+            mergedBoard = mergedBoard.applyGravityUp()
 
             // Find where the result piece ended up after gravity
             val finalPoint = findPiece(mergedBoard, to.column, nextValue) ?: to
@@ -371,7 +374,7 @@ internal class MergeShiftGameLogic(
                 val nextValue = value * (1 shl numNeighbors)
                 var board = state.board.clearPoints(sources)
                 board = board.fill(listOf(to), getToneForValue(nextValue), value = nextValue)
-                board = board.applyGravity()
+                board = board.applyGravityUp()
 
                 // Find where the result piece ended up after gravity
                 val finalPoint = findPiece(board, to.column, nextValue) ?: to
@@ -571,7 +574,82 @@ internal class MergeShiftGameLogic(
 
     override fun holdPiece(state: GameState): GameMoveResult = invalidMove(state)
     override fun replaceActivePiece(state: GameState, specialType: SpecialBlockType): GameMoveResult = invalidMove(state)
-    override fun reviveFromReward(state: GameState): GameMoveResult = invalidMove(state)
+    override fun reviveFromReward(state: GameState): GameMoveResult {
+        if (state.status != GameStatus.GameOver || state.rewardedReviveUsed) {
+            return invalidMove(state)
+        }
+
+        val clearedPoints = selectRewardCells(state.board)
+        if (clearedPoints.isEmpty()) {
+            return invalidMove(state)
+        }
+
+        val revivedBoard = state.board
+            .clearPoints(clearedPoints)
+            .applyGravityUp()
+        val (revivedActivePiece, revivedQueue, nextPieceId) = restoreQueueAfterRevive(state)
+        val nextPressure = computeColumnPressure(revivedBoard, state.config)
+        val nextToken = state.feedbackToken + 1L
+
+        return GameMoveResult(
+            state = state.copy(
+                board = revivedBoard,
+                activePiece = revivedActivePiece,
+                nextQueue = revivedQueue,
+                columnPressure = nextPressure,
+                status = GameStatus.Running,
+                recentlyMergedPoints = emptySet(),
+                clearAnimationToken = state.clearAnimationToken + 1L,
+                screenShakeToken = state.screenShakeToken + 1L,
+                impactFlashToken = state.impactFlashToken + 1L,
+                comboPopupToken = state.comboPopupToken + 1L,
+                floatingFeedback = FloatingFeedback(
+                    text = gameText(GameTextKey.FeedbackExtraLife, clearedPoints.size),
+                    emphasis = FeedbackEmphasis.Bonus,
+                    token = nextToken,
+                ),
+                feedbackToken = nextToken,
+                rewardedReviveUsed = true,
+                nextPieceId = nextPieceId,
+                remainingTimeMillis = state.remainingTimeMillis?.plus(GameLogic.TIME_ATTACK_REVIVE_BONUS_MILLIS),
+                message = gameText(GameTextKey.GameMessageExtraLifeUsed, clearedPoints.size),
+            ),
+            events = setOf(GameEvent.Revived),
+        )
+    }
+
+    private fun selectRewardCells(
+        board: BoardMatrix,
+    ): Set<GridPoint> {
+        if (REWARDED_REVIVE_CELL_COUNT <= 0) return emptySet()
+        return buildList {
+            for (column in 0 until board.columns) {
+                for (row in 0 until board.rows) {
+                    val cell = board.cellAt(column, row) ?: continue
+                    add(GridPoint(column, row) to cell.value)
+                }
+            }
+        }
+            .shuffled(random)
+            .sortedBy { it.second }
+            .take(REWARDED_REVIVE_CELL_COUNT)
+            .map { it.first }
+            .toSet()
+    }
+
+    private fun restoreQueueAfterRevive(state: GameState): Triple<Piece, List<Piece>, Long> {
+        var currentNextId = state.nextPieceId
+        val activePiece = state.activePiece ?: state.nextQueue.firstOrNull() ?: createPiece(currentNextId).also {
+            currentNextId = it.second
+        }.first
+        val queue = (if (state.activePiece == null) state.nextQueue.drop(1) else state.nextQueue).toMutableList()
+        while (queue.size < QUEUE_SIZE) {
+            val (piece, nextId) = createPiece(currentNextId)
+            queue += piece
+            currentNextId = nextId
+        }
+        return Triple(activePiece, queue.toList(), currentNextId)
+    }
 
     private fun invalidMove(state: GameState) = GameMoveResult(state, events = setOf(GameEvent.InvalidDrop))
 }

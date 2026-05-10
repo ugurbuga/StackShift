@@ -46,7 +46,7 @@ data class BoomBlocksInteractiveGameOnboardingUi(
 fun BoomBlocksInteractiveGameOnboardingOverlay(
     ui: BoomBlocksInteractiveGameOnboardingUi,
     boardRect: Rect,
-    cellSizePx: Float,
+    cellSizePx: Float, onBack: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val targetRect = remember(ui.scene, boardRect, cellSizePx) {
@@ -69,6 +69,7 @@ fun BoomBlocksInteractiveGameOnboardingOverlay(
         BoomBlocksInteractiveOnboardingInfoCard(
             ui = ui,
             visualState = visualState,
+            onBack = onBack,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth(),

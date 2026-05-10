@@ -6,6 +6,7 @@ import com.ugurbuga.blockgames.game.model.AppThemeMode
 import com.ugurbuga.blockgames.game.model.BlockColorPalette
 import com.ugurbuga.blockgames.game.model.BlockVisualStyle
 import com.ugurbuga.blockgames.game.model.BoardBlockStyleMode
+import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.normalizeBlockVisualStyle
 import com.ugurbuga.blockgames.game.model.resolveUnifiedThemePalette
 
@@ -30,14 +31,16 @@ actual object AppSettingsStorage {
             hasSeenTutorial = (parts[6].toIntOrNull() ?: 0) == 1,
             hasInitializedLanguage = (parts.getOrNull(7)?.toIntOrNull() ?: 0) == 1 || parts.isNotEmpty(),
             hasShownInteractiveOnboarding = (parts.getOrNull(8)?.toIntOrNull() ?: 0) == 1,
-            challengeProgress = decodeChallengeProgress(parts.getOrNull(10) ?: parts.getOrNull(9)),
             tokenBalance = parts.getOrNull(11)?.toIntOrNull() ?: defaultSettings.tokenBalance,
             unlockedThemeModes = decodeEnumSet(parts.getOrNull(12), AppThemeMode.entries),
             unlockedThemePalettes = decodeEnumSet(parts.getOrNull(13), AppColorPalette.entries),
             unlockedBlockStyles = decodeEnumSet(parts.getOrNull(14), BlockVisualStyle.entries),
+            styleChallengeProgress = decodeStyleChallengeProgress(parts.getOrNull(10) ?: parts.getOrNull(9)),
             lastAppOpenedAtEpochMillis = parts.getOrNull(15)?.toLongOrNull() ?: defaultSettings.lastAppOpenedAtEpochMillis,
-            isHighScoresClearedOnce = (parts.getOrNull(16)?.toIntOrNull() ?: 0) == 1,
             lastActiveSlot = parts.getOrNull(17)?.let { GameSessionSlot.fromKey(it) },
+            selectedGameplayStyle = parts.getOrNull(18)?.takeIf(String::isNotBlank)?.let(GameplayStyle::valueOf),
+            seenTutorialStyles = decodeEnumSet(parts.getOrNull(19), GameplayStyle.entries),
+            shownInteractiveOnboardingStyles = decodeEnumSet(parts.getOrNull(20), GameplayStyle.entries),
         ).sanitized()
     }
 
@@ -56,20 +59,35 @@ actual object AppSettingsStorage {
                 if (sanitized.hasInitializedLanguage) 1 else 0,
                 if (sanitized.hasShownInteractiveOnboarding) 1 else 0,
                 0,
-                encodeChallengeProgress(sanitized.challengeProgress),
+                encodeStyleChallengeProgress(sanitized.styleChallengeProgress),
                 sanitized.tokenBalance,
                 encodeEnumSet(sanitized.unlockedThemeModes),
                 encodeEnumSet(sanitized.unlockedThemePalettes),
                 encodeEnumSet(sanitized.unlockedBlockStyles),
                 sanitized.lastAppOpenedAtEpochMillis,
-                if (sanitized.isHighScoresClearedOnce) 1 else 0,
                 sanitized.lastActiveSlot?.key ?: "",
+                sanitized.selectedGameplayStyle?.name ?: "",
+                encodeEnumSet(sanitized.seenTutorialStyles),
+                encodeEnumSet(sanitized.shownInteractiveOnboardingStyles),
             ).joinToString(separator = Separator.toString()),
         )
     }
 
     private const val StorageKey = "stackshift.settings"
     private const val Separator = ','
-    private val SupportedFieldCounts = 7..18
+    private val SupportedFieldCounts = 7..21
+
+    private fun decodeStyleChallengeProgress(encoded: String?): Map<GameplayStyle, com.ugurbuga.blockgames.game.model.ChallengeProgress> {
+        val legacy = decodeChallengeProgress(encoded)
+        return if (legacy.completedDays.isEmpty()) {
+            emptyMap()
+        } else {
+            mapOf(GameplayStyle.StackShift to legacy)
+        }
+    }
+
+    private fun encodeStyleChallengeProgress(progressByStyle: Map<GameplayStyle, com.ugurbuga.blockgames.game.model.ChallengeProgress>): String {
+        return encodeChallengeProgress(progressByStyle[GameplayStyle.StackShift] ?: com.ugurbuga.blockgames.game.model.ChallengeProgress())
+    }
 }
 

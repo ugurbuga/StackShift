@@ -26,23 +26,36 @@ import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
 
 sealed class GameSessionSlot {
     abstract val key: String
+    abstract val style: GameplayStyle?
 
-    object Classic : GameSessionSlot() {
-        override val key: String = "classic"
+    data class Classic(override val style: GameplayStyle) : GameSessionSlot() {
+        override val key: String = "classic_${style.name.lowercase()}"
     }
 
-    object TimeAttack : GameSessionSlot() {
-        override val key: String = "time_attack"
+    data class TimeAttack(override val style: GameplayStyle) : GameSessionSlot() {
+        override val key: String = "time_attack_${style.name.lowercase()}"
     }
 
-    data class DailyChallenge(val dateId: String, val style: GameplayStyle) : GameSessionSlot() {
+    data class DailyChallenge(val dateId: String, override val style: GameplayStyle) : GameSessionSlot() {
         override val key: String = "daily_challenge_${style.name.lowercase()}_$dateId"
     }
 
     companion object {
         fun fromKey(key: String): GameSessionSlot? = when {
-            key == "classic" -> Classic
-            key == "time_attack" -> TimeAttack
+            key == "classic" -> Classic(GlobalPlatformConfig.gameplayStyle)
+            key.startsWith("classic_") -> {
+                val styleName = key.removePrefix("classic_")
+                val style = GameplayStyle.entries.firstOrNull { it.name.lowercase() == styleName }
+                style?.let(::Classic)
+            }
+
+            key == "time_attack" -> TimeAttack(GlobalPlatformConfig.gameplayStyle)
+            key.startsWith("time_attack_") -> {
+                val styleName = key.removePrefix("time_attack_")
+                val style = GameplayStyle.entries.firstOrNull { it.name.lowercase() == styleName }
+                style?.let(::TimeAttack)
+            }
+
             key.startsWith("daily_challenge_") -> {
                 val parts = key.removePrefix("daily_challenge_").split("_", limit = 2)
                 if (parts.size == 2) {
@@ -59,6 +72,7 @@ sealed class GameSessionSlot {
 fun sessionSlotFor(
     mode: GameMode,
     challenge: DailyChallenge? = null,
+    gameplayStyle: GameplayStyle = GlobalPlatformConfig.gameplayStyle,
 ): GameSessionSlot = when {
     challenge != null -> GameSessionSlot.DailyChallenge(
         dateId = "${challenge.year}-${challenge.month.toString().padStart(2, '0')}-${
@@ -67,13 +81,14 @@ fun sessionSlotFor(
         style = challenge.style,
     )
 
-    mode == GameMode.TimeAttack -> GameSessionSlot.TimeAttack
-    else -> GameSessionSlot.Classic
+    mode == GameMode.TimeAttack -> GameSessionSlot.TimeAttack(gameplayStyle)
+    else -> GameSessionSlot.Classic(gameplayStyle)
 }
 
 fun GameState.sessionSlot(): GameSessionSlot = sessionSlotFor(
     mode = gameMode,
     challenge = activeChallenge,
+    gameplayStyle = gameplayStyle,
 )
 
 expect object GameSessionStorage {

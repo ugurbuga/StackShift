@@ -6,6 +6,7 @@ import com.ugurbuga.blockgames.game.model.AppThemeMode
 import com.ugurbuga.blockgames.game.model.BlockColorPalette
 import com.ugurbuga.blockgames.game.model.BlockVisualStyle
 import com.ugurbuga.blockgames.game.model.BoardBlockStyleMode
+import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.resolveUnifiedThemePalette
 import platform.Foundation.NSUserDefaults
 
@@ -29,6 +30,11 @@ actual object AppSettingsStorage {
             boardBlockStyleMode = BoardBlockStyleMode.entries.getOrElse(defaults.integerForKey(KeyBoardBlockStyleMode).toInt()) { defaultSettings.boardBlockStyleMode },
             hasSeenTutorial = defaults.boolForKey(KeyHasSeenTutorial),
             hasShownInteractiveOnboarding = defaults.boolForKey(KeyHasShownInteractiveOnboarding),
+            seenTutorialStyles = decodeEnumSet(defaults.getSafeString(KeySeenTutorialStyles), GameplayStyle.entries),
+            shownInteractiveOnboardingStyles = decodeEnumSet(
+                defaults.getSafeString(KeyShownInteractiveOnboardingStyles),
+                GameplayStyle.entries,
+            ),
             hasInitializedLanguage = defaults.boolForKey(KeyHasInitializedLanguage) || hasStoredLanguage,
             tokenBalance = defaults.integerForKey(KeyTokenBalance).toInt(),
             unlockedThemeModes = decodeEnumSet(defaults.getSafeString(KeyUnlockedThemeModes), AppThemeMode.entries),
@@ -41,7 +47,6 @@ actual object AppSettingsStorage {
                 defaults.stringForKey(KeyLastAppOpenedAtEpochMillis)?.toLongOrNull()
                     ?: defaults.integerForKey(KeyLastAppOpenedAtEpochMillis).toLong()
             } ?: defaultSettings.lastAppOpenedAtEpochMillis,
-            isHighScoresClearedOnce = defaults.boolForKey(KeyIsHighScoresClearedOnce),
             lastActiveSlot = defaults.stringForKey(KeyLastActiveSlot)?.let {
                 GameSessionSlot.fromKey(it)
             },
@@ -61,6 +66,11 @@ actual object AppSettingsStorage {
         defaults.setInteger(sanitized.boardBlockStyleMode.ordinal.toLong(), forKey = KeyBoardBlockStyleMode)
         defaults.setBool(sanitized.hasSeenTutorial, forKey = KeyHasSeenTutorial)
         defaults.setBool(sanitized.hasShownInteractiveOnboarding, forKey = KeyHasShownInteractiveOnboarding)
+        defaults.setObject(encodeEnumSet(sanitized.seenTutorialStyles), forKey = KeySeenTutorialStyles)
+        defaults.setObject(
+            encodeEnumSet(sanitized.shownInteractiveOnboardingStyles),
+            forKey = KeyShownInteractiveOnboardingStyles,
+        )
         defaults.setBool(sanitized.hasInitializedLanguage, forKey = KeyHasInitializedLanguage)
         defaults.setInteger(sanitized.tokenBalance.toLong(), forKey = KeyTokenBalance)
         defaults.setObject(encodeEnumSet(sanitized.unlockedThemeModes), forKey = KeyUnlockedThemeModes)
@@ -70,7 +80,6 @@ actual object AppSettingsStorage {
             defaults.setObject(encodeChallengeProgress(progress), forKey = KeyChallengeProgressPrefix + style.name.lowercase())
         }
         defaults.setObject(sanitized.lastAppOpenedAtEpochMillis.toString(), forKey = KeyLastAppOpenedAtEpochMillis)
-        defaults.setBool(sanitized.isHighScoresClearedOnce, forKey = KeyIsHighScoresClearedOnce)
         if (sanitized.lastActiveSlot != null) {
             defaults.setObject(sanitized.lastActiveSlot.key, forKey = KeyLastActiveSlot)
         } else {
@@ -84,7 +93,6 @@ actual object AppSettingsStorage {
     }
 
     private const val KeySelectedGameplayStyle = "selectedGameplayStyle"
-    private const val KeyIsHighScoresClearedOnce = "isHighScoresClearedOnce"
     private const val KeyLastActiveSlot = "lastActiveSlot"
     private const val KeyLastAppOpenedAtEpochMillis = "lastAppOpenedAtEpochMillis"
     private const val KeyChallengeProgressPrefix = "challengeProgress_"
@@ -101,6 +109,8 @@ actual object AppSettingsStorage {
     private const val KeyBoardBlockStyleMode = "boardBlockStyleMode"
     private const val KeyHasSeenTutorial = "hasSeenTutorial"
     private const val KeyHasShownInteractiveOnboarding = "hasShownInteractiveOnboarding"
+    private const val KeySeenTutorialStyles = "seenTutorialStyles"
+    private const val KeyShownInteractiveOnboardingStyles = "shownInteractiveOnboardingStyles"
     private const val KeyHasInitializedLanguage = "hasInitializedLanguage"
 
     private fun NSUserDefaults.getSafeString(key: String): String? {

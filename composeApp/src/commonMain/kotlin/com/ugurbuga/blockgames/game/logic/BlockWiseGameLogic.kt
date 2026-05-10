@@ -499,13 +499,11 @@ internal class BlockWiseGameLogic(
     ): Set<Int> {
         if (maxRowsToClear <= 0) return emptySet()
         return (0 until board.rows)
-            .map { row ->
-                row to (0 until board.columns).count { column -> board.isOccupied(column, row) }
+            .filter { row ->
+                (0 until board.columns).any { column -> board.isOccupied(column, row) }
             }
-            .sortedByDescending { it.second }
+            .shuffled(random)
             .take(maxRowsToClear)
-            .filter { it.second > 0 }
-            .map { it.first }
             .toSet()
     }
 

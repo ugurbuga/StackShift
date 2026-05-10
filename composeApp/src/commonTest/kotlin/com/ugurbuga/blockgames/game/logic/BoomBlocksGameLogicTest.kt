@@ -15,11 +15,30 @@ class BoomBlocksGameLogicTest {
     private val logic = BoomBlocksGameLogic(random = Random(7))
 
     @Test
-    fun boomBlocks_defaultConfigIsSixByFourteen() {
+    fun boomBlocks_defaultConfigIsSixByEight() {
         val config = GameConfig.default(GameplayStyle.BoomBlocks)
 
         assertEquals(6, config.columns)
-        assertEquals(14, config.rows)
+        assertEquals(8, config.rows)
+    }
+
+    @Test
+    fun boomBlocks_startingBoardDoesNotUseBlueTone() {
+        val state = logic.newGame(config = GameConfig.default(GameplayStyle.BoomBlocks))
+
+        for (column in 0 until state.board.columns) {
+            for (row in 0 until state.board.rows) {
+                assertEquals(false, state.board.toneAt(column, row) == CellTone.Blue)
+            }
+        }
+    }
+
+    @Test
+    fun boomBlocks_timeAttackStartsWithDefaultTimer() {
+        val state = logic.newGame(mode = GameMode.TimeAttack)
+
+        assertEquals(GameMode.TimeAttack, state.gameMode)
+        assertEquals(GameLogic.DEFAULT_TIME_ATTACK_DURATION_MILLIS, state.remainingTimeMillis)
     }
 
     @Test

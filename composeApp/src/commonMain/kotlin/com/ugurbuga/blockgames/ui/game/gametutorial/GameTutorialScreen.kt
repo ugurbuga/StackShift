@@ -294,8 +294,12 @@ private enum class TutorialPage {
 }
 
 private fun tutorialBoomBlocksIntroScene(): TutorialDemoScene {
+    val target = setOf(GridPoint(2, 2), GridPoint(1, 2), GridPoint(3, 2))
     val board = BoardMatrix.empty(columns = 5, rows = 5)
-        .fillAll(CellTone.Blue)
+        .fillPattern(
+            exclude = target,
+            disallowedTones = setOf(CellTone.Cyan),
+        )
         .fill(GridPoint(2, 2), CellTone.Cyan)
         .fill(GridPoint(1, 2), CellTone.Cyan)
         .fill(GridPoint(3, 2), CellTone.Cyan)
@@ -319,8 +323,12 @@ private fun tutorialBoomBlocksIntroScene(): TutorialDemoScene {
 }
 
 private fun tutorialBoomBlocksGravityScene(): TutorialDemoScene {
+    val target = setOf(GridPoint(0, 0), GridPoint(1, 0), GridPoint(0, 1))
     val board = BoardMatrix.empty(columns = 5, rows = 5)
-        .fillAll(CellTone.Blue)
+        .fillPattern(
+            exclude = target,
+            disallowedTones = setOf(CellTone.Coral),
+        )
         .fill(GridPoint(0, 0), CellTone.Coral)
         .fill(GridPoint(1, 0), CellTone.Coral)
         .fill(GridPoint(0, 1), CellTone.Coral)
@@ -343,12 +351,25 @@ private fun tutorialBoomBlocksGravityScene(): TutorialDemoScene {
     )
 }
 
-private fun BoardMatrix.fillAll(tone: CellTone): BoardMatrix {
+private fun BoardMatrix.fillPattern(
+    exclude: Set<GridPoint> = emptySet(),
+    disallowedTones: Set<CellTone> = emptySet(),
+): BoardMatrix {
     var result = this
     var id = 1000
+    val tones = listOf(
+        CellTone.Cyan,
+        CellTone.Gold,
+        CellTone.Violet,
+        CellTone.Emerald,
+        CellTone.Coral,
+    ).filterNot(disallowedTones::contains)
     for (c in 0 until columns) {
         for (r in 0 until rows) {
-            result = result.fill(listOf(GridPoint(c, r)), tone, value = id++)
+            val point = GridPoint(c, r)
+            if (point in exclude) continue
+            val tone = tones[(c + (r * 2)) % tones.size]
+            result = result.fill(listOf(point), tone, value = id++)
         }
     }
     return result

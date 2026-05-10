@@ -27,6 +27,8 @@ internal class BoomBlocksGameLogic(
 
     companion object {
         private const val MIN_EXPLODE_SIZE = 3
+        private const val REWARDED_REVIVE_GROUP_MIN_SIZE = 3
+        private const val STARTING_BOARD_GENERATION_ATTEMPTS = 24
         private val BOOM_BLOCKS_TONES = listOf(
             CellTone.Cyan,
             CellTone.Gold,
@@ -45,21 +47,7 @@ internal class BoomBlocksGameLogic(
         challenge: DailyChallenge?,
         mode: GameMode,
     ): GameState {
-        val columns = config.columns
-        val rows = config.rows
-        var board = BoardMatrix.empty(columns, rows)
-        var nextId = 1L
-        
-        for (row in 0 until rows) {
-            for (col in 0 until columns) {
-                board = board.fill(
-                    points = listOf(GridPoint(col, row)),
-                    tone = BOOM_BLOCKS_TONES.random(random),
-                    value = nextId.toInt()
-                )
-                nextId++
-            }
-        }
+        val (board, nextId) = generatePlayableStartingBoard(config)
 
         return GameState(
             config = config,
@@ -75,11 +63,10 @@ internal class BoomBlocksGameLogic(
             secondsUntilDifficultyIncrease = config.difficultyIntervalSeconds,
             status = GameStatus.Running,
             lastActionTime = currentEpochMillis(),
+            remainingTimeMillis = if (mode == GameMode.TimeAttack) GameLogic.DEFAULT_TIME_ATTACK_DURATION_MILLIS else null,
             nextPieceId = nextId,
             activeChallenge = challenge?.copy(tasks = challenge.tasks.map { it.copy(current = 0) }),
-        ).let { 
-            if (hasAnyExplodableGroup(it.board)) it else it.copy(status = GameStatus.GameOver)
-        }
+        )
     }
 
     override fun previewPlacement(state: GameState, column: Int): PlacementPreview? = null
@@ -284,11 +271,167 @@ internal class BoomBlocksGameLogic(
         return false
     }
 
+    private fun presentTones(board: BoardMatrix): List<CellTone> = buildSet {
+        for (row in 0 until board.rows) {
+            for (col in 0 until board.columns) {
+                board.toneAt(col, row)?.let(::add)
+            }
+        }
+    }.toList()
+
+    private fun generatePlayableStartingBoard(config: GameConfig): Pair<BoardMatrix, Long> {
+        repeat(STARTING_BOARD_GENERATION_ATTEMPTS) {
+            val candidate = generateRandomBoard(config)
+            if (hasAnyExplodableGroup(candidate.first)) {
+                return candidate
+            }
+        }
+
+        val (fallbackBoard, nextId) = generateRandomBoard(config)
+        return ensureExplodableBoard(
+            board = fallbackBoard,
+            refillTones = BOOM_BLOCKS_TONES,
+            nextPieceId = nextId,
+        )
+    }
+
+    private fun generateRandomBoard(config: GameConfig): Pair<BoardMatrix, Long> {
+        var board = BoardMatrix.empty(config.columns, config.rows)
+        var nextId = 1L
+
+        for (row in 0 until config.rows) {
+            for (col in 0 until config.columns) {
+                board = board.fill(
+                    points = listOf(GridPoint(col, row)),
+                    tone = BOOM_BLOCKS_TONES.random(random),
+                    value = nextId.toInt(),
+                )
+                nextId++
+            }
+        }
+
+        return board to nextId
+    }
+
+    private fun pointsForTone(board: BoardMatrix, tone: CellTone): Set<GridPoint> = buildSet {
+        for (row in 0 until board.rows) {
+            for (col in 0 until board.columns) {
+                if (board.toneAt(col, row) == tone) {
+                    add(GridPoint(col, row))
+                }
+            }
+        }
+    }
+
+    private fun refillBoard(
+        board: BoardMatrix,
+        refillTones: List<CellTone>,
+        nextPieceId: Long,
+    ): Pair<BoardMatrix, Long> {
+        var currentBoard = board
+        var currentNextId = nextPieceId
+        for (col in 0 until currentBoard.columns) {
+            for (row in 0 until currentBoard.rows) {
+                if (!currentBoard.isOccupied(col, row)) {
+                    currentBoard = currentBoard.fill(
+                        points = listOf(GridPoint(col, row)),
+                        tone = refillTones.random(random),
+                        value = currentNextId.toInt(),
+                    )
+                    currentNextId++
+                }
+            }
+        }
+        return currentBoard to currentNextId
+    }
+
+    private fun ensureExplodableBoard(
+        board: BoardMatrix,
+        refillTones: List<CellTone>,
+        nextPieceId: Long,
+    ): Pair<BoardMatrix, Long> {
+        if (hasAnyExplodableGroup(board)) return board to nextPieceId
+        val guaranteedTone = refillTones.firstOrNull() ?: return board to nextPieceId
+        val anchorPoints = listOf(
+            GridPoint(0, 0),
+            GridPoint(1.coerceAtMost(board.columns - 1), 0),
+            GridPoint(0, 1.coerceAtMost(board.rows - 1)),
+        ).distinct()
+        if (anchorPoints.size < REWARDED_REVIVE_GROUP_MIN_SIZE) return board to nextPieceId
+
+        var currentBoard = board
+        var currentNextId = nextPieceId
+        anchorPoints.forEach { point ->
+            currentBoard = currentBoard.fill(
+                points = listOf(point),
+                tone = guaranteedTone,
+                value = currentNextId.toInt(),
+            )
+            currentNextId++
+        }
+        return currentBoard to currentNextId
+    }
+
     override fun holdPiece(state: GameState): GameMoveResult = invalidMove(state)
     override fun replaceActivePiece(state: GameState, specialType: SpecialBlockType): GameMoveResult = invalidMove(state)
     override fun commitSoftLock(state: GameState): GameMoveResult = invalidMove(state)
-    override fun reviveFromReward(state: GameState): GameMoveResult = invalidMove(state)
-    
+    override fun reviveFromReward(state: GameState): GameMoveResult {
+        if (state.status != GameStatus.GameOver || state.rewardedReviveUsed) {
+            return invalidMove(state)
+        }
+
+        val availableTones = presentTones(state.board)
+        if (availableTones.isEmpty()) return invalidMove(state)
+        val removedTone = availableTones.random(random)
+        val removedPoints = pointsForTone(state.board, removedTone)
+        if (removedPoints.isEmpty()) return invalidMove(state)
+
+        val refillTones = BOOM_BLOCKS_TONES.filterNot { it == removedTone }
+        var nextPieceId = state.nextPieceId
+        var revivedBoard = state.board.clearPoints(removedPoints).applyGravityDown()
+        refillBoard(
+            board = revivedBoard,
+            refillTones = refillTones,
+            nextPieceId = nextPieceId,
+        ).also { (filledBoard, nextId) ->
+            revivedBoard = filledBoard
+            nextPieceId = nextId
+        }
+        ensureExplodableBoard(
+            board = revivedBoard,
+            refillTones = refillTones,
+            nextPieceId = nextPieceId,
+        ).also { (playableBoard, nextId) ->
+            revivedBoard = playableBoard
+            nextPieceId = nextId
+        }
+
+        val nextToken = state.feedbackToken + 1L
+        return GameMoveResult(
+            state = state.copy(
+                board = revivedBoard,
+                status = GameStatus.Running,
+                nextPieceId = nextPieceId,
+                recentlyExplodedPoints = removedPoints,
+                recentlyExplodedTones = removedPoints.associateWith { removedTone },
+                clearAnimationToken = state.clearAnimationToken + 1L,
+                impactFlashToken = state.impactFlashToken + 1L,
+                screenShakeToken = state.screenShakeToken + 1L,
+                floatingFeedback = FloatingFeedback(
+                    text = gameText(GameTextKey.FeedbackExtraLife, removedPoints.size),
+                    emphasis = FeedbackEmphasis.Bonus,
+                    token = nextToken,
+                ),
+                feedbackToken = nextToken,
+                rewardedReviveUsed = true,
+                lastActionTime = currentEpochMillis(),
+                remainingTimeMillis = state.remainingTimeMillis?.plus(GameLogic.TIME_ATTACK_REVIVE_BONUS_MILLIS),
+                message = gameText(GameTextKey.GameMessageExtraLifeUsed, removedPoints.size),
+            ),
+            events = setOf(GameEvent.Revived),
+        )
+    }
+
     override fun tick(state: GameState): GameState {
         if (state.status != GameStatus.Running) return state
 

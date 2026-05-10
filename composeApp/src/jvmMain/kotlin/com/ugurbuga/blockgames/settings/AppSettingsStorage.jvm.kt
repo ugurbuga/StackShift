@@ -6,6 +6,7 @@ import com.ugurbuga.blockgames.game.model.AppThemeMode
 import com.ugurbuga.blockgames.game.model.BlockColorPalette
 import com.ugurbuga.blockgames.game.model.BlockVisualStyle
 import com.ugurbuga.blockgames.game.model.BoardBlockStyleMode
+import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.normalizeBlockVisualStyle
 import com.ugurbuga.blockgames.game.model.resolveUnifiedThemePalette
 import java.util.prefs.Preferences
@@ -32,6 +33,11 @@ actual object AppSettingsStorage {
             boardBlockStyleMode = BoardBlockStyleMode.entries.getOrElse(prefs.getInt(KeyBoardBlockStyleMode, defaultSettings.boardBlockStyleMode.ordinal)) { defaultSettings.boardBlockStyleMode },
             hasSeenTutorial = prefs.getBoolean(KeyHasSeenTutorial, defaultSettings.hasSeenTutorial),
             hasShownInteractiveOnboarding = prefs.getBoolean(KeyHasShownInteractiveOnboarding, defaultSettings.hasShownInteractiveOnboarding),
+            seenTutorialStyles = decodeEnumSet(prefs.getSafeString(KeySeenTutorialStyles, null), GameplayStyle.entries),
+            shownInteractiveOnboardingStyles = decodeEnumSet(
+                prefs.getSafeString(KeyShownInteractiveOnboardingStyles, null),
+                GameplayStyle.entries,
+            ),
             hasInitializedLanguage = prefs.getBoolean(KeyHasInitializedLanguage, defaultSettings.hasInitializedLanguage) || hasStoredLanguage,
             tokenBalance = prefs.getInt(KeyTokenBalance, defaultSettings.tokenBalance),
             unlockedThemeModes = decodeEnumSet(prefs.getSafeString(KeyUnlockedThemeModes, null), AppThemeMode.entries),
@@ -41,7 +47,6 @@ actual object AppSettingsStorage {
                 decodeChallengeProgress(prefs.getSafeString(KeyChallengeProgressPrefix + style.name.lowercase(), null))
             }.filterValues { it.completedDays.isNotEmpty() },
             lastAppOpenedAtEpochMillis = prefs.getLong(KeyLastAppOpenedAtEpochMillis, defaultSettings.lastAppOpenedAtEpochMillis),
-            isHighScoresClearedOnce = prefs.getBoolean(KeyIsHighScoresClearedOnce, defaultSettings.isHighScoresClearedOnce),
             lastActiveSlot = prefs.get(KeyLastActiveSlot, null)?.let {
                 GameSessionSlot.fromKey(it)
             },
@@ -61,6 +66,11 @@ actual object AppSettingsStorage {
         prefs.putInt(KeyBoardBlockStyleMode, sanitized.boardBlockStyleMode.ordinal)
         prefs.putBoolean(KeyHasSeenTutorial, sanitized.hasSeenTutorial)
         prefs.putBoolean(KeyHasShownInteractiveOnboarding, sanitized.hasShownInteractiveOnboarding)
+        prefs.put(KeySeenTutorialStyles, encodeEnumSet(sanitized.seenTutorialStyles))
+        prefs.put(
+            KeyShownInteractiveOnboardingStyles,
+            encodeEnumSet(sanitized.shownInteractiveOnboardingStyles)
+        )
         prefs.putBoolean(KeyHasInitializedLanguage, sanitized.hasInitializedLanguage)
         prefs.putInt(KeyTokenBalance, sanitized.tokenBalance)
         prefs.put(KeyUnlockedThemeModes, encodeEnumSet(sanitized.unlockedThemeModes))
@@ -70,7 +80,6 @@ actual object AppSettingsStorage {
             prefs.put(KeyChallengeProgressPrefix + style.name.lowercase(), encodeChallengeProgress(progress))
         }
         prefs.putLong(KeyLastAppOpenedAtEpochMillis, sanitized.lastAppOpenedAtEpochMillis)
-        prefs.putBoolean(KeyIsHighScoresClearedOnce, sanitized.isHighScoresClearedOnce)
         if (sanitized.lastActiveSlot != null) {
             prefs.put(KeyLastActiveSlot, sanitized.lastActiveSlot.key)
         } else {
@@ -86,7 +95,6 @@ actual object AppSettingsStorage {
     private const val KeySelectedGameplayStyle = "selectedGameplayStyle"
     private const val KeyLastActiveSlot = "lastActiveSlot"
 
-    private const val KeyIsHighScoresClearedOnce = "isHighScoresClearedOnce"
     private const val Namespace = "com.ugurbuga.blockgames.settings"
     private const val KeyLastAppOpenedAtEpochMillis = "lastAppOpenedAtEpochMillis"
     private const val KeyChallengeProgressPrefix = "challengeProgress_"
@@ -102,6 +110,8 @@ actual object AppSettingsStorage {
     private const val KeyBoardBlockStyleMode = "boardBlockStyleMode"
     private const val KeyHasSeenTutorial = "hasSeenTutorial"
     private const val KeyHasShownInteractiveOnboarding = "hasShownInteractiveOnboarding"
+    private const val KeySeenTutorialStyles = "seenTutorialStyles"
+    private const val KeyShownInteractiveOnboardingStyles = "shownInteractiveOnboardingStyles"
     private const val KeyHasInitializedLanguage = "hasInitializedLanguage"
 
     private fun Preferences.getSafeString(key: String, defaultValue: String?): String? =

@@ -30,8 +30,8 @@ enum class BoomBlocksOnboardingStage : OnboardingStage {
 object BoomBlocksOnboardingStateFactory {
     private val guideLogic = BoomBlocksGameLogic()
     private val config = GameConfig(
-        columns = 8,
-        rows = 10,
+        columns = 6,
+        rows = 8,
         difficultyIntervalSeconds = 9_999,
         linesPerLevel = 9_999,
     )
@@ -61,7 +61,10 @@ object BoomBlocksOnboardingStateFactory {
                 stage = stage,
                 gameState = scriptedState(
                     board = BoardMatrix.empty(columns = config.columns, rows = config.rows)
-                        .fillAllNonExplodable(target)
+                        .fillAllNonExplodable(
+                            exclude = target,
+                            disallowedTones = setOf(CellTone.Cyan),
+                        )
                         .fill(GridPoint(3, 4), CellTone.Cyan)
                         .fill(GridPoint(4, 4), CellTone.Cyan)
                         .fill(GridPoint(3, 5), CellTone.Cyan)
@@ -80,7 +83,10 @@ object BoomBlocksOnboardingStateFactory {
                 stage = stage,
                 gameState = scriptedState(
                     board = BoardMatrix.empty(columns = config.columns, rows = config.rows)
-                        .fillAllNonExplodable(target)
+                        .fillAllNonExplodable(
+                            exclude = target,
+                            disallowedTones = setOf(CellTone.Gold),
+                        )
                         .fill(GridPoint(2, 3), CellTone.Gold)
                         .fill(GridPoint(3, 3), CellTone.Gold)
                         .fill(GridPoint(4, 3), CellTone.Gold)
@@ -99,7 +105,10 @@ object BoomBlocksOnboardingStateFactory {
                 stage = stage,
                 gameState = scriptedState(
                     board = BoardMatrix.empty(columns = config.columns, rows = config.rows)
-                        .fillAllNonExplodable(target)
+                        .fillAllNonExplodable(
+                            exclude = target,
+                            disallowedTones = setOf(CellTone.Coral),
+                        )
                         .fill(GridPoint(0, 0), CellTone.Coral)
                         .fill(GridPoint(1, 0), CellTone.Coral)
                         .fill(GridPoint(0, 1), CellTone.Coral)
@@ -114,7 +123,10 @@ object BoomBlocksOnboardingStateFactory {
                 stage = stage,
                 gameState = scriptedState(
                     board = BoardMatrix.empty(columns = config.columns, rows = config.rows)
-                        .fillAllNonExplodable(target)
+                        .fillAllNonExplodable(
+                            exclude = target,
+                            disallowedTones = setOf(CellTone.Violet, CellTone.Emerald),
+                        )
                         .fill(GridPoint(3, 4), CellTone.Violet)
                         .fill(GridPoint(4, 4), CellTone.Violet)
                         .fill(GridPoint(3, 5), CellTone.Violet)
@@ -146,7 +158,10 @@ object BoomBlocksOnboardingStateFactory {
         )
     }
 
-    private fun BoardMatrix.fillAllNonExplodable(exclude: Set<GridPoint>): BoardMatrix {
+    private fun BoardMatrix.fillAllNonExplodable(
+        exclude: Set<GridPoint>,
+        disallowedTones: Set<CellTone> = emptySet(),
+    ): BoardMatrix {
         var result = this
         var id = 1000
         val tones = listOf(
@@ -155,12 +170,12 @@ object BoomBlocksOnboardingStateFactory {
             CellTone.Violet,
             CellTone.Emerald,
             CellTone.Coral,
-        )
+        ).filterNot(disallowedTones::contains)
         for (c in 0 until columns) {
             for (r in 0 until rows) {
                 if (GridPoint(c, r) in exclude) continue
 
-                val tone = tones[(c * 2 + r) % tones.size]
+                val tone = tones[(c + (r * 2)) % tones.size]
                 result = result.fill(listOf(GridPoint(c, r)), tone, value = id++)
             }
         }

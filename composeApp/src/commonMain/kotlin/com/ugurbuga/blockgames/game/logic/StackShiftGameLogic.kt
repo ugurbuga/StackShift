@@ -1088,13 +1088,11 @@ internal class StackShiftGameLogic(
     ): Set<Int> {
         if (totalRows <= 0 || maxRowsToClear <= 0) return emptySet()
 
-        val allRows = (0 until totalRows).toList()
-        val occupiedRows = allRows.filter { row ->
+        return (0 until totalRows)
+            .filter { row ->
             (0 until board.columns).any { column -> board.isOccupied(column, row) }
-        }.shuffled(random)
-        val emptyRows = allRows.filterNot(occupiedRows::contains).shuffled(random)
-
-        return (occupiedRows + emptyRows)
+            }
+            .shuffled(random)
             .take(maxRowsToClear.coerceAtMost(totalRows))
             .toSet()
     }
