@@ -1,6 +1,7 @@
 package com.ugurbuga.blockgames.settings
 
 import com.ugurbuga.blockgames.game.model.GameState
+import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
 
 actual object GameSessionStorage {
     actual fun load(slot: GameSessionSlot): GameState? = BrowserStorage.get(keyFor(slot))
@@ -16,23 +17,33 @@ actual object GameSessionStorage {
     }
 
     actual fun clear() {
-        BrowserStorage.remove(keyFor(GameSessionSlot.Classic))
-        BrowserStorage.remove(keyFor(GameSessionSlot.TimeAttack))
-        BrowserStorage.keys().filter { it.startsWith("stackshift.game.session.daily_challenge_") }
+        BrowserStorage.keys().filter {
+            it == "gameState_classic" ||
+                it.startsWith("gameState_classic_") ||
+                it == "gameState_time_attack" ||
+                it.startsWith("gameState_time_attack_") ||
+                it.startsWith("gameState_daily_challenge_")
+        }
             .forEach { BrowserStorage.remove(it) }
     }
 
     actual fun cleanup(allowedDateIds: List<String>) {
-        val allowedKeys = allowedDateIds.map { "stackshift.game.session.daily_challenge_$it" }.toSet()
+        val style = GlobalPlatformConfig.gameplayStyle.name.lowercase()
+        val allowedKeys = allowedDateIds.map { "gameState_daily_challenge_${style}_$it" }.toSet()
         BrowserStorage.keys()
-            .filter { it.startsWith("stackshift.game.session.daily_challenge_") && it !in allowedKeys }
+            .filter { it.startsWith("gameState_daily_challenge_${style}_") && it !in allowedKeys }
             .forEach { BrowserStorage.remove(it) }
     }
 
-    private fun keyFor(slot: GameSessionSlot): String = when (slot) {
-        GameSessionSlot.Classic -> "stackshift.game.session.classic"
-        GameSessionSlot.TimeAttack -> "stackshift.game.session.time_attack"
-        is GameSessionSlot.DailyChallenge -> "stackshift.game.session.daily_challenge_${slot.dateId}"
+    actual fun getSavedDailyChallengeDays(yearMonth: String): Set<Int> {
+        val style = GlobalPlatformConfig.gameplayStyle.name.lowercase()
+        val prefix = "gameState_daily_challenge_${style}_$yearMonth-"
+        return BrowserStorage.keys()
+            .filter { it.startsWith(prefix) }
+            .mapNotNull { it.substringAfterLast("-").toIntOrNull() }
+            .toSet()
     }
+
+    private fun keyFor(slot: GameSessionSlot): String = "gameState_${slot.key}"
 }
 

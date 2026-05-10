@@ -35,6 +35,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
@@ -73,6 +74,7 @@ import com.ugurbuga.blockgames.telemetry.AppTelemetry
 import com.ugurbuga.blockgames.telemetry.NoOpAppTelemetry
 import com.ugurbuga.blockgames.ui.game.BoardGrid
 import com.ugurbuga.blockgames.ui.game.GameOverDialog
+import com.ugurbuga.blockgames.ui.game.GameOverDialogRevealDurationMillis
 import com.ugurbuga.blockgames.ui.game.InteractiveOnboardingCompletionDialog
 import com.ugurbuga.blockgames.ui.game.MinimalTopBar
 import com.ugurbuga.blockgames.ui.game.PieceBlocks
@@ -132,21 +134,33 @@ fun BlockWiseGameScreen(
     var dragPointerInHost by remember { mutableStateOf<Offset?>(null) }
     var showRestartDialog by remember { mutableStateOf(false) }
     var rewardedReviveLoading by remember { mutableStateOf(false) }
+    val gameOverBoardClearProgress = remember { Animatable(0f) }
     val gameOverDialogRevealProgress = remember { Animatable(0f) }
+    var showGameOverDialog by remember { mutableStateOf(false) }
 
     val interactiveOnboardingEnabled = interactiveOnboardingScene != null
 
     LaunchedEffect(gameState.status) {
         if (gameState.status == GameStatus.GameOver) {
+            gameOverBoardClearProgress.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(
+                    durationMillis = (90 * gameState.config.rows).coerceAtLeast(1200),
+                    easing = FastOutSlowInEasing,
+                ),
+            )
+            showGameOverDialog = true
             gameOverDialogRevealProgress.animateTo(
                 targetValue = 1f,
                 animationSpec = tween(
-                    durationMillis = 260,
+                    durationMillis = GameOverDialogRevealDurationMillis,
                     easing = FastOutSlowInEasing,
                 ),
             )
         } else {
+            gameOverBoardClearProgress.snapTo(0f)
             gameOverDialogRevealProgress.snapTo(0f)
+            showGameOverDialog = false
         }
     }
 
@@ -338,7 +352,18 @@ fun BlockWiseGameScreen(
                             activeColumn = placementPreview?.selectedColumn,
                             activePiece = draggedPiece,
                             isDragging = draggedPiece != null,
+                            gameOverClearProgressProvider = { gameOverBoardClearProgress.value },
                         )
+
+                        if (gameState.status == GameStatus.GameOver || gameOverBoardClearProgress.value > 0f) {
+                            GameOverBoardClearOverlay(
+                                revealProgress = gameOverBoardClearProgress.value,
+                                rowCount = gameState.config.rows,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(GameUiShapeTokens.panelCorner)),
+                            )
+                        }
                     }
                 }
 
@@ -433,7 +458,7 @@ fun BlockWiseGameScreen(
         )
     }
 
-    if (gameState.status == GameStatus.GameOver) {
+    if (showGameOverDialog) {
         GameOverDialog(
             gameState = gameState,
             highestScore = highestScore,
@@ -441,7 +466,7 @@ fun BlockWiseGameScreen(
             revealProgressProvider = { gameOverDialogRevealProgress.value },
             canUseExtraLife = !gameState.rewardedReviveUsed,
             isExtraLifeLoading = rewardedReviveLoading,
-            showExtraLifeButton = adController !== NoOpGameAdController && gameState.activeChallenge?.isCompleted != true,
+            showExtraLifeButton = adController !== NoOpGameAdController,
             onPlayAgain = {
                 if (gameState.activeChallenge?.isCompleted == true) {
                     onBack()

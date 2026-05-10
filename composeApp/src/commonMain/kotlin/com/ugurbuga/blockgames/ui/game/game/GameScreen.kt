@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import com.ugurbuga.blockgames.ads.GameAdController
 import com.ugurbuga.blockgames.ads.NoOpGameAdController
 import com.ugurbuga.blockgames.game.logic.GameEvent
+import com.ugurbuga.blockgames.game.model.GameConfig
 import com.ugurbuga.blockgames.game.model.GameState
 import com.ugurbuga.blockgames.game.model.GameStatus
 import com.ugurbuga.blockgames.game.model.GameplayStyle
@@ -290,10 +291,18 @@ fun BlockGamesGameApp(
             },
             onRestart = {
                 telemetry.logUserAction(TelemetryActionNames.RestartGame)
-                viewModel.restart()
+                viewModel.restart(
+                    config = restartConfigForStyle(uiState.gameState, GameplayStyle.BoomBlocks),
+                )
+            },
+            onRewardedRevive = {
+                telemetry.logUserAction("rewarded_revive")
+                dispatchFeedback(viewModel.reviveFromReward(), soundPlayer, haptics)
             },
             onBack = onBack,
             highestScore = highestScore,
+            showNewHighScoreMessage = newHighScoreReached,
+            adController = adController,
             interactiveOnboardingScene = boomBlocksOnboardingScene,
             interactiveOnboardingCurrentStep = onboardingStages.indexOf(onboardingStage)
                 .takeIf { it >= 0 }?.plus(1) ?: 0,
@@ -334,7 +343,7 @@ fun BlockGamesGameApp(
                 telemetry.logUserAction(TelemetryActionNames.RestartGame)
                 dispatchFeedback(
                     viewModel.restart(
-                        config = uiState.gameState.config,
+                        config = restartConfigForStyle(uiState.gameState, GameplayStyle.BlockWise),
                     ),
                     soundPlayer,
                     haptics,
@@ -401,7 +410,7 @@ fun BlockGamesGameApp(
             onRestart = {
                 telemetry.logUserAction(TelemetryActionNames.RestartGame)
                 viewModel.restart(
-                    config = uiState.gameState.config,
+                    config = restartConfigForStyle(uiState.gameState, GameplayStyle.StackShift),
                 )
             },
             onRewardedRevive = {
@@ -457,10 +466,18 @@ fun BlockGamesGameApp(
             },
             onRestart = {
                 telemetry.logUserAction(TelemetryActionNames.RestartGame)
-                viewModel.restart()
+                viewModel.restart(
+                    config = restartConfigForStyle(uiState.gameState, GameplayStyle.MergeShift),
+                )
+            },
+            onRewardedRevive = {
+                telemetry.logUserAction("rewarded_revive")
+                viewModel.reviveFromReward()
             },
             onTick = viewModel::tick,
             onBack = onBack,
+            showNewHighScoreMessage = newHighScoreReached,
+            adController = adController,
             telemetry = telemetry,
             soundPlayer = soundPlayer,
             haptics = haptics,
@@ -487,6 +504,22 @@ private fun GameState.hiddenOnboardingPreviewState(): GameState = copy(
     holdPiece = null,
     canHold = false,
 )
+
+private fun restartConfigForStyle(
+    state: GameState,
+    expectedStyle: GameplayStyle,
+): GameConfig {
+    val defaultConfig = GameConfig.default(expectedStyle)
+    return if (
+        state.gameplayStyle == expectedStyle &&
+        state.config.columns == defaultConfig.columns &&
+        state.config.rows == defaultConfig.rows
+    ) {
+        state.config
+    } else {
+        defaultConfig
+    }
+}
 
 private data class InteractiveOnboardingAdvanceRequest(
     val completedStage: OnboardingStage,

@@ -9,6 +9,8 @@ import com.ugurbuga.blockgames.game.model.Piece
 import com.ugurbuga.blockgames.game.model.PieceKind
 import com.ugurbuga.blockgames.game.model.PlacementPreview
 import com.ugurbuga.blockgames.game.model.SpecialBlockType
+import com.ugurbuga.blockgames.ui.game.game.freePlacementDragTopLeft
+import com.ugurbuga.blockgames.ui.game.game.resolveNearestFreePlacementPreview
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

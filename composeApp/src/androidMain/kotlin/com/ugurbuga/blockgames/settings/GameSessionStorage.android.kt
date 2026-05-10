@@ -30,16 +30,19 @@ actual object GameSessionStorage {
     }
 
     actual fun clear() {
-        prefs.edit()
-            .remove(keyFor(GameSessionSlot.Classic))
-            .remove(keyFor(GameSessionSlot.TimeAttack))
-            .apply()
+        val keysToRemove = prefs.all.keys.filter {
+            it == "gameState_classic" ||
+                it.startsWith("gameState_classic_") ||
+                it == "gameState_time_attack" ||
+                it.startsWith("gameState_time_attack_") ||
+                it.startsWith("gameState_daily_challenge_")
+        }
 
-        // Clear all daily challenge sessions
-        prefs.all.keys.filter { it.startsWith("gameState_daily_challenge_") }
-            .forEach { key ->
-                prefs.edit().remove(key).apply()
-            }
+        if (keysToRemove.isNotEmpty()) {
+            val editor = prefs.edit()
+            keysToRemove.forEach(editor::remove)
+            editor.apply()
+        }
     }
 
     actual fun cleanup(allowedDateIds: List<String>) {

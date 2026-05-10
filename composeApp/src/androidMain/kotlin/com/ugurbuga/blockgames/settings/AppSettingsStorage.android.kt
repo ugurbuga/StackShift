@@ -67,6 +67,14 @@ actual object AppSettingsStorage {
                 KeyHasShownInteractiveOnboarding,
                 defaultSettings.hasShownInteractiveOnboarding
             ),
+            seenTutorialStyles = decodeEnumSet(
+                prefs.getSafeString(KeySeenTutorialStyles, null),
+                GameplayStyle.entries,
+            ),
+            shownInteractiveOnboardingStyles = decodeEnumSet(
+                prefs.getSafeString(KeyShownInteractiveOnboardingStyles, null),
+                GameplayStyle.entries,
+            ),
             hasInitializedLanguage = prefs.getBoolean(
                 KeyHasInitializedLanguage,
                 defaultSettings.hasInitializedLanguage
@@ -90,10 +98,6 @@ actual object AppSettingsStorage {
             lastAppOpenedAtEpochMillis = prefs.getLong(
                 KeyLastAppOpenedAtEpochMillis,
                 defaultSettings.lastAppOpenedAtEpochMillis,
-            ),
-            isHighScoresClearedOnce = prefs.getBoolean(
-                KeyIsHighScoresClearedOnce,
-                defaultSettings.isHighScoresClearedOnce
             ),
             lastActiveSlot = prefs.getString(KeyLastActiveSlot, null)?.let {
                 GameSessionSlot.fromKey(it)
@@ -123,6 +127,11 @@ actual object AppSettingsStorage {
             .putInt(KeyBoardBlockStyleMode, sanitized.boardBlockStyleMode.ordinal)
             .putBoolean(KeyHasSeenTutorial, sanitized.hasSeenTutorial)
             .putBoolean(KeyHasShownInteractiveOnboarding, sanitized.hasShownInteractiveOnboarding)
+            .putString(KeySeenTutorialStyles, encodeEnumSet(sanitized.seenTutorialStyles))
+            .putString(
+                KeyShownInteractiveOnboardingStyles,
+                encodeEnumSet(sanitized.shownInteractiveOnboardingStyles)
+            )
             .putBoolean(KeyHasInitializedLanguage, sanitized.hasInitializedLanguage)
             .putInt(KeyTokenBalance, sanitized.tokenBalance)
             .putString(KeyUnlockedThemeModes, encodeEnumSet(sanitized.unlockedThemeModes))
@@ -134,7 +143,6 @@ actual object AppSettingsStorage {
                 }
             }
             .putLong(KeyLastAppOpenedAtEpochMillis, sanitized.lastAppOpenedAtEpochMillis)
-            .putBoolean(KeyIsHighScoresClearedOnce, sanitized.isHighScoresClearedOnce)
             .apply {
                 if (sanitized.lastActiveSlot != null) {
                     putString(KeyLastActiveSlot, sanitized.lastActiveSlot.key)
@@ -150,7 +158,6 @@ actual object AppSettingsStorage {
             .apply()
     }
 
-    private const val KeyIsHighScoresClearedOnce = "isHighScoresClearedOnce"
     private const val KeyLastActiveSlot = "lastActiveSlot"
     private const val KeySelectedGameplayStyle = "selectedGameplayStyle"
     private const val KeyLastAppOpenedAtEpochMillis = "lastAppOpenedAtEpochMillis"
@@ -166,5 +173,7 @@ actual object AppSettingsStorage {
     private const val KeyBoardBlockStyleMode = "boardBlockStyleMode"
     private const val KeyHasSeenTutorial = "hasSeenTutorial"
     private const val KeyHasShownInteractiveOnboarding = "hasShownInteractiveOnboarding"
+    private const val KeySeenTutorialStyles = "seenTutorialStyles"
+    private const val KeyShownInteractiveOnboardingStyles = "shownInteractiveOnboardingStyles"
     private const val KeyHasInitializedLanguage = "hasInitializedLanguage"
 }

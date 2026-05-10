@@ -1,6 +1,7 @@
 package com.ugurbuga.blockgames.settings
 
 import com.ugurbuga.blockgames.game.model.GameState
+import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
 import platform.Foundation.NSUserDefaults
 
 actual object GameSessionStorage {
@@ -22,29 +23,36 @@ actual object GameSessionStorage {
     }
 
     actual fun clear() {
-        defaults.removeObjectForKey(keyFor(GameSessionSlot.Classic))
-        defaults.removeObjectForKey(keyFor(GameSessionSlot.TimeAttack))
-        // Daily challenges are handled via key prefix matching if we had a way to list keys,
-        // but NSUserDefaults doesn't easily expose all keys.
-        // For now, we only clear the known ones if we tracked them, or we clear all if needed.
-        // On iOS, we can use dictionaryRepresentation to find keys.
         val keys = defaults.dictionaryRepresentation().keys
         keys.filterIsInstance<String>()
-            .filter { it.startsWith("gameState_daily_challenge_") }
+            .filter {
+                it == "gameState_classic" ||
+                    it.startsWith("gameState_classic_") ||
+                    it == "gameState_time_attack" ||
+                    it.startsWith("gameState_time_attack_") ||
+                    it.startsWith("gameState_daily_challenge_")
+            }
             .forEach { defaults.removeObjectForKey(it) }
     }
 
     actual fun cleanup(allowedDateIds: List<String>) {
-        val allowedKeys = allowedDateIds.map { "gameState_daily_challenge_$it" }.toSet()
+        val style = GlobalPlatformConfig.gameplayStyle.name.lowercase()
+        val allowedKeys = allowedDateIds.map { "gameState_daily_challenge_${style}_$it" }.toSet()
         val keys = defaults.dictionaryRepresentation().keys
         keys.filterIsInstance<String>()
-            .filter { it.startsWith("gameState_daily_challenge_") && it !in allowedKeys }
+            .filter { it.startsWith("gameState_daily_challenge_${style}_") && it !in allowedKeys }
             .forEach { defaults.removeObjectForKey(it) }
     }
 
-    private fun keyFor(slot: GameSessionSlot): String = when (slot) {
-        GameSessionSlot.Classic -> "gameState_classic"
-        GameSessionSlot.TimeAttack -> "gameState_time_attack"
-        is GameSessionSlot.DailyChallenge -> "gameState_daily_challenge_${slot.dateId}"
+    actual fun getSavedDailyChallengeDays(yearMonth: String): Set<Int> {
+        val style = GlobalPlatformConfig.gameplayStyle.name.lowercase()
+        val prefix = "gameState_daily_challenge_${style}_$yearMonth-"
+        val keys = defaults.dictionaryRepresentation().keys
+        return keys.filterIsInstance<String>()
+            .filter { it.startsWith(prefix) }
+            .mapNotNull { it.substringAfterLast("-").toIntOrNull() }
+            .toSet()
     }
+
+    private fun keyFor(slot: GameSessionSlot): String = "gameState_${slot.key}"
 }

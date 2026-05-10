@@ -25,9 +25,10 @@ data class AppSettings(
     val lastAppOpenedAtEpochMillis: Long = 0L,
     val hasSeenTutorial: Boolean = false,
     val hasShownInteractiveOnboarding: Boolean = false,
+    val seenTutorialStyles: Set<GameplayStyle> = emptySet(),
+    val shownInteractiveOnboardingStyles: Set<GameplayStyle> = emptySet(),
     val hasInitializedLanguage: Boolean = false,
     val soundEnabled: Boolean = false,
-    val isHighScoresClearedOnce: Boolean = false,
     val lastActiveSlot: GameSessionSlot? = null,
     val selectedGameplayStyle: GameplayStyle? = null,
 ) {

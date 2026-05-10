@@ -25,14 +25,14 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import blockgames.composeapp.generated.resources.Res
+import blockgames.composeapp.generated.resources.app_title_stackshift
 import com.ugurbuga.blockgames.game.model.CellTone
 import com.ugurbuga.blockgames.game.model.SpecialBlockType
 import com.ugurbuga.blockgames.localization.LocalAppSettings
 import com.ugurbuga.blockgames.localization.appStringResource
 import com.ugurbuga.blockgames.ui.game.BlockCellPreview
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
-import blockgames.composeapp.generated.resources.Res
-import blockgames.composeapp.generated.resources.app_title_stackshift
 
 val AppFooterBannerHeight = 50.dp
 
@@ -43,7 +43,7 @@ fun AppFooterAdSlot(
 ) {
     if (adController.bannerPresentationMode != BannerPresentationMode.Inline) return
 
-    var bannerLoaded by remember { mutableStateOf(false) }
+    var bannerEverLoaded by remember { mutableStateOf(false) }
     val uiColors = BlockGamesThemeTokens.uiColors
 
     Surface(
@@ -58,14 +58,18 @@ fun AppFooterAdSlot(
                 .fillMaxWidth()
                 .height(AppFooterBannerHeight),
         ) {
-            if (!bannerLoaded) {
+            if (!bannerEverLoaded) {
                 AppBrandedBannerPlaceholder(modifier = Modifier.matchParentSize())
             }
             adController.Banner(
                 modifier = Modifier
                     .matchParentSize()
-                    .graphicsLayer { alpha = if (bannerLoaded) 1f else 0f },
-                onLoadStateChanged = { bannerLoaded = it },
+                    .graphicsLayer { alpha = if (bannerEverLoaded) 1f else 0f },
+                onLoadStateChanged = { loaded ->
+                    if (loaded) {
+                        bannerEverLoaded = true
+                    }
+                },
             )
         }
     }

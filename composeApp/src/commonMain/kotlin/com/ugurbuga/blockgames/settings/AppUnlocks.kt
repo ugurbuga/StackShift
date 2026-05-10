@@ -5,6 +5,7 @@ import com.ugurbuga.blockgames.game.model.AppThemeMode
 import com.ugurbuga.blockgames.game.model.BlockVisualStyle
 import com.ugurbuga.blockgames.game.model.ChallengeProgress
 import com.ugurbuga.blockgames.game.model.DailyChallenge
+import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.normalizeBlockVisualStyle
 import com.ugurbuga.blockgames.platform.isDebugBuild
 
@@ -75,6 +76,7 @@ fun AppSettings.isBlockStyleUnlocked(style: BlockVisualStyle): Boolean =
 
 fun AppSettings.sanitized(): AppSettings {
     val isDebug = isDebugBuild()
+    val allGameplayStyles = GameplayStyle.entries.toSet()
     val sanitizedUnlockedBlockStyles: Set<BlockVisualStyle> =
         ((if (isDebug) BlockVisualStyle.entries.toSet() else this.unlockedBlockStyles) + DefaultUnlockedBlockStyles)
             .map(::normalizeBlockVisualStyle)
@@ -84,6 +86,16 @@ fun AppSettings.sanitized(): AppSettings {
         debugBuild = isDebug,
         unlockedThemePalettes = this.unlockedThemePalettes,
     )
+    val sanitizedSeenTutorialStyles = when {
+        this.seenTutorialStyles.isNotEmpty() -> this.seenTutorialStyles
+        this.hasSeenTutorial -> allGameplayStyles
+        else -> emptySet()
+    }
+    val sanitizedShownInteractiveOnboardingStyles = when {
+        this.shownInteractiveOnboardingStyles.isNotEmpty() -> this.shownInteractiveOnboardingStyles
+        this.hasShownInteractiveOnboarding -> allGameplayStyles
+        else -> emptySet()
+    }
     val sanitizedThemeMode = this.themeMode.takeIf { it in sanitizedThemeModes } ?: AppThemeMode.System
     val sanitizedThemePalette = this.themeColorPalette.takeIf { it in sanitizedThemePalettes } ?: AppColorPalette.Classic
     val normalizedBlockStyle = normalizeBlockVisualStyle(this.blockVisualStyle)
@@ -97,10 +109,30 @@ fun AppSettings.sanitized(): AppSettings {
         unlockedBlockStyles = sanitizedUnlockedBlockStyles,
         tokenBalance = this.tokenBalance.coerceAtLeast(0),
         lastAppOpenedAtEpochMillis = this.lastAppOpenedAtEpochMillis.coerceAtLeast(0L),
+        hasSeenTutorial = sanitizedSeenTutorialStyles.isNotEmpty(),
+        hasShownInteractiveOnboarding = sanitizedShownInteractiveOnboardingStyles.isNotEmpty(),
+        seenTutorialStyles = sanitizedSeenTutorialStyles,
+        shownInteractiveOnboardingStyles = sanitizedShownInteractiveOnboardingStyles,
         soundEnabled = this.soundEnabled,
-        isHighScoresClearedOnce = this.isHighScoresClearedOnce,
     )
 }
+
+fun AppSettings.hasSeenTutorialFor(style: GameplayStyle): Boolean = style in this.seenTutorialStyles
+
+fun AppSettings.hasShownInteractiveOnboardingFor(style: GameplayStyle): Boolean =
+    style in this.shownInteractiveOnboardingStyles
+
+fun AppSettings.markTutorialSeen(style: GameplayStyle): AppSettings =
+    this.copy(
+        hasSeenTutorial = true,
+        seenTutorialStyles = this.seenTutorialStyles + style,
+    ).sanitized()
+
+fun AppSettings.markInteractiveOnboardingShown(style: GameplayStyle): AppSettings =
+    this.copy(
+        hasShownInteractiveOnboarding = true,
+        shownInteractiveOnboardingStyles = this.shownInteractiveOnboardingStyles + style,
+    ).sanitized()
 
 fun AppSettings.selectThemeMode(mode: AppThemeMode): AppSettings =
     this.copy(themeMode = mode).sanitized()

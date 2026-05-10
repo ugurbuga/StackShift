@@ -353,5 +353,6 @@
     <string name="selection_mergeshift_desc">Merge pieces of the same value to reach higher scores.</string>
     <string name="selection_boomblocks_desc">Tap groups of 3 or more blocks to explode them.</string>
     <string name="selection_switch_game">Switch Game</string>
+    <string name="selection_active_game_badge">ACTIVE</string>
 </resources>
 
