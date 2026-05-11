@@ -313,8 +313,25 @@ internal class BlockWiseGameLogic(
     override fun holdPiece(state: GameState): GameMoveResult = invalidMove(state)
 
     override fun replaceActivePiece(state: GameState, specialType: SpecialBlockType): GameMoveResult {
-        specialType.hashCode()
-        return invalidMove(state)
+        if (state.status != GameStatus.Running) return invalidMove(state)
+
+        val currentNextId = state.nextPieceId
+        val (newTray, nextId) = replenishTray(emptyList(), state.level, currentNextId)
+
+        val nextToken = state.feedbackToken + 1L
+        val nextState = state.copy(
+            activePiece = newTray.firstOrNull(),
+            nextQueue = newTray.drop(1),
+            nextPieceId = nextId,
+            message = gameText(GameTextKey.GameMessageAdRewardBlockWise),
+            floatingFeedback = FloatingFeedback(
+                text = gameText(GameTextKey.FeedbackAdRewardBlockWise),
+                emphasis = FeedbackEmphasis.Bonus,
+                token = nextToken,
+            ),
+            feedbackToken = nextToken,
+        )
+        return GameMoveResult(state = nextState, events = setOf(GameEvent.SpecialTriggered))
     }
 
     override fun commitSoftLock(state: GameState): GameMoveResult = invalidMove(state)

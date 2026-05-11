@@ -61,9 +61,21 @@ import androidx.compose.ui.window.DialogProperties
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.boost
 import blockgames.composeapp.generated.resources.challenge_completed
+import blockgames.composeapp.generated.resources.color_amber
+import blockgames.composeapp.generated.resources.color_blue
+import blockgames.composeapp.generated.resources.color_coral
+import blockgames.composeapp.generated.resources.color_cyan
+import blockgames.composeapp.generated.resources.color_emerald
+import blockgames.composeapp.generated.resources.color_gold
+import blockgames.composeapp.generated.resources.color_lime
+import blockgames.composeapp.generated.resources.color_rose
+import blockgames.composeapp.generated.resources.color_violet
 import blockgames.composeapp.generated.resources.continue_label
 import blockgames.composeapp.generated.resources.danger
 import blockgames.composeapp.generated.resources.danger_none
+import blockgames.composeapp.generated.resources.feedback_ad_reward_blockwise
+import blockgames.composeapp.generated.resources.feedback_ad_reward_boomblocks
+import blockgames.composeapp.generated.resources.feedback_ad_reward_mergeshift
 import blockgames.composeapp.generated.resources.feedback_chain
 import blockgames.composeapp.generated.resources.feedback_clear
 import blockgames.composeapp.generated.resources.feedback_extra_life
@@ -77,6 +89,10 @@ import blockgames.composeapp.generated.resources.feedback_soft_lock
 import blockgames.composeapp.generated.resources.feedback_special
 import blockgames.composeapp.generated.resources.feedback_special_chain
 import blockgames.composeapp.generated.resources.feedback_swap
+import blockgames.composeapp.generated.resources.game_message_ad_reward_blockwise
+import blockgames.composeapp.generated.resources.game_message_ad_reward_boomblocks
+import blockgames.composeapp.generated.resources.game_message_ad_reward_mergeshift
+import blockgames.composeapp.generated.resources.game_message_ad_reward_stackshift
 import blockgames.composeapp.generated.resources.game_message_chain_lines
 import blockgames.composeapp.generated.resources.game_message_extra_life_used
 import blockgames.composeapp.generated.resources.game_message_good_shot
@@ -989,7 +1005,17 @@ internal fun InteractiveOnboardingCompletionDialog(
 
 @Composable
 internal fun resolveGameText(text: GameText): String {
-    return formatAppString(stringResource(text.key.stringResourceId(), *text.args.toTypedArray()))
+    val resourceId = text.key.stringResourceId()
+    val resolvedText = if (text.args.isEmpty()) {
+        stringResource(resourceId)
+    } else {
+        val finalArgs = text.args.map { arg ->
+            val tone = CellTone.entries.find { it.name == arg }
+            if (tone != null) stringResource(tone.stringResourceId()) else arg
+        }
+        stringResource(resourceId, *finalArgs.toTypedArray())
+    }
+    return formatAppString(resolvedText)
 }
 
 internal fun SpecialBlockType.shortLabel(): GameText {
@@ -1044,6 +1070,10 @@ internal fun GameTextKey.stringResourceId(): StringResource {
         GameTextKey.GameMessageSpecialLines -> Res.string.game_message_special_lines
         GameTextKey.GameMessageSpecialTriggered -> Res.string.game_message_special_triggered
         GameTextKey.GameMessagePerfectDrop -> Res.string.game_message_perfect_drop
+        GameTextKey.GameMessageAdRewardBlockWise -> Res.string.game_message_ad_reward_blockwise
+        GameTextKey.GameMessageAdRewardMergeShift -> Res.string.game_message_ad_reward_mergeshift
+        GameTextKey.GameMessageAdRewardBoomBlocks -> Res.string.game_message_ad_reward_boomblocks
+        GameTextKey.GameMessageAdRewardStackShift -> Res.string.game_message_ad_reward_stackshift
         GameTextKey.GameMessageChainLines -> Res.string.game_message_chain_lines
         GameTextKey.GameMessageLinesCleared -> Res.string.game_message_lines_cleared
         GameTextKey.GameMessageGoodShot -> Res.string.game_message_good_shot
@@ -1069,6 +1099,23 @@ internal fun GameTextKey.stringResourceId(): StringResource {
         GameTextKey.SpecialGhost -> Res.string.special_ghost
         GameTextKey.SpecialHeavy -> Res.string.special_heavy
         GameTextKey.PiecePropertiesNone -> Res.string.piece_properties_none
+        GameTextKey.FeedbackAdRewardBlockWise -> Res.string.feedback_ad_reward_blockwise
+        GameTextKey.FeedbackAdRewardMergeShift -> Res.string.feedback_ad_reward_mergeshift
+        GameTextKey.FeedbackAdRewardBoomBlocks -> Res.string.feedback_ad_reward_boomblocks
+    }
+}
+
+internal fun CellTone.stringResourceId(): StringResource {
+    return when (this) {
+        CellTone.Cyan -> Res.string.color_cyan
+        CellTone.Gold -> Res.string.color_gold
+        CellTone.Violet -> Res.string.color_violet
+        CellTone.Emerald -> Res.string.color_emerald
+        CellTone.Coral -> Res.string.color_coral
+        CellTone.Blue -> Res.string.color_blue
+        CellTone.Rose -> Res.string.color_rose
+        CellTone.Lime -> Res.string.color_lime
+        CellTone.Amber -> Res.string.color_amber
     }
 }
 

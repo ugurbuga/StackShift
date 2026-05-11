@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Stars
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.SwapVert
@@ -24,6 +26,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.cancel
+import blockgames.composeapp.generated.resources.game_message_ad_reward_blockwise
+import blockgames.composeapp.generated.resources.game_message_ad_reward_boomblocks
+import blockgames.composeapp.generated.resources.game_message_ad_reward_mergeshift
 import blockgames.composeapp.generated.resources.leave_session_confirm
 import blockgames.composeapp.generated.resources.leave_session_confirm_body
 import blockgames.composeapp.generated.resources.leave_session_confirm_title
@@ -158,6 +163,47 @@ data class RewardFeedbackState(
     val icon: ImageVector = Icons.Filled.Stars,
     val visible: Boolean = false
 )
+
+internal data class RewardFeedbackSpec(
+    val messageRes: StringResource,
+    val icon: ImageVector,
+)
+
+internal fun rewardedDockFeedbackSpec(
+    gameplayStyle: GameplayStyle,
+    specialType: SpecialBlockType,
+): RewardFeedbackSpec {
+    return when (gameplayStyle) {
+        GameplayStyle.StackShift -> {
+            if (specialType == SpecialBlockType.RowClearer) {
+                RewardFeedbackSpec(
+                    messageRes = Res.string.reward_piece_row_message,
+                    icon = Icons.Filled.SwapHoriz,
+                )
+            } else {
+                RewardFeedbackSpec(
+                    messageRes = Res.string.reward_piece_column_message,
+                    icon = Icons.Filled.SwapVert,
+                )
+            }
+        }
+
+        GameplayStyle.BlockWise -> RewardFeedbackSpec(
+            messageRes = Res.string.game_message_ad_reward_blockwise,
+            icon = Icons.Filled.Refresh,
+        )
+
+        GameplayStyle.MergeShift -> RewardFeedbackSpec(
+            messageRes = Res.string.game_message_ad_reward_mergeshift,
+            icon = Icons.Filled.Refresh,
+        )
+
+        GameplayStyle.BoomBlocks -> RewardFeedbackSpec(
+            messageRes = Res.string.game_message_ad_reward_boomblocks,
+            icon = Icons.Filled.AutoAwesome,
+        )
+    }
+}
 
 @Composable
 fun BlockGamesRoot(
@@ -688,11 +734,16 @@ fun BlockGamesAppHost(
         },
         onReplaceActivePieceRewarded = { specialType ->
             telemetry.logUserAction("replace_active_piece_${specialType.name.lowercase()}")
+            val gameplayStyle = gameViewModel.snapshotState().gameplayStyle
+            val rewardFeedbackSpec = rewardedDockFeedbackSpec(
+                gameplayStyle = gameplayStyle,
+                specialType = specialType,
+            )
             gameViewModel.replaceActivePiece(specialType)
+
             rewardFeedback = RewardFeedbackState(
-                messageRes = if (specialType == SpecialBlockType.RowClearer) Res.string.reward_piece_row_message
-                else Res.string.reward_piece_column_message,
-                icon = if (specialType == SpecialBlockType.RowClearer) Icons.Filled.SwapHoriz else Icons.Filled.SwapVert,
+                messageRes = rewardFeedbackSpec.messageRes,
+                icon = rewardFeedbackSpec.icon,
                 visible = true
             )
         },
@@ -701,28 +752,9 @@ fun BlockGamesAppHost(
             if (!settings.hasSeenTutorialFor(gameplayStyle)) {
                 persistSettings(settings.markTutorialSeen(gameplayStyle))
             }
-            if (!settings.hasShownInteractiveOnboardingFor(gameplayStyle)) {
-                telemetry.logUserAction(TelemetryActionNames.OpenInteractiveOnboarding)
-                prepareInteractiveOnboarding()
-                replaceTop(AppRoute.InteractiveOnboarding)
-            } else {
-                val requestedMode = pendingRequestedGameMode
-                pendingRequestedGameMode = null
-                if (requestedMode != null) {
-                    restoreOrRestartSession(
-                        slot = sessionSlotFor(requestedMode, gameplayStyle = gameplayStyle),
-                        gameplayStyle = gameplayStyle,
-                    ) {
-                        gameViewModel.restart(
-                            config = GameConfig.default(gameplayStyle),
-                            mode = requestedMode,
-                        )
-                    }
-                    replaceTop(AppRoute.Game)
-                } else {
-                    navigateBack()
-                }
-            }
+            telemetry.logUserAction(TelemetryActionNames.OpenInteractiveOnboarding)
+            prepareInteractiveOnboarding()
+            replaceTop(AppRoute.InteractiveOnboarding)
         },
         onInteractiveOnboardingFinished = { finalState ->
             completeInteractiveOnboarding(finalState = finalState, returnHome = false)

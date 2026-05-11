@@ -2,6 +2,10 @@ package com.ugurbuga.blockgames.ui.game.game
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -19,6 +23,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -52,10 +59,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import blockgames.composeapp.generated.resources.Res
+import blockgames.composeapp.generated.resources.ad_reward_blockwise_refresh
+import blockgames.composeapp.generated.resources.challenge_info_place_pieces_title
 import blockgames.composeapp.generated.resources.time_remaining
 import com.ugurbuga.blockgames.BlockGamesTheme
 import com.ugurbuga.blockgames.ads.GameAdController
 import com.ugurbuga.blockgames.ads.NoOpGameAdController
+import com.ugurbuga.blockgames.game.model.CellTone
 import com.ugurbuga.blockgames.game.model.DailyChallenge
 import com.ugurbuga.blockgames.game.model.GameConfig
 import com.ugurbuga.blockgames.game.model.GameState
@@ -64,6 +74,7 @@ import com.ugurbuga.blockgames.game.model.GameTextKey
 import com.ugurbuga.blockgames.game.model.GridPoint
 import com.ugurbuga.blockgames.game.model.Piece
 import com.ugurbuga.blockgames.game.model.PlacementPreview
+import com.ugurbuga.blockgames.game.model.SpecialBlockType
 import com.ugurbuga.blockgames.game.model.gameText
 import com.ugurbuga.blockgames.settings.AppSettings
 import com.ugurbuga.blockgames.settings.BlockWiseOnboardingScene
@@ -79,6 +90,7 @@ import com.ugurbuga.blockgames.ui.game.InteractiveOnboardingCompletionDialog
 import com.ugurbuga.blockgames.ui.game.MinimalTopBar
 import com.ugurbuga.blockgames.ui.game.PieceBlocks
 import com.ugurbuga.blockgames.ui.game.RestartConfirmDialog
+import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
 import com.ugurbuga.blockgames.ui.game.dailychallenge.ChallengeTasksDock
 import com.ugurbuga.blockgames.ui.game.onboarding.BlockWiseInteractiveGameOnboardingUi
 import com.ugurbuga.blockgames.ui.game.onboarding.BlockWiseInteractiveOnboardingInfoCard
@@ -103,6 +115,7 @@ fun BlockWiseGameScreen(
     onRequestPreview: (Long, GridPoint) -> PlacementPreview?,
     onResolvePreviewImpact: (PlacementPreview?) -> Set<GridPoint>,
     onPlacePiece: (Long, GridPoint) -> Unit,
+    onReplaceActivePiece: (SpecialBlockType) -> Unit,
     onRestart: () -> Unit,
     onRewardedRevive: () -> Unit,
     onBack: () -> Unit,
@@ -263,6 +276,17 @@ fun BlockWiseGameScreen(
         }
     }
 
+    val infiniteTransition = rememberInfiniteTransition(label = "blockWise")
+    val stylePulse by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 3200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "stylePulse",
+    )
+
     val interactiveOnboardingTargetAligned by remember(
         interactiveOnboardingScene,
         placementPreview,
@@ -370,6 +394,10 @@ fun BlockWiseGameScreen(
                 TrayDock(
                     pieces = trayPieces,
                     challenge = gameState.activeChallenge,
+                    adController = adController,
+                    onReplaceActivePiece = onReplaceActivePiece,
+                    showRewardedAction = !interactiveOnboardingEnabled,
+                    stylePulse = stylePulse,
                     activeDragPieceId = draggedPieceId,
                     onPieceRectChanged = { pieceId, rect -> trayPieceRectsInRoot[pieceId] = rect },
                     onPositioned = { trayRectInRoot = it },
@@ -511,6 +539,10 @@ private fun StatusCard(text: String) {
 private fun TrayDock(
     pieces: List<Piece>,
     challenge: DailyChallenge?,
+    adController: GameAdController,
+    onReplaceActivePiece: (SpecialBlockType) -> Unit,
+    showRewardedAction: Boolean,
+    stylePulse: Float = 0f,
     activeDragPieceId: Long?,
     onPieceRectChanged: (Long, Rect) -> Unit,
     onPositioned: (Rect) -> Unit = {},
@@ -568,11 +600,26 @@ private fun TrayDock(
                     modifier = Modifier.fillMaxWidth(),
                 )
             } else {
-                Text(
-                    text = resolveGameText(gameText(GameTextKey.LaunchDragHintBlockWise)),
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold,
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(Res.string.challenge_info_place_pieces_title),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    )
+
+                    if (showRewardedAction) {
+                        ReplaceActivePieceAdButton(
+                            adController = adController,
+                            onActivated = { onReplaceActivePiece(SpecialBlockType.None) },
+                            stylePulse = stylePulse,
+                        )
+                    }
+                }
             }
             Row(
                 modifier = Modifier.fillMaxWidth().height(pieceCardHeight),
@@ -643,6 +690,37 @@ private fun TrayPieceCard(
             PieceBlocks(piece = piece, cellSize = pieceCellSize)
         }
     }
+}
+
+@Composable
+private fun ReplaceActivePieceAdButton(
+    adController: GameAdController,
+    onActivated: () -> Unit,
+    stylePulse: Float = 0f,
+) {
+    var loading by remember { mutableStateOf(false) }
+
+    TopBarActionBlockButton(
+        tone = CellTone.Gold,
+        icon = Icons.Filled.Refresh,
+        contentDescription = stringResource(Res.string.ad_reward_blockwise_refresh),
+        onClick = onClick@{
+            if (loading) return@onClick
+            loading = true
+            adController.showRewardedAd { success ->
+                loading = false
+                if (success) {
+                    onActivated()
+                }
+            }
+        },
+        enabled = !loading,
+        pulse = stylePulse,
+        size = 40.dp,
+        showAdIcon = true,
+        adIcon = Icons.Outlined.Videocam,
+        extraAlpha = 0.8f,
+    )
 }
 
 internal fun freePlacementDragTopLeft(
@@ -823,6 +901,7 @@ private fun BlockWiseGameScreenPreview() {
             onRequestPreview = { _, _ -> null },
             onResolvePreviewImpact = { emptySet() },
             onPlacePiece = { _, _ -> },
+            onReplaceActivePiece = {},
             onRestart = {},
             onRewardedRevive = {},
             onBack = {},
@@ -842,6 +921,7 @@ private fun BlockWiseOnboardingDragPreview() {
             onRequestPreview = { _, _ -> null },
             onResolvePreviewImpact = { emptySet() },
             onPlacePiece = { _, _ -> },
+            onReplaceActivePiece = {},
             onRestart = {},
             onRewardedRevive = {},
             onBack = {},
@@ -864,6 +944,7 @@ private fun BlockWiseOnboardingLineClearPreview() {
             onRequestPreview = { _, _ -> null },
             onResolvePreviewImpact = { emptySet() },
             onPlacePiece = { _, _ -> },
+            onReplaceActivePiece = {},
             onRestart = {},
             onRewardedRevive = {},
             onBack = {},
@@ -886,6 +967,7 @@ private fun BlockWiseOnboardingColumnClearPreview() {
             onRequestPreview = { _, _ -> null },
             onResolvePreviewImpact = { emptySet() },
             onPlacePiece = { _, _ -> },
+            onReplaceActivePiece = {},
             onRestart = {},
             onRewardedRevive = {},
             onBack = {},
@@ -908,6 +990,7 @@ private fun BlockWiseOnboardingCrossClearPreview() {
             onRequestPreview = { _, _ -> null },
             onResolvePreviewImpact = { emptySet() },
             onPlacePiece = { _, _ -> },
+            onReplaceActivePiece = {},
             onRestart = {},
             onRewardedRevive = {},
             onBack = {},

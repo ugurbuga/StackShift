@@ -54,8 +54,8 @@ private val androidFlavorConfigs = listOf(
     AndroidFlavorConfig(
         name = "StackShift",
         applicationId = "com.ugurbuga.stackshift",
-        versionCode = 7,
-        versionName = "1.0.5",
+        versionCode = 8,
+        versionName = "1.1.0",
     ),
     AndroidFlavorConfig(
         name = "BlockWise",

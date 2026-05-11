@@ -20,6 +20,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,6 +44,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import blockgames.composeapp.generated.resources.Res
+import blockgames.composeapp.generated.resources.ad_reward_boomblocks_clear
 import blockgames.composeapp.generated.resources.time_remaining
 import com.ugurbuga.blockgames.BlockGamesTheme
 import com.ugurbuga.blockgames.ads.GameAdController
@@ -50,6 +54,7 @@ import com.ugurbuga.blockgames.game.model.CellTone
 import com.ugurbuga.blockgames.game.model.GameState
 import com.ugurbuga.blockgames.game.model.GameStatus
 import com.ugurbuga.blockgames.game.model.GridPoint
+import com.ugurbuga.blockgames.game.model.SpecialBlockType
 import com.ugurbuga.blockgames.game.model.paletteColor
 import com.ugurbuga.blockgames.game.model.resolveBoardBlockStyle
 import com.ugurbuga.blockgames.localization.LocalAppSettings
@@ -62,6 +67,7 @@ import com.ugurbuga.blockgames.ui.game.GameOverDialog
 import com.ugurbuga.blockgames.ui.game.GameOverDialogRevealDurationMillis
 import com.ugurbuga.blockgames.ui.game.InteractiveOnboardingCompletionDialog
 import com.ugurbuga.blockgames.ui.game.MinimalTopBar
+import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
 import com.ugurbuga.blockgames.ui.game.boardCellCornerRadiusPx
 import com.ugurbuga.blockgames.ui.game.dailychallenge.ChallengeTasksDock
 import com.ugurbuga.blockgames.ui.game.drawCellBody
@@ -88,6 +94,7 @@ private const val BOOM_BLOCKS_GAME_OVER_ROW_CLEAR_DURATION_MILLIS = 92
 fun BoomBlocksGameScreen(
     gameState: GameState,
     onTapCell: (GridPoint) -> Unit,
+    onReplaceActivePiece: (SpecialBlockType) -> Unit = {},
     onRestart: () -> Unit,
     onRewardedRevive: () -> Unit = {},
     onBack: () -> Unit,
@@ -275,13 +282,24 @@ fun BoomBlocksGameScreen(
                     }
                 )
 
-                if (gameState.activeChallenge != null) {
-                    ChallengeTasksDock(
-                        challenge = gameState.activeChallenge,
-                        modifier = Modifier.fillMaxWidth().height(64.dp)
-                    )
-                } else {
-                    Spacer(modifier = Modifier.height(64.dp))
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(64.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (gameState.activeChallenge != null) {
+                        ChallengeTasksDock(
+                            challenge = gameState.activeChallenge,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    } else if (interactiveOnboardingScene == null) {
+                        SpecialActionAdButton(
+                            tone = CellTone.Violet,
+                            icon = Icons.Filled.AutoAwesome,
+                            adController = adController,
+                            onActivated = { onReplaceActivePiece(SpecialBlockType.None) },
+                            stylePulse = stylePulse,
+                        )
+                    }
                 }
             }
 
@@ -337,8 +355,8 @@ fun BoomBlocksGameScreen(
                         }
                     }
                 },
-                onUseExtraLife = {
-                    if (rewardedReviveLoading || gameState.rewardedReviveUsed) return@GameOverDialog
+                onUseExtraLife = onUseExtraLife@{
+                    if (rewardedReviveLoading || gameState.rewardedReviveUsed) return@onUseExtraLife
                     rewardedReviveLoading = true
                     adController.showRewardedRevive { rewarded ->
                         rewardedReviveLoading = false
@@ -350,6 +368,39 @@ fun BoomBlocksGameScreen(
             )
         }
     }
+}
+
+@Composable
+private fun SpecialActionAdButton(
+    tone: CellTone,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    adController: GameAdController,
+    onActivated: () -> Unit,
+    stylePulse: Float = 0f,
+) {
+    var loading by remember { mutableStateOf(false) }
+
+    TopBarActionBlockButton(
+        tone = tone,
+        icon = icon,
+        contentDescription = stringResource(Res.string.ad_reward_boomblocks_clear),
+        onClick = onClick@{
+            if (loading) return@onClick
+            loading = true
+            adController.showRewardedAd { success ->
+                loading = false
+                if (success) {
+                    onActivated()
+                }
+            }
+        },
+        enabled = !loading,
+        pulse = stylePulse,
+        size = 40.dp,
+        showAdIcon = true,
+        adIcon = Icons.Outlined.Videocam,
+        extraAlpha = 0.8f,
+    )
 }
 
 private enum class GravityDir { Up, Down, Left, Right }
@@ -426,10 +477,10 @@ internal fun GameGrid(
             val relDistToRight = (cols - 1 - avgCol) / cols
 
             val minDist = minOf(relDistToTop, relDistToBottom, relDistToLeft, relDistToRight)
-            when {
-                minDist == relDistToTop -> GravityDir.Up
-                minDist == relDistToBottom -> GravityDir.Down
-                minDist == relDistToLeft -> GravityDir.Left
+            when (minDist) {
+                relDistToTop -> GravityDir.Up
+                relDistToBottom -> GravityDir.Down
+                relDistToLeft -> GravityDir.Left
                 else -> GravityDir.Right
             }
         } else GravityDir.Down
@@ -443,8 +494,8 @@ internal fun GameGrid(
         }
 
         val newBlocks = mutableListOf<VisualBlock>()
-        val columnRefillOffsets = IntArray(board.columns) { 0 }
-        val rowRefillOffsets = IntArray(board.rows) { 0 }
+        val columnRefillOffsets = IntArray(board.columns)
+        val rowRefillOffsets = IntArray(board.rows)
 
         for (c in 0 until board.columns) {
             for (r in 0 until board.rows) {
@@ -548,6 +599,10 @@ internal fun GameGrid(
         explodableGroups.flatten().toSet()
     }
 
+    val guidedGroup = remember(board, gameState.onboardingGuidePoint) {
+        gameState.onboardingGuidePoint?.let { findConnectedGroup(board, it) } ?: emptySet()
+    }
+
     androidx.compose.foundation.Canvas(modifier = modifier) {
         val cellWidth = size.width / board.columns
         val cellHeight = size.height / board.rows
@@ -559,10 +614,12 @@ internal fun GameGrid(
                 val currentCol = block.sourceCol + (block.targetCol - block.sourceCol) * progress
 
                 val isExplodable = GridPoint(block.targetCol, block.targetRow) in explodableCells
+                val isGuided = GridPoint(block.targetCol, block.targetRow) in guidedGroup
                 val hintOffset = ((block.targetCol * 0.13f) + (block.targetRow * 0.07f)) % 1f
                 val cellHintPhase = (hintPhase + hintOffset) % 1f
                 val shimmer = ((sin(cellHintPhase * 2.0 * PI).toFloat()) + 1f) / 2f
                 val emphasis = when {
+                    isGuided -> 1f
                     !isExplodable -> 0f
                     hintEnabled -> 1f
                     else -> 0f

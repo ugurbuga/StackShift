@@ -494,6 +494,8 @@ internal class MergeShiftGameLogic(
     private fun findMergeForPoint(board: BoardMatrix, p: GridPoint): Triple<Set<GridPoint>, GridPoint, Int>? {
         val cell = board.cellAt(p.column, p.row) ?: return null
         val v = cell.value
+        if (v <= 0) return null
+
         val neighbors = mutableSetOf<GridPoint>()
 
         // Check Above
@@ -540,6 +542,7 @@ internal class MergeShiftGameLogic(
     }
 
     private fun getToneForValue(value: Int): CellTone {
+        if (value <= 0) return CellTone.entries[0]
         val power = (log2(value.toDouble())).toInt()
         return CellTone.entries[power % CellTone.entries.size]
     }
@@ -583,7 +586,36 @@ internal class MergeShiftGameLogic(
     }
 
     override fun holdPiece(state: GameState): GameMoveResult = invalidMove(state)
-    override fun replaceActivePiece(state: GameState, specialType: SpecialBlockType): GameMoveResult = invalidMove(state)
+
+    override fun replaceActivePiece(state: GameState, specialType: SpecialBlockType): GameMoveResult {
+        if (state.status != GameStatus.Running) return invalidMove(state)
+
+        var currentNextId = state.nextPieceId
+        val (newActive, nextId1) = createPiece(currentNextId)
+        currentNextId = nextId1
+
+        val newQueue = mutableListOf<Piece>()
+        repeat(QUEUE_SIZE) {
+            val (piece, nextId) = createPiece(currentNextId)
+            newQueue.add(piece)
+            currentNextId = nextId
+        }
+
+        val nextToken = state.feedbackToken + 1L
+        val nextState = state.copy(
+            activePiece = newActive,
+            nextQueue = newQueue,
+            nextPieceId = currentNextId,
+            message = gameText(GameTextKey.GameMessageAdRewardMergeShift),
+            floatingFeedback = FloatingFeedback(
+                text = gameText(GameTextKey.FeedbackAdRewardMergeShift),
+                emphasis = FeedbackEmphasis.Bonus,
+                token = nextToken,
+            ),
+            feedbackToken = nextToken,
+        )
+        return GameMoveResult(state = nextState, events = setOf(GameEvent.SpecialTriggered))
+    }
     override fun reviveFromReward(state: GameState): GameMoveResult {
         if (state.status != GameStatus.GameOver || state.rewardedReviveUsed) {
             return invalidMove(state)

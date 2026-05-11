@@ -41,14 +41,11 @@ import com.ugurbuga.blockgames.telemetry.LogScreen
 import com.ugurbuga.blockgames.telemetry.NoOpAppTelemetry
 import com.ugurbuga.blockgames.telemetry.TelemetryActionNames
 import com.ugurbuga.blockgames.telemetry.TelemetryScreenNames
-import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
 
 private const val InteractiveOnboardingStageAdvanceDelayMillis = 720L
-private const val InteractiveOnboardingClearAnimationDurationMillis = 620
-private const val InteractiveOnboardingBoardShiftDurationMillis = 360
 
 @Composable
 fun BlockGamesGameApp(
@@ -68,7 +65,6 @@ fun BlockGamesGameApp(
     val gameplayStyle = GlobalPlatformConfig.gameplayStyle
     val haptics = rememberGameHaptics()
     val uiState by viewModel.uiState.collectAsState()
-    val uiColors = BlockGamesThemeTokens.uiColors
     val onboardingStages: List<OnboardingStage> = remember(gameplayStyle) {
         when (gameplayStyle) {
             GameplayStyle.BlockWise -> BlockWiseOnboardingStateFactory.stages
@@ -291,6 +287,7 @@ fun BlockGamesGameApp(
                     }
                 }
             },
+            onReplaceActivePiece = onReplaceActivePieceRewarded,
             onRestart = {
                 telemetry.logUserAction(TelemetryActionNames.RestartGame)
                 viewModel.restart(
@@ -341,6 +338,7 @@ fun BlockGamesGameApp(
                     }
                 }
             },
+            onReplaceActivePiece = onReplaceActivePieceRewarded,
             onRestart = {
                 telemetry.logUserAction(TelemetryActionNames.RestartGame)
                 dispatchFeedback(
@@ -482,6 +480,7 @@ fun BlockGamesGameApp(
                     }
                 }
             },
+            onReplaceActivePiece = onReplaceActivePieceRewarded,
             onRestart = {
                 telemetry.logUserAction(TelemetryActionNames.RestartGame)
                 viewModel.restart(

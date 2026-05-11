@@ -57,6 +57,7 @@ object BoomBlocksOnboardingStateFactory {
     private fun buildScene(stage: BoomBlocksOnboardingStage): BoomBlocksOnboardingScene = when (stage) {
         BoomBlocksOnboardingStage.BasicExplosion -> {
             val target = setOf(GridPoint(3, 4), GridPoint(4, 4), GridPoint(3, 5))
+            val guidePoint = GridPoint(3, 4)
             BoomBlocksOnboardingScene(
                 stage = stage,
                 gameState = scriptedState(
@@ -67,9 +68,10 @@ object BoomBlocksOnboardingStateFactory {
                         )
                         .fill(GridPoint(3, 4), CellTone.Cyan)
                         .fill(GridPoint(4, 4), CellTone.Cyan)
-                        .fill(GridPoint(3, 5), CellTone.Cyan)
+                        .fill(GridPoint(3, 5), CellTone.Cyan),
+                    guidePoint = guidePoint,
                 ),
-                guidePoint = GridPoint(3, 4),
+                guidePoint = guidePoint,
             )
         }
 
@@ -79,13 +81,15 @@ object BoomBlocksOnboardingStateFactory {
                 GridPoint(2, 4), GridPoint(3, 4), GridPoint(4, 4),
                 GridPoint(3, 5)
             )
+            val distraction = setOf(GridPoint(0, 0), GridPoint(1, 0), GridPoint(0, 1))
+            val guidePoint = GridPoint(3, 4)
             BoomBlocksOnboardingScene(
                 stage = stage,
                 gameState = scriptedState(
                     board = BoardMatrix.empty(columns = config.columns, rows = config.rows)
                         .fillAllNonExplodable(
-                            exclude = target,
-                            disallowedTones = setOf(CellTone.Gold),
+                            exclude = target + distraction,
+                            disallowedTones = setOf(CellTone.Gold, CellTone.Violet),
                         )
                         .fill(GridPoint(2, 3), CellTone.Gold)
                         .fill(GridPoint(3, 3), CellTone.Gold)
@@ -94,31 +98,44 @@ object BoomBlocksOnboardingStateFactory {
                         .fill(GridPoint(3, 4), CellTone.Gold)
                         .fill(GridPoint(4, 4), CellTone.Gold)
                         .fill(GridPoint(3, 5), CellTone.Gold)
+                        // Distraction group (explodable but shouldn't be allowed)
+                        .fill(GridPoint(0, 0), CellTone.Violet)
+                        .fill(GridPoint(1, 0), CellTone.Violet)
+                        .fill(GridPoint(0, 1), CellTone.Violet),
+                    guidePoint = guidePoint,
                 ),
-                guidePoint = GridPoint(3, 4),
+                guidePoint = guidePoint,
             )
         }
 
         BoomBlocksOnboardingStage.GravityShift -> {
             val target = setOf(GridPoint(0, 0), GridPoint(1, 0), GridPoint(0, 1))
+            val distraction = setOf(GridPoint(4, 6), GridPoint(5, 6), GridPoint(5, 7))
+            val guidePoint = GridPoint(0, 0)
             BoomBlocksOnboardingScene(
                 stage = stage,
                 gameState = scriptedState(
                     board = BoardMatrix.empty(columns = config.columns, rows = config.rows)
                         .fillAllNonExplodable(
-                            exclude = target,
-                            disallowedTones = setOf(CellTone.Coral),
+                            exclude = target + distraction,
+                            disallowedTones = setOf(CellTone.Coral, CellTone.Emerald),
                         )
                         .fill(GridPoint(0, 0), CellTone.Coral)
                         .fill(GridPoint(1, 0), CellTone.Coral)
                         .fill(GridPoint(0, 1), CellTone.Coral)
+                        // Distraction group
+                        .fill(GridPoint(4, 6), CellTone.Emerald)
+                        .fill(GridPoint(5, 6), CellTone.Emerald)
+                        .fill(GridPoint(5, 7), CellTone.Emerald),
+                    guidePoint = guidePoint,
                 ),
-                guidePoint = GridPoint(0, 0),
+                guidePoint = guidePoint,
             )
         }
 
         BoomBlocksOnboardingStage.StrategicClears -> {
             val target = setOf(GridPoint(3, 4), GridPoint(4, 4), GridPoint(3, 5))
+            val guidePoint = GridPoint(3, 4)
             BoomBlocksOnboardingScene(
                 stage = stage,
                 gameState = scriptedState(
@@ -132,15 +149,17 @@ object BoomBlocksOnboardingStateFactory {
                         .fill(GridPoint(3, 5), CellTone.Violet)
                         .fill(GridPoint(3, 3), CellTone.Emerald)
                         .fill(GridPoint(4, 3), CellTone.Emerald)
-                        .fill(GridPoint(4, 5), CellTone.Emerald)
+                        .fill(GridPoint(4, 5), CellTone.Emerald),
+                    guidePoint = guidePoint,
                 ),
-                guidePoint = GridPoint(3, 4),
+                guidePoint = guidePoint,
             )
         }
     }
 
     private fun scriptedState(
         board: BoardMatrix,
+        guidePoint: GridPoint?,
     ): GameState {
         return GameState(
             config = config,
@@ -154,6 +173,7 @@ object BoomBlocksOnboardingStateFactory {
             difficultyStage = 0,
             secondsUntilDifficultyIncrease = config.difficultyIntervalSeconds,
             status = GameStatus.Running,
+            onboardingGuidePoint = guidePoint,
             message = gameText(GameTextKey.GameMessageSelectColumn),
         )
     }

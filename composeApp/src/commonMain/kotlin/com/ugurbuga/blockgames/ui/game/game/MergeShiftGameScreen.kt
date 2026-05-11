@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,7 +22,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -53,6 +58,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import blockgames.composeapp.generated.resources.Res
+import blockgames.composeapp.generated.resources.ad_reward_mergeshift_swap
 import blockgames.composeapp.generated.resources.launch_label
 import blockgames.composeapp.generated.resources.restart_cancel
 import blockgames.composeapp.generated.resources.restart_confirm
@@ -67,6 +73,7 @@ import com.ugurbuga.blockgames.game.model.GameState
 import com.ugurbuga.blockgames.game.model.GameStatus
 import com.ugurbuga.blockgames.game.model.GridPoint
 import com.ugurbuga.blockgames.game.model.PlacementPreview
+import com.ugurbuga.blockgames.game.model.SpecialBlockType
 import com.ugurbuga.blockgames.game.model.toTopLeft
 import com.ugurbuga.blockgames.localization.LocalAppSettings
 import com.ugurbuga.blockgames.platform.feedback.GameHaptics
@@ -116,6 +123,7 @@ fun MergeShiftGameScreen(
     onRequestPreview: (Int) -> PlacementPreview?,
     onRequestImpactPoints: (PlacementPreview?) -> Set<GridPoint> = { emptySet() },
     onPlacePiece: (Int) -> GameDispatchResult,
+    onReplaceActivePiece: (SpecialBlockType) -> Unit = {},
     onRestart: () -> InteractionFeedback,
     onRewardedRevive: () -> InteractionFeedback = { InteractionFeedback.None },
     onTick: () -> Unit,
@@ -433,6 +441,9 @@ fun MergeShiftGameScreen(
 
                         MergeShiftBottomDock(
                             gameState = gameState,
+                            adController = adController,
+                            onReplaceActivePiece = onReplaceActivePiece,
+                            showRewardedAction = !interactiveOnboardingEnabled,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(cellSize * 3f)
@@ -617,6 +628,9 @@ fun MergeShiftGameScreen(
 @Composable
 private fun MergeShiftBottomDock(
     gameState: GameState,
+    adController: GameAdController,
+    onReplaceActivePiece: (SpecialBlockType) -> Unit,
+    showRewardedAction: Boolean,
     modifier: Modifier = Modifier,
     stylePulse: Float = 0f,
 ) {
@@ -651,17 +665,67 @@ private fun MergeShiftBottomDock(
                     modifier = Modifier.fillMaxWidth()
                 )
             } else {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Spacer(modifier = Modifier.size(40.dp))
+                    
                     Text(
                         text = stringResource(Res.string.launch_label),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                        fontWeight = FontWeight.Black
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.padding(bottom = 4.dp)
                     )
+
+                    if (showRewardedAction) {
+                        SpecialActionAdButton(
+                            tone = com.ugurbuga.blockgames.game.model.CellTone.Gold,
+                            icon = Icons.Filled.Refresh,
+                            adController = adController,
+                            onActivated = { onReplaceActivePiece(SpecialBlockType.None) },
+                            stylePulse = stylePulse,
+                        )
+                    }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun SpecialActionAdButton(
+    tone: com.ugurbuga.blockgames.game.model.CellTone,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    adController: GameAdController,
+    onActivated: () -> Unit,
+    stylePulse: Float = 0f,
+) {
+    var loading by remember { mutableStateOf(false) }
+
+    TopBarActionBlockButton(
+        tone = tone,
+        icon = icon,
+        contentDescription = stringResource(Res.string.ad_reward_mergeshift_swap),
+        onClick = onClick@{
+            if (loading) return@onClick
+            loading = true
+            adController.showRewardedAd { success ->
+                loading = false
+                if (success) {
+                    onActivated()
+                }
+            }
+        },
+        enabled = !loading,
+        pulse = stylePulse,
+        size = 40.dp,
+        showAdIcon = true,
+        adIcon = Icons.Outlined.Videocam,
+        extraAlpha = 0.8f,
+    )
 }
 
 @Preview(name = "MergeShift - Game")
