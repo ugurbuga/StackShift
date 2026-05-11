@@ -40,8 +40,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
@@ -656,14 +656,14 @@ fun BoardGrid(
                                     val text = formatMergeValue(cell.value)
                                     val fontSize = (minOf(cellWidthPx, cellHeightPx) * 0.44f)
                                     val textStyle = TextStyle(
-                                        color = Color.White.copy(alpha = renderedCellAlpha),
+                                        color = Color.White.copy(alpha = boardDecorAlpha),
                                         fontWeight = FontWeight.ExtraBold,
                                         fontSize = with(density) { fontSize.toSp() },
                                         textAlign = TextAlign.Center,
                                         shadow = Shadow(
-                                            color = Color.Black.copy(alpha = 0.6f * renderedCellAlpha),
+                                            color = Color.Black.copy(alpha = 0.75f * boardDecorAlpha),
                                             offset = Offset(2f, 2f),
-                                            blurRadius = 2f
+                                            blurRadius = 4f
                                         )
                                     )
                                     val measuredText = textMeasurer.measure(text, textStyle)
@@ -809,14 +809,14 @@ fun BoardGrid(
                         val text = formatMergeValue(activePiece.value)
                         val fontSize = (minOf(cellWidthPx, cellHeightPx) * 0.44f)
                         val textStyle = TextStyle(
-                            color = Color.White.copy(alpha = previewAlpha * boardDecorAlpha),
+                            color = Color.White.copy(alpha = boardDecorAlpha),
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = with(density) { fontSize.toSp() },
                             textAlign = TextAlign.Center,
                             shadow = Shadow(
-                                color = Color.Black.copy(alpha = 0.4f * previewAlpha * boardDecorAlpha),
-                                offset = Offset(1f, 1f),
-                                blurRadius = 1f
+                                color = Color.Black.copy(alpha = 0.75f * boardDecorAlpha),
+                                offset = Offset(2f, 2f),
+                                blurRadius = 4f
                             )
                         )
                         val measuredText = textMeasurer.measure(text, textStyle)
@@ -904,9 +904,9 @@ fun BoardGrid(
                             fontSize = with(density) { fontSize.toSp() },
                             textAlign = TextAlign.Center,
                             shadow = Shadow(
-                                color = Color.Black.copy(alpha = 0.6f * boardDecorAlpha),
+                                color = Color.Black.copy(alpha = 0.75f * boardDecorAlpha),
                                 offset = Offset(2f, 2f),
-                                blurRadius = 2f
+                                blurRadius = 4f
                             )
                         )
                         val measuredText = textMeasurer.measure(text, textStyle)
@@ -1596,8 +1596,13 @@ fun PieceBlocks(
                         text = formatMergeValue(piece.value),
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.ExtraBold,
-                            fontSize = with(density) { (cellSize.toPx() * 0.4f).toSp() },
-                            color = Color.White
+                            fontSize = with(density) { (cellSize.toPx() * 0.44f).toSp() },
+                            color = Color.White,
+                            shadow = Shadow(
+                                color = Color.Black.copy(alpha = 0.75f * alpha),
+                                offset = Offset(2f, 2f),
+                                blurRadius = 4f
+                            )
                         ),
                         maxLines = 1,
                     )

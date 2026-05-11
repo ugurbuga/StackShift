@@ -73,6 +73,12 @@ internal class BoomBlocksGameLogic(
     
     override fun previewPlacement(state: GameState, pieceId: Long, origin: GridPoint): PlacementPreview? {
         if (state.status != GameStatus.Running) return null
+
+        if (state.onboardingGuidePoint != null) {
+            val targetGroup = findConnectedGroup(state.board, state.onboardingGuidePoint)
+            if (origin !in targetGroup) return null
+        }
+
         val group = findConnectedGroup(state.board, origin)
         if (group.size < MIN_EXPLODE_SIZE) return null
         
@@ -94,6 +100,11 @@ internal class BoomBlocksGameLogic(
     override fun placePiece(state: GameState, pieceId: Long, origin: GridPoint): GameMoveResult {
         if (state.status != GameStatus.Running) return invalidMove(state)
         
+        if (state.onboardingGuidePoint != null) {
+            val targetGroup = findConnectedGroup(state.board, state.onboardingGuidePoint)
+            if (origin !in targetGroup) return invalidMove(state)
+        }
+
         val group = findConnectedGroup(state.board, origin)
         if (group.size < MIN_EXPLODE_SIZE) return invalidMove(state)
         
@@ -116,31 +127,27 @@ internal class BoomBlocksGameLogic(
         
         val minDist = minOf(relDistToTop, relDistToBottom, relDistToLeft, relDistToRight)
         
-        val boardAfterGravity = when {
-            minDist == relDistToTop -> boardAfterClear.applyGravityUp() // Closest to top -> Pushed UP (comes from bottom)
-            minDist == relDistToBottom -> boardAfterClear.applyGravityDown() // Closest to bottom -> Pushed DOWN (comes from top)
-            minDist == relDistToLeft -> boardAfterClear.applyGravityLeft() // Closest to left -> Pushed LEFT (comes from right)
+        val boardAfterGravity = when (minDist) {
+            relDistToTop -> boardAfterClear.applyGravityUp() // Closest to top -> Pushed UP (comes from bottom)
+            relDistToBottom -> boardAfterClear.applyGravityDown() // Closest to bottom -> Pushed DOWN (comes from top)
+            relDistToLeft -> boardAfterClear.applyGravityLeft() // Closest to left -> Pushed LEFT (comes from right)
             else -> boardAfterClear.applyGravityRight() // Closest to right -> Pushed RIGHT (comes from left)
         }
         
         // 3. Refill the empty spaces
         var nextId = state.nextPieceId
         if (nextId < 1) nextId = 1 // Ensure positive IDs
+
+        val (refilledBoard, refilledNextId) = refillBoard(boardAfterGravity, BOOM_BLOCKS_TONES, nextId)
+        val isOnboarding = state.secondsUntilDifficultyIncrease >= 9999
         
-        var finalBoard = boardAfterGravity
-        for (col in 0 until finalBoard.columns) {
-            for (row in 0 until finalBoard.rows) {
-                if (!finalBoard.isOccupied(col, row)) {
-                    finalBoard = finalBoard.fill(
-                        points = listOf(GridPoint(col, row)),
-                        tone = BOOM_BLOCKS_TONES.random(random),
-                        value = nextId.toInt()
-                    )
-                    nextId++
-                }
-            }
+        val (finalBoard, finalNextId) = if (isOnboarding) {
+            ensureExplodableBoard(refilledBoard, BOOM_BLOCKS_TONES, refilledNextId)
+        } else {
+            refilledBoard to refilledNextId
         }
-        
+        nextId = finalNextId
+
         val scoreGain = scoreCalculator.calculateScore(
             ScoreCalculator.ScoreParams(
                 tilesPlaced = 0,
@@ -165,7 +172,7 @@ internal class BoomBlocksGameLogic(
         } else 0L
 
         val hasMoves = hasAnyExplodableGroup(finalBoard)
-        val nextStatus = if (hasMoves) GameStatus.Running else GameStatus.GameOver
+        val nextStatus = if (hasMoves || isOnboarding) GameStatus.Running else GameStatus.GameOver
         
         val explodedTones = group.associateWith { point ->
             state.board.toneAt(point.column, point.row) ?: CellTone.Cyan
@@ -373,7 +380,46 @@ internal class BoomBlocksGameLogic(
     }
 
     override fun holdPiece(state: GameState): GameMoveResult = invalidMove(state)
-    override fun replaceActivePiece(state: GameState, specialType: SpecialBlockType): GameMoveResult = invalidMove(state)
+    override fun replaceActivePiece(state: GameState, specialType: SpecialBlockType): GameMoveResult {
+        if (state.status != GameStatus.Running) return invalidMove(state)
+
+        val availableTones = presentTones(state.board)
+        if (availableTones.isEmpty()) return invalidMove(state)
+        val removedTone = availableTones.random(random)
+        val removedPoints = pointsForTone(state.board, removedTone)
+
+        val boardAfterClear = state.board.clearPoints(removedPoints).applyGravityDown()
+        val (refilledBoard, refilledNextId) = refillBoard(
+            boardAfterClear,
+            BOOM_BLOCKS_TONES,
+            state.nextPieceId
+        )
+
+        val isOnboarding = state.secondsUntilDifficultyIncrease >= 9999
+        val (finalBoard, finalNextId) = if (isOnboarding) {
+            ensureExplodableBoard(refilledBoard, BOOM_BLOCKS_TONES, refilledNextId)
+        } else {
+            refilledBoard to refilledNextId
+        }
+
+        val nextToken = state.feedbackToken + 1L
+        val nextState = state.copy(
+            board = finalBoard,
+            nextPieceId = finalNextId,
+            recentlyExplodedPoints = removedPoints,
+            recentlyExplodedTones = removedPoints.associateWith { removedTone },
+            clearAnimationToken = state.clearAnimationToken + 1,
+            impactFlashToken = state.impactFlashToken + 1,
+            message = gameText(GameTextKey.GameMessageAdRewardBoomBlocks),
+            floatingFeedback = FloatingFeedback(
+                text = gameText(GameTextKey.FeedbackAdRewardBoomBlocks, removedTone.name),
+                emphasis = FeedbackEmphasis.Bonus,
+                token = nextToken,
+            ),
+            feedbackToken = nextToken,
+        )
+        return GameMoveResult(state = nextState, events = setOf(GameEvent.SpecialTriggered))
+    }
     override fun commitSoftLock(state: GameState): GameMoveResult = invalidMove(state)
     override fun reviveFromReward(state: GameState): GameMoveResult {
         if (state.status != GameStatus.GameOver || state.rewardedReviveUsed) {

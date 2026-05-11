@@ -6,6 +6,7 @@ import com.ugurbuga.blockgames.game.model.BoardMatrix
 import com.ugurbuga.blockgames.game.model.CellTone
 import com.ugurbuga.blockgames.game.model.GameConfig
 import com.ugurbuga.blockgames.game.model.GameState
+import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.GameTextKey
 import com.ugurbuga.blockgames.game.model.GridPoint
 import com.ugurbuga.blockgames.game.model.Piece
@@ -143,6 +144,7 @@ object BlockWiseOnboardingStateFactory {
     ): GameState {
         val baseState = guideLogic.newGame(config = config)
         return baseState.copy(
+            gameplayStyle = GameplayStyle.BlockWise,
             board = board,
             activePiece = trayPieces.firstOrNull(),
             nextQueue = trayPieces.drop(1),

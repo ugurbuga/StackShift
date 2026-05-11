@@ -1,3 +1,5 @@
+@file:JvmName("MainKt")
+
 package com.ugurbuga.blockgames
 
 import androidx.compose.runtime.DisposableEffect
@@ -8,6 +10,9 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import blockgames.composeapp.generated.resources.Res
+import blockgames.composeapp.generated.resources.app_title_stackshift
+import com.ugurbuga.blockgames.localization.appStringResource
 import java.awt.Dimension
 import java.awt.Taskbar
 import java.awt.Toolkit
@@ -16,10 +21,6 @@ import java.awt.event.ComponentEvent
 import java.util.prefs.Preferences
 import kotlin.math.abs
 import kotlin.math.roundToInt
-import com.ugurbuga.blockgames.localization.appStringResource
-import org.jetbrains.compose.resources.stringResource
-import blockgames.composeapp.generated.resources.Res
-import blockgames.composeapp.generated.resources.app_title_stackshift
 
 fun main() = application {
     val initialSnapshot = remember { DesktopWindowPrefs.load() }

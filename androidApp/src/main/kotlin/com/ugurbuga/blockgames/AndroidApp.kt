@@ -2,17 +2,25 @@ package com.ugurbuga.blockgames
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
+import com.ugurbuga.blockgames.settings.AppSettingsStorage
 import com.ugurbuga.blockgames.ui.theme.blockGamesThemeSpec
 import com.ugurbuga.blockgames.ui.theme.isBlockGamesDarkTheme
 
 @Composable
-fun AndroidApp() {
-    val gameplayStyle = resolveGameplayStyle()
-    GlobalPlatformConfig.gameplayStyle = gameplayStyle
+fun AndroidApp(
+    launchGameplayStyleOverride: GameplayStyle? = null,
+) {
+    remember(launchGameplayStyleOverride) {
+        (launchGameplayStyleOverride ?: AppSettingsStorage.load().selectedGameplayStyle ?: resolveGameplayStyle()).also {
+            GlobalPlatformConfig.gameplayStyle = it
+        }
+    }
     BlockGamesAppHost(
         bootstrapLogSource = "android_app_${BuildConfig.APP_VARIANT_NAME}",
+        startupGameplayStyleOverride = launchGameplayStyleOverride,
     ) { settings, canNavigateBack, onRequestBack ->
         val darkTheme = isBlockGamesDarkTheme(settings)
         val themeSpec = blockGamesThemeSpec(

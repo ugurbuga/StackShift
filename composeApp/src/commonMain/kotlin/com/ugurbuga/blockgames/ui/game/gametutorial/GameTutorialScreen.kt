@@ -48,7 +48,7 @@ import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.TouchApp
-import androidx.compose.material.icons.filled.Translate
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -103,8 +103,8 @@ import blockgames.composeapp.generated.resources.launch_soft_lock_message
 import blockgames.composeapp.generated.resources.piece_properties_active
 import blockgames.composeapp.generated.resources.queue_next_short
 import blockgames.composeapp.generated.resources.restart
+import blockgames.composeapp.generated.resources.selection_switch_game
 import blockgames.composeapp.generated.resources.settings_challenges
-import blockgames.composeapp.generated.resources.settings_language
 import blockgames.composeapp.generated.resources.settings_theme
 import blockgames.composeapp.generated.resources.settings_tutorial
 import blockgames.composeapp.generated.resources.tutorial_back
@@ -926,37 +926,43 @@ private fun TutorialSystemsStep() {
         title = stringResource(Res.string.tutorial_stackshift_systems_title),
         body = stringResource(Res.string.tutorial_stackshift_systems_body),
     ) {
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            TutorialActionTile(
-                tone = CellTone.Emerald,
-                icon = Icons.Filled.EmojiEvents,
-                title = stringResource(Res.string.settings_challenges),
-            )
-            TutorialActionTile(
-                tone = CellTone.Gold,
-                icon = Icons.AutoMirrored.Filled.MenuBook,
-                title = stringResource(Res.string.settings_tutorial),
-            )
-            TutorialActionTile(
-                tone = CellTone.Violet,
-                icon = Icons.Filled.Palette,
-                title = stringResource(Res.string.settings_theme),
-            )
-            TutorialActionTile(
-                tone = CellTone.Coral,
-                icon = Icons.Filled.Translate,
-                title = stringResource(Res.string.settings_language),
-            )
-            TutorialActionTile(
-                tone = CellTone.Cyan,
-                icon = Icons.Filled.Refresh,
-                title = stringResource(Res.string.restart),
-            )
-        }
+        TutorialSystemTiles()
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun TutorialSystemTiles() {
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        TutorialActionTile(
+            tone = CellTone.Emerald,
+            icon = Icons.Filled.EmojiEvents,
+            title = stringResource(Res.string.settings_challenges),
+        )
+        TutorialActionTile(
+            tone = CellTone.Gold,
+            icon = Icons.AutoMirrored.Filled.MenuBook,
+            title = stringResource(Res.string.settings_tutorial),
+        )
+        TutorialActionTile(
+            tone = CellTone.Violet,
+            icon = Icons.Filled.Palette,
+            title = stringResource(Res.string.settings_theme),
+        )
+        TutorialActionTile(
+            tone = CellTone.Coral,
+            icon = Icons.Default.SwapHoriz,
+            title = stringResource(Res.string.selection_switch_game),
+        )
+        TutorialActionTile(
+            tone = CellTone.Cyan,
+            icon = Icons.Filled.Refresh,
+            title = stringResource(Res.string.restart),
+        )
     }
 }
 
@@ -1089,6 +1095,7 @@ private fun TutorialMergeShiftIntroStep() {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TutorialMergeShiftSystemsStep() {
     TutorialSection(
@@ -1096,6 +1103,7 @@ private fun TutorialMergeShiftSystemsStep() {
         body = stringResource(Res.string.tutorial_mergeshift_systems_body),
     ) {
         TutorialHintCard(text = stringResource(Res.string.launch_soft_lock_message))
+        TutorialSystemTiles()
     }
 }
 

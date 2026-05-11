@@ -113,7 +113,7 @@
     <string name="launch_label">Fırlatma</string>
     <string name="launch_bar">Fırlatma çubuğu</string>
     <string name="launch_boost_active">Hız aktif • %1$s tur</string>
-    <string name="launch_special_chance">Özel blok şansı +%1$s%</string>
+    <string name="launch_special_chance">Özel blok şansı +%1$s%%</string>
     <string name="launch_soft_lock_message">Hedefi önizle, sonra bırakıp yerleştir</string>
     <string name="launch_chain_message">Satır + Sütun • +%2$s</string>
     <string name="launch_paused">Duraklatıldı</string>
@@ -142,6 +142,10 @@
     <string name="game_message_chain_lines">Çifte temizlik! %2$s çizgi temizlendi.</string>
     <string name="game_message_lines_cleared">%1$s çizgi temizlendi.</string>
     <string name="game_message_good_shot">İyi hamle. Havuzdaki kalan parçalara bak.</string>
+    <string name="game_message_ad_reward_blockwise">Parça havuzu yenilendi! Yeni şekiller hazır.</string>
+    <string name="game_message_ad_reward_mergeshift">Sayılar değişti! Birleştirmeye devam et.</string>
+    <string name="game_message_ad_reward_boomblocks">Renk temizlendi! Tahta yeniden şekillendi.</string>
+    <string name="game_message_ad_reward_stackshift">Özel blok kuşanıldı! Fırlatmaya hazır.</string>
     <string name="game_message_hold_updated">Parça havuzu yenilendi. Devam et.</string>
     <string name="game_message_tempo_critical">Havuz tıkanmadan önce bir satır veya sütun temizliği ara.</string>
     <string name="game_message_tempo_up">Yeni bir üçlü hazır. Tahtayı dikkatle tara.</string>
@@ -263,7 +267,7 @@
     <string name="tutorial_stackshift_intro_title">Aktif parçayı sürükle ve fırlatmanı hizala</string>
     <string name="tutorial_stackshift_intro_body">Mevcut parça fırlatma yuvasında başlar. Tahtanın altında sola veya sağa sürükle, ön izleme iyi görünüyorsa bırak; en yakın geçerli şeride düşer.</string>
     <string name="tutorial_stackshift_systems_title">Tahta dolmaya başladığında aksiyon bloklarını kullan</string>
-    <string name="tutorial_stackshift_systems_body">Beklet mevcut parçayı değiştirir, Duraklat oyunu dondurur, Blok Özellikleri simgelerin anlamını gösterir ve Ayarlar görünümü değiştirir. Bu butonlar aynı zamanda seçtiğin tahta blok stiline de uyum sağlar.</string>
+    <string name="tutorial_stackshift_systems_body">Beklet mevcut parçayı değiştirir, Duraklat oyunu dondurur, Blok Özellikleri simgelerin anlamını gösterir ve Ayarlar görünümü ve dili değiştirir. Bu butonlar aynı zamanda seçtiğin tahta blok stiline de uyum sağlar.</string>
     <string name="tutorial_stackshift_specials_title">Özel bloklar sıkışık tahtaları kurtarabilir</string>
     <string name="tutorial_stackshift_specials_body">Bazı parçalar özel etkiler taşır. Her ikonun ne yaptığını öğren ki bir satırı temizleyebilesin, bir sütunu temizleyebilesin, boşluklardan sızabilesin ya da tahta sıkıştığında tehlikeyi delebilesin.</string>
     <string name="tutorial_stackshift_ready_title">StackShift'te fırlatmaya hazırsın</string>
@@ -284,7 +288,7 @@
     <string name="tutorial_mergeshift_intro_title">Aynı değerdeki blokları birleştirmek için parçaları fırlat</string>
     <string name="tutorial_mergeshift_intro_body">MergeShift\'te parçalar fırlatma yuvasından fırlatılır. Bir blok aynı değere sahip başka bir bloğun üzerine düştüğünde, daha yüksek bir değerde birleşirler. Alan açmak ve daha yüksek skorlara ulaşmak için birleştirmeye devam et.</string>
     <string name="tutorial_mergeshift_systems_title">Taşmayı önlemek için birleşmelerini planla</string>
-    <string name="tutorial_mergeshift_systems_body">Fırlattığın her parça sütun yüksekliğini artırır. Eğer herhangi bir sütun tepeye ulaşırsa oyun biter. Parçanın nereye düşeceğini ve hangi bloklarla birleşebileceğini görmek için ön izlemeyi kullan.</string>
+    <string name="tutorial_mergeshift_systems_body">Fırlattığın her parça sütun yüksekliğini artırır. Eğer herhangi bir sütun tepeye ulaşırsa oyun biter. Parçanın nereye düşeceğini görmek için ön izlemeyi kullan veya deneyimini özelleştirmek için Ayarlar\'ı aç.</string>
     <string name="tutorial_mergeshift_specials_title">Büyük kombolar için çoklu birleşmeleri birleştir</string>
     <string name="tutorial_mergeshift_specials_body">Tek bir fırlatma zincirleme birleşme reaksiyonu tetikleyebilir. Bu kombolar daha fazla puan kazandırır ve tahtada daha fazla alan açarak oyunda daha uzun süre kalmana yardımcı olur.</string>
     <string name="tutorial_mergeshift_ready_title">MergeShift için hazırsın</string>
@@ -334,6 +338,21 @@
     <string name="interactive_onboarding_boomblocks_strategic_body">Yeni bloklar patlama merkezine göre tahtayı yeniden doldurur. Bunu daha da büyük gruplar hazırlamak için kullan!</string>
     <string name="interactive_onboarding_boomblocks_tap_hint">Devam etmek için vurgulanan gruba dokun.</string>
 
+    <string name="ad_reward_blockwise_refresh">Tepsiyi Yenile</string>
+    <string name="ad_reward_mergeshift_swap">Sayıyı Değiştir</string>
+    <string name="ad_reward_boomblocks_clear">Rengi Temizle</string>
+    <string name="feedback_ad_reward_blockwise">Parça havuzu yenilendi</string>
+    <string name="feedback_ad_reward_mergeshift">Sayılar değiştirildi</string>
+    <string name="feedback_ad_reward_boomblocks">%1$s rengi temizlendi</string>
+    <string name="color_cyan">Turkuaz</string>
+    <string name="color_gold">Altın</string>
+    <string name="color_violet">Mor</string>
+    <string name="color_emerald">Zümrüt</string>
+    <string name="color_coral">Mercan</string>
+    <string name="color_blue">Mavi</string>
+    <string name="color_rose">Pembe</string>
+    <string name="color_lime">Lime</string>
+    <string name="color_amber">Kehribar</string>
     <string name="challenge_task_explode_groups">%1$d blok grubu patlat</string>
 
     <string name="selection_title">Oyununu Seç</string>

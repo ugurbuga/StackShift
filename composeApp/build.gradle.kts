@@ -2,6 +2,7 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.gradle.api.tasks.JavaExec
 
 private fun findDesktopJdkHome(): File? {
     val candidateHomes = buildList {
@@ -68,6 +69,10 @@ kotlin {
     jvm {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_11)
+        }
+
+        mainRun {
+            mainClass = "com.ugurbuga.blockgames.MainKt"
         }
     }
     
@@ -138,6 +143,10 @@ compose.desktop {
             }
         }
     }
+}
+
+tasks.withType<JavaExec>().matching { it.name == "jvmRun" }.configureEach {
+    mainClass.set("com.ugurbuga.blockgames.MainKt")
 }
 
 tasks.register("packageDesktopApp") {

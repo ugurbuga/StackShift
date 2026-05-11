@@ -1,6 +1,7 @@
 package com.ugurbuga.blockgames.settings
 
 import com.ugurbuga.blockgames.game.model.ChallengeProgress
+import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.platform.CurrentDate
 import kotlin.test.Test
 import kotlin.test.assertFalse
@@ -13,8 +14,10 @@ class NotificationReminderRulesTest {
         val date = CurrentDate(year = 2026, month = 4, day = 27)
         val incomplete = AppSettings()
         val complete = AppSettings(
-            challengeProgress = ChallengeProgress(
-                completedDays = mapOf("2026-04" to setOf(27)),
+            styleChallengeProgress = mapOf(
+                GameplayStyle.StackShift to ChallengeProgress(
+                    completedDays = mapOf("2026-04" to setOf(27)),
+                ),
             ),
         )
 

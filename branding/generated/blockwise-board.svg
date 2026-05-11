@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
   <defs>
     <linearGradient id="screenBg" x1="132" y1="92" x2="884" y2="936" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#152434"/>
-      <stop offset="0.48" stop-color="#0C1621"/>
-      <stop offset="1" stop-color="#070D14"/>
+      <stop offset="0" stop-color="#102031"/>
+      <stop offset="0.48" stop-color="#091321"/>
+      <stop offset="1" stop-color="#050A12"/>
     </linearGradient>
   </defs>
   
@@ -42,93 +42,93 @@
   <rect x="723" y="723" width="197" height="197" rx="41" fill="#FFFFFF" fill-opacity="0.05" stroke="#FFFFFF" stroke-opacity="0.1" stroke-width="2"/>
 
   <g>
-    <rect x="102" y="102" width="197" height="197" rx="41" fill="#FF4D6D"/>
+    <rect x="102" y="102" width="197" height="197" rx="41" fill="#FB7185"/>
     
   </g>
 
   <g>
-    <rect x="309" y="102" width="197" height="197" rx="41" fill="#FF4D6D"/>
+    <rect x="309" y="102" width="197" height="197" rx="41" fill="#FB7185"/>
     
   </g>
 
   <g>
-    <rect x="516" y="102" width="197" height="197" rx="41" fill="#A2FF00"/>
+    <rect x="516" y="102" width="197" height="197" rx="41" fill="#22C55E"/>
     
   </g>
 
   <g>
-    <rect x="723" y="102" width="197" height="197" rx="41" fill="#A2FF00"/>
+    <rect x="723" y="102" width="197" height="197" rx="41" fill="#22C55E"/>
     
   </g>
 
   <g>
-    <rect x="723" y="309" width="197" height="197" rx="41" fill="#A2FF00"/>
+    <rect x="723" y="309" width="197" height="197" rx="41" fill="#22C55E"/>
     
   </g>
 
   <g>
-    <rect x="102" y="516" width="197" height="197" rx="41" fill="#6B74FF"/>
+    <rect x="102" y="516" width="197" height="197" rx="41" fill="#8B5CF6"/>
     
   </g>
 
   <g>
-    <rect x="723" y="516" width="197" height="197" rx="41" fill="#00D2FF"/>
+    <rect x="723" y="516" width="197" height="197" rx="41" fill="#22D3EE"/>
     
   </g>
 
   <g>
-    <rect x="102" y="723" width="197" height="197" rx="41" fill="#6B74FF"/>
+    <rect x="102" y="723" width="197" height="197" rx="41" fill="#8B5CF6"/>
     
   </g>
 
   <g>
-    <rect x="516" y="723" width="197" height="197" rx="41" fill="#00D2FF"/>
+    <rect x="516" y="723" width="197" height="197" rx="41" fill="#22D3EE"/>
     
   </g>
 
   <g>
-    <rect x="723" y="723" width="197" height="197" rx="41" fill="#00D2FF"/>
+    <rect x="723" y="723" width="197" height="197" rx="41" fill="#22D3EE"/>
     
   </g>
 
   <g transform="translate(262.6, 448.9) rotate(0) translate(-98.5, -98.5)">
-    <rect width="197" height="197" rx="41" fill="#FFEA00"/>
+    <rect width="197" height="197" rx="41" fill="#FACC15"/>
     
   </g>
 
   <g transform="translate(469.6, 448.9) rotate(0) translate(-98.5, -98.5)">
-    <rect width="197" height="197" rx="41" fill="#FFEA00"/>
+    <rect width="197" height="197" rx="41" fill="#FACC15"/>
     
   </g>
 
   <g transform="translate(676.5999999999999, 448.9) rotate(0) translate(-98.5, -98.5)">
-    <rect width="197" height="197" rx="41" fill="#FFEA00"/>
+    <rect width="197" height="197" rx="41" fill="#FACC15"/>
     
   </g>
 
   <g transform="translate(469.6, 655.9000000000001) rotate(0) translate(-98.5, -98.5)">
-    <rect width="197" height="197" rx="41" fill="#FFEA00"/>
+    <rect width="197" height="197" rx="41" fill="#FACC15"/>
     
   </g>
   <g opacity="0.25">
 
   <g>
-    <rect x="102" y="309" width="197" height="197" rx="41" fill="#FFEA00"/>
+    <rect x="102" y="309" width="197" height="197" rx="41" fill="#FACC15"/>
     
   </g>
 
   <g>
-    <rect x="309" y="309" width="197" height="197" rx="41" fill="#FFEA00"/>
+    <rect x="309" y="309" width="197" height="197" rx="41" fill="#FACC15"/>
     
   </g>
 
   <g>
-    <rect x="516" y="309" width="197" height="197" rx="41" fill="#FFEA00"/>
+    <rect x="516" y="309" width="197" height="197" rx="41" fill="#FACC15"/>
     
   </g>
 
   <g>
-    <rect x="309" y="516" width="197" height="197" rx="41" fill="#FFEA00"/>
+    <rect x="309" y="516" width="197" height="197" rx="41" fill="#FACC15"/>
     
   </g>
   </g>

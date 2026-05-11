@@ -12,11 +12,11 @@ class StackShiftGameOnboardingStateFactoryTest {
     private val onboardingStages = StackShiftGameOnboardingStateFactory.stages
 
     @Test
-    fun everyStageUsesTenBySixBoardConfig() {
+    fun everyStageUsesTenByTwelveBoardConfig() {
         onboardingStages.forEach { stage ->
             val config = StackShiftGameOnboardingStateFactory.scene(stage).gameState.config
             assertEquals(10, config.columns, "Stage $stage should use 10 columns during interactive onboarding")
-            assertEquals(6, config.rows, "Stage $stage should use 6 rows during interactive onboarding")
+            assertEquals(12, config.rows, "Stage $stage should use 12 rows during interactive onboarding")
         }
     }
 

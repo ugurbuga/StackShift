@@ -490,8 +490,9 @@ internal class StackShiftGameLogic(
         val nextState = state.copy(
             activePiece = activePiece.copy(special = specialType),
             softLock = null,
+            message = gameText(GameTextKey.GameMessageAdRewardStackShift),
             floatingFeedback = FloatingFeedback(
-                text = gameText(GameTextKey.FeedbackSpecial, "0", 0),
+                text = gameText(GameTextKey.GameMessageAdRewardStackShift),
                 emphasis = FeedbackEmphasis.Bonus,
                 token = nextToken,
             ),

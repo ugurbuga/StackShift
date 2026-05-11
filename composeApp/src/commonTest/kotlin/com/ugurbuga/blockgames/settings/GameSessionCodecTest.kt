@@ -66,9 +66,12 @@ class GameSessionCodecTest {
         )
         val challengeState = logic.newGame(challenge = challenge)
 
-        assertEquals(GameSessionSlot.Classic, classicState.sessionSlot())
-        assertEquals(GameSessionSlot.TimeAttack, timeAttackState.sessionSlot())
-        assertEquals(GameSessionSlot.DailyChallenge("2026-04-28"), challengeState.sessionSlot())
+        assertEquals(GameSessionSlot.Classic(classicState.gameplayStyle), classicState.sessionSlot())
+        assertEquals(GameSessionSlot.TimeAttack(timeAttackState.gameplayStyle), timeAttackState.sessionSlot())
+        assertEquals(
+            GameSessionSlot.DailyChallenge("2026-04-28", challenge.style),
+            challengeState.sessionSlot(),
+        )
     }
 }
 

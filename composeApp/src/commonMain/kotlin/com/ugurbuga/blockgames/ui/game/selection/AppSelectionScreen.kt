@@ -43,8 +43,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Gamepad
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -63,6 +61,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -89,7 +88,6 @@ import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.GridPoint
 import com.ugurbuga.blockgames.game.model.Piece
 import com.ugurbuga.blockgames.game.model.PlacementPreview
-import com.ugurbuga.blockgames.game.model.paletteColor
 import com.ugurbuga.blockgames.settings.AppSettings
 import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStage
 import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStateFactory
@@ -104,10 +102,12 @@ import com.ugurbuga.blockgames.telemetry.LogScreen
 import com.ugurbuga.blockgames.telemetry.NoOpAppTelemetry
 import com.ugurbuga.blockgames.telemetry.TelemetryScreenNames
 import com.ugurbuga.blockgames.ui.game.BoardGrid
+import com.ugurbuga.blockgames.ui.game.BlockStyleActionButton
 import com.ugurbuga.blockgames.ui.game.PieceBlocks
 import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
 import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
+import com.ugurbuga.blockgames.ui.theme.appBackgroundBrush
 import com.ugurbuga.blockgames.ui.theme.blockGamesSurfaceShadow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -191,14 +191,7 @@ fun AppSelectionScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            uiColors.screenGradientTop,
-                            uiColors.screenGradientBottom,
-                        ),
-                    ),
-                )
+                .background(appBackgroundBrush(uiColors))
                 .statusBarsPadding(),
         ) {
             LazyColumn(
@@ -251,12 +244,7 @@ fun AppSelectionScreen(
                             .widthIn(max = SelectionContentMaxWidth),
                         title = title,
                         description = desc,
-                        tone = when(style) {
-                            GameplayStyle.StackShift -> CellTone.Cyan
-                            GameplayStyle.BlockWise -> CellTone.Amber
-                            GameplayStyle.MergeShift -> CellTone.Violet
-                            GameplayStyle.BoomBlocks -> CellTone.Coral
-                        },
+                        tone = style.selectionTone(),
                         style = style,
                         isExpanded = isExpanded,
                         isActive = style == currentStyle,
@@ -291,6 +279,7 @@ private fun SelectionItem(
     modifier: Modifier = Modifier,
 ) {
     val uiColors = BlockGamesThemeTokens.uiColors
+    val accentColor = remember(style, uiColors) { uiColors.selectionAccentFor(style) }
     val playButtonBringIntoViewRequester = remember { BringIntoViewRequester() }
 
     LaunchedEffect(isExpanded) {
@@ -311,13 +300,17 @@ private fun SelectionItem(
             .clickable(onClick = onExpandToggle),
         shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
         colors = CardDefaults.cardColors(
-            containerColor = if (isExpanded) uiColors.panel else uiColors.gameSurface.copy(alpha = 0.90f)
+            containerColor = if (isExpanded) {
+                lerp(uiColors.panel, accentColor.copy(alpha = 0.18f), 0.14f)
+            } else {
+                lerp(uiColors.gameSurface.copy(alpha = 0.90f), accentColor.copy(alpha = 0.10f), 0.10f)
+            }
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = if (isExpanded) {
-            BorderStroke(1.dp, tone.paletteColor(com.ugurbuga.blockgames.game.model.BlockColorPalette.Classic).copy(alpha = 0.5f))
+            BorderStroke(1.dp, accentColor.copy(alpha = 0.52f))
         } else if (isActive) {
-            BorderStroke(1.dp, tone.paletteColor(com.ugurbuga.blockgames.game.model.BlockColorPalette.Classic).copy(alpha = 0.3f))
+            BorderStroke(1.dp, accentColor.copy(alpha = 0.34f))
         } else null
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -332,13 +325,13 @@ private fun SelectionItem(
                     modifier = Modifier
                         .size(48.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(tone.paletteColor(com.ugurbuga.blockgames.game.model.BlockColorPalette.Classic).copy(alpha = 0.2f)),
+                        .background(accentColor.copy(alpha = 0.18f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Gamepad,
                         contentDescription = null,
-                        tint = tone.paletteColor(com.ugurbuga.blockgames.game.model.BlockColorPalette.Classic),
+                        tint = accentColor,
                         modifier = Modifier.size(32.dp)
                     )
                 }
@@ -356,10 +349,10 @@ private fun SelectionItem(
                         )
                         if (isActive) {
                             Surface(
-                                color = tone.paletteColor(com.ugurbuga.blockgames.game.model.BlockColorPalette.Classic).copy(alpha = 0.15f),
-                                contentColor = tone.paletteColor(com.ugurbuga.blockgames.game.model.BlockColorPalette.Classic),
+                                color = accentColor.copy(alpha = 0.15f),
+                                contentColor = accentColor,
                                 shape = RoundedCornerShape(4.dp),
-                                border = BorderStroke(1.dp, tone.paletteColor(com.ugurbuga.blockgames.game.model.BlockColorPalette.Classic).copy(alpha = 0.4f))
+                                border = BorderStroke(1.dp, accentColor.copy(alpha = 0.40f))
                             ) {
                                 Text(
                                     text = stringResource(Res.string.selection_active_game_badge),
@@ -396,37 +389,24 @@ private fun SelectionItem(
                             .fillMaxWidth()
                             .aspectRatio(1.2f)
                             .clip(RoundedCornerShape(GameUiShapeTokens.surfaceCorner))
-                            .background(uiColors.gameSurface.copy(alpha = 0.5f))
-                            .border(1.dp, uiColors.panelStroke.copy(alpha = 0.3f), RoundedCornerShape(GameUiShapeTokens.surfaceCorner))
+                            .background(lerp(uiColors.gameSurface.copy(alpha = 0.56f), accentColor.copy(alpha = 0.10f), 0.14f))
+                            .border(1.dp, accentColor.copy(alpha = 0.26f), RoundedCornerShape(GameUiShapeTokens.surfaceCorner))
                             .padding(8.dp)
                     ) {
                         GameDemoView(style = style, stylePulse = stylePulse)
                     }
 
-                    Button(
+                    BlockStyleActionButton(
+                        text = stringResource(Res.string.home_play_cta),
                         onClick = onPlayClick,
                         modifier = Modifier
                             .bringIntoViewRequester(playButtonBringIntoViewRequester)
                             .fillMaxWidth()
                             .height(56.dp),
-                        shape = RoundedCornerShape(GameUiShapeTokens.buttonCorner),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = tone.paletteColor(com.ugurbuga.blockgames.game.model.BlockColorPalette.Classic),
-                            contentColor = Color.White
-                        )
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(Icons.Default.PlayArrow, contentDescription = null)
-                            Text(
-                                text = stringResource(Res.string.home_play_cta),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.ExtraBold
-                            )
-                        }
-                    }
+                        tone = tone,
+                        pulse = stylePulse,
+                        icon = Icons.Default.PlayArrow,
+                    )
                 }
             }
         }
@@ -435,6 +415,7 @@ private fun SelectionItem(
 
 @Composable
 private fun GameDemoView(style: GameplayStyle, stylePulse: Float) {
+    val uiColors = BlockGamesThemeTokens.uiColors
     val stackShiftScenario = remember(style) {
         if (style == GameplayStyle.StackShift) buildStackShiftDemoScenario() else null
     }
@@ -740,6 +721,7 @@ private fun GameDemoView(style: GameplayStyle, stylePulse: Float) {
 
             // Tap indicator for BoomBlocks
             if (isBoomTapVisible) {
+                val tapAccent = uiColors.selectionAccentFor(GameplayStyle.BoomBlocks)
                 val tapX = boardOffsetX + (actualBoardWidth * (animatedX.value + 0.5f / columns))
                 val tapY = actualBoardHeight * (animatedY.value + 0.5f / rows)
                 Box(
@@ -752,12 +734,26 @@ private fun GameDemoView(style: GameplayStyle, stylePulse: Float) {
                             scaleY = boomTapScale.value
                             alpha = 1f - (boomTapScale.value * 0.5f)
                         }
-                        .background(Color.White.copy(alpha = 0.6f), CircleShape)
-                        .border(2.dp, Color.White, CircleShape)
+                        .background(tapAccent.copy(alpha = 0.34f), CircleShape)
+                        .border(2.dp, tapAccent.copy(alpha = 0.84f), CircleShape)
                 )
             }
         }
     }
+}
+
+private fun GameplayStyle.selectionTone(): CellTone = when (this) {
+    GameplayStyle.StackShift -> CellTone.Cyan
+    GameplayStyle.BlockWise -> CellTone.Amber
+    GameplayStyle.MergeShift -> CellTone.Violet
+    GameplayStyle.BoomBlocks -> CellTone.Coral
+}
+
+private fun com.ugurbuga.blockgames.ui.theme.BlockGamesUiColors.selectionAccentFor(style: GameplayStyle): Color = when (style) {
+    GameplayStyle.StackShift -> selectionStackShift
+    GameplayStyle.BlockWise -> selectionBlockWise
+    GameplayStyle.MergeShift -> selectionMergeShift
+    GameplayStyle.BoomBlocks -> selectionBoomBlocks
 }
 
 @Composable

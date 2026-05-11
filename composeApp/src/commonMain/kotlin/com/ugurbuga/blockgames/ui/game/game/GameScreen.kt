@@ -22,6 +22,8 @@ import com.ugurbuga.blockgames.game.model.SpecialBlockType
 import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
 import com.ugurbuga.blockgames.platform.feedback.NoOpSoundEffectPlayer
 import com.ugurbuga.blockgames.platform.feedback.SoundEffectPlayer
+import com.ugurbuga.blockgames.presentation.game.GameDispatchResult
+import com.ugurbuga.blockgames.presentation.game.GameIntent
 import com.ugurbuga.blockgames.presentation.game.GameViewModel
 import com.ugurbuga.blockgames.presentation.game.InteractionFeedback
 import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStage
@@ -39,14 +41,11 @@ import com.ugurbuga.blockgames.telemetry.LogScreen
 import com.ugurbuga.blockgames.telemetry.NoOpAppTelemetry
 import com.ugurbuga.blockgames.telemetry.TelemetryActionNames
 import com.ugurbuga.blockgames.telemetry.TelemetryScreenNames
-import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
 
 private const val InteractiveOnboardingStageAdvanceDelayMillis = 720L
-private const val InteractiveOnboardingClearAnimationDurationMillis = 620
-private const val InteractiveOnboardingBoardShiftDurationMillis = 360
 
 @Composable
 fun BlockGamesGameApp(
@@ -66,7 +65,6 @@ fun BlockGamesGameApp(
     val gameplayStyle = GlobalPlatformConfig.gameplayStyle
     val haptics = rememberGameHaptics()
     val uiState by viewModel.uiState.collectAsState()
-    val uiColors = BlockGamesThemeTokens.uiColors
     val onboardingStages: List<OnboardingStage> = remember(gameplayStyle) {
         when (gameplayStyle) {
             GameplayStyle.BlockWise -> BlockWiseOnboardingStateFactory.stages
@@ -289,6 +287,7 @@ fun BlockGamesGameApp(
                     }
                 }
             },
+            onReplaceActivePiece = onReplaceActivePieceRewarded,
             onRestart = {
                 telemetry.logUserAction(TelemetryActionNames.RestartGame)
                 viewModel.restart(
@@ -339,6 +338,7 @@ fun BlockGamesGameApp(
                     }
                 }
             },
+            onReplaceActivePiece = onReplaceActivePieceRewarded,
             onRestart = {
                 telemetry.logUserAction(TelemetryActionNames.RestartGame)
                 dispatchFeedback(
@@ -379,10 +379,25 @@ fun BlockGamesGameApp(
             onResolvePreviewImpact = viewModel::previewImpactPoints,
             onPlacePiece = { column ->
                 telemetry.logUserAction("place_piece_stackshift")
-                viewModel.placePieceResult(column).also { result ->
-                    val scene = stackShiftOnboardingScene
-                    if (!interactiveOnboardingEnabled || scene == null) return@also
+                val initialResult = viewModel.placePieceResult(column)
+                val result = if (
+                    interactiveOnboardingEnabled &&
+                    stackShiftOnboardingScene != null &&
+                    (GameEvent.SoftLockStarted in initialResult.events || GameEvent.SoftLockAdjusted in initialResult.events)
+                ) {
+                    val commitResult = viewModel.dispatchResult(GameIntent.CommitSoftLock)
+                    GameDispatchResult(
+                        events = initialResult.events + commitResult.events,
+                        feedback = commitResult.feedback,
+                    )
+                } else {
+                    initialResult
+                }
 
+                val scene = stackShiftOnboardingScene
+                if (!interactiveOnboardingEnabled || scene == null) {
+                    result
+                } else {
                     when {
                         GameEvent.PlacementAccepted in result.events -> {
                             onboardingAwaitingCommit = false
@@ -400,6 +415,7 @@ fun BlockGamesGameApp(
                             onboardingAdvanceRequest = null
                         }
                     }
+                    result
                 }
             },
             onHoldPiece = viewModel::holdPiece,
@@ -464,6 +480,7 @@ fun BlockGamesGameApp(
                     }
                 }
             },
+            onReplaceActivePiece = onReplaceActivePieceRewarded,
             onRestart = {
                 telemetry.logUserAction(TelemetryActionNames.RestartGame)
                 viewModel.restart(

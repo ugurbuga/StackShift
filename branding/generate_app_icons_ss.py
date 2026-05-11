@@ -26,6 +26,19 @@ FOREGROUND_SVG_NAME = "stackshift-adaptive-foreground.svg"
 MACOS_FOREGROUND_SVG_NAME = "stackshift-macos-foreground.svg"
 
 LOGO_GRID_SIZE = 4
+FEATURE_GRAPHIC_LEFT_TEXT_CENTER_X = 172
+FEATURE_GRAPHIC_RIGHT_TEXT_CENTER_X = 852
+
+BG_TOP = "#152434"
+BG_MIDDLE = "#0C1621"
+BG_BOTTOM = "#070D14"
+GLOW_A = "#48D8C8"
+GLOW_B = "#6B74FF"
+TILE_CORAL = "#FF4D6D"
+TILE_EMERALD = "#A2FF00"
+TILE_CYAN = "#00D2FF"
+TILE_GOLD = "#FFEA00"
+TILE_VIOLET = "#6B74FF"
 
 def main() -> None:
     ensure_tools()
@@ -273,17 +286,17 @@ def mosaic_icon_svg(
     return f"""<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1024\" height=\"1024\" viewBox=\"0 0 1024 1024\" fill=\"none\">
   <defs>
     <linearGradient id=\"screenBg\" x1=\"132\" y1=\"92\" x2=\"884\" y2=\"936\" gradientUnits=\"userSpaceOnUse\">
-      <stop offset=\"0\" stop-color=\"#152434\"/>
-      <stop offset=\"0.48\" stop-color=\"#0C1621\"/>
-      <stop offset=\"1\" stop-color=\"#070D14\"/>
+      <stop offset=\"0\" stop-color=\"{BG_TOP}\"/>
+      <stop offset=\"0.48\" stop-color=\"{BG_MIDDLE}\"/>
+      <stop offset=\"1\" stop-color=\"{BG_BOTTOM}\"/>
     </linearGradient>
     <radialGradient id=\"screenGlowA\" cx=\"0\" cy=\"0\" r=\"1\" gradientUnits=\"userSpaceOnUse\" gradientTransform=\"translate(232 214) rotate(45) scale(448)\">
-      <stop stop-color=\"#48D8C8\" stop-opacity=\"0.26\"/>
-      <stop offset=\"1\" stop-color=\"#48D8C8\" stop-opacity=\"0\"/>
+      <stop stop-color=\"{GLOW_A}\" stop-opacity=\"0.26\"/>
+      <stop offset=\"1\" stop-color=\"{GLOW_A}\" stop-opacity=\"0\"/>
     </radialGradient>
     <radialGradient id=\"screenGlowB\" cx=\"0\" cy=\"0\" r=\"1\" gradientUnits=\"userSpaceOnUse\" gradientTransform=\"translate(796 822) rotate(45) scale(404)\">
-      <stop stop-color=\"#6B74FF\" stop-opacity=\"0.22\"/>
-      <stop offset=\"1\" stop-color=\"#6B74FF\" stop-opacity=\"0\"/>
+      <stop stop-color=\"{GLOW_B}\" stop-opacity=\"0.22\"/>
+      <stop offset=\"1\" stop-color=\"{GLOW_B}\" stop-opacity=\"0\"/>
     </radialGradient>
   </defs>
   {background}
@@ -316,32 +329,34 @@ def feature_graphic_svg_content() -> str:
   {font_style}
   <defs>
     <linearGradient id="featureBg" x1="132" y1="92" x2="884" y2="436" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#152434"/>
-      <stop offset="0.48" stop-color="#0C1621"/>
-      <stop offset="1" stop-color="#070D14"/>
+      <stop offset="0" stop-color="{BG_TOP}"/>
+      <stop offset="0.48" stop-color="{BG_MIDDLE}"/>
+      <stop offset="1" stop-color="{BG_BOTTOM}"/>
     </linearGradient>
     <radialGradient id="featureGlowA" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(232 114) rotate(45) scale(448)">
-      <stop stop-color="#48D8C8" stop-opacity="0.18"/>
-      <stop offset="1" stop-color="#48D8C8" stop-opacity="0"/>
+      <stop stop-color="{GLOW_A}" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="{GLOW_A}" stop-opacity="0"/>
     </radialGradient>
     <radialGradient id="featureGlowB" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(796 386) rotate(45) scale(404)">
-      <stop stop-color="#6B74FF" stop-opacity="0.14"/>
-      <stop offset="1" stop-color="#6B74FF" stop-opacity="0"/>
+      <stop stop-color="{GLOW_B}" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="{GLOW_B}" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#FF4D6D"/>
-      <stop offset="25%" stop-color="#A2FF00"/>
-      <stop offset="50%" stop-color="#00D2FF"/>
-      <stop offset="75%" stop-color="#6B74FF"/>
-      <stop offset="100%" stop-color="#FFEA00"/>
+      <stop offset="0%" stop-color="{TILE_CORAL}"/>
+      <stop offset="25%" stop-color="{TILE_EMERALD}"/>
+      <stop offset="50%" stop-color="{TILE_CYAN}"/>
+      <stop offset="75%" stop-color="{TILE_VIOLET}"/>
+      <stop offset="100%" stop-color="{TILE_GOLD}"/>
     </linearGradient>
   </defs>
   <rect width="1024" height="500" fill="url(#featureBg)"/>
   <rect width="1024" height="500" fill="url(#featureGlowA)"/>
   <rect width="1024" height="500" fill="url(#featureGlowB)"/>
-  <text x="160" y="288" font-family="'NunitoBlack', sans-serif" font-weight="900" font-size="90" fill="url(#textGradient)" stroke="url(#textGradient)" stroke-width="4" text-anchor="middle">STACK</text>
-  <text x="864" y="288" font-family="'NunitoBlack', sans-serif" font-weight="900" font-size="90" fill="url(#textGradient)" stroke="url(#textGradient)" stroke-width="4" text-anchor="middle">SHIFT</text>
-  <g transform="translate(312, 50) scale(0.390625)">
+  <text x="{FEATURE_GRAPHIC_LEFT_TEXT_CENTER_X}" y="166" font-family="'NunitoBlack', sans-serif" font-weight="900" font-size="50" fill="url(#textGradient)" stroke="url(#textGradient)" stroke-width="2.5" text-anchor="middle">StackShift</text>
+  <text x="{FEATURE_GRAPHIC_LEFT_TEXT_CENTER_X}" y="336" font-family="'NunitoBlack', sans-serif" font-weight="900" font-size="50" fill="url(#textGradient)" stroke="url(#textGradient)" stroke-width="2.5" text-anchor="middle">BoomBlocks</text>
+  <text x="{FEATURE_GRAPHIC_RIGHT_TEXT_CENTER_X}" y="166" font-family="'NunitoBlack', sans-serif" font-weight="900" font-size="50" fill="url(#textGradient)" stroke="url(#textGradient)" stroke-width="2.5" text-anchor="middle">BlockWise</text>
+  <text x="{FEATURE_GRAPHIC_RIGHT_TEXT_CENTER_X}" y="336" font-family="'NunitoBlack', sans-serif" font-weight="900" font-size="50" fill="url(#textGradient)" stroke="url(#textGradient)" stroke-width="2.5" text-anchor="middle">MergeShift</text>
+  <g transform="translate(344, 82) scale(0.328125)">
     {mosaic_icon_svg(include_background=False, logo_scale=0.8)}
   </g>
 </svg>'''
@@ -366,16 +381,16 @@ def logo_geometry(logo_scale: float = 1.0, offset_x: int = 0, offset_y: int = 0)
 
 
 def mosaic_tiles(geometry: dict[str, int]) -> str:
-    c_pink = "#FF4D6D"
-    c_lime = "#A2FF00"
-    c_cyan = "#00D2FF"
-    c_gold = "#FFEA00"
-    c_purple = "#6B74FF"
+    c_coral = TILE_CORAL
+    c_emerald = TILE_EMERALD
+    c_cyan = TILE_CYAN
+    c_gold = TILE_GOLD
+    c_violet = TILE_VIOLET
 
     tile_layout: list[list[dict[str, str] | None]] = [
-        [{"color": c_purple}, {"color": c_purple}, {"color": c_pink}, {"color": c_pink}],
-        [{"color": c_lime}, {"color": c_lime}, None, {"color": c_pink}],
-        [{"color": c_cyan}, None, None, {"color": c_pink}],
+        [{"color": c_violet}, {"color": c_violet}, {"color": c_coral}, {"color": c_coral}],
+        [{"color": c_emerald}, {"color": c_emerald}, None, {"color": c_coral}],
+        [{"color": c_cyan}, None, None, {"color": c_coral}],
         [{"color": c_cyan}, None, None, None],
     ]
 

@@ -4,6 +4,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
@@ -13,6 +14,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.graphics.toColorInt
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.shared.R
 import com.ugurbuga.blockgames.settings.AppSettingsStorage
 import com.ugurbuga.blockgames.settings.shouldSendDailyChallengeReminder
@@ -20,11 +22,13 @@ import com.ugurbuga.blockgames.settings.shouldSendMissYouReminder
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
 import blockgames.composeapp.generated.resources.Res
+import blockgames.composeapp.generated.resources.app_title_blockwise
+import blockgames.composeapp.generated.resources.app_title_boomblocks
+import blockgames.composeapp.generated.resources.app_title_mergeshift
 import blockgames.composeapp.generated.resources.app_title_stackshift
 import blockgames.composeapp.generated.resources.notification_daily_challenge_body
 import blockgames.composeapp.generated.resources.notification_daily_challenge_title
 import blockgames.composeapp.generated.resources.notification_miss_you_body
-import blockgames.composeapp.generated.resources.notification_miss_you_title
 import blockgames.composeapp.generated.resources.notification_reminders_channel_name
 import blockgames.composeapp.generated.resources.notification_test_body
 import java.util.Locale
@@ -41,6 +45,7 @@ class NotificationWorker(
         const val TAG_DAILY_CHALLENGE = "daily_challenge_notification"
 
         const val DATA_KEY_TYPE = "notification_type"
+        const val EXTRA_TARGET_GAMEPLAY_STYLE = "target_gameplay_style"
 
         const val TYPE_MISS_YOU = "miss_you"
         const val TYPE_DAILY_CHALLENGE = "daily_challenge"
@@ -62,6 +67,7 @@ class NotificationWorker(
 
     private suspend fun showNotification(type: String) {
         val settings = AppSettingsStorage.load()
+        val selectedGameplayStyle = settings.selectedGameplayStyle ?: GameplayStyle.StackShift
         val appLocale = Locale.forLanguageTag(settings.language.localeTag)
 
         // Temporarily set default locale to fetch strings in app-selected language
@@ -71,14 +77,17 @@ class NotificationWorker(
         suspend fun localized(resource: StringResource): String =
             runCatching { getString(resource) }.getOrDefault("")
 
-        val appName = applicationContext.applicationInfo
-            .loadLabel(applicationContext.packageManager)
-            .toString()
+        val appName = localized(selectedGameplayStyle.appTitleResource())
+            .ifBlank {
+                applicationContext.applicationInfo
+                    .loadLabel(applicationContext.packageManager)
+                    .toString()
+            }
 
         val title = when (type) {
             TYPE_DAILY_CHALLENGE -> localized(Res.string.notification_daily_challenge_title)
-            TYPE_TEST -> localized(Res.string.app_title_stackshift)
-            else -> localized(Res.string.notification_miss_you_title)
+            TYPE_TEST -> appName
+            else -> appName
         }.ifBlank { appName }
 
         val message = when (type) {
@@ -106,18 +115,18 @@ class NotificationWorker(
         }
 
         val intent = applicationContext.packageManager.getLaunchIntentForPackage(applicationContext.packageName)
+            ?.apply {
+                putExtra(EXTRA_TARGET_GAMEPLAY_STYLE, selectedGameplayStyle.name)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            }
         val pendingIntent = PendingIntent.getActivity(
             applicationContext,
-            0,
+            notificationIdForType(type),
             intent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        val notificationId = when (type) {
-            TYPE_DAILY_CHALLENGE -> 1002
-            TYPE_TEST -> 1003
-            else -> 1001
-        }
+        val notificationId = notificationIdForType(type)
         val largeIcon = runCatching {
             applicationContext.packageManager
                 .getApplicationIcon(applicationContext.packageName)
@@ -140,6 +149,19 @@ class NotificationWorker(
 
         notificationManager.notify(notificationId, notification)
     }
+
+    private fun notificationIdForType(type: String): Int = when (type) {
+        TYPE_DAILY_CHALLENGE -> 1002
+        TYPE_TEST -> 1003
+        else -> 1001
+    }
+}
+
+private fun GameplayStyle.appTitleResource(): StringResource = when (this) {
+    GameplayStyle.BlockWise -> Res.string.app_title_blockwise
+    GameplayStyle.MergeShift -> Res.string.app_title_mergeshift
+    GameplayStyle.BoomBlocks -> Res.string.app_title_boomblocks
+    GameplayStyle.StackShift -> Res.string.app_title_stackshift
 }
 
 private fun Drawable.toBitmap(): Bitmap {

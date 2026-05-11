@@ -42,7 +42,7 @@ class BoomBlocksGameLogicTest {
     }
 
     @Test
-    fun boomBlocks_clearAppliesDownwardGravityBeforeRefill() {
+    fun boomBlocks_clearUsesNearestEdgeToChooseGravityDirection() {
         val board = BoardMatrix.empty(columns = 3, rows = 4)
             .fill(
                 points = listOf(GridPoint(column = 0, row = 0)),
@@ -81,7 +81,7 @@ class BoomBlocksGameLogicTest {
             origin = GridPoint(column = 0, row = 2),
         ).state
 
-        assertEquals(1, resolved.board.cellAt(column = 0, row = 3)?.value)
+        assertEquals(1, resolved.board.cellAt(column = 0, row = 0)?.value)
         assertEquals(setOf(
             GridPoint(column = 0, row = 1),
             GridPoint(column = 0, row = 2),

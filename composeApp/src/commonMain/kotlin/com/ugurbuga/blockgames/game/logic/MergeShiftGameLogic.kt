@@ -36,6 +36,16 @@ internal class MergeShiftGameLogic(
         private const val REWARDED_REVIVE_CELL_COUNT = 6
     }
 
+    private data class MergeChainResolution(
+        val board: BoardMatrix,
+        val score: Int,
+        val lastMoveScore: Int,
+        val challenge: DailyChallenge?,
+        val remainingTimeMillis: Long?,
+        val lastMergedPoint: GridPoint?,
+        val mergeCount: Int,
+    )
+
     override fun restoreGame(state: GameState): GameState {
         return state.copy(nextPieceId = maxOf(state.nextPieceId, GameSessionCodec.maxPieceId(state) + 1L))
     }
@@ -484,6 +494,8 @@ internal class MergeShiftGameLogic(
     private fun findMergeForPoint(board: BoardMatrix, p: GridPoint): Triple<Set<GridPoint>, GridPoint, Int>? {
         val cell = board.cellAt(p.column, p.row) ?: return null
         val v = cell.value
+        if (v <= 0) return null
+
         val neighbors = mutableSetOf<GridPoint>()
 
         // Check Above
@@ -530,6 +542,7 @@ internal class MergeShiftGameLogic(
     }
 
     private fun getToneForValue(value: Int): CellTone {
+        if (value <= 0) return CellTone.entries[0]
         val power = (log2(value.toDouble())).toInt()
         return CellTone.entries[power % CellTone.entries.size]
     }
@@ -573,7 +586,36 @@ internal class MergeShiftGameLogic(
     }
 
     override fun holdPiece(state: GameState): GameMoveResult = invalidMove(state)
-    override fun replaceActivePiece(state: GameState, specialType: SpecialBlockType): GameMoveResult = invalidMove(state)
+
+    override fun replaceActivePiece(state: GameState, specialType: SpecialBlockType): GameMoveResult {
+        if (state.status != GameStatus.Running) return invalidMove(state)
+
+        var currentNextId = state.nextPieceId
+        val (newActive, nextId1) = createPiece(currentNextId)
+        currentNextId = nextId1
+
+        val newQueue = mutableListOf<Piece>()
+        repeat(QUEUE_SIZE) {
+            val (piece, nextId) = createPiece(currentNextId)
+            newQueue.add(piece)
+            currentNextId = nextId
+        }
+
+        val nextToken = state.feedbackToken + 1L
+        val nextState = state.copy(
+            activePiece = newActive,
+            nextQueue = newQueue,
+            nextPieceId = currentNextId,
+            message = gameText(GameTextKey.GameMessageAdRewardMergeShift),
+            floatingFeedback = FloatingFeedback(
+                text = gameText(GameTextKey.FeedbackAdRewardMergeShift),
+                emphasis = FeedbackEmphasis.Bonus,
+                token = nextToken,
+            ),
+            feedbackToken = nextToken,
+        )
+        return GameMoveResult(state = nextState, events = setOf(GameEvent.SpecialTriggered))
+    }
     override fun reviveFromReward(state: GameState): GameMoveResult {
         if (state.status != GameStatus.GameOver || state.rewardedReviveUsed) {
             return invalidMove(state)
@@ -587,22 +629,39 @@ internal class MergeShiftGameLogic(
         val revivedBoard = state.board
             .clearPoints(clearedPoints)
             .applyGravityUp()
+        val resolvedMergeChain = resolveMergeChain(
+            board = revivedBoard,
+            initialScore = state.score,
+            initialChallenge = state.activeChallenge,
+            initialRemainingTimeMillis = state.remainingTimeMillis,
+        )
         val (revivedActivePiece, revivedQueue, nextPieceId) = restoreQueueAfterRevive(state)
-        val nextPressure = computeColumnPressure(revivedBoard, state.config)
+        val nextPressure = computeColumnPressure(resolvedMergeChain.board, state.config)
         val nextToken = state.feedbackToken + 1L
+        val events = buildSet {
+            add(GameEvent.Revived)
+            if (resolvedMergeChain.challenge != null &&
+                resolvedMergeChain.challenge.isCompleted &&
+                state.activeChallenge?.isCompleted == false
+            ) {
+                add(GameEvent.ChallengeCompleted)
+            }
+        }
 
         return GameMoveResult(
             state = state.copy(
-                board = revivedBoard,
+                board = resolvedMergeChain.board,
                 activePiece = revivedActivePiece,
                 nextQueue = revivedQueue,
                 columnPressure = nextPressure,
                 status = GameStatus.Running,
-                recentlyMergedPoints = emptySet(),
-                clearAnimationToken = state.clearAnimationToken + 1L,
+                recentlyMergedPoints = resolvedMergeChain.lastMergedPoint?.let(::setOf).orEmpty(),
+                clearAnimationToken = state.clearAnimationToken + 1L + resolvedMergeChain.mergeCount,
                 screenShakeToken = state.screenShakeToken + 1L,
                 impactFlashToken = state.impactFlashToken + 1L,
                 comboPopupToken = state.comboPopupToken + 1L,
+                score = resolvedMergeChain.score,
+                lastMoveScore = resolvedMergeChain.lastMoveScore,
                 floatingFeedback = FloatingFeedback(
                     text = gameText(GameTextKey.FeedbackExtraLife, clearedPoints.size),
                     emphasis = FeedbackEmphasis.Bonus,
@@ -611,10 +670,70 @@ internal class MergeShiftGameLogic(
                 feedbackToken = nextToken,
                 rewardedReviveUsed = true,
                 nextPieceId = nextPieceId,
-                remainingTimeMillis = state.remainingTimeMillis?.plus(GameLogic.TIME_ATTACK_REVIVE_BONUS_MILLIS),
+                activeChallenge = resolvedMergeChain.challenge,
+                remainingTimeMillis = resolvedMergeChain.remainingTimeMillis?.plus(GameLogic.TIME_ATTACK_REVIVE_BONUS_MILLIS),
                 message = gameText(GameTextKey.GameMessageExtraLifeUsed, clearedPoints.size),
             ),
-            events = setOf(GameEvent.Revived),
+            events = events,
+        )
+    }
+
+    private fun resolveMergeChain(
+        board: BoardMatrix,
+        initialScore: Int,
+        initialChallenge: DailyChallenge?,
+        initialRemainingTimeMillis: Long?,
+    ): MergeChainResolution {
+        var currentBoard = board
+        var currentScore = initialScore
+        var currentChallenge = initialChallenge
+        var currentRemainingTimeMillis = initialRemainingTimeMillis
+        var lastMoveScore = 0
+        var lastMergedPoint: GridPoint? = null
+        var mergeCount = 0
+
+        while (true) {
+            val nextMerge = findNextMergeGlobal(currentBoard) ?: break
+            val (sources, to, value) = nextMerge
+            val numNeighbors = sources.size - 1
+            val nextValue = value * (1 shl numNeighbors)
+
+            currentBoard = currentBoard.clearPoints(sources)
+            currentBoard = currentBoard.fill(listOf(to), getToneForValue(nextValue), value = nextValue)
+            currentBoard = currentBoard.applyGravityUp()
+
+            lastMergedPoint = findPiece(currentBoard, to.column, nextValue) ?: to
+            val nextScore = currentScore + nextValue
+            val awardedTimeMillis = if (initialRemainingTimeMillis != null) {
+                val scoreBonus =
+                    (nextScore / GameLogic.TIME_ATTACK_SCORE_BONUS_THRESHOLD -
+                        currentScore / GameLogic.TIME_ATTACK_SCORE_BONUS_THRESHOLD) *
+                        GameLogic.TIME_ATTACK_SCORE_BONUS_MILLIS
+                val mergeBonus = GameLogic.TIME_ATTACK_BONUS_PER_CLEARED_BLOCK_MILLIS * 2
+                scoreBonus + mergeBonus
+            } else {
+                0L
+            }
+
+            currentScore = nextScore
+            currentRemainingTimeMillis = currentRemainingTimeMillis?.plus(awardedTimeMillis)
+            currentChallenge = updateChallengeProgress(
+                challenge = currentChallenge,
+                scoreGain = nextValue,
+                mergesCount = 1,
+            )
+            lastMoveScore = nextValue
+            mergeCount++
+        }
+
+        return MergeChainResolution(
+            board = currentBoard,
+            score = currentScore,
+            lastMoveScore = lastMoveScore,
+            challenge = currentChallenge,
+            remainingTimeMillis = currentRemainingTimeMillis,
+            lastMergedPoint = lastMergedPoint,
+            mergeCount = mergeCount,
         )
     }
 

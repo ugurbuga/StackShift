@@ -358,6 +358,13 @@ enum class GameTextKey {
     SpecialGhost,
     SpecialHeavy,
     PiecePropertiesNone,
+    GameMessageAdRewardBlockWise,
+    GameMessageAdRewardMergeShift,
+    GameMessageAdRewardBoomBlocks,
+    GameMessageAdRewardStackShift,
+    FeedbackAdRewardBlockWise,
+    FeedbackAdRewardMergeShift,
+    FeedbackAdRewardBoomBlocks,
 }
 
 @Immutable
@@ -929,6 +936,7 @@ data class GameState(
     val feedbackToken: Long = 0L,
     val rewardedReviveUsed: Boolean = false,
     val nextPieceId: Long = 1L,
+    val onboardingGuidePoint: GridPoint? = null,
     val lastActionTime: Long = 0L,
     val remainingTimeMillis: Long? = null,
     val message: GameText = GameText(GameTextKey.GameMessageSelectColumn),

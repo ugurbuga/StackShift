@@ -1,7 +1,7 @@
 package com.ugurbuga.blockgames.settings
 
 import androidx.compose.runtime.Immutable
-import com.ugurbuga.blockgames.game.logic.GameLogic
+import com.ugurbuga.blockgames.game.logic.StackShiftGameLogic
 import com.ugurbuga.blockgames.game.model.BoardMatrix
 import com.ugurbuga.blockgames.game.model.CellTone
 import com.ugurbuga.blockgames.game.model.GameConfig
@@ -39,7 +39,7 @@ data class StackShiftOnboardingScene(
 )
 
 object StackShiftGameOnboardingStateFactory {
-    private val guideLogic = GameLogic.create()
+    private val guideLogic = StackShiftGameLogic()
     private val config = GameConfig(
         columns = 10,
         rows = 12,

@@ -27,6 +27,15 @@ MACOS_FOREGROUND_SVG_NAME = "blockwise-macos-foreground.svg"
 
 LOGO_GRID_SIZE = 4
 
+BG_TOP = "#102031"
+BG_MIDDLE = "#091321"
+BG_BOTTOM = "#050A12"
+TILE_CORAL = "#FB7185"
+TILE_EMERALD = "#22C55E"
+TILE_CYAN = "#22D3EE"
+TILE_GOLD = "#FACC15"
+TILE_VIOLET = "#8B5CF6"
+
 def main() -> None:
     ensure_tools()
     with tempfile.TemporaryDirectory(prefix="blockwise-icon-") as temp_dir:
@@ -268,9 +277,9 @@ def mosaic_icon_svg(
     return f"""<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1024\" height=\"1024\" viewBox=\"0 0 1024 1024\" fill=\"none\">
   <defs>
     <linearGradient id=\"screenBg\" x1=\"132\" y1=\"92\" x2=\"884\" y2=\"936\" gradientUnits=\"userSpaceOnUse\">
-      <stop offset=\"0\" stop-color=\"#152434\"/>
-      <stop offset=\"0.48\" stop-color=\"#0C1621\"/>
-      <stop offset=\"1\" stop-color=\"#070D14\"/>
+      <stop offset=\"0\" stop-color=\"{BG_TOP}\"/>
+      <stop offset=\"0.48\" stop-color=\"{BG_MIDDLE}\"/>
+      <stop offset=\"1\" stop-color=\"{BG_BOTTOM}\"/>
     </linearGradient>
   </defs>
   {background}
@@ -303,16 +312,16 @@ def feature_graphic_svg_content() -> str:
   {font_style}
   <defs>
     <linearGradient id="featureBg" x1="132" y1="92" x2="884" y2="436" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#152434"/>
-      <stop offset="0.48" stop-color="#0C1621"/>
-      <stop offset="1" stop-color="#070D14"/>
+      <stop offset="0" stop-color="{BG_TOP}"/>
+      <stop offset="0.48" stop-color="{BG_MIDDLE}"/>
+      <stop offset="1" stop-color="{BG_BOTTOM}"/>
     </linearGradient>
     <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#FF4D6D"/>
-      <stop offset="25%" stop-color="#A2FF00"/>
-      <stop offset="50%" stop-color="#00D2FF"/>
-      <stop offset="75%" stop-color="#6B74FF"/>
-      <stop offset="100%" stop-color="#FFEA00"/>
+      <stop offset="0%" stop-color="{TILE_CORAL}"/>
+      <stop offset="25%" stop-color="{TILE_EMERALD}"/>
+      <stop offset="50%" stop-color="{TILE_CYAN}"/>
+      <stop offset="75%" stop-color="{TILE_VIOLET}"/>
+      <stop offset="100%" stop-color="{TILE_GOLD}"/>
     </linearGradient>
   </defs>
   <rect width="1024" height="500" fill="url(#featureBg)"/>
@@ -343,17 +352,17 @@ def logo_geometry(logo_scale: float = 1.0, offset_x: int = 0, offset_y: int = 0)
 
 
 def mosaic_tiles(geometry: dict[str, int]) -> str:
-    c_pink = "#FF4D6D"
-    c_lime = "#A2FF00"
-    c_cyan = "#00D2FF"
-    c_gold = "#FFEA00"
-    c_purple = "#6B74FF"
+    c_coral = TILE_CORAL
+    c_emerald = TILE_EMERALD
+    c_cyan = TILE_CYAN
+    c_gold = TILE_GOLD
+    c_violet = TILE_VIOLET
 
     tile_layout: list[list[dict[str, str] | None]] = [
-        [{"color": c_pink}, {"color": c_pink}, {"color": c_lime}, {"color": c_lime}],
-        [None, None, None, {"color": c_lime}],
-        [{"color": c_purple}, None, None, {"color": c_cyan}],
-        [{"color": c_purple}, None, {"color": c_cyan}, {"color": c_cyan}],
+        [{"color": c_coral}, {"color": c_coral}, {"color": c_emerald}, {"color": c_emerald}],
+        [None, None, None, {"color": c_emerald}],
+        [{"color": c_violet}, None, None, {"color": c_cyan}],
+        [{"color": c_violet}, None, {"color": c_cyan}, {"color": c_cyan}],
     ]
 
     lines: list[str] = []

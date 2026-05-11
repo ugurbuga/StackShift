@@ -28,7 +28,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -377,11 +382,27 @@ internal fun InteractiveOnboardingTargetHighlight(
     guideColor: Color,
     isSuccessState: Boolean,
     isAwaitingPlacementCommit: Boolean,
+    pulseDelayMillis: Long = 0L,
     modifier: Modifier = Modifier,
 ) {
     val rect = targetRect ?: return
     val density = LocalDensity.current
-    val shouldAnimatePulse = !isAwaitingPlacementCommit && !isSuccessState
+
+    var isPulseEnabled by remember(targetRect, pulseDelayMillis) {
+        mutableStateOf(pulseDelayMillis == 0L)
+    }
+
+    LaunchedEffect(targetRect, pulseDelayMillis) {
+        if (pulseDelayMillis > 0) {
+            isPulseEnabled = false // Reset for new target
+            delay(pulseDelayMillis)
+            isPulseEnabled = true
+        } else {
+            isPulseEnabled = true
+        }
+    }
+
+    val shouldAnimatePulse = !isAwaitingPlacementCommit && !isSuccessState && isPulseEnabled
     val pulsePhase = if (!shouldAnimatePulse) {
         0f
     } else {

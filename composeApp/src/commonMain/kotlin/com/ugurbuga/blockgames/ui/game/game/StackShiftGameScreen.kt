@@ -1577,8 +1577,8 @@ private fun SpecialActionAdButton(
         tone = tone,
         icon = icon,
         contentDescription = specialType.name,
-        onClick = {
-            if (loading) return@TopBarActionBlockButton
+        onClick = onClick@{
+            if (loading) return@onClick
             loading = true
             adController.showRewardedAd { success ->
                 loading = false
