@@ -249,6 +249,7 @@ data class GameConfig(
             GameplayStyle.StackShift -> GameConfig(columns = 10, rows = 12)
             GameplayStyle.MergeShift -> GameConfig(columns = 3, rows = 5)
             GameplayStyle.BoomBlocks -> GameConfig(columns = 6, rows = 8)
+            GameplayStyle.BlockSort -> GameConfig(columns = 6, rows = 4, difficultyIntervalSeconds = 9_999, linesPerLevel = 9_999)
         }
     }
 }
@@ -263,6 +264,22 @@ enum class GameplayStyle {
     BlockWise,
     MergeShift,
     BoomBlocks,
+    BlockSort,
+}
+
+fun GameplayStyle.storageKey(): String = when (this) {
+    GameplayStyle.BlockSort -> "blocksort"
+    else -> name.lowercase()
+}
+
+fun GameplayStyle.persistedKeys(): List<String> = listOf(storageKey())
+
+fun gameplayStyleFromPersistedValue(raw: String?): GameplayStyle? {
+    val normalized = raw?.trim()?.takeIf(String::isNotBlank) ?: return null
+    return GameplayStyle.entries.firstOrNull { style ->
+        normalized.equals(style.name, ignoreCase = true) ||
+            normalized.equals(style.storageKey(), ignoreCase = true)
+    }
 }
 
 enum class GameStatus {
@@ -548,6 +565,7 @@ data class BoardCell(
     val value: Int = 0,
 )
 
+@Immutable
 class BoardMatrix private constructor(
     val columns: Int,
     val rows: Int,
@@ -941,6 +959,7 @@ data class GameState(
     val remainingTimeMillis: Long? = null,
     val message: GameText = GameText(GameTextKey.GameMessageSelectColumn),
     val activeChallenge: DailyChallenge? = null,
+    val blockSortLastMovedCellValues: Set<Int> = emptySet(),
 ) {
     val nextPiece: Piece?
         get() = nextQueue.firstOrNull()

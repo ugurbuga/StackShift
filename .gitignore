@@ -16,6 +16,8 @@ androidApp/google-services.json
 androidApp/src/blockwise/google-services.json
 androidApp/src/stackshift/google-services.json
 androidApp/src/mergeshift/google-services.json
+androidApp/src/blocksort/google-services.json
+androidApp/src/blockgames/google-services.json
 androidApp/src/main/assets/adi-registration.properties
 
 # Log/OS Files

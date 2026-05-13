@@ -27,6 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.cancel
 import blockgames.composeapp.generated.resources.game_message_ad_reward_blockwise
+import blockgames.composeapp.generated.resources.game_message_ad_reward_blocksort
 import blockgames.composeapp.generated.resources.game_message_ad_reward_boomblocks
 import blockgames.composeapp.generated.resources.game_message_ad_reward_mergeshift
 import blockgames.composeapp.generated.resources.leave_session_confirm
@@ -61,6 +62,7 @@ import com.ugurbuga.blockgames.settings.BoomBlocksOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.GameSessionSlot
 import com.ugurbuga.blockgames.settings.GameSessionStorage
 import com.ugurbuga.blockgames.settings.HighScoreStorage
+import com.ugurbuga.blockgames.settings.BlockSortOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.MergeShiftOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.RewardedTokenAdReward
 import com.ugurbuga.blockgames.settings.StackShiftGameOnboardingStateFactory
@@ -128,6 +130,7 @@ private fun isUsableSavedSession(
         GameplayStyle.StackShift -> state.activePiece != null
         GameplayStyle.MergeShift -> state.activePiece != null
         GameplayStyle.BoomBlocks -> true
+        GameplayStyle.BlockSort -> state.board.occupiedCount > 0
     }
 }
 
@@ -201,6 +204,11 @@ internal fun rewardedDockFeedbackSpec(
         GameplayStyle.BoomBlocks -> RewardFeedbackSpec(
             messageRes = Res.string.game_message_ad_reward_boomblocks,
             icon = Icons.Filled.AutoAwesome,
+        )
+
+        GameplayStyle.BlockSort -> RewardFeedbackSpec(
+            messageRes = Res.string.game_message_ad_reward_blocksort,
+            icon = Icons.Filled.Refresh,
         )
     }
 }
@@ -578,6 +586,7 @@ fun BlockGamesAppHost(
             GameplayStyle.BlockWise -> BlockWiseOnboardingStateFactory.initialState()
             GameplayStyle.MergeShift -> MergeShiftOnboardingStateFactory.initialState()
             GameplayStyle.BoomBlocks -> BoomBlocksOnboardingStateFactory.initialState()
+            GameplayStyle.BlockSort -> BlockSortOnboardingStateFactory.initialState()
             else -> StackShiftGameOnboardingStateFactory.initialState()
         }
         gameViewModel = createGameViewModel(initialState)

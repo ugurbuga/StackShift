@@ -4,6 +4,7 @@
 # Android now supports per-flavor Firebase configuration:
 # - stackshift  -> applicationId com.ugurbuga.stackshift
 # - blockwise   -> applicationId com.ugurbuga.blockwise
+# - blocksort   -> applicationId com.ugurbuga.blocksort
 #
 # Legacy non-flavor android keys are still accepted for stackshift only.
 
@@ -22,6 +23,14 @@ firebase.blockwise.storageBucket=
 firebase.blockwise.android.appId=
 firebase.blockwise.android.apiKey=
 firebase.blockwise.android.packageName=com.ugurbuga.blockwise
+
+firebase.blocksort.projectNumber=
+firebase.blocksort.gcmSenderId=
+firebase.blocksort.projectId=
+firebase.blocksort.storageBucket=
+firebase.blocksort.android.appId=
+firebase.blocksort.android.apiKey=
+firebase.blocksort.android.packageName=com.ugurbuga.blocksort
 
 # Legacy fallback keys for the stackshift flavor only.
 firebase.projectNumber=

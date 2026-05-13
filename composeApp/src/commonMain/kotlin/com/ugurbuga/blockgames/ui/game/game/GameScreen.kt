@@ -21,6 +21,7 @@ import com.ugurbuga.blockgames.game.model.GameConfig
 import com.ugurbuga.blockgames.game.model.GameState
 import com.ugurbuga.blockgames.game.model.GameStatus
 import com.ugurbuga.blockgames.game.model.GameplayStyle
+import com.ugurbuga.blockgames.game.model.GridPoint
 import com.ugurbuga.blockgames.game.model.SpecialBlockType
 import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
 import com.ugurbuga.blockgames.platform.feedback.NoOpSoundEffectPlayer
@@ -34,6 +35,8 @@ import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.BoomBlocksOnboardingStage
 import com.ugurbuga.blockgames.settings.BoomBlocksOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.HighScoreStorage
+import com.ugurbuga.blockgames.settings.BlockSortOnboardingStage
+import com.ugurbuga.blockgames.settings.BlockSortOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.MergeShiftOnboardingStage
 import com.ugurbuga.blockgames.settings.MergeShiftOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.OnboardingStage
@@ -50,6 +53,8 @@ import kotlin.time.Duration.Companion.milliseconds
 
 
 private const val InteractiveOnboardingStageAdvanceDelayMillis = 720L
+private const val RewardedReviveTelemetryAction = "rewarded_revive"
+private const val MoveColumnBlockSortTelemetryAction = "move_column_blocksort"
 
 @NonSkippableComposable
 @Composable
@@ -75,6 +80,7 @@ fun BlockGamesGameApp(
             GameplayStyle.BlockWise -> BlockWiseOnboardingStateFactory.stages
             GameplayStyle.MergeShift -> MergeShiftOnboardingStateFactory.stages
             GameplayStyle.BoomBlocks -> BoomBlocksOnboardingStateFactory.stages
+            GameplayStyle.BlockSort -> BlockSortOnboardingStateFactory.stages
             else -> StackShiftGameOnboardingStateFactory.stages
         }
     }
@@ -128,10 +134,17 @@ fun BlockGamesGameApp(
         } else null
     }
 
+    val blockSortOnboardingScene = remember(interactiveOnboardingEnabled, onboardingStage) {
+        if (interactiveOnboardingEnabled && onboardingStage is BlockSortOnboardingStage) {
+            BlockSortOnboardingStateFactory.scene(onboardingStage as BlockSortOnboardingStage)
+        } else null
+    }
+
     val onboardingSceneGameState = stackShiftOnboardingScene?.gameState
         ?: blockWiseOnboardingScene?.gameState
         ?: mergeShiftOnboardingScene?.gameState
         ?: boomBlocksOnboardingScene?.gameState
+        ?: blockSortOnboardingScene?.gameState
 
     val displayGameState by remember(
         uiState.gameState,
@@ -189,6 +202,7 @@ fun BlockGamesGameApp(
                 GameplayStyle.BlockWise -> BlockWiseOnboardingStateFactory.cleanGameState()
                 GameplayStyle.MergeShift -> MergeShiftOnboardingStateFactory.cleanGameState()
                 GameplayStyle.BoomBlocks -> BoomBlocksOnboardingStateFactory.cleanGameState()
+                GameplayStyle.BlockSort -> BlockSortOnboardingStateFactory.cleanGameState()
                 else -> StackShiftGameOnboardingStateFactory.cleanGameState()
             }
             showOnboardingCompletionDialog = true
@@ -312,6 +326,61 @@ fun BlockGamesGameApp(
                 .takeIf { it >= 0 }?.plus(1) ?: 0,
             interactiveOnboardingTotalSteps = onboardingStages.size,
             interactiveOnboardingAwaitingCommit = onboardingAwaitingCommit,
+            interactiveOnboardingCompletionDialogVisible = showOnboardingCompletionDialog,
+            onInteractiveOnboardingStartGame = {
+                pendingOnboardingCompletionState?.let(onInteractiveOnboardingFinished)
+            },
+            onInteractiveOnboardingReturnHome = {
+                pendingOnboardingCompletionState?.let(onInteractiveOnboardingReturnHome)
+            },
+        )
+
+        GameplayStyle.BlockSort -> BlockSortGameScreen(
+            modifier = modifier,
+            gameState = displayGameState,
+            onRequestPreview = { sourceColumn, targetColumn ->
+                viewModel.previewPlacement(sourceColumn.toLong(), GridPoint(targetColumn, 0))
+            },
+            onMove = { sourceColumn, targetColumn ->
+                telemetry.logUserAction(MoveColumnBlockSortTelemetryAction)
+                val result = viewModel.placePieceResult(sourceColumn.toLong(), GridPoint(targetColumn, 0))
+                dispatchFeedback(result.feedback, soundPlayer, haptics)
+
+                if (interactiveOnboardingEnabled && blockSortOnboardingScene != null) {
+                    if (GameEvent.PlacementAccepted in result.events) {
+                        onboardingAdvanceRequest = InteractiveOnboardingAdvanceRequest(
+                            completedStage = blockSortOnboardingScene.stage,
+                            nextStage = nextInteractiveOnboardingStage(
+                                blockSortOnboardingScene.stage,
+                                onboardingStages,
+                            ),
+                        )
+                    }
+                }
+
+                GameEvent.PlacementAccepted in result.events
+            },
+            onRestart = {
+                telemetry.logUserAction(TelemetryActionNames.RestartGame)
+                dispatchFeedback(
+                    viewModel.restart(
+                        config = restartConfigForStyle(uiState.gameState, GameplayStyle.BlockSort),
+                    ),
+                    soundPlayer,
+                    haptics,
+                )
+            },
+            onRewardedRevive = {
+                telemetry.logUserAction(RewardedReviveTelemetryAction)
+                dispatchFeedback(viewModel.reviveFromReward(), soundPlayer, haptics)
+            },
+            onBack = onBack,
+            highestScore = highestScore,
+            showNewHighScoreMessage = newHighScoreReached,
+            interactiveOnboardingScene = blockSortOnboardingScene,
+            interactiveOnboardingCurrentStep = onboardingStages.indexOf(onboardingStage)
+                .takeIf { it >= 0 }?.plus(1) ?: 0,
+            interactiveOnboardingTotalSteps = onboardingStages.size,
             interactiveOnboardingCompletionDialogVisible = showOnboardingCompletionDialog,
             onInteractiveOnboardingStartGame = {
                 pendingOnboardingCompletionState?.let(onInteractiveOnboardingFinished)

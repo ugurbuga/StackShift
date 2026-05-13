@@ -67,12 +67,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import blockgames.composeapp.generated.resources.Res
+import blockgames.composeapp.generated.resources.app_title_blocksort
 import blockgames.composeapp.generated.resources.app_title_blockwise
 import blockgames.composeapp.generated.resources.app_title_boomblocks
 import blockgames.composeapp.generated.resources.app_title_mergeshift
 import blockgames.composeapp.generated.resources.app_title_stackshift
 import blockgames.composeapp.generated.resources.home_play_cta
 import blockgames.composeapp.generated.resources.selection_active_game_badge
+import blockgames.composeapp.generated.resources.selection_blocksort_desc
 import blockgames.composeapp.generated.resources.selection_blockwise_desc
 import blockgames.composeapp.generated.resources.selection_boomblocks_desc
 import blockgames.composeapp.generated.resources.selection_mergeshift_desc
@@ -87,11 +89,15 @@ import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.GridPoint
 import com.ugurbuga.blockgames.game.model.Piece
 import com.ugurbuga.blockgames.game.model.PlacementPreview
+import com.ugurbuga.blockgames.game.model.resolveBoardBlockStyle
+import com.ugurbuga.blockgames.localization.LocalAppSettings
 import com.ugurbuga.blockgames.settings.AppSettings
 import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStage
 import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.BoomBlocksOnboardingStage
 import com.ugurbuga.blockgames.settings.BoomBlocksOnboardingStateFactory
+import com.ugurbuga.blockgames.settings.BlockSortOnboardingStage
+import com.ugurbuga.blockgames.settings.BlockSortOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.MergeShiftOnboardingStage
 import com.ugurbuga.blockgames.settings.MergeShiftOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.StackShiftGameOnboardingStateFactory
@@ -104,6 +110,7 @@ import com.ugurbuga.blockgames.ui.game.BlockStyleActionButton
 import com.ugurbuga.blockgames.ui.game.BoardGrid
 import com.ugurbuga.blockgames.ui.game.PieceBlocks
 import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
+import com.ugurbuga.blockgames.ui.game.game.BlockSortBoard
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
 import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
 import com.ugurbuga.blockgames.ui.theme.appBackgroundBrush
@@ -157,6 +164,20 @@ private data class BoomBlocksDemoScenario(
     val steps: List<BoomBlocksDemoStep>,
 )
 
+private data class BlockSortDemoStep(
+    val beforeState: GameState,
+    val sourceColumn: Int,
+    val targetColumn: Int,
+    val preview: PlacementPreview,
+    val nextState: GameState,
+)
+
+private data class SelectionGameSpec(
+    val style: GameplayStyle,
+    val titleRes: StringResource,
+    val descriptionRes: StringResource,
+)
+
 @Composable
 fun AppSelectionScreen(
     currentStyle: GameplayStyle,
@@ -167,6 +188,15 @@ fun AppSelectionScreen(
 ) {
     val uiColors = BlockGamesThemeTokens.uiColors
     LogScreen(telemetry, TelemetryScreenNames.Selection)
+    val items = remember {
+        listOf(
+            SelectionGameSpec(GameplayStyle.StackShift, Res.string.app_title_stackshift, Res.string.selection_stackshift_desc),
+            SelectionGameSpec(GameplayStyle.BlockWise, Res.string.app_title_blockwise, Res.string.selection_blockwise_desc),
+            SelectionGameSpec(GameplayStyle.BlockSort, Res.string.app_title_blocksort, Res.string.selection_blocksort_desc),
+            SelectionGameSpec(GameplayStyle.MergeShift, Res.string.app_title_mergeshift, Res.string.selection_mergeshift_desc),
+            SelectionGameSpec(GameplayStyle.BoomBlocks, Res.string.app_title_boomblocks, Res.string.selection_boomblocks_desc),
+        )
+    }
 
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
@@ -228,21 +258,15 @@ fun AppSelectionScreen(
                     }
                 }
 
-                val items = listOf(
-                    Triple(GameplayStyle.StackShift, Res.string.app_title_stackshift, Res.string.selection_stackshift_desc),
-                    Triple(GameplayStyle.BlockWise, Res.string.app_title_blockwise, Res.string.selection_blockwise_desc),
-                    Triple(GameplayStyle.MergeShift, Res.string.app_title_mergeshift, Res.string.selection_mergeshift_desc),
-                    Triple(GameplayStyle.BoomBlocks, Res.string.app_title_boomblocks, Res.string.selection_boomblocks_desc),
-                )
-
-                itemsIndexed(items) { index, (style, title, desc) ->
+                itemsIndexed(items) { index, item ->
+                    val style = item.style
                     val isExpanded = expandedStyle == style
                     SelectionItem(
                         modifier = Modifier
                             .padding(horizontal = 24.dp)
                             .widthIn(max = SelectionContentMaxWidth),
-                        title = title,
-                        description = desc,
+                        title = stringResource(item.titleRes),
+                        description = stringResource(item.descriptionRes),
                         tone = style.selectionTone(),
                         style = style,
                         isExpanded = isExpanded,
@@ -266,8 +290,8 @@ fun AppSelectionScreen(
 
 @Composable
 private fun SelectionItem(
-    title: StringResource,
-    description: StringResource,
+    title: String,
+    description: String,
     tone: CellTone,
     style: GameplayStyle,
     isExpanded: Boolean,
@@ -341,7 +365,7 @@ private fun SelectionItem(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = stringResource(title),
+                            text = title,
                             style = MaterialTheme.typography.titleLarge,
                             color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.Bold
@@ -363,7 +387,7 @@ private fun SelectionItem(
                         }
                     }
                     Text(
-                        text = stringResource(description),
+                        text = description,
                         style = MaterialTheme.typography.bodyMedium,
                         color = uiColors.subtitle,
                     )
@@ -415,11 +439,18 @@ private fun SelectionItem(
 @Composable
 private fun GameDemoView(style: GameplayStyle, stylePulse: Float) {
     val uiColors = BlockGamesThemeTokens.uiColors
+    val settings = LocalAppSettings.current
+    val boardStyle = remember(settings.blockVisualStyle, settings.boardBlockStyleMode) {
+        resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
+    }
     val stackShiftScenario = remember(style) {
         if (style == GameplayStyle.StackShift) buildStackShiftDemoScenario() else null
     }
     val blockWiseScenario = remember(style) {
         if (style == GameplayStyle.BlockWise) buildBlockWiseDemoScenario() else null
+    }
+    val blockSortScenario = remember(style) {
+        if (style == GameplayStyle.BlockSort) buildBlockSortDemoScenario() else emptyList()
     }
     val logic = remember(style, stackShiftScenario?.seed) {
         com.ugurbuga.blockgames.game.logic.GameLogic.create(
@@ -432,6 +463,8 @@ private fun GameDemoView(style: GameplayStyle, stylePulse: Float) {
                 ?: StackShiftGameOnboardingStateFactory.scene(StackShiftOnboardingStage.LineClear).gameState
             GameplayStyle.BlockWise -> blockWiseScenario?.steps?.firstOrNull()?.beforeState
                 ?: BlockWiseOnboardingStateFactory.scene(BlockWiseOnboardingStage.CrossClear).gameState
+            GameplayStyle.BlockSort -> blockSortScenario.firstOrNull()?.beforeState
+                ?: BlockSortOnboardingStateFactory.scene(BlockSortOnboardingStage.PickSource).gameState
             GameplayStyle.MergeShift -> MergeShiftOnboardingStateFactory.scene(MergeShiftOnboardingStage.VerticalMerge).gameState
             GameplayStyle.BoomBlocks -> BoomBlocksOnboardingStateFactory.scene(BoomBlocksOnboardingStage.BasicExplosion).gameState
         }
@@ -448,6 +481,7 @@ private fun GameDemoView(style: GameplayStyle, stylePulse: Float) {
     var impactedPreviewCells by remember(style) { mutableStateOf(emptySet<GridPoint>()) }
     var settledDemoPiece by remember(style) { mutableStateOf<Piece?>(null) }
     var settledPreview by remember(style) { mutableStateOf<PlacementPreview?>(null) }
+    var blockSortSelectedSource by remember(style) { mutableStateOf<Int?>(null) }
     var isBoomTapVisible by remember(style) { mutableStateOf(false) }
     val boomTapScale = remember(style) { Animatable(0f) }
 
@@ -459,6 +493,7 @@ private fun GameDemoView(style: GameplayStyle, stylePulse: Float) {
             impactedPreviewCells = emptySet()
             settledDemoPiece = null
             settledPreview = null
+            blockSortSelectedSource = null
             isBoomTapVisible = false
             delay(1000)
 
@@ -573,6 +608,22 @@ private fun GameDemoView(style: GameplayStyle, stylePulse: Float) {
                     }
                 }
 
+                GameplayStyle.BlockSort -> {
+                    val scenarioSteps = blockSortScenario
+                    if (scenarioSteps.isNotEmpty()) {
+                        scenarioSteps.take(SelectionDemoActionCount).forEachIndexed { stepIndex, step ->
+                            if (stepIndex == 0 || gameState != step.beforeState) {
+                                gameState = step.beforeState
+                            }
+                            blockSortSelectedSource = step.sourceColumn
+                            delay(if (stepIndex == 0) 500 else 700)
+                            gameState = step.nextState
+                            blockSortSelectedSource = null
+                            delay(1200)
+                        }
+                    }
+                }
+
                 GameplayStyle.MergeShift -> {
                     repeat(SelectionDemoActionCount) { stepIndex ->
                         val currentConfig = gameState.config
@@ -643,7 +694,7 @@ private fun GameDemoView(style: GameplayStyle, stylePulse: Float) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         val columns = gameState.config.columns
         val rows = gameState.config.rows
-        val availableBoardHeight = if (style == GameplayStyle.BoomBlocks) {
+        val availableBoardHeight = if (style == GameplayStyle.BoomBlocks || style == GameplayStyle.BlockSort) {
             maxHeight
         } else {
             maxHeight * SelectionDemoBoardHeightFractionWithTray
@@ -669,6 +720,26 @@ private fun GameDemoView(style: GameplayStyle, stylePulse: Float) {
                     hintEnabled = false,
                     hintPhase = 0f,
                     stylePulse = stylePulse,
+                )
+            } else if (style == GameplayStyle.BlockSort) {
+                BlockSortBoard(
+                    gameState = gameState,
+                    selectedSourceColumn = blockSortSelectedSource,
+                    interactiveOnboardingScene = null,
+                    onRequestPreview = { source, target ->
+                        if (blockSortSelectedSource != source) {
+                            null
+                        } else {
+                            logic.previewPlacement(gameState, source.toLong(), GridPoint(target, 0))
+                        }
+                    },
+                    onColumnTapped = {},
+                    palette = settings.blockColorPalette,
+                    boardStylePulse = stylePulse,
+                    boardStyle = boardStyle,
+                    modifier = Modifier
+                        .offset(x = boardOffsetX)
+                        .size(actualBoardWidth, actualBoardHeight),
                 )
             } else {
                 BoardGrid(
@@ -744,6 +815,7 @@ private fun GameDemoView(style: GameplayStyle, stylePulse: Float) {
 internal fun GameplayStyle.selectionTone(): CellTone = when (this) {
     GameplayStyle.StackShift -> CellTone.Cyan
     GameplayStyle.BlockWise -> CellTone.Amber
+    GameplayStyle.BlockSort -> CellTone.Emerald
     GameplayStyle.MergeShift -> CellTone.Violet
     GameplayStyle.BoomBlocks -> CellTone.Coral
 }
@@ -751,8 +823,37 @@ internal fun GameplayStyle.selectionTone(): CellTone = when (this) {
 private fun com.ugurbuga.blockgames.ui.theme.BlockGamesUiColors.selectionAccentFor(style: GameplayStyle): Color = when (style) {
     GameplayStyle.StackShift -> selectionStackShift
     GameplayStyle.BlockWise -> selectionBlockWise
+    GameplayStyle.BlockSort -> guideAccent
     GameplayStyle.MergeShift -> selectionMergeShift
     GameplayStyle.BoomBlocks -> selectionBoomBlocks
+}
+
+private fun buildBlockSortDemoScenario(): List<BlockSortDemoStep> {
+    val logic = com.ugurbuga.blockgames.game.logic.GameLogic.create(random = Random(0))
+    return listOf(
+        BlockSortOnboardingStateFactory.scene(BlockSortOnboardingStage.PickSource),
+        BlockSortOnboardingStateFactory.scene(BlockSortOnboardingStage.MatchColor),
+        BlockSortOnboardingStateFactory.scene(BlockSortOnboardingStage.FinishColumn),
+    ).mapNotNull { scene ->
+        val targetColumn = scene.acceptedTargetColumns.firstOrNull() ?: return@mapNotNull null
+        val preview = logic.previewPlacement(
+            scene.gameState,
+            scene.guideSourceColumn.toLong(),
+            GridPoint(targetColumn, 0),
+        ) ?: return@mapNotNull null
+        val nextState = logic.placePiece(
+            scene.gameState,
+            scene.guideSourceColumn.toLong(),
+            GridPoint(targetColumn, 0),
+        ).state
+        BlockSortDemoStep(
+            beforeState = scene.gameState,
+            sourceColumn = scene.guideSourceColumn,
+            targetColumn = targetColumn,
+            preview = preview,
+            nextState = nextState,
+        )
+    }
 }
 
 @Composable

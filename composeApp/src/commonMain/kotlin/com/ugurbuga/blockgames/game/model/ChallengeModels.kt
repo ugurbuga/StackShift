@@ -38,7 +38,7 @@ enum class ChallengeTaskType(
     ),
     PlacePieces(
         stableId = "place_pieces",
-        supportedStyles = setOf(GameplayStyle.BlockWise, GameplayStyle.BoomBlocks),
+        supportedStyles = setOf(GameplayStyle.BlockWise, GameplayStyle.BoomBlocks, GameplayStyle.BlockSort),
     ),
     ClearBothDirections(
         stableId = "clear_both_directions",
@@ -77,6 +77,11 @@ enum class ChallengeTaskType(
             ).getOrNull(ordinal)
 
             GameplayStyle.BoomBlocks -> listOf(
+                ReachScore,
+                PlacePieces,
+            ).getOrNull(ordinal)
+
+            GameplayStyle.BlockSort -> listOf(
                 ReachScore,
                 PlacePieces,
             ).getOrNull(ordinal)

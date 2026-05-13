@@ -3,6 +3,7 @@ package com.ugurbuga.blockgames.localization
 import androidx.compose.runtime.Composable
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.app_title_blockwise
+import blockgames.composeapp.generated.resources.app_title_blocksort
 import blockgames.composeapp.generated.resources.app_title_boomblocks
 import blockgames.composeapp.generated.resources.app_title_mergeshift
 import blockgames.composeapp.generated.resources.app_title_stackshift
@@ -18,7 +19,7 @@ fun appStringResource(resource: StringResource, vararg args: Any): String {
 
 @Composable
 fun appNameStringResource(): String {
-    return stringResource(appNameResourceId())
+    return formatAppString(stringResource(appNameResourceId()))
 }
 
 fun appNameResourceId(): StringResource {
@@ -26,6 +27,7 @@ fun appNameResourceId(): StringResource {
         GameplayStyle.BlockWise -> Res.string.app_title_blockwise
         GameplayStyle.MergeShift -> Res.string.app_title_mergeshift
         GameplayStyle.BoomBlocks -> Res.string.app_title_boomblocks
+        GameplayStyle.BlockSort -> Res.string.app_title_blocksort
         else -> Res.string.app_title_stackshift
     }
 }
@@ -44,6 +46,9 @@ fun formatAppString(raw: String): String {
         }
         GameplayStyle.BoomBlocks -> {
             raw.replace(stackShiftTitle, stringResource(Res.string.app_title_boomblocks))
+        }
+        GameplayStyle.BlockSort -> {
+            raw.replace(stackShiftTitle, stringResource(Res.string.app_title_blocksort))
         }
         else -> raw
     }

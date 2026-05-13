@@ -47,8 +47,8 @@ import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -92,11 +92,16 @@ import blockgames.composeapp.generated.resources.block_properties_heavy_desc
 import blockgames.composeapp.generated.resources.block_properties_heavy_title
 import blockgames.composeapp.generated.resources.block_properties_row_clearer_desc
 import blockgames.composeapp.generated.resources.block_properties_row_clearer_title
+import blockgames.composeapp.generated.resources.blocksort_goal_hint
+import blockgames.composeapp.generated.resources.blocksort_round_complete_hint
 import blockgames.composeapp.generated.resources.game_message_select_column
 import blockgames.composeapp.generated.resources.game_message_special_chain_board
 import blockgames.composeapp.generated.resources.game_message_special_lines
 import blockgames.composeapp.generated.resources.game_message_tempo_up
 import blockgames.composeapp.generated.resources.interactive_onboarding_boomblocks_tap_hint
+import blockgames.composeapp.generated.resources.interactive_onboarding_blocksort_finish_hint
+import blockgames.composeapp.generated.resources.interactive_onboarding_blocksort_match_hint
+import blockgames.composeapp.generated.resources.interactive_onboarding_blocksort_pick_hint
 import blockgames.composeapp.generated.resources.launch_drag_hint
 import blockgames.composeapp.generated.resources.launch_drag_hint_blockwise
 import blockgames.composeapp.generated.resources.launch_soft_lock_message
@@ -115,6 +120,14 @@ import blockgames.composeapp.generated.resources.tutorial_boomblocks_intro_title
 import blockgames.composeapp.generated.resources.tutorial_boomblocks_ready_body
 import blockgames.composeapp.generated.resources.tutorial_boomblocks_ready_title
 import blockgames.composeapp.generated.resources.tutorial_finish
+import blockgames.composeapp.generated.resources.tutorial_blocksort_finish_body
+import blockgames.composeapp.generated.resources.tutorial_blocksort_finish_title
+import blockgames.composeapp.generated.resources.tutorial_blocksort_intro_body
+import blockgames.composeapp.generated.resources.tutorial_blocksort_intro_title
+import blockgames.composeapp.generated.resources.tutorial_blocksort_ready_body
+import blockgames.composeapp.generated.resources.tutorial_blocksort_ready_title
+import blockgames.composeapp.generated.resources.tutorial_blocksort_rules_body
+import blockgames.composeapp.generated.resources.tutorial_blocksort_rules_title
 import blockgames.composeapp.generated.resources.tutorial_intro_body
 import blockgames.composeapp.generated.resources.tutorial_intro_title
 import blockgames.composeapp.generated.resources.tutorial_mergeshift_intro_body
@@ -148,6 +161,7 @@ import blockgames.composeapp.generated.resources.tutorial_systems_title
 import com.ugurbuga.blockgames.BlockGamesTheme
 import com.ugurbuga.blockgames.ads.GameAdController
 import com.ugurbuga.blockgames.ads.NoOpGameAdController
+import com.ugurbuga.blockgames.game.logic.BlockSortGameLogic
 import com.ugurbuga.blockgames.game.logic.GameLogic
 import com.ugurbuga.blockgames.game.model.BoardMatrix
 import com.ugurbuga.blockgames.game.model.CellTone
@@ -165,6 +179,9 @@ import com.ugurbuga.blockgames.game.model.resolveBoardBlockStyle
 import com.ugurbuga.blockgames.localization.LocalAppSettings
 import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
 import com.ugurbuga.blockgames.settings.AppSettings
+import com.ugurbuga.blockgames.settings.BlockSortOnboardingScene
+import com.ugurbuga.blockgames.settings.BlockSortOnboardingStage
+import com.ugurbuga.blockgames.settings.BlockSortOnboardingStateFactory
 import com.ugurbuga.blockgames.telemetry.AppTelemetry
 import com.ugurbuga.blockgames.telemetry.LogScreen
 import com.ugurbuga.blockgames.telemetry.NoOpAppTelemetry
@@ -178,6 +195,7 @@ import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
 import com.ugurbuga.blockgames.ui.game.blockStyleIconTint
 import com.ugurbuga.blockgames.ui.game.boardCellCornerRadiusDp
 import com.ugurbuga.blockgames.ui.game.boardFrameCornerRadiusDp
+import com.ugurbuga.blockgames.ui.game.game.BlockSortBoard
 import com.ugurbuga.blockgames.ui.game.game.GameGrid
 import com.ugurbuga.blockgames.ui.game.game.LaunchGuideLineOverlay
 import com.ugurbuga.blockgames.ui.game.game.columnToLeft
@@ -291,6 +309,10 @@ private enum class TutorialPage {
     BoomBlocksIntro,
     BoomBlocksGravity,
     BoomBlocksReady,
+    BlockSortIntro,
+    BlockSortRules,
+    BlockSortFinish,
+    BlockSortReady,
 }
 
 internal fun tutorialBoomBlocksIntroScene(): TutorialDemoScene {
@@ -593,6 +615,13 @@ fun GameTutorialScreen(
                 TutorialPage.StackShiftSystems,
                 TutorialPage.BoomBlocksReady,
             )
+
+            GameplayStyle.BlockSort -> listOf(
+                TutorialPage.BlockSortIntro,
+                TutorialPage.BlockSortRules,
+                TutorialPage.BlockSortFinish,
+                TutorialPage.BlockSortReady,
+            )
         }
     }
     val totalSteps = tutorialPages.size
@@ -703,6 +732,10 @@ fun GameTutorialScreen(
                                 TutorialPage.BoomBlocksIntro -> TutorialBoomBlocksIntroStep()
                                 TutorialPage.BoomBlocksGravity -> TutorialBoomBlocksGravityStep()
                                 TutorialPage.BoomBlocksReady -> TutorialBoomBlocksReadyStep()
+                                TutorialPage.BlockSortIntro -> TutorialBlockSortIntroStep()
+                                TutorialPage.BlockSortRules -> TutorialBlockSortRulesStep()
+                                TutorialPage.BlockSortFinish -> TutorialBlockSortFinishStep()
+                                TutorialPage.BlockSortReady -> TutorialBlockSortReadyStep()
                             }
                         }
                     }
@@ -1156,6 +1189,90 @@ private fun TutorialBoomBlocksReadyStep() {
         body = stringResource(Res.string.tutorial_boomblocks_ready_body),
     ) {
         TutorialHintCard(text = stringResource(Res.string.tutorial_ready_settings_hint))
+    }
+}
+
+@Composable
+private fun TutorialBlockSortIntroStep() {
+    val scene = remember { BlockSortOnboardingStateFactory.scene(BlockSortOnboardingStage.PickSource) }
+    TutorialSection(
+        title = stringResource(Res.string.tutorial_blocksort_intro_title),
+        body = stringResource(Res.string.tutorial_blocksort_intro_body),
+    ) {
+        TutorialBlockSortBoardDemo(scene = scene)
+        TutorialHintCard(text = stringResource(Res.string.interactive_onboarding_blocksort_pick_hint))
+    }
+}
+
+@Composable
+private fun TutorialBlockSortRulesStep() {
+    val scene = remember { BlockSortOnboardingStateFactory.scene(BlockSortOnboardingStage.MatchColor) }
+    TutorialSection(
+        title = stringResource(Res.string.tutorial_blocksort_rules_title),
+        body = stringResource(Res.string.tutorial_blocksort_rules_body),
+    ) {
+        TutorialBlockSortBoardDemo(scene = scene)
+        TutorialHintCard(text = stringResource(Res.string.interactive_onboarding_blocksort_match_hint))
+    }
+}
+
+@Composable
+private fun TutorialBlockSortFinishStep() {
+    val scene = remember { BlockSortOnboardingStateFactory.scene(BlockSortOnboardingStage.FinishColumn) }
+    TutorialSection(
+        title = stringResource(Res.string.tutorial_blocksort_finish_title),
+        body = stringResource(Res.string.tutorial_blocksort_finish_body),
+    ) {
+        TutorialBlockSortBoardDemo(scene = scene)
+        TutorialHintCard(text = stringResource(Res.string.interactive_onboarding_blocksort_finish_hint))
+    }
+}
+
+@Composable
+private fun TutorialBlockSortReadyStep() {
+    TutorialSection(
+        title = stringResource(Res.string.tutorial_blocksort_ready_title),
+        body = stringResource(Res.string.tutorial_blocksort_ready_body),
+    ) {
+        TutorialHintCard(text = stringResource(Res.string.blocksort_goal_hint))
+        TutorialHintCard(text = stringResource(Res.string.blocksort_round_complete_hint, 1200))
+    }
+}
+
+@Composable
+private fun TutorialBlockSortBoardDemo(
+    scene: BlockSortOnboardingScene,
+    modifier: Modifier = Modifier,
+) {
+    val settings = LocalAppSettings.current
+    val boardStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
+    val logic = remember { BlockSortGameLogic() }
+    val targetColumn = remember(scene) { scene.acceptedTargetColumns.firstOrNull() ?: scene.guideSourceColumn }
+
+    TutorialMiniBoardShell(modifier = modifier) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(280.dp),
+        ) {
+            BlockSortBoard(
+                gameState = scene.gameState,
+                selectedSourceColumn = scene.guideSourceColumn,
+                interactiveOnboardingScene = scene,
+                onRequestPreview = { source, target ->
+                    if (source != scene.guideSourceColumn) {
+                        null
+                    } else {
+                        logic.previewPlacement(scene.gameState, source.toLong(), GridPoint(target, 0))
+                    }
+                },
+                onColumnTapped = {},
+                palette = settings.blockColorPalette,
+                boardStylePulse = 0f,
+                boardStyle = boardStyle,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }
 

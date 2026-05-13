@@ -9,6 +9,8 @@ import com.ugurbuga.blockgames.game.model.BlockColorPalette
 import com.ugurbuga.blockgames.game.model.BlockVisualStyle
 import com.ugurbuga.blockgames.game.model.BoardBlockStyleMode
 import com.ugurbuga.blockgames.game.model.GameplayStyle
+import com.ugurbuga.blockgames.game.model.gameplayStyleFromPersistedValue
+import com.ugurbuga.blockgames.game.model.persistedKeys
 import com.ugurbuga.blockgames.game.model.resolveUnifiedThemePalette
 
 actual object AppSettingsStorage {
@@ -93,7 +95,12 @@ actual object AppSettingsStorage {
                 BlockVisualStyle.entries,
             ),
             styleChallengeProgress = GameplayStyle.entries.associateWith { style ->
-                decodeChallengeProgress(prefs.getSafeString(KeyChallengeProgressPrefix + style.name.lowercase(), null))
+                decodeChallengeProgress(
+                    style.persistedKeys()
+                        .asSequence()
+                        .mapNotNull { key -> prefs.getSafeString(KeyChallengeProgressPrefix + key, null) }
+                        .firstOrNull()
+                )
             }.filterValues { it.completedDays.isNotEmpty() },
             lastAppOpenedAtEpochMillis = prefs.getLong(
                 KeyLastAppOpenedAtEpochMillis,
@@ -103,7 +110,7 @@ actual object AppSettingsStorage {
                 GameSessionSlot.fromKey(it)
             },
             selectedGameplayStyle = prefs.getString(KeySelectedGameplayStyle, null)?.let {
-                GameplayStyle.valueOf(it)
+                gameplayStyleFromPersistedValue(it)
             },
         ).sanitized()
     }

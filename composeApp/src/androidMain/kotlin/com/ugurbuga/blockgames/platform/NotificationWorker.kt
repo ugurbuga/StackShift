@@ -22,6 +22,7 @@ import com.ugurbuga.blockgames.settings.shouldSendMissYouReminder
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
 import blockgames.composeapp.generated.resources.Res
+import blockgames.composeapp.generated.resources.app_title_blocksort
 import blockgames.composeapp.generated.resources.app_title_blockwise
 import blockgames.composeapp.generated.resources.app_title_boomblocks
 import blockgames.composeapp.generated.resources.app_title_mergeshift
@@ -158,6 +159,7 @@ class NotificationWorker(
 }
 
 private fun GameplayStyle.appTitleResource(): StringResource = when (this) {
+    GameplayStyle.BlockSort -> Res.string.app_title_blocksort
     GameplayStyle.BlockWise -> Res.string.app_title_blockwise
     GameplayStyle.MergeShift -> Res.string.app_title_mergeshift
     GameplayStyle.BoomBlocks -> Res.string.app_title_boomblocks

@@ -1,11 +1,13 @@
 package com.ugurbuga.blockgames.settings
 
+import com.ugurbuga.blockgames.game.model.GameplayStyle
+import com.ugurbuga.blockgames.game.model.gameplayStyleFromPersistedValue
+
 import com.ugurbuga.blockgames.game.model.AppColorPalette
 import com.ugurbuga.blockgames.game.model.AppThemeMode
 import com.ugurbuga.blockgames.game.model.BlockVisualStyle
 import com.ugurbuga.blockgames.game.model.ChallengeProgress
 import com.ugurbuga.blockgames.game.model.DailyChallenge
-import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.normalizeBlockVisualStyle
 import com.ugurbuga.blockgames.platform.isDebugBuild
 
@@ -209,7 +211,16 @@ internal fun <T : Enum<T>> decodeEnumSet(raw: String?, entries: List<T>): Set<T>
     val normalized = normalizePersistedDelimitedValue(raw) ?: return emptySet()
     return normalized
         .split(';', ',')
-        .mapNotNull { encoded -> entries.firstOrNull { it.name == encoded.trim() } }
+        .mapNotNull { encoded ->
+            val trimmed = encoded.trim()
+            entries.firstOrNull { it.name == trimmed }
+                ?: if (entries.firstOrNull() is GameplayStyle) {
+                    @Suppress("UNCHECKED_CAST")
+                    gameplayStyleFromPersistedValue(trimmed) as T?
+                } else {
+                    null
+                }
+        }
         .toSet()
 }
 

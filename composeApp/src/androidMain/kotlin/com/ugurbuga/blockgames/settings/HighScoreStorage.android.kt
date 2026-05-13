@@ -43,6 +43,11 @@ actual object HighScoreStorage {
                 GameMode.Classic -> "highScoreClassicBoomBlocks"
                 GameMode.TimeAttack -> "highScoreTimeAttackBoomBlocks"
             }
+
+            GameplayStyle.BlockSort -> when (mode) {
+                GameMode.Classic -> "highScoreClassicBlockSort"
+                GameMode.TimeAttack -> "highScoreTimeAttackBlockSort"
+            }
         }
     }
 }

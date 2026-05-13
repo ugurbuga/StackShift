@@ -65,6 +65,8 @@ import androidx.compose.ui.unit.sp
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.app_title_banner_blockwise_bottom
 import blockgames.composeapp.generated.resources.app_title_banner_blockwise_top
+import blockgames.composeapp.generated.resources.app_title_banner_blocksort_bottom
+import blockgames.composeapp.generated.resources.app_title_banner_blocksort_top
 import blockgames.composeapp.generated.resources.app_title_banner_boomblocks_bottom
 import blockgames.composeapp.generated.resources.app_title_banner_boomblocks_top
 import blockgames.composeapp.generated.resources.app_title_banner_stackshift_bottom
@@ -302,6 +304,120 @@ private fun HomeTitleBanner(
         GameplayStyle.BlockWise -> BlockWiseHomeTitleBanner(settings, pulse, modifier)
         GameplayStyle.MergeShift -> MergeShiftHomeTitleBanner(settings, pulse, modifier)
         GameplayStyle.BoomBlocks -> BoomBlocksHomeTitleBanner(settings, pulse, modifier)
+        GameplayStyle.BlockSort -> BlockSortHomeTitleBanner(settings, pulse, modifier)
+    }
+}
+
+@Composable
+private fun BlockSortHomeTitleBanner(
+    settings: AppSettings,
+    pulse: Float,
+    modifier: Modifier = Modifier,
+) {
+    val uiColors = BlockGamesThemeTokens.uiColors
+    val bannerMotionTransition = rememberInfiniteTransition(label = "blockSortBannerMotion")
+    val sequenceClock by bannerMotionTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 4200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "blockSortBannerSequenceClock",
+    )
+    val phase = normalizedPhase(sequenceClock)
+    val topRow = rememberHomeTitleRow(
+        word = stringResource(Res.string.app_title_banner_blocksort_top),
+        startColumn = 0,
+    )
+    val bottomRow = rememberHomeTitleRow(
+        word = stringResource(Res.string.app_title_banner_blocksort_bottom),
+        startColumn = 1,
+    )
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .blockGamesSurfaceShadow(
+                shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
+                elevation = 10.dp,
+            ),
+        shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
+        colors = CardDefaults.cardColors(containerColor = uiColors.gameSurface.copy(alpha = 0.94f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.82f)),
+    ) {
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(6f / 3.8f)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            uiColors.panelHighlight.copy(alpha = 0.20f),
+                            uiColors.success.copy(alpha = 0.10f),
+                            Color.Transparent,
+                        ),
+                    ),
+                ),
+        ) {
+            val cellWidth = maxWidth / HomeTitleBannerColumns
+            val boardCellHeight = cellWidth
+            val rowShift = boardCellHeight * (0.08f * phase)
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = boardCellHeight * 0.65f),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .height(boardCellHeight)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    topRow.forEach { cell ->
+                        val cellModifier = Modifier.size(boardCellHeight)
+                        if (cell == null) {
+                            HomeTitleEmptyCell(settings = settings, pulse = pulse, modifier = cellModifier)
+                        } else {
+                            HomeTitleAnimatedCell(
+                                letter = cell.letter,
+                                tone = cell.tone,
+                                settings = settings,
+                                pulse = pulse,
+                                alpha = 0.92f,
+                                modifier = cellModifier,
+                                offsetY = -rowShift,
+                            )
+                        }
+                    }
+                }
+                Row(
+                    modifier = Modifier
+                        .height(boardCellHeight)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    bottomRow.forEach { cell ->
+                        val cellModifier = Modifier.size(boardCellHeight)
+                        if (cell == null) {
+                            HomeTitleEmptyCell(settings = settings, pulse = pulse, modifier = cellModifier)
+                        } else {
+                            HomeTitleAnimatedCell(
+                                letter = cell.letter,
+                                tone = cell.tone,
+                                settings = settings,
+                                pulse = pulse,
+                                alpha = 1f,
+                                modifier = cellModifier,
+                                offsetY = rowShift,
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

@@ -7,7 +7,9 @@ import com.ugurbuga.blockgames.game.model.BlockColorPalette
 import com.ugurbuga.blockgames.game.model.BlockVisualStyle
 import com.ugurbuga.blockgames.game.model.BoardBlockStyleMode
 import com.ugurbuga.blockgames.game.model.GameplayStyle
+import com.ugurbuga.blockgames.game.model.gameplayStyleFromPersistedValue
 import com.ugurbuga.blockgames.game.model.normalizeBlockVisualStyle
+import com.ugurbuga.blockgames.game.model.persistedKeys
 import com.ugurbuga.blockgames.game.model.resolveUnifiedThemePalette
 import java.util.prefs.Preferences
 
@@ -44,14 +46,19 @@ actual object AppSettingsStorage {
             unlockedThemePalettes = decodeEnumSet(prefs.getSafeString(KeyUnlockedThemePalettes, null), AppColorPalette.entries),
             unlockedBlockStyles = decodeEnumSet(prefs.getSafeString(KeyUnlockedBlockStyles, null), BlockVisualStyle.entries),
             styleChallengeProgress = com.ugurbuga.blockgames.game.model.GameplayStyle.entries.associateWith { style ->
-                decodeChallengeProgress(prefs.getSafeString(KeyChallengeProgressPrefix + style.name.lowercase(), null))
+                decodeChallengeProgress(
+                    style.persistedKeys()
+                        .asSequence()
+                        .mapNotNull { key -> prefs.getSafeString(KeyChallengeProgressPrefix + key, null) }
+                        .firstOrNull()
+                )
             }.filterValues { it.completedDays.isNotEmpty() },
             lastAppOpenedAtEpochMillis = prefs.getLong(KeyLastAppOpenedAtEpochMillis, defaultSettings.lastAppOpenedAtEpochMillis),
             lastActiveSlot = prefs.get(KeyLastActiveSlot, null)?.let {
                 GameSessionSlot.fromKey(it)
             },
             selectedGameplayStyle = prefs.get(KeySelectedGameplayStyle, null)?.let {
-                com.ugurbuga.blockgames.game.model.GameplayStyle.valueOf(it)
+                gameplayStyleFromPersistedValue(it)
             },
         ).sanitized()
     }

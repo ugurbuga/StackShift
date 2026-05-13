@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.drawable.toDrawable
 import com.ugurbuga.blockgames.ads.AndroidAdMobIds
 import com.ugurbuga.blockgames.game.model.GameplayStyle
+import com.ugurbuga.blockgames.game.model.gameplayStyleFromPersistedValue
 import com.ugurbuga.blockgames.platform.NotificationWorker
 import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
 import com.ugurbuga.blockgames.settings.AppContextHolder
@@ -87,7 +88,7 @@ class MainActivity : ComponentActivity() {
 
     private fun resolveGameplayStyleOverride(intent: Intent?): GameplayStyle? {
         val rawStyle = intent?.getStringExtra(NotificationWorker.EXTRA_TARGET_GAMEPLAY_STYLE) ?: return null
-        return GameplayStyle.entries.firstOrNull { it.name == rawStyle }
+        return gameplayStyleFromPersistedValue(rawStyle)
     }
 }
 

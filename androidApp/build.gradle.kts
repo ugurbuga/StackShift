@@ -64,6 +64,12 @@ private val androidFlavorConfigs = listOf(
         versionName = "1.0.1",
     ),
     AndroidFlavorConfig(
+        name = "BlockSort",
+        applicationId = "com.ugurbuga.blocksort",
+        versionCode = 1,
+        versionName = "1.0.0",
+    ),
+    AndroidFlavorConfig(
         name = "MergeShift",
         applicationId = "com.ugurbuga.mergeshift",
         versionCode = 1,

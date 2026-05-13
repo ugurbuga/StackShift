@@ -22,6 +22,7 @@ import com.ugurbuga.blockgames.game.model.PlacementPreview
 import com.ugurbuga.blockgames.game.model.PressureLevel
 import com.ugurbuga.blockgames.game.model.SoftLockState
 import com.ugurbuga.blockgames.game.model.SpecialBlockType
+import com.ugurbuga.blockgames.game.model.gameplayStyleFromPersistedValue
 import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
 
 sealed class GameSessionSlot {
@@ -45,21 +46,21 @@ sealed class GameSessionSlot {
             key == "classic" -> Classic(GlobalPlatformConfig.gameplayStyle)
             key.startsWith("classic_") -> {
                 val styleName = key.removePrefix("classic_")
-                val style = GameplayStyle.entries.firstOrNull { it.name.lowercase() == styleName }
+                val style = gameplayStyleFromPersistedValue(styleName)
                 style?.let(::Classic)
             }
 
             key == "time_attack" -> TimeAttack(GlobalPlatformConfig.gameplayStyle)
             key.startsWith("time_attack_") -> {
                 val styleName = key.removePrefix("time_attack_")
-                val style = GameplayStyle.entries.firstOrNull { it.name.lowercase() == styleName }
+                val style = gameplayStyleFromPersistedValue(styleName)
                 style?.let(::TimeAttack)
             }
 
             key.startsWith("daily_challenge_") -> {
                 val parts = key.removePrefix("daily_challenge_").split("_", limit = 2)
                 if (parts.size == 2) {
-                    val style = GameplayStyle.entries.firstOrNull { it.name.lowercase() == parts[0] }
+                    val style = gameplayStyleFromPersistedValue(parts[0])
                     if (style != null) DailyChallenge(parts[1], style) else null
                 } else null
             }

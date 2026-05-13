@@ -36,6 +36,7 @@ object ChallengeGenerator {
                     GameplayStyle.BlockWise -> random.nextInt(2, 8) * 1000
                     GameplayStyle.MergeShift -> (random.nextInt(5, 15) * 1000)
                     GameplayStyle.BoomBlocks -> random.nextInt(15, 40) * 1000
+                    GameplayStyle.BlockSort -> random.nextInt(3, 10) * 1000
                 }
                 ChallengeTaskType.TriggerSpecial -> random.nextInt(2, 6)
                 ChallengeTaskType.PerfectPlacement -> random.nextInt(10, 20)
@@ -44,6 +45,7 @@ object ChallengeGenerator {
                 ChallengeTaskType.ClearColumns -> random.nextInt(3, 9)
                 ChallengeTaskType.PlacePieces -> when (gameplayStyle) {
                     GameplayStyle.BoomBlocks -> random.nextInt(40, 100)
+                    GameplayStyle.BlockSort -> random.nextInt(10, 24)
                     else -> random.nextInt(12, 28)
                 }
                 ChallengeTaskType.ClearBothDirections -> random.nextInt(1, 4)

@@ -7,6 +7,7 @@ import com.ugurbuga.blockgames.game.model.BlockColorPalette
 import com.ugurbuga.blockgames.game.model.BlockVisualStyle
 import com.ugurbuga.blockgames.game.model.BoardBlockStyleMode
 import com.ugurbuga.blockgames.game.model.GameplayStyle
+import com.ugurbuga.blockgames.game.model.gameplayStyleFromPersistedValue
 import com.ugurbuga.blockgames.game.model.normalizeBlockVisualStyle
 import com.ugurbuga.blockgames.game.model.resolveUnifiedThemePalette
 
@@ -38,7 +39,7 @@ actual object AppSettingsStorage {
             styleChallengeProgress = decodeStyleChallengeProgress(parts.getOrNull(10) ?: parts.getOrNull(9)),
             lastAppOpenedAtEpochMillis = parts.getOrNull(15)?.toLongOrNull() ?: defaultSettings.lastAppOpenedAtEpochMillis,
             lastActiveSlot = parts.getOrNull(17)?.let { GameSessionSlot.fromKey(it) },
-            selectedGameplayStyle = parts.getOrNull(18)?.takeIf(String::isNotBlank)?.let(GameplayStyle::valueOf),
+            selectedGameplayStyle = parts.getOrNull(18)?.takeIf(String::isNotBlank)?.let(::gameplayStyleFromPersistedValue),
             seenTutorialStyles = decodeEnumSet(parts.getOrNull(19), GameplayStyle.entries),
             shownInteractiveOnboardingStyles = decodeEnumSet(parts.getOrNull(20), GameplayStyle.entries),
         ).sanitized()
