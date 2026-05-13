@@ -293,7 +293,7 @@ private enum class TutorialPage {
     BoomBlocksReady,
 }
 
-private fun tutorialBoomBlocksIntroScene(): TutorialDemoScene {
+internal fun tutorialBoomBlocksIntroScene(): TutorialDemoScene {
     val target = setOf(GridPoint(2, 2), GridPoint(1, 2), GridPoint(3, 2))
     val board = BoardMatrix.empty(columns = 5, rows = 5)
         .fillPattern(
@@ -322,7 +322,7 @@ private fun tutorialBoomBlocksIntroScene(): TutorialDemoScene {
     )
 }
 
-private fun tutorialBoomBlocksGravityScene(): TutorialDemoScene {
+internal fun tutorialBoomBlocksGravityScene(): TutorialDemoScene {
     val target = setOf(GridPoint(0, 0), GridPoint(1, 0), GridPoint(0, 1))
     val board = BoardMatrix.empty(columns = 5, rows = 5)
         .fillPattern(
@@ -351,7 +351,7 @@ private fun tutorialBoomBlocksGravityScene(): TutorialDemoScene {
     )
 }
 
-private fun BoardMatrix.fillPattern(
+internal fun BoardMatrix.fillPattern(
     exclude: Set<GridPoint> = emptySet(),
     disallowedTones: Set<CellTone> = emptySet(),
 ): BoardMatrix {
@@ -375,17 +375,17 @@ private fun BoardMatrix.fillPattern(
     return result
 }
 
-private fun BoardMatrix.fill(point: GridPoint, tone: CellTone): BoardMatrix {
+internal fun BoardMatrix.fill(point: GridPoint, tone: CellTone): BoardMatrix {
     return this.fill(listOf(point), tone, value = (point.column * 100 + point.row + 5000))
 }
 
-private data class TutorialDemoScene(
+internal data class TutorialDemoScene(
     val gameState: GameState,
     val spawnColumn: Int,
     val autoColumns: List<Int>,
 )
 
-private fun tutorialPreviewGameState(
+internal fun tutorialPreviewGameState(
     board: BoardMatrix,
     activePiece: Piece,
     nextQueue: List<Piece> = listOf(TutorialNextPiece),

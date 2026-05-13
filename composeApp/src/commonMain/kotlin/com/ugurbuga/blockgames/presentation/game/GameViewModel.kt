@@ -1,5 +1,6 @@
 package com.ugurbuga.blockgames.presentation.game
 
+import androidx.compose.runtime.Stable
 import com.ugurbuga.blockgames.game.logic.GameEvent
 import com.ugurbuga.blockgames.game.logic.GameLogic
 import com.ugurbuga.blockgames.game.model.DailyChallenge
@@ -17,6 +18,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.StateFlow
 
+@Stable
 class GameViewModel(
     private val gameLogic: GameLogic = GameLogic.create(),
     initialState: GameState? = null,
@@ -134,12 +136,3 @@ data class GameDispatchResult(
     val events: Set<GameEvent> = emptySet(),
     val feedback: InteractionFeedback = InteractionFeedback.None,
 )
-
-fun GameDispatchResult.mergeWith(other: GameDispatchResult): GameDispatchResult = GameDispatchResult(
-    events = events + other.events,
-    feedback = InteractionFeedback(
-        sounds = feedback.sounds + other.feedback.sounds,
-        haptics = feedback.haptics + other.feedback.haptics,
-    ),
-)
-

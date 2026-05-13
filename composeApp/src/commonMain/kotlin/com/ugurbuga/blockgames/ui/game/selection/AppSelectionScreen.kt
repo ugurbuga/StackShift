@@ -59,10 +59,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -101,8 +100,8 @@ import com.ugurbuga.blockgames.telemetry.AppTelemetry
 import com.ugurbuga.blockgames.telemetry.LogScreen
 import com.ugurbuga.blockgames.telemetry.NoOpAppTelemetry
 import com.ugurbuga.blockgames.telemetry.TelemetryScreenNames
-import com.ugurbuga.blockgames.ui.game.BoardGrid
 import com.ugurbuga.blockgames.ui.game.BlockStyleActionButton
+import com.ugurbuga.blockgames.ui.game.BoardGrid
 import com.ugurbuga.blockgames.ui.game.PieceBlocks
 import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
@@ -742,7 +741,7 @@ private fun GameDemoView(style: GameplayStyle, stylePulse: Float) {
     }
 }
 
-private fun GameplayStyle.selectionTone(): CellTone = when (this) {
+internal fun GameplayStyle.selectionTone(): CellTone = when (this) {
     GameplayStyle.StackShift -> CellTone.Cyan
     GameplayStyle.BlockWise -> CellTone.Amber
     GameplayStyle.MergeShift -> CellTone.Violet
@@ -794,7 +793,7 @@ private fun DemoTrayPieces(
     }
 }
 
-private fun findPreferredColumnPlacement(
+internal fun findPreferredColumnPlacement(
     state: GameState,
     preferredColumns: List<Int>,
     previewProvider: (GameState, Int) -> PlacementPreview?,
@@ -815,7 +814,7 @@ private fun findPreferredColumnPlacement(
         }
 }
 
-private fun mergeShiftPreferredColumnsForStep(stepIndex: Int): List<Int> = when (stepIndex % 6) {
+internal fun mergeShiftPreferredColumnsForStep(stepIndex: Int): List<Int> = when (stepIndex % 6) {
     0 -> listOf(0, 2, 1)
     1 -> listOf(2, 0, 1)
     2 -> listOf(1, 0, 2)
@@ -895,7 +894,7 @@ private fun findAllColumnPlacements(
     }
 }
 
-private fun demoTrayLeftFraction(
+internal fun demoTrayLeftFraction(
     piece: Piece,
     slotIndex: Int,
     columns: Int,
@@ -905,7 +904,7 @@ private fun demoTrayLeftFraction(
     return slotCenter - halfPieceWidth
 }
 
-private fun demoTrayTopFraction(
+internal fun demoTrayTopFraction(
     piece: Piece,
     rows: Int,
 ): Float {

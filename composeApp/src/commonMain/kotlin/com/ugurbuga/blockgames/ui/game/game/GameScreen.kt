@@ -2,6 +2,7 @@ package com.ugurbuga.blockgames.ui.game.game
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.NonSkippableComposable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -11,6 +12,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import com.ugurbuga.blockgames.BlockGamesTheme
 import com.ugurbuga.blockgames.ads.GameAdController
 import com.ugurbuga.blockgames.ads.NoOpGameAdController
 import com.ugurbuga.blockgames.game.logic.GameEvent
@@ -34,6 +37,7 @@ import com.ugurbuga.blockgames.settings.HighScoreStorage
 import com.ugurbuga.blockgames.settings.MergeShiftOnboardingStage
 import com.ugurbuga.blockgames.settings.MergeShiftOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.OnboardingStage
+import com.ugurbuga.blockgames.settings.AppSettings
 import com.ugurbuga.blockgames.settings.StackShiftGameOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.StackShiftOnboardingStage
 import com.ugurbuga.blockgames.telemetry.AppTelemetry
@@ -47,6 +51,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 private const val InteractiveOnboardingStageAdvanceDelayMillis = 720L
 
+@NonSkippableComposable
 @Composable
 fun BlockGamesGameApp(
     modifier: Modifier = Modifier,
@@ -90,7 +95,7 @@ fun BlockGamesGameApp(
     var pendingOnboardingCompletionState by remember(interactiveOnboardingEnabled) {
         mutableStateOf<GameState?>(null)
     }
-    var shouldShowLaunchOverlay by rememberSaveable { mutableStateOf(value = true) }
+    val shouldShowLaunchOverlay = rememberSaveable { mutableStateOf(value = true) }
 
     LaunchedEffect(uiState.gameState.status) {
         while (uiState.gameState.status == GameStatus.Running) {
@@ -441,8 +446,8 @@ fun BlockGamesGameApp(
             soundPlayer = soundPlayer,
             haptics = haptics,
             highestScore = highestScore,
-            showLaunchOverlayInitially = shouldShowLaunchOverlay,
-            onLaunchOverlayFinished = { shouldShowLaunchOverlay = false },
+            showLaunchOverlayInitially = shouldShowLaunchOverlay.value,
+            onLaunchOverlayFinished = { shouldShowLaunchOverlay.value = false },
             showNewHighScoreMessage = newHighScoreReached,
             interactiveOnboardingScene = stackShiftOnboardingScene,
             interactiveOnboardingCurrentStep = onboardingStages.indexOf(onboardingStage)
@@ -515,14 +520,14 @@ fun BlockGamesGameApp(
     }
 }
 
-private fun GameState.hiddenOnboardingPreviewState(): GameState = copy(
+internal fun GameState.hiddenOnboardingPreviewState(): GameState = copy(
     activePiece = null,
     nextQueue = emptyList(),
     holdPiece = null,
     canHold = false,
 )
 
-private fun restartConfigForStyle(
+internal fun restartConfigForStyle(
     state: GameState,
     expectedStyle: GameplayStyle,
 ): GameConfig {
@@ -543,7 +548,7 @@ private data class InteractiveOnboardingAdvanceRequest(
     val nextStage: OnboardingStage?,
 )
 
-private fun nextInteractiveOnboardingStage(
+internal fun nextInteractiveOnboardingStage(
     currentStage: OnboardingStage,
     stages: List<OnboardingStage>,
 ): OnboardingStage? {
@@ -551,3 +556,15 @@ private fun nextInteractiveOnboardingStage(
     if (currentIndex < 0) return null
     return stages.getOrNull(currentIndex + 1)
 }
+
+@Preview(name = "Game App", widthDp = 412, heightDp = 915)
+@Composable
+private fun BlockGamesGameAppPreview() {
+    GlobalPlatformConfig.gameplayStyle = GameplayStyle.StackShift
+    BlockGamesTheme(settings = AppSettings()) {
+        BlockGamesGameApp(
+            telemetry = NoOpAppTelemetry,
+        )
+    }
+}
+

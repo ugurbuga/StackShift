@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
@@ -96,6 +95,7 @@ import com.ugurbuga.blockgames.ui.game.InteractiveOnboardingCompletionDialog
 import com.ugurbuga.blockgames.ui.game.MinimalTopBar
 import com.ugurbuga.blockgames.ui.game.PieceBlocks
 import com.ugurbuga.blockgames.ui.game.RestartConfirmDialog
+import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
 import com.ugurbuga.blockgames.ui.game.boardFrameCornerRadiusDp
 import com.ugurbuga.blockgames.ui.game.dailychallenge.ChallengeTasksDock
 import com.ugurbuga.blockgames.ui.game.onboarding.InteractiveOnboardingInfoCard
@@ -220,10 +220,10 @@ fun MergeShiftGameScreen(
     var isLaunching by remember { mutableStateOf(false) }
     
     val boardRect by remember(boardRectInRoot, overlayHostRectInRoot) {
-        derivedStateOf { boardRectInRoot.toLocalRect(overlayHostRectInRoot) }
+        derivedStateOf { boardRectInRoot.toMergeShiftLocalRect(overlayHostRectInRoot) }
     }
     val trayRect by remember(trayRectInRoot, overlayHostRectInRoot) {
-        derivedStateOf { trayRectInRoot.toLocalRect(overlayHostRectInRoot) }
+        derivedStateOf { trayRectInRoot.toMergeShiftLocalRect(overlayHostRectInRoot) }
     }
     val cellSizePx by remember(boardRect, gameState.config) {
         derivedStateOf {
@@ -838,12 +838,12 @@ private fun MergeShiftOnboardingMultiMergePreview() {
     }
 }
 
-private fun Rect.toLocalRect(hostRect: Rect): Rect {
+internal fun Rect.toMergeShiftLocalRect(hostRect: Rect): Rect {
     if (this == Rect.Zero || hostRect == Rect.Zero) return Rect.Zero
     return Rect(
-        left - hostRect.left,
-        top - hostRect.top,
-        right - hostRect.left,
-        bottom - hostRect.top,
+        this.left - hostRect.left,
+        this.top - hostRect.top,
+        this.right - hostRect.left,
+        this.bottom - hostRect.top,
     )
 }

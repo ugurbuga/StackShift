@@ -413,17 +413,9 @@ fun GameScreen(
     }
     var isDragging by remember { mutableStateOf(value = false) }
     var isLaunching by remember { mutableStateOf(value = false) }
-    val boardRect by remember(boardRectInRoot, overlayHostRectInRoot) {
-        derivedStateOf { boardRectInRoot.toLocalRect(overlayHostRectInRoot) }
-    }
-    val trayRect by remember(trayRectInRoot, overlayHostRectInRoot) {
-        derivedStateOf { trayRectInRoot.toLocalRect(overlayHostRectInRoot) }
-    }
-    val cellSizePx by remember(boardRect, gameState.config) {
-        derivedStateOf {
-            if (boardRect.width == 0f) 0f else boardRect.width / gameState.config.columns
-        }
-    }
+    val boardRect = boardRectInRoot.toStackShiftLocalRect(overlayHostRectInRoot)
+    val trayRect = trayRectInRoot.toStackShiftLocalRect(overlayHostRectInRoot)
+    val cellSizePx = if (boardRect.width == 0f) 0f else boardRect.width / gameState.config.columns.toFloat()
     val spawnColumn by remember(
         activePiece?.id,
         gameState.lastPlacementColumn,
@@ -1169,7 +1161,7 @@ internal fun BoxScope.LaunchGuideLineOverlay(
     }
 }
 
-private fun launchGuideSegments(
+internal fun launchGuideSegments(
     preview: PlacementPreview,
     activePiece: Piece,
     pieceTopLeft: Offset,
@@ -1874,13 +1866,13 @@ fun resolveSpawnColumn(piece: Piece?, boardColumns: Int, lastPlacementColumn: In
 fun columnToLeft(column: Int, boardRect: Rect, cellSizePx: Float): Float =
     boardRect.left + (column * cellSizePx)
 
-private fun Rect.toLocalRect(hostRect: Rect): Rect {
+internal fun Rect.toStackShiftLocalRect(hostRect: Rect): Rect {
     if (this == Rect.Zero || hostRect == Rect.Zero) return Rect.Zero
     return Rect(
-        left - hostRect.left,
-        top - hostRect.top,
-        right - hostRect.left,
-        bottom - hostRect.top,
+        this.left - hostRect.left,
+        this.top - hostRect.top,
+        this.right - hostRect.left,
+        this.bottom - hostRect.top,
     )
 }
 

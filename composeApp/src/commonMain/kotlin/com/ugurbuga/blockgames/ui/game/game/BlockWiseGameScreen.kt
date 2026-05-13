@@ -195,19 +195,11 @@ fun BlockWiseGameScreen(
     } else {
         FreePlacementTrayPieceCellSize
     }
-    val boardRect by remember {
-        derivedStateOf {
-            val insetPx = with(density) { 1.dp.toPx() }
-            boardRectInRoot
-                .toLocalRect(hostRectInRoot)
-                .deflate(insetPx)
-        }
-    }
-    val cellSizePx by remember {
-        derivedStateOf {
-            if (boardRect == Rect.Zero) 0f else boardRect.width / currentGameState.config.columns.toFloat()
-        }
-    }
+    val insetPx = with(density) { 1.dp.toPx() }
+    val boardRect = boardRectInRoot
+        .toBlockWiseLocalRect(hostRectInRoot)
+        .deflate(insetPx)
+    val cellSizePx = if (boardRect == Rect.Zero) 0f else boardRect.width / currentGameState.config.columns.toFloat()
     val overlayTopLeft by remember {
         derivedStateOf {
             val pointer = dragPointerInHost ?: return@derivedStateOf null
@@ -456,7 +448,7 @@ fun BlockWiseGameScreen(
                 BlockWiseOnboardingTargetOverlay(
                     ui = onboardingUi,
                     boardRect = boardRect,
-                    trayRect = trayRectInRoot.toLocalRect(hostRectInRoot),
+                    trayRect = trayRectInRoot.toBlockWiseLocalRect(hostRectInRoot),
                     cellSizePx = cellSizePx,
                 )
             }
@@ -805,7 +797,7 @@ internal fun resolveNearestFreePlacementPreview(
     }
 }
 
-private fun initialDragPointerPosition(
+internal fun initialDragPointerPosition(
     pieceRectInRoot: Rect,
     pointerOffsetInPieceCard: Offset,
     hostRectInRoot: Rect,
@@ -827,7 +819,7 @@ internal fun GridPoint.toFreePlacementTopLeft(
     y = boardRect.top + (row * cellSizePx),
 )
 
-private fun overlapArea(
+internal fun overlapArea(
     first: Rect,
     second: Rect,
 ): Float {
@@ -838,7 +830,7 @@ private fun overlapArea(
     return overlapWidth * overlapHeight
 }
 
-private fun overlapArea(
+internal fun overlapArea(
     first: List<Rect>,
     second: List<Rect>,
 ): Float = first.sumOf { firstRect ->
@@ -847,7 +839,7 @@ private fun overlapArea(
     }
 }.toFloat()
 
-private fun overlapBlockCount(
+internal fun overlapBlockCount(
     overlayCellRects: List<Rect>,
     candidateCellRects: List<Rect>,
 ): Int = overlayCellRects.count { overlayRect ->
@@ -863,17 +855,32 @@ private fun squaredDistance(
     return (dx * dx) + (dy * dy)
 }
 
-private fun Rect.toLocalRect(hostRect: Rect): Rect {
+internal fun Rect.toBlockWiseLocalRect(hostRect: Rect): Rect {
     if (this == Rect.Zero || hostRect == Rect.Zero) return Rect.Zero
     return Rect(
-        left = left - hostRect.left,
-        top = top - hostRect.top,
-        right = right - hostRect.left,
-        bottom = bottom - hostRect.top,
+        left = this.left - hostRect.left,
+        top = this.top - hostRect.top,
+        right = this.right - hostRect.left,
+        bottom = this.bottom - hostRect.top,
     )
 }
 
-private fun Piece.cellRects(
+internal fun Rect.deflate(inset: Float): Rect {
+    if (this == Rect.Zero) return Rect.Zero
+    val safeInset = inset.coerceAtLeast(0f)
+    val nextLeft = this.left + safeInset
+    val nextTop = this.top + safeInset
+    val nextRight = (this.right - safeInset).coerceAtLeast(nextLeft)
+    val nextBottom = (this.bottom - safeInset).coerceAtLeast(nextTop)
+    return Rect(
+        left = nextLeft,
+        top = nextTop,
+        right = nextRight,
+        bottom = nextBottom,
+    )
+}
+
+internal fun Piece.cellRects(
     topLeft: Offset,
     cellSizePx: Float,
 ): List<Rect> = cells.map { cell ->

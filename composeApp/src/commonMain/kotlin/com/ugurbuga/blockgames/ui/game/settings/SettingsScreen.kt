@@ -628,7 +628,7 @@ private data class SettingsOption<T>(
     val priceTokens: Int = 0,
 )
 
-private data class UnlockRequest(
+internal data class UnlockRequest(
     val label: String,
     val priceTokens: Int,
     val currentBalance: Int,
@@ -637,7 +637,7 @@ private data class UnlockRequest(
     val canAfford: Boolean get() = currentBalance >= priceTokens
 }
 
-private fun unlockRequest(
+internal fun unlockRequest(
     label: String,
     priceTokens: Int,
     currentBalance: Int,
@@ -926,34 +926,34 @@ private fun themePaletteOptions(
         )
     }
 
+internal fun visibleBlockStyles(): List<BlockVisualStyle> = listOf(
+    BlockVisualStyle.Flat,
+    BlockVisualStyle.Bubble,
+    BlockVisualStyle.Outline,
+    BlockVisualStyle.Sharp3D,
+    BlockVisualStyle.Wood,
+    BlockVisualStyle.GridSplit,
+    BlockVisualStyle.Crystal,
+    BlockVisualStyle.DynamicLiquid,
+    BlockVisualStyle.Tornado,
+    BlockVisualStyle.HoneycombTexture,
+    BlockVisualStyle.SpiderWeb,
+    BlockVisualStyle.Cosmic,
+    BlockVisualStyle.Brick,
+    BlockVisualStyle.SoundWave,
+    BlockVisualStyle.Prism,
+    BlockVisualStyle.Flame,
+    BlockVisualStyle.Gears,
+    BlockVisualStyle.Pixel,
+)
+
 @Composable
 private fun blockStyleOptions(
     settings: AppSettings,
     pulse: Float,
     previewColor: Color,
 ): List<SettingsOption<BlockVisualStyle>> {
-    val visibleStyles = listOf(
-        BlockVisualStyle.Flat,
-        BlockVisualStyle.Bubble,
-        BlockVisualStyle.Outline,
-        BlockVisualStyle.Sharp3D,
-        BlockVisualStyle.Wood,
-        BlockVisualStyle.GridSplit,
-        BlockVisualStyle.Crystal,
-        BlockVisualStyle.DynamicLiquid,
-        BlockVisualStyle.Tornado,
-        BlockVisualStyle.HoneycombTexture,
-        BlockVisualStyle.SpiderWeb,
-        BlockVisualStyle.Cosmic,
-        BlockVisualStyle.Brick,
-        BlockVisualStyle.SoundWave,
-        BlockVisualStyle.Prism,
-        BlockVisualStyle.Flame,
-        BlockVisualStyle.Gears,
-        BlockVisualStyle.Pixel,
-    )
-
-    return visibleStyles.map { style ->
+    return visibleBlockStyles().map { style ->
         SettingsOption(
             value = style,
             label = when (style) {

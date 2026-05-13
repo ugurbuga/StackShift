@@ -1391,7 +1391,7 @@ private fun HomeTitleDemoHand(
     )
 }
 
-private data class HomeTitleCell(
+internal data class HomeTitleCell(
     val letter: String? = null,
     val tone: CellTone,
 )
@@ -1419,15 +1419,15 @@ private fun rememberHomeTitleRow(
     }
 }
 
-private fun segmentProgress(
+internal fun segmentProgress(
     phase: Float,
     start: Float,
     end: Float,
 ): Float = ((phase - start) / (end - start)).coerceIn(0f, 1f)
 
-private fun clearFlashAlpha(progress: Float): Float = 1f - abs((progress * 2f) - 1f)
+internal fun clearFlashAlpha(progress: Float): Float = 1f - abs((progress * 2f) - 1f)
 
-private fun titleTopRowAlpha(
+internal fun titleTopRowAlpha(
     phase: Float,
     upperExplode: Float,
     stackLaunch: Float,
@@ -1439,7 +1439,7 @@ private fun titleTopRowAlpha(
     else -> 1f
 }
 
-private fun titleBottomRowAlpha(
+internal fun titleBottomRowAlpha(
     phase: Float,
     lowerExplode: Float,
     shiftLaunch: Float,
@@ -1451,7 +1451,7 @@ private fun titleBottomRowAlpha(
     else -> 1f
 }
 
-private fun normalizedPhase(value: Float): Float {
+internal fun normalizedPhase(value: Float): Float {
     val remainder = value % 1f
     return if (remainder < 0f) remainder + 1f else remainder
 }
@@ -1629,7 +1629,7 @@ private fun HomeTitleAnimatedPiece(
     }
 }
 
-private fun homeTitleOccupiedCenterOffset(
+internal fun homeTitleOccupiedCenterOffset(
     cells: List<HomeTitleCell?>,
     cellSize: Dp,
 ): Dp {

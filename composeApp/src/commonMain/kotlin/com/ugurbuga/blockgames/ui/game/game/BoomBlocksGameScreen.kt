@@ -705,7 +705,7 @@ internal fun GameGrid(
     }
 }
 
-private fun findConnectedGroup(
+internal fun findConnectedGroup(
     board: BoardMatrix,
     start: GridPoint
 ): Set<GridPoint> {

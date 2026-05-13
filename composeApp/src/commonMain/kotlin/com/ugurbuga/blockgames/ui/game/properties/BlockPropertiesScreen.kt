@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.block_properties_column_clearer_desc
@@ -50,9 +51,11 @@ import blockgames.composeapp.generated.resources.block_properties_row_clearer_de
 import blockgames.composeapp.generated.resources.block_properties_row_clearer_title
 import blockgames.composeapp.generated.resources.block_properties_select_hint
 import blockgames.composeapp.generated.resources.block_properties_title
+import com.ugurbuga.blockgames.BlockGamesTheme
 import com.ugurbuga.blockgames.game.model.CellTone
 import com.ugurbuga.blockgames.game.model.SpecialBlockType
 import com.ugurbuga.blockgames.localization.LocalAppSettings
+import com.ugurbuga.blockgames.settings.AppSettings
 import com.ugurbuga.blockgames.telemetry.AppTelemetry
 import com.ugurbuga.blockgames.telemetry.LogScreen
 import com.ugurbuga.blockgames.telemetry.NoOpAppTelemetry
@@ -63,6 +66,7 @@ import com.ugurbuga.blockgames.ui.game.blockStyleIconTint
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
 import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
 import com.ugurbuga.blockgames.ui.theme.blockGamesSurfaceShadow
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 private val BlockSampleSize = 78.dp
@@ -204,17 +208,6 @@ private fun BlockTypeRow(
     pulse: Float = 0f,
 ) {
     val uiColors = BlockGamesThemeTokens.uiColors
-    
-    val transition = rememberInfiniteTransition(label = "blockPropsPulse")
-    val stylePulse by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 2200, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "stylePulse",
-    )
     val settings = LocalAppSettings.current
     val contentColor = blockStyleIconTint(style = settings.blockVisualStyle)
     val background = if (selected) {
@@ -321,29 +314,29 @@ private fun BlockTitleAndDesc(special: SpecialBlockType) {
     )
 }
 
-@Composable
-private fun resolveBlockTitle(special: SpecialBlockType): String {
-    return when (special) {
-        SpecialBlockType.None -> stringResource(Res.string.block_properties_normal_title)
-        SpecialBlockType.ColumnClearer -> stringResource(Res.string.block_properties_column_clearer_title)
-        SpecialBlockType.RowClearer -> stringResource(Res.string.block_properties_row_clearer_title)
-        SpecialBlockType.Ghost -> stringResource(Res.string.block_properties_ghost_title)
-        SpecialBlockType.Heavy -> stringResource(Res.string.block_properties_heavy_title)
-    }
+internal fun resolveBlockTitleRes(special: SpecialBlockType): StringResource = when (special) {
+    SpecialBlockType.None -> Res.string.block_properties_normal_title
+    SpecialBlockType.ColumnClearer -> Res.string.block_properties_column_clearer_title
+    SpecialBlockType.RowClearer -> Res.string.block_properties_row_clearer_title
+    SpecialBlockType.Ghost -> Res.string.block_properties_ghost_title
+    SpecialBlockType.Heavy -> Res.string.block_properties_heavy_title
 }
 
 @Composable
-private fun resolveBlockDesc(special: SpecialBlockType): String {
-    return when (special) {
-        SpecialBlockType.None -> stringResource(Res.string.block_properties_normal_desc)
-        SpecialBlockType.ColumnClearer -> stringResource(Res.string.block_properties_column_clearer_desc)
-        SpecialBlockType.RowClearer -> stringResource(Res.string.block_properties_row_clearer_desc)
-        SpecialBlockType.Ghost -> stringResource(Res.string.block_properties_ghost_desc)
-        SpecialBlockType.Heavy -> stringResource(Res.string.block_properties_heavy_desc)
-    }
+private fun resolveBlockTitle(special: SpecialBlockType): String = stringResource(resolveBlockTitleRes(special))
+
+internal fun resolveBlockDescRes(special: SpecialBlockType): StringResource = when (special) {
+    SpecialBlockType.None -> Res.string.block_properties_normal_desc
+    SpecialBlockType.ColumnClearer -> Res.string.block_properties_column_clearer_desc
+    SpecialBlockType.RowClearer -> Res.string.block_properties_row_clearer_desc
+    SpecialBlockType.Ghost -> Res.string.block_properties_ghost_desc
+    SpecialBlockType.Heavy -> Res.string.block_properties_heavy_desc
 }
 
-private fun sampleToneFor(special: SpecialBlockType): CellTone {
+@Composable
+private fun resolveBlockDesc(special: SpecialBlockType): String = stringResource(resolveBlockDescRes(special))
+
+internal fun sampleToneFor(special: SpecialBlockType): CellTone {
     return when (special) {
         SpecialBlockType.None -> CellTone.Cyan
         SpecialBlockType.ColumnClearer -> CellTone.Emerald
@@ -353,4 +346,13 @@ private fun sampleToneFor(special: SpecialBlockType): CellTone {
     }
 }
 
-
+@Preview(name = "Block Properties", showBackground = true, widthDp = 412, heightDp = 915)
+@Composable
+private fun BlockPropertiesScreenPreview() {
+    BlockGamesTheme(settings = AppSettings()) {
+        BlockPropertiesScreen(
+            telemetry = NoOpAppTelemetry,
+            onBack = {},
+        )
+    }
+}

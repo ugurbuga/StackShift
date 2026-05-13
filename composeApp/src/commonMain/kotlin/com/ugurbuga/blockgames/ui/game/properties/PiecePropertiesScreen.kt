@@ -1,8 +1,5 @@
 package com.ugurbuga.blockgames.ui.game.properties
 
-import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
-import com.ugurbuga.blockgames.ui.game.PieceBlocks
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -23,18 +20,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.ugurbuga.blockgames.game.model.CellTone
-import com.ugurbuga.blockgames.game.model.Piece
-import com.ugurbuga.blockgames.game.model.SpecialBlockType
-import com.ugurbuga.blockgames.telemetry.AppTelemetry
-import com.ugurbuga.blockgames.telemetry.LogScreen
-import com.ugurbuga.blockgames.telemetry.NoOpAppTelemetry
-import com.ugurbuga.blockgames.telemetry.TelemetryScreenNames
-import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
-import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
-import com.ugurbuga.blockgames.ui.theme.blockGamesSurfaceShadow
-import org.jetbrains.compose.resources.stringResource
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.piece_properties_active
 import blockgames.composeapp.generated.resources.piece_properties_cells
@@ -50,6 +37,23 @@ import blockgames.composeapp.generated.resources.special_column_clearer
 import blockgames.composeapp.generated.resources.special_ghost
 import blockgames.composeapp.generated.resources.special_heavy
 import blockgames.composeapp.generated.resources.special_row_clearer
+import com.ugurbuga.blockgames.BlockGamesTheme
+import com.ugurbuga.blockgames.game.model.CellTone
+import com.ugurbuga.blockgames.game.model.GridPoint
+import com.ugurbuga.blockgames.game.model.Piece
+import com.ugurbuga.blockgames.game.model.PieceKind
+import com.ugurbuga.blockgames.game.model.SpecialBlockType
+import com.ugurbuga.blockgames.settings.AppSettings
+import com.ugurbuga.blockgames.telemetry.AppTelemetry
+import com.ugurbuga.blockgames.telemetry.LogScreen
+import com.ugurbuga.blockgames.telemetry.NoOpAppTelemetry
+import com.ugurbuga.blockgames.telemetry.TelemetryScreenNames
+import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
+import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
+import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
+import com.ugurbuga.blockgames.ui.theme.blockGamesSurfaceShadow
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun PiecePropertiesScreen(
@@ -187,13 +191,39 @@ private fun PropertyRow(
     )
 }
 
+internal fun resolveSpecialLabelRes(type: SpecialBlockType): StringResource = when (type) {
+    SpecialBlockType.None -> Res.string.piece_properties_none
+    SpecialBlockType.ColumnClearer -> Res.string.special_column_clearer
+    SpecialBlockType.RowClearer -> Res.string.special_row_clearer
+    SpecialBlockType.Ghost -> Res.string.special_ghost
+    SpecialBlockType.Heavy -> Res.string.special_heavy
+}
+
 @Composable
-private fun resolveSpecialLabel(type: SpecialBlockType): String {
-    return when (type) {
-        SpecialBlockType.None -> stringResource(Res.string.piece_properties_none)
-        SpecialBlockType.ColumnClearer -> stringResource(Res.string.special_column_clearer)
-        SpecialBlockType.RowClearer -> stringResource(Res.string.special_row_clearer)
-        SpecialBlockType.Ghost -> stringResource(Res.string.special_ghost)
-        SpecialBlockType.Heavy -> stringResource(Res.string.special_heavy)
+private fun resolveSpecialLabel(type: SpecialBlockType): String = stringResource(resolveSpecialLabelRes(type))
+
+@Preview(name = "Piece Properties", showBackground = true, widthDp = 412, heightDp = 915)
+@Composable
+private fun PiecePropertiesScreenPreview() {
+    BlockGamesTheme(settings = AppSettings()) {
+        PiecePropertiesScreen(
+            telemetry = NoOpAppTelemetry,
+            activePiece = Piece(
+                id = 1L,
+                kind = PieceKind.T,
+                tone = CellTone.Violet,
+                cells = listOf(
+                    GridPoint(0, 0),
+                    GridPoint(1, 0),
+                    GridPoint(2, 0),
+                    GridPoint(1, 1),
+                ),
+                width = 3,
+                height = 2,
+                special = SpecialBlockType.RowClearer,
+            ),
+            onBack = {},
+        )
     }
 }
+

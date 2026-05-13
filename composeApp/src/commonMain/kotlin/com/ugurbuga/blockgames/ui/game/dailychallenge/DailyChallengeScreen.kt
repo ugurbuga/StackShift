@@ -145,6 +145,7 @@ import com.ugurbuga.blockgames.ui.theme.appBackgroundBrush
 import com.ugurbuga.blockgames.ui.theme.blockGamesSurfaceShadow
 import com.ugurbuga.blockgames.ui.theme.isBlockGamesDarkTheme
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -779,9 +780,7 @@ fun ChallengeInfoDialog(
     }
 }
 
-@Composable
-private fun challengeInfoTitle(taskType: ChallengeTaskType): String {
-    val res = when (taskType) {
+internal fun challengeInfoTitleRes(taskType: ChallengeTaskType): StringResource = when (taskType) {
         ChallengeTaskType.ClearBlocks -> Res.string.challenge_info_clear_blocks_title
         ChallengeTaskType.ReachScore -> Res.string.challenge_info_reach_score_title
         ChallengeTaskType.TriggerSpecial -> Res.string.challenge_info_trigger_special_title
@@ -792,12 +791,11 @@ private fun challengeInfoTitle(taskType: ChallengeTaskType): String {
         ChallengeTaskType.PlacePieces -> Res.string.challenge_info_place_pieces_title
         ChallengeTaskType.ClearBothDirections -> Res.string.challenge_info_clear_both_directions_title
     }
-    return stringResource(res)
-}
 
 @Composable
-private fun challengeInfoDescription(taskType: ChallengeTaskType): String {
-    val res = when (taskType) {
+private fun challengeInfoTitle(taskType: ChallengeTaskType): String = stringResource(challengeInfoTitleRes(taskType))
+
+internal fun challengeInfoDescriptionRes(taskType: ChallengeTaskType): StringResource = when (taskType) {
         ChallengeTaskType.ClearBlocks -> Res.string.challenge_info_clear_blocks
         ChallengeTaskType.ReachScore -> Res.string.challenge_info_reach_score
         ChallengeTaskType.TriggerSpecial -> Res.string.challenge_info_trigger_special
@@ -808,8 +806,9 @@ private fun challengeInfoDescription(taskType: ChallengeTaskType): String {
         ChallengeTaskType.PlacePieces -> Res.string.challenge_info_place_pieces
         ChallengeTaskType.ClearBothDirections -> Res.string.challenge_info_clear_both_directions
     }
-    return stringResource(res)
-}
+
+@Composable
+private fun challengeInfoDescription(taskType: ChallengeTaskType): String = stringResource(challengeInfoDescriptionRes(taskType))
 
 @Composable
 private fun ChallengeInfoItem(
@@ -831,24 +830,25 @@ private fun ChallengeInfoItem(
     }
 }
 
+internal fun monthNameRes(month: Int): StringResource? = when (month) {
+    1 -> Res.string.month_january
+    2 -> Res.string.month_february
+    3 -> Res.string.month_march
+    4 -> Res.string.month_april
+    5 -> Res.string.month_may
+    6 -> Res.string.month_june
+    7 -> Res.string.month_july
+    8 -> Res.string.month_august
+    9 -> Res.string.month_september
+    10 -> Res.string.month_october
+    11 -> Res.string.month_november
+    12 -> Res.string.month_december
+    else -> null
+}
+
 @Composable
 fun monthName(month: Int): String {
-    val res = when (month) {
-        1 -> Res.string.month_january
-        2 -> Res.string.month_february
-        3 -> Res.string.month_march
-        4 -> Res.string.month_april
-        5 -> Res.string.month_may
-        6 -> Res.string.month_june
-        7 -> Res.string.month_july
-        8 -> Res.string.month_august
-        9 -> Res.string.month_september
-        10 -> Res.string.month_october
-        11 -> Res.string.month_november
-        12 -> Res.string.month_december
-        else -> null
-    }
-    return res?.let { stringResource(it) } ?: ""
+    return monthNameRes(month)?.let { stringResource(it) } ?: ""
 }
 
 data class YearMonth(val year: Int, val month: Int)
