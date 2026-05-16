@@ -959,7 +959,10 @@ data class GameState(
     val remainingTimeMillis: Long? = null,
     val message: GameText = GameText(GameTextKey.GameMessageSelectColumn),
     val activeChallenge: DailyChallenge? = null,
+    val blockSortCompletedRoundBoard: BoardMatrix? = null,
     val blockSortLastMovedCellValues: Set<Int> = emptySet(),
+    val blockSortBonusEmptyColumnUsed: Boolean = false,
+    val blockSortScoredMoveSignatures: Set<String> = emptySet(),
 ) {
     val nextPiece: Piece?
         get() = nextQueue.firstOrNull()

@@ -149,7 +149,7 @@
     <string name="game_message_ad_reward_mergeshift">Numbers changed! Keep merging.</string>
     <string name="game_message_ad_reward_boomblocks">Color cleared! The board is reshaped.</string>
     <string name="game_message_ad_reward_stackshift">Special block equipped! Ready to launch.</string>
-    <string name="game_message_ad_reward_blocksort">Board remixed! Fresh routes are open.</string>
+    <string name="game_message_ad_reward_blocksort">Extra empty column added for this round.</string>
     <string name="game_message_hold_updated">Tray refreshed. Keep building.</string>
     <string name="game_message_tempo_critical">Look for a row or column clear before the tray locks up.</string>
     <string name="game_message_tempo_up">A new trio is ready. Scan the board carefully.</string>
@@ -178,6 +178,8 @@
     <string name="challenge_info_chain_reaction">Set up follow-up clears so one move triggers extra clears afterward.</string>
     <string name="challenge_info_clear_columns_title">Columns</string>
     <string name="challenge_info_clear_columns">Complete full columns to clear them from the board.</string>
+    <string name="challenge_info_clear_rounds_title">Rounds</string>
+    <string name="challenge_info_clear_rounds">Finish full BlockSort rounds by turning every filled column into a single color.</string>
     <string name="challenge_info_place_pieces_title">Placements</string>
     <string name="challenge_info_place_pieces">Every successful drop counts, even if it does not clear a line.</string>
     <string name="challenge_info_clear_both_directions_title">Row + Column</string>
@@ -190,7 +192,9 @@
     <string name="challenge_task_perfect_placement">Make %1$d perfect placements</string>
     <string name="challenge_task_chain_reaction">Create %1$d chain reactions</string>
     <string name="challenge_task_clear_columns">Clear %1$d columns</string>
+    <string name="challenge_task_complete_columns">Complete %1$d columns</string>
     <string name="challenge_task_place_pieces">Place %1$d pieces</string>
+    <string name="challenge_task_clear_rounds">Clear %1$d rounds</string>
     <string name="ad_reward_blockwise_refresh">Refresh Tray</string>
     <string name="ad_reward_mergeshift_swap">Change Number</string>
     <string name="ad_reward_boomblocks_clear">Clear Color</string>

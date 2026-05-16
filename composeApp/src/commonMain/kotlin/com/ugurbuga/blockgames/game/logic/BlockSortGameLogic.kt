@@ -22,7 +22,6 @@ internal class BlockSortGameLogic(
 ) : GameLogic {
 
     companion object {
-        private const val EmptyColumns = 2
         private const val MoveScorePerBlock = 50
         private const val CompletedColumnBonus = 120
         private const val RoundClearBonusBase = 600
@@ -48,6 +47,8 @@ internal class BlockSortGameLogic(
         return state.copy(
             config = normalizedConfig,
             status = status,
+            difficultyStage = blockSortRoundDifficulty(state.level).ordinal,
+            blockSortCompletedRoundBoard = null,
             blockSortLastMovedCellValues = emptySet(),
         )
     }
@@ -100,6 +101,13 @@ internal class BlockSortGameLogic(
 
         val movedCells = move.movedRows.mapNotNull { row -> state.board.cellAt(sourceColumn, row) }
         val movedCellValues = movedCells.mapNotNull { cell -> cell.value.takeIf { it != 0 } }.toSet()
+        val moveScoreSignature = blockSortMoveScoreSignature(
+            sourceColumn = sourceColumn,
+            targetColumn = targetColumn,
+            movedCellValues = movedCellValues,
+        )
+        val sourceWasCompleted = isCompletedColumn(state.board, sourceColumn)
+        val moveIsScoreEligible = !sourceWasCompleted && moveScoreSignature !in state.blockSortScoredMoveSignatures
         var board = state.board.clearPoints(move.movedRows.mapTo(mutableSetOf()) { row -> GridPoint(sourceColumn, row) })
         move.targetRows.forEachIndexed { index, row ->
             val movedCell = movedCells.getOrNull(index) ?: return@forEachIndexed
@@ -114,7 +122,11 @@ internal class BlockSortGameLogic(
         val newlyCompletedColumns = setOf(sourceColumn, targetColumn).count { column ->
             isCompletedColumn(board, column) && !isCompletedColumn(state.board, column)
         }
-        val moveScore = (move.moveCount * MoveScorePerBlock) + (newlyCompletedColumns * CompletedColumnBonus)
+        val moveScore = if (moveIsScoreEligible) {
+            (move.moveCount * MoveScorePerBlock) + (newlyCompletedColumns * CompletedColumnBonus)
+        } else {
+            0
+        }
         val nextScore = state.score + moveScore
         val nextSortedColumns = state.linesCleared + newlyCompletedColumns
 
@@ -122,6 +134,8 @@ internal class BlockSortGameLogic(
             challenge = state.activeChallenge,
             placedPieces = 1,
             score = nextScore,
+            completedColumns = newlyCompletedColumns,
+            clearedRounds = 0,
         )
         val events = mutableSetOf(GameEvent.PlacementAccepted)
         if (newlyCompletedColumns > 0) {
@@ -140,7 +154,9 @@ internal class BlockSortGameLogic(
             status = GameStatus.Running,
             lastActionTime = currentEpochMillis(),
             activeChallenge = updatedChallenge,
+            blockSortCompletedRoundBoard = null,
             blockSortLastMovedCellValues = movedCellValues,
+            blockSortScoredMoveSignatures = state.blockSortScoredMoveSignatures + moveScoreSignature,
         )
 
         return if (isRoundSolved(board)) {
@@ -149,6 +165,8 @@ internal class BlockSortGameLogic(
                 challenge = updatedChallenge,
                 placedPieces = 0,
                 score = nextScore + roundBonus,
+                completedColumns = 0,
+                clearedRounds = 1,
             )
             if (updatedChallenge?.isCompleted == true && state.activeChallenge?.isCompleted == false) {
                 events += GameEvent.ChallengeCompleted
@@ -165,7 +183,10 @@ internal class BlockSortGameLogic(
             GameMoveResult(
                 state = nextRoundState.copy(
                     lastMoveScore = moveScore + roundBonus,
-                    blockSortLastMovedCellValues = emptySet(),
+                    blockSortCompletedRoundBoard = board,
+                    blockSortLastMovedCellValues = movedCellValues,
+                    blockSortBonusEmptyColumnUsed = false,
+                    blockSortScoredMoveSignatures = emptySet(),
                 ),
                 preview = preview,
                 events = events,
@@ -192,12 +213,17 @@ internal class BlockSortGameLogic(
 
     override fun replaceActivePiece(state: GameState, specialType: SpecialBlockType): GameMoveResult {
         if (state.status != GameStatus.Running) return invalidMove(state)
-        val shuffledBoard = reshuffleBoard(state.board, state.level) ?: return invalidMove(state)
+        if (state.blockSortBonusEmptyColumnUsed) return invalidMove(state)
+        val expandedBoard = addEmptyColumns(state.board, extraCount = 1)
         return GameMoveResult(
             state = state.copy(
-                board = shuffledBoard,
+                config = state.config.copy(columns = expandedBoard.columns),
+                board = expandedBoard,
                 lastActionTime = currentEpochMillis(),
+                recentlyClearedColumns = emptySet(),
+                blockSortCompletedRoundBoard = null,
                 blockSortLastMovedCellValues = emptySet(),
+                blockSortBonusEmptyColumnUsed = true,
             ),
             events = setOf(GameEvent.SpecialTriggered),
         )
@@ -216,7 +242,9 @@ internal class BlockSortGameLogic(
                 rewardedReviveUsed = true,
                 recentlyClearedColumns = emptySet(),
                 lastActionTime = currentEpochMillis(),
+                blockSortCompletedRoundBoard = null,
                 blockSortLastMovedCellValues = emptySet(),
+                blockSortScoredMoveSignatures = emptySet(),
             ),
             events = setOf(GameEvent.Revived),
         )
@@ -263,13 +291,16 @@ internal class BlockSortGameLogic(
             lastMoveScore = 0,
             linesCleared = totalSortedColumns,
             level = level,
-            difficultyStage = 0,
+            difficultyStage = blockSortRoundDifficulty(level).ordinal,
             secondsUntilDifficultyIncrease = config.difficultyIntervalSeconds,
             status = GameStatus.Running,
             remainingTimeMillis = remainingTimeMillis,
             lastActionTime = currentEpochMillis(),
             activeChallenge = challenge,
+            blockSortCompletedRoundBoard = null,
             blockSortLastMovedCellValues = emptySet(),
+            blockSortBonusEmptyColumnUsed = false,
+            blockSortScoredMoveSignatures = emptySet(),
         )
     }
 
@@ -280,12 +311,13 @@ internal class BlockSortGameLogic(
     private fun roundCapacity(level: Int): Int = blockSortRoundCapacity(level)
 
     private fun roundColorCount(level: Int): Int {
-        return (roundColumns(level) - EmptyColumns).coerceAtLeast(3)
+        return (roundColumns(level) - blockSortRoundEmptyColumns(level)).coerceAtLeast(3)
     }
 
     private fun generateRoundBoard(level: Int): BoardMatrix {
         val columns = roundColumns(level)
         val rows = roundCapacity(level)
+        val difficulty = blockSortRoundDifficulty(level)
         val colors = availableTones(level).take(roundColorCount(level))
         var bestBoard: BoardMatrix? = null
         var bestScore = Int.MIN_VALUE
@@ -297,7 +329,12 @@ internal class BlockSortGameLogic(
             }
             containers.shuffle(random)
 
-            val reverseSteps = (columns * rows * 2) + (level * 7) + (attempt * 2)
+            val reverseMultiplier = when (difficulty) {
+                BlockSortRoundDifficulty.Easy -> 1.65f
+                BlockSortRoundDifficulty.Medium -> 2.05f
+                BlockSortRoundDifficulty.Hard -> 2.45f
+            }
+            val reverseSteps = ((columns * rows * reverseMultiplier) + (level * 4) + (attempt * 2)).toInt()
             repeat(reverseSteps) {
                 val targetIndices = containers.indices.filter { containers[it].isNotEmpty() }
                 if (targetIndices.isEmpty()) return@repeat
@@ -344,7 +381,7 @@ internal class BlockSortGameLogic(
 
         return bestBoard ?: colors
             .map { tone -> MutableList(rows) { tone } }
-            .plus(List(EmptyColumns) { mutableListOf() })
+            .plus(List(blockSortRoundEmptyColumns(level)) { mutableListOf() })
             .toBoardMatrix(columns, rows)
     }
 
@@ -505,6 +542,8 @@ internal class BlockSortGameLogic(
         challenge: DailyChallenge?,
         placedPieces: Int,
         score: Int,
+        completedColumns: Int,
+        clearedRounds: Int,
     ): DailyChallenge? {
         challenge ?: return null
         return challenge.copy(
@@ -512,6 +551,8 @@ internal class BlockSortGameLogic(
                 when (task.type) {
                     ChallengeTaskType.ReachScore -> task.copy(current = score.coerceAtLeast(task.current))
                     ChallengeTaskType.PlacePieces -> task.copy(current = task.current + placedPieces)
+                    ChallengeTaskType.ClearColumns -> task.copy(current = task.current + completedColumns)
+                    ChallengeTaskType.ClearRounds -> task.copy(current = task.current + clearedRounds)
                     else -> task
                 }
             },
@@ -532,12 +573,60 @@ internal class BlockSortGameLogic(
 }
 
 internal fun blockSortRoundCapacity(level: Int): Int {
-    val capacities = intArrayOf(4, 5, 4, 6, 5, 6)
-    return capacities[(level - 1).mod(capacities.size)]
+    return when (blockSortRoundDifficulty(level)) {
+        BlockSortRoundDifficulty.Easy -> 4
+        BlockSortRoundDifficulty.Medium -> 5
+        BlockSortRoundDifficulty.Hard -> 6
+    }
 }
 
 internal fun blockSortRoundColumns(level: Int): Int {
-    return (6 + (level / 2)).coerceAtMost(9)
+    val cycleIndex = (level - 1).coerceAtLeast(0) / 6
+    val baseColumns = (6 + cycleIndex).coerceAtMost(8)
+    val difficultyOffset = when (blockSortRoundDifficulty(level)) {
+        BlockSortRoundDifficulty.Easy -> 0
+        BlockSortRoundDifficulty.Medium -> 1
+        BlockSortRoundDifficulty.Hard -> 2
+    }
+    return (baseColumns + difficultyOffset).coerceAtMost(9)
+}
+
+internal fun blockSortRoundEmptyColumns(level: Int): Int {
+    return 1
+}
+
+internal enum class BlockSortRoundDifficulty {
+    Easy,
+    Medium,
+    Hard,
+}
+
+internal fun blockSortRoundDifficulty(level: Int): BlockSortRoundDifficulty {
+    return when ((level - 1).mod(6)) {
+        0, 1, 2 -> BlockSortRoundDifficulty.Easy
+        3, 4 -> BlockSortRoundDifficulty.Medium
+        else -> BlockSortRoundDifficulty.Hard
+    }
+}
+
+private fun addEmptyColumns(
+    board: BoardMatrix,
+    extraCount: Int,
+): BoardMatrix {
+    if (extraCount <= 0) return board
+    var expanded = BoardMatrix.empty(columns = board.columns + extraCount, rows = board.rows)
+    for (column in 0 until board.columns) {
+        for (row in 0 until board.rows) {
+            val cell = board.cellAt(column, row) ?: continue
+            expanded = expanded.fill(
+                points = listOf(GridPoint(column, row)),
+                tone = cell.tone,
+                special = cell.special,
+                value = cell.value,
+            )
+        }
+    }
+    return expanded
 }
 
 private fun List<MutableList<CellTone>>.toBoardMatrix(columnCount: Int, rows: Int = 4): BoardMatrix {
@@ -553,6 +642,17 @@ private fun List<MutableList<CellTone>>.toBoardMatrix(columnCount: Int, rows: In
         }
     }
     return board
+}
+
+private fun blockSortMoveScoreSignature(
+    sourceColumn: Int,
+    targetColumn: Int,
+    movedCellValues: Set<Int>,
+): String {
+    val minColumn = minOf(sourceColumn, targetColumn)
+    val maxColumn = maxOf(sourceColumn, targetColumn)
+    val cellPart = movedCellValues.sorted().joinToString(separator = "x")
+    return "c${minColumn}x${maxColumn}x$cellPart"
 }
 
 

@@ -55,5 +55,41 @@ class HomeScreenCommonTest {
         assertEquals(20.dp, homeTitleOccupiedCenterOffset(cells = cells, cellSize = 10.dp))
         assertEquals(0.dp, homeTitleOccupiedCenterOffset(cells = List(6) { null }, cellSize = 10.dp))
     }
+
+    @Test
+    fun blockSortHomeBannerColumns_buildFiveColumnsAndApplyThreeMoves() {
+        val before = blockSortHomeBannerColumns(topWord = "BLOCK", bottomWord = "SORT", completedMoves = 0)
+        val afterFirstMove = blockSortHomeBannerColumns(topWord = "BLOCK", bottomWord = "SORT", completedMoves = 1)
+        val afterAllMoves = blockSortHomeBannerColumns(topWord = "BLOCK", bottomWord = "SORT", completedMoves = 3)
+
+        assertEquals(5, before.size)
+        assertEquals(List(5) { 4 }, before.map { it.size })
+
+        assertEquals("BLOCK", before.mapNotNull { it[2]?.letter }.joinToString(separator = ""))
+        assertEquals("SORT", before.mapNotNull { it[3]?.letter }.joinToString(separator = ""))
+        assertEquals(List(5) { true }, before.map { it[3] != null })
+
+        assertEquals(CellTone.Gold, before[0][0]?.tone)
+        assertEquals(null, before[1][0])
+        assertEquals(null, afterFirstMove[0][0])
+        assertEquals(CellTone.Gold, afterFirstMove[1][0]?.tone)
+
+        assertEquals(CellTone.Blue, afterAllMoves[0][0]?.tone)
+        assertEquals(CellTone.Gold, afterAllMoves[1][0]?.tone)
+        assertEquals(CellTone.Violet, afterAllMoves[3][0]?.tone)
+        assertEquals(null, afterAllMoves[4][0])
+    }
+
+    @Test
+    fun blockSortHomeBannerMoves_defineThreeSingleBlockTransfers() {
+        assertEquals(
+            listOf(
+                BlockSortHomeBannerMove(sourceColumn = 0, sourceRow = 0, targetColumn = 1, targetRow = 0, tone = CellTone.Gold),
+                BlockSortHomeBannerMove(sourceColumn = 2, sourceRow = 0, targetColumn = 3, targetRow = 0, tone = CellTone.Violet),
+                BlockSortHomeBannerMove(sourceColumn = 4, sourceRow = 0, targetColumn = 0, targetRow = 0, tone = CellTone.Blue),
+            ),
+            blockSortHomeBannerMoves(),
+        )
+    }
 }
 

@@ -111,12 +111,16 @@ enum class AppRoute {
     Selection,
 }
 
-private fun isUsableSavedSession(
+internal fun isUsableSavedSession(
     state: GameState,
     slot: GameSessionSlot,
 ): Boolean {
-    val defaultConfig = GameConfig.default(state.gameplayStyle)
-    if (state.config.columns != defaultConfig.columns || state.config.rows != defaultConfig.rows) return false
+    if (state.gameplayStyle == GameplayStyle.BlockSort) {
+        if (state.config.columns <= 0 || state.config.rows <= 0) return false
+    } else {
+        val defaultConfig = GameConfig.default(state.gameplayStyle)
+        if (state.config.columns != defaultConfig.columns || state.config.rows != defaultConfig.rows) return false
+    }
 
     if (slot is GameSessionSlot.DailyChallenge) {
         val activeChallenge = state.activeChallenge ?: return false

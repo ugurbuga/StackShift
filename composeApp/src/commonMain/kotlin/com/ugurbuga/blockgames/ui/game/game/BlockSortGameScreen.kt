@@ -13,6 +13,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,7 +31,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -54,14 +55,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import blockgames.composeapp.generated.resources.Res
-import blockgames.composeapp.generated.resources.blocksort_completed_label
 import blockgames.composeapp.generated.resources.blocksort_no_moves_hint
-import blockgames.composeapp.generated.resources.blocksort_round_complete_hint
-import blockgames.composeapp.generated.resources.blocksort_round_congrats_title
 import blockgames.composeapp.generated.resources.blocksort_round_label
 import blockgames.composeapp.generated.resources.blocksort_select_source_hint
 import blockgames.composeapp.generated.resources.blocksort_selected_hint
@@ -77,6 +74,8 @@ import blockgames.composeapp.generated.resources.interactive_onboarding_blocksor
 import blockgames.composeapp.generated.resources.interactive_onboarding_step_counter
 import blockgames.composeapp.generated.resources.time_remaining
 import com.ugurbuga.blockgames.BlockGamesTheme
+import com.ugurbuga.blockgames.ads.GameAdController
+import com.ugurbuga.blockgames.ads.NoOpGameAdController
 import com.ugurbuga.blockgames.game.model.BoardCell
 import com.ugurbuga.blockgames.game.model.CellTone
 import com.ugurbuga.blockgames.game.model.GameConfig
@@ -93,6 +92,8 @@ import com.ugurbuga.blockgames.ui.game.BlockCellPreview
 import com.ugurbuga.blockgames.ui.game.GameOverDialog
 import com.ugurbuga.blockgames.ui.game.InteractiveOnboardingCompletionDialog
 import com.ugurbuga.blockgames.ui.game.MinimalTopBar
+import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
+import com.ugurbuga.blockgames.ui.game.dailychallenge.ChallengeTasksDock
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
 import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
 import com.ugurbuga.blockgames.ui.theme.appBackgroundBrush
@@ -101,8 +102,15 @@ import org.jetbrains.compose.resources.stringResource
 
 private const val BlockSortStylePulseTransitionLabel = "blockSortInteractionPulse"
 private const val BlockSortStylePulseAnimationLabel = "interactionPulse"
-private const val BlockSortMoveAnimationDurationMillis = 2720
-private const val BlockSortLevelAnimationDurationMillis = 2480
+internal const val BlockSortMoveAnimationDurationMillis = 2720
+internal const val BlockSortFinalMoveAnimationDurationMillis = 720
+internal const val BlockSortLevelAnimationDurationMillis = 2200
+internal const val BlockSortTotalTransitionPauseDurationMillis =
+    BlockSortFinalMoveAnimationDurationMillis + BlockSortLevelAnimationDurationMillis
+private const val BlockSortLevelTransitionHoldEnd = 0f
+private const val BlockSortLevelTransitionClearEnd = 0.62f
+private const val BlockSortLevelTransitionColumnExitEnd = 0.72f
+private const val BlockSortLevelTransitionColumnEntryEnd = 0.84f
 private val BlockSortColumnGap = 10.dp
 private val BlockSortCellGap = 6.dp
 private val BlockSortBoardRowGap = 14.dp
@@ -111,6 +119,16 @@ private val BlockSortColumnVerticalPadding = 8.dp
 private val BlockSortMoveAnimationEasing = CubicBezierEasing(0.16f, 0.84f, 0.24f, 1f)
 private val BlockSortLevelAnimationEasing = CubicBezierEasing(0.16f, 1f, 0.30f, 1f)
 
+internal data class BlockSortLevelTransitionPhases(
+    val oldBoardClearProgress: Float,
+    val oldBoardColumnExitProgress: Float,
+    val newBoardColumnEntryProgress: Float,
+    val newBoardRevealProgress: Float,
+    val currentBoardAlpha: Float,
+    val previousBoardAlpha: Float,
+    val nextRoundBadgeAlpha: Float,
+)
+
 @Composable
 fun BlockSortGameScreen(
     gameState: GameState,
@@ -118,9 +136,11 @@ fun BlockSortGameScreen(
     onMove: (Int, Int) -> Boolean,
     onRestart: () -> Unit,
     onRewardedRevive: () -> Unit = {},
+    onRewardedAddEmptyColumn: () -> Unit = {},
     onBack: () -> Unit,
     highestScore: Int,
     showNewHighScoreMessage: Boolean = false,
+    adController: GameAdController = NoOpGameAdController,
     interactiveOnboardingScene: BlockSortOnboardingScene? = null,
     interactiveOnboardingCurrentStep: Int = 0,
     interactiveOnboardingTotalSteps: Int = 0,
@@ -140,11 +160,42 @@ fun BlockSortGameScreen(
     var selectedSourceColumn by remember(gameState.board, interactiveOnboardingScene?.stage) {
         mutableStateOf<Int?>(null)
     }
+    var previousDisplayedRoundLevel by remember { mutableIntStateOf(gameState.level) }
     var showGameOverDialog by remember(gameState.status) { mutableStateOf(gameState.status == GameStatus.GameOver) }
     var rewardedReviveLoading by remember(gameState.status) { mutableStateOf(false) }
+    var rewardedAddColumnLoading by remember(gameState.level, gameState.config.columns) { mutableStateOf(false) }
+    val roundDisplayTransitionProgress = remember { Animatable(1f) }
     val interactionPulse = rememberBlockSortInteractionPulse(
         enabled = interactiveOnboardingScene != null || selectedSourceColumn != null,
     )
+    val isPendingRoundDisplayTransition = gameState.level > previousDisplayedRoundLevel
+    val displayedRoundLevel = if (
+        isPendingRoundDisplayTransition &&
+        shouldShowPreviousBlockSortRound(roundDisplayTransitionProgress.value)
+    ) {
+        previousDisplayedRoundLevel
+    } else {
+        gameState.level
+    }
+
+    LaunchedEffect(gameState.level) {
+        if (gameState.level > previousDisplayedRoundLevel) {
+            roundDisplayTransitionProgress.snapTo(0f)
+            try {
+                roundDisplayTransitionProgress.animateTo(
+                    targetValue = 1f,
+                    animationSpec = tween(
+                        durationMillis = BlockSortTotalTransitionPauseDurationMillis,
+                        easing = BlockSortLevelAnimationEasing,
+                    ),
+                )
+            } finally {
+                previousDisplayedRoundLevel = gameState.level
+            }
+        } else {
+            previousDisplayedRoundLevel = gameState.level
+        }
+    }
 
     LaunchedEffect(gameState.status) {
         if (gameState.status == GameStatus.GameOver) {
@@ -152,6 +203,7 @@ fun BlockSortGameScreen(
         } else {
             showGameOverDialog = false
             rewardedReviveLoading = false
+            rewardedAddColumnLoading = false
         }
     }
 
@@ -267,15 +319,28 @@ fun BlockSortGameScreen(
                     boardStyle = boardStyle,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1.1f),
+                        .weight(1f),
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 BlockSortInfoPanel(
                     gameState = gameState,
+                    displayedRoundLevel = displayedRoundLevel,
                     selectedSourceColumn = selectedSourceColumn,
                     interactiveOnboardingScene = interactiveOnboardingScene,
+                    adController = adController,
+                    rewardedAddColumnLoading = rewardedAddColumnLoading,
+                    onRewardedAddEmptyColumn = {
+                        if (rewardedAddColumnLoading || gameState.blockSortBonusEmptyColumnUsed) return@BlockSortInfoPanel
+                        rewardedAddColumnLoading = true
+                        adController.showRewardedAd { success ->
+                            rewardedAddColumnLoading = false
+                            if (success) {
+                                onRewardedAddEmptyColumn()
+                            }
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -300,11 +365,46 @@ internal fun BlockSortBoard(
     var previousBoard by remember { mutableStateOf(gameState.board) }
     var previousLevel by remember { mutableIntStateOf(gameState.level) }
     var levelTransitionPreviousBoard by remember { mutableStateOf<com.ugurbuga.blockgames.game.model.BoardMatrix?>(null) }
+    var levelTransitionSourceBoard by remember { mutableStateOf<com.ugurbuga.blockgames.game.model.BoardMatrix?>(null) }
+    var levelTransitionAnimatedCells by remember { mutableStateOf<List<BlockSortAnimatedCell>>(emptyList()) }
+    var levelTransitionHiddenTargets by remember { mutableStateOf<Set<GridPoint>>(emptySet()) }
     var animatedCells by remember { mutableStateOf<List<BlockSortAnimatedCell>>(emptyList()) }
     var hiddenAnimatedTargets by remember { mutableStateOf<Set<GridPoint>>(emptySet()) }
     val moveAnimationProgress = remember { Animatable(1f) }
+    val levelMoveAnimationProgress = remember { Animatable(1f) }
     val levelTransitionProgress = remember { Animatable(1f) }
-    val isLevelTransitioning = levelTransitionPreviousBoard != null
+    val isPendingLevelTransition = isPendingBlockSortLevelTransition(
+        previousLevel = previousLevel,
+        currentLevel = gameState.level,
+        hasActiveTransitionBoard = levelTransitionPreviousBoard != null,
+    )
+    val pendingCompletedBoard = gameState.blockSortCompletedRoundBoard.takeIf { isPendingLevelTransition }
+    val transitionPreviousBoard = levelTransitionPreviousBoard ?: pendingCompletedBoard
+    val transitionSourceBoard = levelTransitionSourceBoard ?: previousBoard.takeIf { pendingCompletedBoard != null }
+    val pendingLevelAnimatedCells = remember(
+        transitionSourceBoard,
+        transitionPreviousBoard,
+        gameState.blockSortLastMovedCellValues,
+    ) {
+        if (transitionSourceBoard == null || transitionPreviousBoard == null) {
+            emptyList()
+        } else {
+            resolveAnimatedMoveCells(
+                previousBoard = transitionSourceBoard,
+                currentBoard = transitionPreviousBoard,
+                allowedCellValues = gameState.blockSortLastMovedCellValues,
+                maxMovedCells = transitionPreviousBoard.rows,
+            )
+        }
+    }
+    val activeLevelAnimatedCells = levelTransitionAnimatedCells.ifEmpty { pendingLevelAnimatedCells }
+    val activeLevelHiddenTargets = levelTransitionHiddenTargets.ifEmpty {
+        activeLevelAnimatedCells.mapTo(mutableSetOf(), BlockSortAnimatedCell::to)
+    }
+    val levelMoveProgress = if (isPendingLevelTransition && activeLevelAnimatedCells.isNotEmpty()) 0f else levelMoveAnimationProgress.value
+    val isLevelMoveAnimating =
+        transitionPreviousBoard != null && activeLevelAnimatedCells.isNotEmpty() && levelMoveProgress < 1f
+    val isLevelTransitioning = transitionPreviousBoard != null
 
     val previewMap = remember(gameState.board, selectedSourceColumn, interactiveOnboardingScene?.stage, isLevelTransitioning) {
         if (isLevelTransitioning) {
@@ -329,6 +429,8 @@ internal fun BlockSortBoard(
         val oldBoard = previousBoard
         val oldLevel = previousLevel
         if (oldBoard != gameState.board) {
+            hiddenAnimatedTargets = emptySet()
+            animatedCells = emptyList()
             if (gameState.level == oldLevel) {
                 val moveCells = resolveAnimatedMoveCells(
                     previousBoard = oldBoard,
@@ -336,31 +438,66 @@ internal fun BlockSortBoard(
                     allowedCellValues = gameState.blockSortLastMovedCellValues,
                     maxMovedCells = gameState.config.rows,
                 )
+                previousBoard = gameState.board
+                previousLevel = gameState.level
                 if (moveCells.isNotEmpty()) {
                     animatedCells = moveCells
                     hiddenAnimatedTargets = moveCells.mapTo(mutableSetOf(), BlockSortAnimatedCell::to)
                     moveAnimationProgress.snapTo(0f)
-                    moveAnimationProgress.animateTo(
-                        targetValue = 1f,
-                        animationSpec = tween(durationMillis = BlockSortMoveAnimationDurationMillis, easing = BlockSortMoveAnimationEasing),
-                    )
-                    hiddenAnimatedTargets = emptySet()
-                    animatedCells = emptyList()
+                    try {
+                        moveAnimationProgress.animateTo(
+                            targetValue = 1f,
+                            animationSpec = tween(durationMillis = BlockSortMoveAnimationDurationMillis, easing = BlockSortMoveAnimationEasing),
+                        )
+                    } finally {
+                        hiddenAnimatedTargets = emptySet()
+                        animatedCells = emptyList()
+                    }
                 }
             } else if (gameState.level > oldLevel) {
-                levelTransitionPreviousBoard = oldBoard
-                animatedCells = emptyList()
-                hiddenAnimatedTargets = emptySet()
-                levelTransitionProgress.snapTo(0f)
-                levelTransitionProgress.animateTo(
-                    targetValue = 1f,
-                    animationSpec = tween(durationMillis = BlockSortLevelAnimationDurationMillis, easing = BlockSortLevelAnimationEasing),
+                val completedBoard = gameState.blockSortCompletedRoundBoard ?: oldBoard
+                val levelMoveCells = resolveAnimatedMoveCells(
+                    previousBoard = oldBoard,
+                    currentBoard = completedBoard,
+                    allowedCellValues = gameState.blockSortLastMovedCellValues,
+                    maxMovedCells = completedBoard.rows,
                 )
-                levelTransitionPreviousBoard = null
+                levelTransitionSourceBoard = oldBoard
+                levelTransitionPreviousBoard = completedBoard
+                levelTransitionAnimatedCells = levelMoveCells
+                levelTransitionHiddenTargets = levelMoveCells.mapTo(mutableSetOf(), BlockSortAnimatedCell::to)
+                levelMoveAnimationProgress.snapTo(0f)
+                levelTransitionProgress.snapTo(0f)
+                try {
+                    if (levelMoveCells.isNotEmpty()) {
+                        levelMoveAnimationProgress.animateTo(
+                            targetValue = 1f,
+                            animationSpec = tween(durationMillis = BlockSortFinalMoveAnimationDurationMillis, easing = BlockSortMoveAnimationEasing),
+                        )
+                    }
+                    levelTransitionHiddenTargets = emptySet()
+                    levelTransitionAnimatedCells = emptyList()
+                    levelTransitionSourceBoard = null
+                    levelTransitionProgress.animateTo(
+                        targetValue = 1f,
+                        animationSpec = tween(durationMillis = BlockSortLevelAnimationDurationMillis, easing = BlockSortLevelAnimationEasing),
+                    )
+                } finally {
+                    levelTransitionPreviousBoard = null
+                    levelTransitionSourceBoard = null
+                    levelTransitionAnimatedCells = emptyList()
+                    levelTransitionHiddenTargets = emptySet()
+                    previousBoard = gameState.board
+                    previousLevel = gameState.level
+                }
+            } else {
+                previousBoard = gameState.board
+                previousLevel = gameState.level
             }
+        } else {
+            previousBoard = gameState.board
+            previousLevel = gameState.level
         }
-        previousBoard = gameState.board
-        previousLevel = gameState.level
     }
 
     Card(
@@ -378,7 +515,7 @@ internal fun BlockSortBoard(
                 .fillMaxSize()
                 .padding(16.dp),
         ) {
-            val layout = remember(maxWidth, maxHeight, gameState.config.columns, gameState.config.rows) {
+            val currentBoardLayout = remember(maxWidth, maxHeight, gameState.config.columns, gameState.config.rows) {
                 calculateBlockSortBoardLayout(
                     maxWidth = maxWidth,
                     maxHeight = maxHeight,
@@ -386,31 +523,51 @@ internal fun BlockSortBoard(
                     rowCount = gameState.config.rows,
                 )
             }
-            val transitionProgress = if (isLevelTransitioning) levelTransitionProgress.value else 1f
-            val oldBoardClearProgress = if (isLevelTransitioning) transitionSegmentProgress(transitionProgress, 0.14f, 0.38f) else 1f
-            val oldBoardExitProgress = if (isLevelTransitioning) transitionSegmentProgress(transitionProgress, 0.40f, 0.56f) else 1f
-            val newBoardFrameProgress = if (isLevelTransitioning) transitionSegmentProgress(transitionProgress, 0.66f, 0.82f) else 1f
-            val newBoardRevealProgress = if (isLevelTransitioning) transitionSegmentProgress(transitionProgress, 0.82f, 1f) else 1f
-            val currentBoardScale = if (isLevelTransitioning) 0.94f + (0.06f * newBoardFrameProgress) else 1f
-            val currentBoardAlpha = if (isLevelTransitioning) newBoardFrameProgress else 1f
-            val currentBoardTranslationY = if (isLevelTransitioning) lerpDp(18.dp, 0.dp, newBoardFrameProgress) else 0.dp
-            val previousBoardAlpha = if (isLevelTransitioning) 1f - oldBoardExitProgress else 1f
-            val previousBoardScale = if (isLevelTransitioning) 1f - (0.08f * oldBoardExitProgress) else 1f
-            val previousBoardTranslationY = if (isLevelTransitioning) lerpDp(0.dp, (-18).dp, oldBoardExitProgress) else 0.dp
-            val congratsAlpha = if (isLevelTransitioning) 1f - transitionSegmentProgress(transitionProgress, 0.08f, 0.20f) else 0f
-            val congratsScale = 0.96f + (0.04f * transitionSegmentProgress(transitionProgress, 0f, 0.10f))
-            val nextRoundBadgeAlpha = if (isLevelTransitioning) transitionSegmentProgress(transitionProgress, 0.88f, 1f) else 0f
+            val previousRoundBoard = transitionPreviousBoard
+            val previousBoardLayout = remember(
+                maxWidth,
+                maxHeight,
+                previousRoundBoard?.columns,
+                previousRoundBoard?.rows,
+            ) {
+                previousRoundBoard?.let {
+                    calculateBlockSortBoardLayout(
+                        maxWidth = maxWidth,
+                        maxHeight = maxHeight,
+                        columnCount = it.columns,
+                        rowCount = it.rows,
+                    )
+                }
+            }
+            val transitionPhases = if (isLevelTransitioning) {
+                resolveBlockSortLevelTransitionPhases(
+                    if (isPendingLevelTransition) 0f else levelTransitionProgress.value,
+                )
+            } else {
+                BlockSortLevelTransitionPhases(
+                    oldBoardClearProgress = 1f,
+                    oldBoardColumnExitProgress = 0f,
+                    newBoardColumnEntryProgress = 1f,
+                    newBoardRevealProgress = 1f,
+                    currentBoardAlpha = 1f,
+                    previousBoardAlpha = 0f,
+                    nextRoundBadgeAlpha = 0f,
+                )
+            }
 
             Box(
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .size(layout.boardWidth, layout.boardHeight),
+                    .size(
+                        width = maxOf(currentBoardLayout.boardWidth, previousBoardLayout?.boardWidth ?: currentBoardLayout.boardWidth),
+                        height = maxOf(currentBoardLayout.boardHeight, previousBoardLayout?.boardHeight ?: currentBoardLayout.boardHeight),
+                    ),
                 contentAlignment = Alignment.Center,
             ) {
                 BlockSortBoardColumnsLayer(
                     board = gameState.board,
                     rowCount = gameState.config.rows,
-                    layout = layout,
+                    layout = currentBoardLayout,
                     palette = palette,
                     boardStyle = boardStyle,
                     boardStylePulse = boardStylePulse,
@@ -423,18 +580,20 @@ internal fun BlockSortBoard(
                     validTargetColumns = validTargetColumns,
                     interactionsEnabled = !isLevelTransitioning,
                     rowClearProgress = 0f,
-                    rowRevealProgress = newBoardRevealProgress,
-                    layerAlpha = currentBoardAlpha,
-                    layerScale = currentBoardScale,
-                    layerTranslationY = currentBoardTranslationY,
+                    rowRevealProgress = transitionPhases.newBoardRevealProgress,
+                    revealFromBottom = isLevelTransitioning,
+                    columnFrameProgress = transitionPhases.newBoardColumnEntryProgress,
+                    layerAlpha = transitionPhases.currentBoardAlpha,
+                    layerScale = 1f,
+                    layerTranslationY = 0.dp,
                     onColumnTapped = onColumnTapped,
                 )
 
-                levelTransitionPreviousBoard?.let { previousRoundBoard ->
+                previousRoundBoard?.let {
                     BlockSortBoardColumnsLayer(
-                        board = previousRoundBoard,
-                        rowCount = previousRoundBoard.rows,
-                        layout = layout,
+                        board = it,
+                        rowCount = it.rows,
+                        layout = previousBoardLayout ?: currentBoardLayout,
                         palette = palette,
                         boardStyle = boardStyle,
                         boardStylePulse = boardStylePulse,
@@ -443,32 +602,35 @@ internal fun BlockSortBoard(
                         guideTargetColumns = emptySet(),
                         previewMap = emptyMap(),
                         pulsingCells = emptySet(),
-                        hiddenCells = emptySet(),
+                        hiddenCells = if (isLevelMoveAnimating) activeLevelHiddenTargets else emptySet(),
                         validTargetColumns = emptySet(),
                         interactionsEnabled = false,
-                        rowClearProgress = oldBoardClearProgress,
+                        rowClearProgress = transitionPhases.oldBoardClearProgress,
                         rowRevealProgress = 1f,
-                        layerAlpha = previousBoardAlpha,
-                        layerScale = previousBoardScale,
-                        layerTranslationY = previousBoardTranslationY,
+                        revealFromBottom = false,
+                        columnFrameProgress = 1f - transitionPhases.oldBoardColumnExitProgress,
+                        layerAlpha = transitionPhases.previousBoardAlpha,
+                        layerScale = 1f,
+                        layerTranslationY = 0.dp,
                         onColumnTapped = {},
                     )
                 }
 
-                if (animatedCells.isNotEmpty() && !isLevelTransitioning) {
-                    val easedProgress = BlockSortMoveAnimationEasing.transform(moveAnimationProgress.value)
-                    animatedCells.forEach { animatedCell ->
-                        val from = layout.cellTopLeft(animatedCell.from)
-                        val to = layout.cellTopLeft(animatedCell.to)
-                        val fromXPx = with(density) { from.x.toPx() }
-                        val fromYPx = with(density) { from.y.toPx() }
-                        val toXPx = with(density) { to.x.toPx() }
-                        val toYPx = with(density) { to.y.toPx() }
+                if (isLevelMoveAnimating) {
+                    val levelMoveLayout = previousBoardLayout ?: currentBoardLayout
+                    val easedProgress = BlockSortMoveAnimationEasing.transform(levelMoveProgress)
+                    activeLevelAnimatedCells.forEach { animatedCell ->
+                        val from = levelMoveLayout.cellTopLeft(animatedCell.from)
+                        val to = levelMoveLayout.cellTopLeft(animatedCell.to)
+                        val fromXPx = density.run { from.x.toPx() }
+                        val fromYPx = density.run { from.y.toPx() }
+                        val toXPx = density.run { to.x.toPx() }
+                        val toYPx = density.run { to.y.toPx() }
                         BlockCellPreview(
                             tone = animatedCell.tone,
                             palette = palette,
                             style = boardStyle,
-                            size = layout.cellSize,
+                            size = levelMoveLayout.cellSize,
                             special = animatedCell.special,
                             pulse = 0.10f + (boardStylePulse * 0.30f),
                             modifier = Modifier
@@ -481,53 +643,41 @@ internal fun BlockSortBoard(
                     }
                 }
 
-                if (congratsAlpha > 0.01f) {
-                    Box(
-                        modifier = Modifier.matchParentSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Card(
-                            modifier = Modifier.graphicsLayer {
-                                alpha = congratsAlpha
-                                scaleX = congratsScale
-                                scaleY = congratsScale
-                            },
-                            shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
-                            colors = CardDefaults.cardColors(containerColor = uiColors.gameSurface.copy(alpha = 0.98f)),
-                            border = BorderStroke(1.dp, uiColors.success.copy(alpha = 0.58f)),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(6.dp),
-                            ) {
-                                Text(
-                                    text = stringResource(Res.string.blocksort_round_congrats_title),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                )
-                                Text(
-                                    text = stringResource(Res.string.blocksort_round_complete_hint, gameState.lastMoveScore),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    textAlign = TextAlign.Center,
-                                    color = uiColors.subtitle,
-                                )
-                            }
-                        }
+                if (animatedCells.isNotEmpty() && !isLevelTransitioning) {
+                    val easedProgress = BlockSortMoveAnimationEasing.transform(moveAnimationProgress.value)
+                    animatedCells.forEach { animatedCell ->
+                        val from = currentBoardLayout.cellTopLeft(animatedCell.from)
+                        val to = currentBoardLayout.cellTopLeft(animatedCell.to)
+                        val fromXPx = density.run { from.x.toPx() }
+                        val fromYPx = density.run { from.y.toPx() }
+                        val toXPx = density.run { to.x.toPx() }
+                        val toYPx = density.run { to.y.toPx() }
+                        BlockCellPreview(
+                            tone = animatedCell.tone,
+                            palette = palette,
+                            style = boardStyle,
+                            size = currentBoardLayout.cellSize,
+                            special = animatedCell.special,
+                            pulse = 0.10f + (boardStylePulse * 0.30f),
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .graphicsLayer {
+                                    translationX = lerpFloat(fromXPx, toXPx, easedProgress)
+                                    translationY = lerpFloat(fromYPx, toYPx, easedProgress)
+                                },
+                        )
                     }
                 }
 
-                if (nextRoundBadgeAlpha > 0.01f) {
+                if (transitionPhases.nextRoundBadgeAlpha > 0.01f) {
                     Card(
                         modifier = Modifier
                             .align(Alignment.TopCenter)
                             .padding(top = 6.dp)
                             .graphicsLayer {
-                                alpha = nextRoundBadgeAlpha
-                                scaleX = 0.96f + (0.04f * nextRoundBadgeAlpha)
-                                scaleY = 0.96f + (0.04f * nextRoundBadgeAlpha)
+                                alpha = transitionPhases.nextRoundBadgeAlpha
+                                scaleX = 0.96f + (0.04f * transitionPhases.nextRoundBadgeAlpha)
+                                scaleY = 0.96f + (0.04f * transitionPhases.nextRoundBadgeAlpha)
                             },
                         shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
                         colors = CardDefaults.cardColors(containerColor = uiColors.gameSurface.copy(alpha = 0.94f)),
@@ -543,6 +693,7 @@ internal fun BlockSortBoard(
                         )
                     }
                 }
+
             }
         }
     }
@@ -566,6 +717,8 @@ private fun BlockSortBoardColumnsLayer(
     interactionsEnabled: Boolean,
     rowClearProgress: Float,
     rowRevealProgress: Float,
+    revealFromBottom: Boolean,
+    columnFrameProgress: Float,
     layerAlpha: Float,
     layerScale: Float,
     layerTranslationY: androidx.compose.ui.unit.Dp,
@@ -609,6 +762,8 @@ private fun BlockSortBoardColumnsLayer(
                         interactionsEnabled = interactionsEnabled,
                         rowClearProgress = rowClearProgress,
                         rowRevealProgress = rowRevealProgress,
+                        revealFromBottom = revealFromBottom,
+                        columnFrameProgress = columnFrameProgress,
                         onTap = { onColumnTapped(column) },
                         modifier = Modifier.size(layout.columnWidth, layout.columnHeight),
                     )
@@ -639,6 +794,8 @@ private fun BlockSortColumn(
     interactionsEnabled: Boolean,
     rowClearProgress: Float,
     rowRevealProgress: Float,
+    revealFromBottom: Boolean,
+    columnFrameProgress: Float,
     onTap: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -662,6 +819,12 @@ private fun BlockSortColumn(
         modifier = modifier
             .fillMaxSize()
             .clip(RoundedCornerShape(GameUiShapeTokens.surfaceCorner))
+            .graphicsLayer {
+                alpha = columnFrameProgress.coerceIn(0f, 1f)
+                val scale = 0.92f + (0.08f * columnFrameProgress.coerceIn(0f, 1f))
+                scaleX = scale
+                scaleY = scale
+            }
             .clickable(enabled = interactionsEnabled, onClick = onTap),
         shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
         colors = CardDefaults.cardColors(
@@ -684,7 +847,11 @@ private fun BlockSortColumn(
                 val point = GridPoint(column, row)
                 val cell = board.cellAt(column, row)
                 val cellAlpha = rowClearAlpha(row = row, rowCount = rowCount, clearProgress = rowClearProgress)
-                val revealAlpha = rowRevealAlpha(row = row, rowCount = rowCount, revealProgress = rowRevealProgress)
+                val revealAlpha = if (revealFromBottom) {
+                    rowRevealAlphaFromBottom(row = row, rowCount = rowCount, revealProgress = rowRevealProgress)
+                } else {
+                    rowRevealAlpha(row = row, rowCount = rowCount, revealProgress = rowRevealProgress)
+                }
                 val visibleAlpha = cellAlpha * revealAlpha
                 val slotAlpha = cellAlpha
                 val showOccupiedCell = cell != null && point !in hiddenCells && revealAlpha > 0.01f
@@ -699,9 +866,9 @@ private fun BlockSortColumn(
                                 .clip(RoundedCornerShape(14.dp))
                                 .background(uiColors.boardEmptyCell)
                                 .graphicsLayer {
-                                    alpha = slotAlpha * if (point in previewCells) (0.78f + (stylePulse * 0.20f)) else 1f
-                                    scaleX = if (point in previewCells) 1f + (stylePulse * 0.05f) else 1f
-                                    scaleY = if (point in previewCells) 1f + (stylePulse * 0.05f) else 1f
+                                    alpha = slotAlpha * if (point in previewCells) (0.72f + (stylePulse * 0.28f)) else 1f
+                                    scaleX = if (point in previewCells) 1f + (stylePulse * 0.09f) else 1f
+                                    scaleY = if (point in previewCells) 1f + (stylePulse * 0.09f) else 1f
                                 },
                         )
                     } else {
@@ -710,7 +877,7 @@ private fun BlockSortColumn(
                                 alpha = visibleAlpha
                                 val scaleBoost = when {
                                     point in pulsingCells -> 0.045f * stylePulse
-                                    point in previewCells -> 0.035f * stylePulse
+                                    point in previewCells -> 0.080f * stylePulse
                                     else -> 0f
                                 }
                                 scaleX = 1f + scaleBoost
@@ -737,8 +904,17 @@ private fun BlockSortColumn(
                             modifier = Modifier
                                 .matchParentSize()
                                 .clip(RoundedCornerShape(14.dp))
-                                .background(uiColors.guideAccent.copy(alpha = 0.10f + (0.12f * stylePulse)))
-                                .graphicsLayer { alpha = visibleAlpha },
+                                .border(
+                                    width = 1.5.dp,
+                                    color = uiColors.guideAccent.copy(alpha = 0.56f + (0.22f * stylePulse)),
+                                    shape = RoundedCornerShape(14.dp),
+                                )
+                                .background(uiColors.guideAccent.copy(alpha = 0.12f + (0.12f * stylePulse)))
+                                .graphicsLayer {
+                                    alpha = maxOf(slotAlpha, visibleAlpha) * (0.72f + (0.20f * stylePulse))
+                                    scaleX = 0.92f + (0.16f * stylePulse)
+                                    scaleY = 0.92f + (0.16f * stylePulse)
+                                },
                         )
                     }
                 }
@@ -789,8 +965,12 @@ private fun BlockSortStatPill(
 @Composable
 private fun BlockSortInfoPanel(
     gameState: GameState,
+    displayedRoundLevel: Int,
     selectedSourceColumn: Int?,
     interactiveOnboardingScene: BlockSortOnboardingScene?,
+    adController: GameAdController,
+    rewardedAddColumnLoading: Boolean,
+    onRewardedAddEmptyColumn: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uiColors = BlockGamesThemeTokens.uiColors
@@ -811,7 +991,7 @@ private fun BlockSortInfoPanel(
         border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.72f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
@@ -823,28 +1003,67 @@ private fun BlockSortInfoPanel(
                     ),
                 )
                 .padding(horizontal = 12.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            BlockSortStatPill(
-                label = stringResource(Res.string.blocksort_round_label),
-                value = gameState.level.toString(),
-                icon = Icons.Filled.Flag,
-            )
-            BlockSortStatPill(
-                label = stringResource(Res.string.blocksort_completed_label),
-                value = gameState.linesCleared.toString(),
-                icon = Icons.Filled.AutoAwesome,
-            )
-            Text(
-                text = helperText,
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodySmall,
-                color = uiColors.subtitle,
-                maxLines = 2,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                BlockSortStatPill(
+                    label = stringResource(Res.string.blocksort_round_label),
+                    value = displayedRoundLevel.toString(),
+                    icon = Icons.Filled.Flag,
+                )
+                if (adController !== NoOpGameAdController) {
+                    BlockSortExtraColumnAdButton(
+                        enabled = !rewardedAddColumnLoading && !gameState.blockSortBonusEmptyColumnUsed && gameState.status == GameStatus.Running,
+                        onActivated = onRewardedAddEmptyColumn,
+                    )
+                }
+                Text(
+                    text = helperText,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = uiColors.subtitle,
+                    maxLines = 2,
+                )
+            }
+
+            gameState.activeChallenge?.let { challenge ->
+                Card(
+                    shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
+                    colors = CardDefaults.cardColors(containerColor = uiColors.gameSurface.copy(alpha = 0.54f)),
+                    border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.42f)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                ) {
+                    ChallengeTasksDock(
+                        challenge = challenge,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 10.dp, vertical = 8.dp),
+                    )
+                }
+            }
         }
     }
+}
+
+@Composable
+private fun BlockSortExtraColumnAdButton(
+    enabled: Boolean,
+    onActivated: () -> Unit,
+) {
+    TopBarActionBlockButton(
+        tone = CellTone.Gold,
+        icon = Icons.Filled.Add,
+        contentDescription = "Add empty column",
+        onClick = onActivated,
+        enabled = enabled,
+        size = 40.dp,
+        showAdIcon = true,
+        extraAlpha = 0.84f,
+    )
 }
 
 private fun isCompletedColumn(board: com.ugurbuga.blockgames.game.model.BoardMatrix, rowCount: Int, column: Int): Boolean {
@@ -998,17 +1217,65 @@ private fun boardCellAnimationKey(cell: BoardCell, column: Int, row: Int): Int {
         ?: (((cell.tone.ordinal + 1) * 10_000) + ((column + 1) * 100) + row)
 }
 
-private fun lerpDp(
-    start: androidx.compose.ui.unit.Dp,
-    stop: androidx.compose.ui.unit.Dp,
-    progress: Float,
-): androidx.compose.ui.unit.Dp = start + ((stop - start) * progress)
 
 private fun lerpFloat(start: Float, stop: Float, progress: Float): Float = start + ((stop - start) * progress)
 
 private fun transitionSegmentProgress(value: Float, start: Float, end: Float): Float {
     if (end <= start) return if (value >= end) 1f else 0f
     return ((value - start) / (end - start)).coerceIn(0f, 1f)
+}
+
+internal fun isPendingBlockSortLevelTransition(
+    previousLevel: Int,
+    currentLevel: Int,
+    hasActiveTransitionBoard: Boolean,
+): Boolean {
+    return !hasActiveTransitionBoard && currentLevel > previousLevel
+}
+
+internal fun shouldShowPreviousBlockSortRound(progress: Float): Boolean {
+    val clampedProgress = progress.coerceIn(0f, 1f)
+    val previousRoundVisibleUntilMillis =
+        BlockSortFinalMoveAnimationDurationMillis + (BlockSortLevelAnimationDurationMillis * BlockSortLevelTransitionColumnExitEnd)
+    val visibilityThreshold = previousRoundVisibleUntilMillis / BlockSortTotalTransitionPauseDurationMillis.toFloat()
+    return clampedProgress < visibilityThreshold
+}
+
+internal fun resolveBlockSortLevelTransitionPhases(progress: Float): BlockSortLevelTransitionPhases {
+    val clampedProgress = progress.coerceIn(0f, 1f)
+    val oldBoardClearProgress = transitionSegmentProgress(
+        value = clampedProgress,
+        start = BlockSortLevelTransitionHoldEnd,
+        end = BlockSortLevelTransitionClearEnd,
+    )
+    val oldBoardColumnExitProgress = transitionSegmentProgress(
+        value = clampedProgress,
+        start = BlockSortLevelTransitionClearEnd,
+        end = BlockSortLevelTransitionColumnExitEnd,
+    )
+    val newBoardColumnEntryProgress = transitionSegmentProgress(
+        value = clampedProgress,
+        start = BlockSortLevelTransitionColumnExitEnd,
+        end = BlockSortLevelTransitionColumnEntryEnd,
+    )
+    val newBoardRevealProgress = transitionSegmentProgress(
+        value = clampedProgress,
+        start = BlockSortLevelTransitionColumnEntryEnd,
+        end = 1f,
+    )
+    return BlockSortLevelTransitionPhases(
+        oldBoardClearProgress = oldBoardClearProgress,
+        oldBoardColumnExitProgress = oldBoardColumnExitProgress,
+        newBoardColumnEntryProgress = newBoardColumnEntryProgress,
+        newBoardRevealProgress = newBoardRevealProgress,
+        currentBoardAlpha = if (clampedProgress < BlockSortLevelTransitionColumnExitEnd) 0f else 1f,
+        previousBoardAlpha = if (clampedProgress >= BlockSortLevelTransitionColumnEntryEnd) 0f else 1f,
+        nextRoundBadgeAlpha = transitionSegmentProgress(
+            value = clampedProgress,
+            start = BlockSortLevelTransitionColumnEntryEnd,
+            end = 1f,
+        ),
+    )
 }
 
 internal fun rowClearAlpha(row: Int, rowCount: Int, clearProgress: Float): Float {
@@ -1023,6 +1290,14 @@ internal fun rowRevealAlpha(row: Int, rowCount: Int, revealProgress: Float): Flo
     if (revealProgress >= 1f) return 1f
     val revealIndex = revealProgress * rowCount
     return (revealIndex - row).coerceIn(0f, 1f)
+}
+
+internal fun rowRevealAlphaFromBottom(row: Int, rowCount: Int, revealProgress: Float): Float {
+    return rowRevealAlpha(
+        row = (rowCount - 1 - row).coerceAtLeast(0),
+        rowCount = rowCount,
+        revealProgress = revealProgress,
+    )
 }
 
 internal fun resolveMovableStackCells(

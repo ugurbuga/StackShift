@@ -24,6 +24,7 @@ import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.GridPoint
 import com.ugurbuga.blockgames.game.model.SpecialBlockType
 import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
+import com.ugurbuga.blockgames.platform.currentEpochMillis
 import com.ugurbuga.blockgames.platform.feedback.NoOpSoundEffectPlayer
 import com.ugurbuga.blockgames.platform.feedback.SoundEffectPlayer
 import com.ugurbuga.blockgames.presentation.game.GameDispatchResult
@@ -102,9 +103,51 @@ fun BlockGamesGameApp(
         mutableStateOf<GameState?>(null)
     }
     val shouldShowLaunchOverlay = rememberSaveable { mutableStateOf(value = true) }
+    var blockSortTimePauseUntilEpochMillis by remember(uiState.gameState.gameplayStyle, uiState.gameState.gameMode) {
+        mutableStateOf(0L)
+    }
+    var previousBlockSortLevel by remember(uiState.gameState.gameplayStyle, uiState.gameState.gameMode) {
+        mutableIntStateOf(uiState.gameState.level)
+    }
 
-    LaunchedEffect(uiState.gameState.status) {
+    LaunchedEffect(
+        uiState.gameState.gameplayStyle,
+        uiState.gameState.gameMode,
+        uiState.gameState.level,
+        uiState.gameState.status,
+    ) {
+        if (
+            uiState.gameState.gameplayStyle == GameplayStyle.BlockSort &&
+            uiState.gameState.gameMode == com.ugurbuga.blockgames.game.model.GameMode.TimeAttack &&
+            uiState.gameState.status == GameStatus.Running &&
+            uiState.gameState.level > previousBlockSortLevel
+        ) {
+            blockSortTimePauseUntilEpochMillis =
+                currentEpochMillis() + BlockSortTotalTransitionPauseDurationMillis.toLong()
+        }
+        previousBlockSortLevel = uiState.gameState.level
+    }
+
+    LaunchedEffect(
+        uiState.gameState.status,
+        uiState.gameState.gameplayStyle,
+        uiState.gameState.gameMode,
+        uiState.gameState.level,
+        blockSortTimePauseUntilEpochMillis,
+    ) {
         while (uiState.gameState.status == GameStatus.Running) {
+            val pauseRemainingMillis = if (
+                uiState.gameState.gameplayStyle == GameplayStyle.BlockSort &&
+                uiState.gameState.gameMode == com.ugurbuga.blockgames.game.model.GameMode.TimeAttack
+            ) {
+                (blockSortTimePauseUntilEpochMillis - currentEpochMillis()).coerceAtLeast(0L)
+            } else {
+                0L
+            }
+            if (pauseRemainingMillis > 0L) {
+                delay(minOf(pauseRemainingMillis, 250L).milliseconds)
+                continue
+            }
             delay(1000.milliseconds)
             viewModel.tick()
         }
@@ -374,9 +417,13 @@ fun BlockGamesGameApp(
                 telemetry.logUserAction(RewardedReviveTelemetryAction)
                 dispatchFeedback(viewModel.reviveFromReward(), soundPlayer, haptics)
             },
+            onRewardedAddEmptyColumn = {
+                onReplaceActivePieceRewarded(SpecialBlockType.None)
+            },
             onBack = onBack,
             highestScore = highestScore,
             showNewHighScoreMessage = newHighScoreReached,
+            adController = adController,
             interactiveOnboardingScene = blockSortOnboardingScene,
             interactiveOnboardingCurrentStep = onboardingStages.indexOf(onboardingStage)
                 .takeIf { it >= 0 }?.plus(1) ?: 0,

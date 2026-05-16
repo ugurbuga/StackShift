@@ -461,6 +461,7 @@ internal class BlockWiseGameLogic(
                 ChallengeTaskType.ChainReaction -> 0
                 ChallengeTaskType.ClearColumns -> columnsCleared
                 ChallengeTaskType.PlacePieces -> 1
+                ChallengeTaskType.ClearRounds -> 0
                 ChallengeTaskType.ClearBothDirections -> if (rowsCleared > 0 && columnsCleared > 0) 1 else 0
             }
             task.copy(current = task.current + progressGain)

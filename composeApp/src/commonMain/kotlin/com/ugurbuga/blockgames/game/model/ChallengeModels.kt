@@ -34,11 +34,15 @@ enum class ChallengeTaskType(
     ),
     ClearColumns(
         stableId = "clear_columns",
-        supportedStyles = setOf(GameplayStyle.BlockWise),
+        supportedStyles = setOf(GameplayStyle.BlockWise, GameplayStyle.BlockSort),
     ),
     PlacePieces(
         stableId = "place_pieces",
-        supportedStyles = setOf(GameplayStyle.BlockWise, GameplayStyle.BoomBlocks, GameplayStyle.BlockSort),
+        supportedStyles = setOf(GameplayStyle.BlockWise, GameplayStyle.BoomBlocks),
+    ),
+    ClearRounds(
+        stableId = "clear_rounds",
+        supportedStyles = setOf(GameplayStyle.BlockSort),
     ),
     ClearBothDirections(
         stableId = "clear_both_directions",
@@ -84,6 +88,8 @@ enum class ChallengeTaskType(
             GameplayStyle.BlockSort -> listOf(
                 ReachScore,
                 PlacePieces,
+                ClearColumns,
+                ClearRounds,
             ).getOrNull(ordinal)
         }
     }

@@ -2,6 +2,8 @@ package com.ugurbuga.blockgames.ui.game.dailychallenge
 
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.challenge_info_clear_both_directions
+import blockgames.composeapp.generated.resources.challenge_info_clear_rounds
+import blockgames.composeapp.generated.resources.challenge_info_clear_rounds_title
 import blockgames.composeapp.generated.resources.challenge_info_clear_columns_title
 import blockgames.composeapp.generated.resources.challenge_info_clear_rows_title
 import blockgames.composeapp.generated.resources.challenge_info_place_pieces
@@ -20,6 +22,7 @@ class DailyChallengeScreenCommonTest {
     fun challengeInfoTitleRes_returnsExpectedResourcesForRepresentativeTasks() {
         assertEquals(Res.string.challenge_info_clear_rows_title, challengeInfoTitleRes(ChallengeTaskType.ClearRows))
         assertEquals(Res.string.challenge_info_clear_columns_title, challengeInfoTitleRes(ChallengeTaskType.ClearColumns))
+        assertEquals(Res.string.challenge_info_clear_rounds_title, challengeInfoTitleRes(ChallengeTaskType.ClearRounds))
         assertEquals(Res.string.challenge_info_trigger_special_title, challengeInfoTitleRes(ChallengeTaskType.TriggerSpecial))
     }
 
@@ -27,6 +30,7 @@ class DailyChallengeScreenCommonTest {
     fun challengeInfoDescriptionRes_returnsExpectedResourcesForRepresentativeTasks() {
         assertEquals(Res.string.challenge_info_reach_score, challengeInfoDescriptionRes(ChallengeTaskType.ReachScore))
         assertEquals(Res.string.challenge_info_place_pieces, challengeInfoDescriptionRes(ChallengeTaskType.PlacePieces))
+        assertEquals(Res.string.challenge_info_clear_rounds, challengeInfoDescriptionRes(ChallengeTaskType.ClearRounds))
         assertEquals(Res.string.challenge_info_clear_both_directions, challengeInfoDescriptionRes(ChallengeTaskType.ClearBothDirections))
     }
 
