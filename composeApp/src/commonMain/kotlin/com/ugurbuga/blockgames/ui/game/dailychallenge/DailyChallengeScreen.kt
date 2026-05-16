@@ -72,6 +72,8 @@ import blockgames.composeapp.generated.resources.challenge_info_clear_both_direc
 import blockgames.composeapp.generated.resources.challenge_info_clear_both_directions_title
 import blockgames.composeapp.generated.resources.challenge_info_clear_columns
 import blockgames.composeapp.generated.resources.challenge_info_clear_columns_title
+import blockgames.composeapp.generated.resources.challenge_info_clear_rounds
+import blockgames.composeapp.generated.resources.challenge_info_clear_rounds_title
 import blockgames.composeapp.generated.resources.challenge_info_clear_rows
 import blockgames.composeapp.generated.resources.challenge_info_clear_rows_title
 import blockgames.composeapp.generated.resources.challenge_info_perfect_placement
@@ -88,7 +90,9 @@ import blockgames.composeapp.generated.resources.challenge_task_chain_reaction
 import blockgames.composeapp.generated.resources.challenge_task_clear_blocks
 import blockgames.composeapp.generated.resources.challenge_task_clear_both_directions
 import blockgames.composeapp.generated.resources.challenge_task_clear_columns
+import blockgames.composeapp.generated.resources.challenge_task_clear_rounds
 import blockgames.composeapp.generated.resources.challenge_task_clear_rows
+import blockgames.composeapp.generated.resources.challenge_task_complete_columns
 import blockgames.composeapp.generated.resources.challenge_task_explode_groups
 import blockgames.composeapp.generated.resources.challenge_task_perfect_placement
 import blockgames.composeapp.generated.resources.challenge_task_place_pieces
@@ -719,7 +723,13 @@ fun taskDescription(task: ChallengeTask): String {
         ChallengeTaskType.ChainReaction -> Res.string.challenge_task_chain_reaction
         ChallengeTaskType.ClearRows -> Res.string.challenge_task_clear_rows
         ChallengeTaskType.ReachScore -> Res.string.challenge_task_reach_score
-        ChallengeTaskType.ClearColumns -> Res.string.challenge_task_clear_columns
+        ChallengeTaskType.ClearColumns -> {
+            if (gameplayStyle == GameplayStyle.BlockSort) {
+                Res.string.challenge_task_complete_columns
+            } else {
+                Res.string.challenge_task_clear_columns
+            }
+        }
         ChallengeTaskType.PlacePieces -> {
             if (gameplayStyle == GameplayStyle.BoomBlocks) {
                 Res.string.challenge_task_explode_groups
@@ -727,6 +737,7 @@ fun taskDescription(task: ChallengeTask): String {
                 Res.string.challenge_task_place_pieces
             }
         }
+        ChallengeTaskType.ClearRounds -> Res.string.challenge_task_clear_rounds
         ChallengeTaskType.ClearBothDirections -> Res.string.challenge_task_clear_both_directions
     }
     return stringResource(res, task.target)
@@ -789,6 +800,7 @@ internal fun challengeInfoTitleRes(taskType: ChallengeTaskType): StringResource 
         ChallengeTaskType.ClearRows -> Res.string.challenge_info_clear_rows_title
         ChallengeTaskType.ClearColumns -> Res.string.challenge_info_clear_columns_title
         ChallengeTaskType.PlacePieces -> Res.string.challenge_info_place_pieces_title
+        ChallengeTaskType.ClearRounds -> Res.string.challenge_info_clear_rounds_title
         ChallengeTaskType.ClearBothDirections -> Res.string.challenge_info_clear_both_directions_title
     }
 
@@ -804,6 +816,7 @@ internal fun challengeInfoDescriptionRes(taskType: ChallengeTaskType): StringRes
         ChallengeTaskType.ClearRows -> Res.string.challenge_info_clear_rows
         ChallengeTaskType.ClearColumns -> Res.string.challenge_info_clear_columns
         ChallengeTaskType.PlacePieces -> Res.string.challenge_info_place_pieces
+        ChallengeTaskType.ClearRounds -> Res.string.challenge_info_clear_rounds
         ChallengeTaskType.ClearBothDirections -> Res.string.challenge_info_clear_both_directions
     }
 

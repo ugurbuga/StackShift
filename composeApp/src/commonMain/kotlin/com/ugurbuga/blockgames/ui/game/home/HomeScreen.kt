@@ -52,6 +52,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
@@ -112,6 +113,8 @@ import kotlin.math.abs
 
 private const val HomeTitleBannerColumns = 6
 private const val HomeTitleBannerRows = 2
+private const val BlockSortHomeBannerColumns = 5
+private const val BlockSortHomeBannerRows = 4
 
 @Composable
 fun HomeScreen(
@@ -320,20 +323,61 @@ private fun BlockSortHomeTitleBanner(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 4200, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse,
+            animation = tween(durationMillis = 6_200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart,
         ),
         label = "blockSortBannerSequenceClock",
     )
     val phase = normalizedPhase(sequenceClock)
-    val topRow = rememberHomeTitleRow(
-        word = stringResource(Res.string.app_title_banner_blocksort_top),
-        startColumn = 0,
-    )
-    val bottomRow = rememberHomeTitleRow(
-        word = stringResource(Res.string.app_title_banner_blocksort_bottom),
-        startColumn = 1,
-    )
+    val topWord = stringResource(Res.string.app_title_banner_blocksort_top)
+    val bottomWord = stringResource(Res.string.app_title_banner_blocksort_bottom)
+    val moves = remember { blockSortHomeBannerMoves() }
+    val moveCount = moves.size.coerceAtLeast(1)
+    val scaledPhase = phase * moveCount
+    val activeMoveIndex = scaledPhase.toInt().coerceIn(0, moves.lastIndex)
+    val localPhase = (scaledPhase - activeMoveIndex).coerceIn(0f, 0.9999f)
+    val activeMove = moves[activeMoveIndex]
+    val sourceTapProgress = segmentProgress(localPhase, 0.00f, 0.18f)
+    val handTravelProgress = segmentProgress(localPhase, 0.18f, 0.42f)
+    val targetTapProgress = segmentProgress(localPhase, 0.42f, 0.60f)
+    val pieceMoveProgress = segmentProgress(localPhase, 0.60f, 0.92f)
+    val completedMoves = activeMoveIndex + if (localPhase >= 0.92f) 1 else 0
+    val baseColumns = remember(topWord, bottomWord, activeMoveIndex) {
+        blockSortHomeBannerColumns(
+            topWord = topWord,
+            bottomWord = bottomWord,
+            completedMoves = activeMoveIndex,
+        )
+    }
+    val displayedColumns = remember(topWord, bottomWord, baseColumns, activeMove, localPhase, completedMoves) {
+        when {
+            localPhase in 0.60f..0.92f -> baseColumns.mapIndexed { columnIndex, columnCells ->
+                if (columnIndex == activeMove.sourceColumn) {
+                    columnCells.toMutableList().apply { this[activeMove.sourceRow] = null }
+                } else {
+                    columnCells
+                }
+            }
+
+            else -> blockSortHomeBannerColumns(
+                topWord = topWord,
+                bottomWord = bottomWord,
+                completedMoves = completedMoves,
+            )
+        }
+    }
+    val sourceHighlight = when {
+        localPhase < 0.18f -> sourceTapProgress
+        localPhase < 0.42f -> 1f - handTravelProgress
+        else -> 0f
+    }
+    val targetHighlight = when {
+        localPhase < 0.18f -> 0f
+        localPhase < 0.42f -> handTravelProgress
+        localPhase < 0.60f -> targetTapProgress
+        localPhase < 0.92f -> 1f - pieceMoveProgress
+        else -> 0f
+    }
 
     Card(
         modifier = modifier
@@ -350,7 +394,7 @@ private fun BlockSortHomeTitleBanner(
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(6f / 3.8f)
+                .aspectRatio(5f / 3.45f)
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
@@ -361,64 +405,292 @@ private fun BlockSortHomeTitleBanner(
                     ),
                 ),
         ) {
-            val cellWidth = maxWidth / HomeTitleBannerColumns
-            val boardCellHeight = cellWidth
-            val rowShift = boardCellHeight * (0.08f * phase)
+            val layout = remember(maxWidth, maxHeight) {
+                calculateBlockSortHomeBannerLayout(maxWidth = maxWidth, maxHeight = maxHeight)
+            }
+            val sourceCellTopLeft = layout.cellTopLeft(column = activeMove.sourceColumn, row = activeMove.sourceRow)
+            val targetCellTopLeft = layout.cellTopLeft(column = activeMove.targetColumn, row = activeMove.targetRow)
+            val movingCellX = lerpDp(sourceCellTopLeft.x, targetCellTopLeft.x, pieceMoveProgress)
+            val movingCellY = lerpDp(sourceCellTopLeft.y, targetCellTopLeft.y, pieceMoveProgress)
+            val handAlpha = if (localPhase < 0.60f) 1f else 0f
+            val handPosition = when {
+                localPhase < 0.18f -> sourceCellTopLeft
+                localPhase < 0.42f -> androidx.compose.ui.unit.DpOffset(
+                    x = lerpDp(sourceCellTopLeft.x, targetCellTopLeft.x, handTravelProgress),
+                    y = lerpDp(sourceCellTopLeft.y, targetCellTopLeft.y, handTravelProgress),
+                )
+                else -> targetCellTopLeft
+            }
+            val tapCompression = maxOf(sourceTapProgress, targetTapProgress)
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(top = boardCellHeight * 0.65f),
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.TopCenter,
             ) {
-                Row(
-                    modifier = Modifier
-                        .height(boardCellHeight)
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
+                Box(
+                    modifier = Modifier.size(layout.boardWidth, layout.boardHeight),
                 ) {
-                    topRow.forEach { cell ->
-                        val cellModifier = Modifier.size(boardCellHeight)
-                        if (cell == null) {
-                            HomeTitleEmptyCell(settings = settings, pulse = pulse, modifier = cellModifier)
-                        } else {
-                            HomeTitleAnimatedCell(
-                                letter = cell.letter,
-                                tone = cell.tone,
+                    Row(
+                        modifier = Modifier.align(Alignment.TopCenter),
+                        horizontalArrangement = Arrangement.spacedBy(layout.columnGap),
+                    ) {
+                        displayedColumns.forEachIndexed { columnIndex, columnCells ->
+                            BlockSortHomeTitleBannerColumn(
+                                cells = columnCells,
                                 settings = settings,
                                 pulse = pulse,
-                                alpha = 0.92f,
-                                modifier = cellModifier,
-                                offsetY = -rowShift,
+                                slotSize = layout.slotSize,
+                                cellGap = layout.cellGap,
+                                sourceHighlight = if (columnIndex == activeMove.sourceColumn) sourceHighlight else 0f,
+                                targetHighlight = if (columnIndex == activeMove.targetColumn) targetHighlight else 0f,
+                                modifier = Modifier.size(layout.columnWidth, layout.columnHeight),
                             )
                         }
                     }
-                }
-                Row(
-                    modifier = Modifier
-                        .height(boardCellHeight)
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    bottomRow.forEach { cell ->
-                        val cellModifier = Modifier.size(boardCellHeight)
-                        if (cell == null) {
-                            HomeTitleEmptyCell(settings = settings, pulse = pulse, modifier = cellModifier)
-                        } else {
-                            HomeTitleAnimatedCell(
-                                letter = cell.letter,
-                                tone = cell.tone,
-                                settings = settings,
-                                pulse = pulse,
-                                alpha = 1f,
-                                modifier = cellModifier,
-                                offsetY = rowShift,
-                            )
-                        }
+
+                    if (localPhase in 0.60f..0.92f) {
+                        HomeTitleAnimatedCell(
+                            letter = null,
+                            tone = activeMove.tone,
+                            settings = settings,
+                            pulse = pulse * 0.7f,
+                            alpha = 1f,
+                            modifier = Modifier
+                                .size(layout.slotSize)
+                                .offset(x = movingCellX, y = movingCellY),
+                        )
+                    }
+
+                    if (sourceTapProgress > 0.01f) {
+                        HomeTitleTapEffect(
+                            x = sourceCellTopLeft.x,
+                            y = sourceCellTopLeft.y,
+                            size = layout.slotSize,
+                            progress = sourceTapProgress,
+                            color = uiColors.launchGlow,
+                        )
+                    }
+
+                    if (targetTapProgress > 0.01f) {
+                        HomeTitleTapEffect(
+                            x = targetCellTopLeft.x,
+                            y = targetCellTopLeft.y,
+                            size = layout.slotSize,
+                            progress = targetTapProgress,
+                            color = uiColors.guideAccent,
+                        )
+                    }
+
+                    if (handAlpha > 0.01f) {
+                        val isDark = isBlockGamesDarkTheme(settings)
+                        val handColor = if (isDark) Color.White else Color.Black.copy(alpha = 0.85f)
+                        HomeTitleDemoHand(
+                            x = handPosition.x,
+                            y = handPosition.y,
+                            size = layout.slotSize * (1f - (tapCompression * 0.18f)),
+                            alpha = handAlpha,
+                            color = handColor,
+                        )
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun BlockSortHomeTitleBannerColumn(
+    cells: List<HomeTitleCell?>,
+    settings: AppSettings,
+    pulse: Float,
+    slotSize: Dp,
+    cellGap: Dp,
+    sourceHighlight: Float,
+    targetHighlight: Float,
+    modifier: Modifier = Modifier,
+) {
+    val uiColors = BlockGamesThemeTokens.uiColors
+    val sourceStrength = sourceHighlight.coerceIn(0f, 1f)
+    val targetStrength = targetHighlight.coerceIn(0f, 1f)
+    val highlightStrength = maxOf(sourceStrength, targetStrength)
+    val highlightColor = if (sourceStrength >= targetStrength) uiColors.launchGlow else uiColors.guideAccent
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(GameUiShapeTokens.surfaceCorner),
+        colors = CardDefaults.cardColors(
+            containerColor = androidx.compose.ui.graphics.lerp(
+                uiColors.gameSurface.copy(alpha = 0.84f),
+                highlightColor.copy(alpha = 0.18f),
+                highlightStrength * 0.42f,
+            ),
+        ),
+        border = BorderStroke(
+            width = if (highlightStrength > 0.01f) 1.5.dp else 1.dp,
+            color = androidx.compose.ui.graphics.lerp(
+                uiColors.panelStroke.copy(alpha = 0.72f),
+                highlightColor.copy(alpha = 0.82f),
+                highlightStrength,
+            ),
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 6.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(cellGap),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            cells.forEach { cell ->
+                if (cell == null) {
+                    HomeTitleEmptyCell(
+                        settings = settings,
+                        pulse = pulse,
+                        modifier = Modifier.size(slotSize),
+                    )
+                } else {
+                    HomeTitleAnimatedCell(
+                        letter = cell.letter,
+                        tone = cell.tone,
+                        settings = settings,
+                        pulse = pulse,
+                        alpha = 1f,
+                        modifier = Modifier.size(slotSize),
+                    )
+                }
+            }
+        }
+    }
+}
+
+private data class BlockSortHomeBannerLayout(
+    val slotSize: Dp,
+    val cellGap: Dp,
+    val columnGap: Dp,
+    val columnWidth: Dp,
+    val columnHeight: Dp,
+    val boardWidth: Dp,
+    val boardHeight: Dp,
+) {
+    fun cellTopLeft(column: Int, row: Int): androidx.compose.ui.unit.DpOffset {
+        return androidx.compose.ui.unit.DpOffset(
+            x = ((columnWidth + columnGap) * column) + 6.dp,
+            y = 8.dp + ((slotSize + cellGap) * row),
+        )
+    }
+}
+
+private fun calculateBlockSortHomeBannerLayout(
+    maxWidth: Dp,
+    maxHeight: Dp,
+): BlockSortHomeBannerLayout {
+    val columnGap = 10.dp
+    val cellGap = 6.dp
+    val horizontalPadding = 12.dp
+    val verticalPadding = 0.dp
+    val widthBasedSlot = (
+        maxWidth - horizontalPadding - (columnGap * (BlockSortHomeBannerColumns - 1)) - (6.dp * 2 * BlockSortHomeBannerColumns)
+    ) / BlockSortHomeBannerColumns
+    val heightBasedSlot = (
+        maxHeight - verticalPadding - (cellGap * (BlockSortHomeBannerRows - 1)) - (8.dp * 2)
+    ) / BlockSortHomeBannerRows
+    val slotSize = minOf(widthBasedSlot, heightBasedSlot).coerceAtLeast(12.dp)
+    val columnWidth = slotSize + (6.dp * 2)
+    val columnHeight = (slotSize * BlockSortHomeBannerRows) + (cellGap * (BlockSortHomeBannerRows - 1)) + (8.dp * 2)
+    val boardWidth = (columnWidth * BlockSortHomeBannerColumns) + (columnGap * (BlockSortHomeBannerColumns - 1))
+    return BlockSortHomeBannerLayout(
+        slotSize = slotSize,
+        cellGap = cellGap,
+        columnGap = columnGap,
+        columnWidth = columnWidth,
+        columnHeight = columnHeight,
+        boardWidth = boardWidth,
+        boardHeight = columnHeight,
+    )
+}
+
+internal fun blockSortHomeBannerColumns(
+    topWord: String,
+    bottomWord: String,
+    completedMoves: Int,
+): List<List<HomeTitleCell?>> {
+    val columns: MutableList<MutableList<HomeTitleCell?>> = mutableListOf(
+        mutableListOf<HomeTitleCell?>(
+            HomeTitleCell(tone = CellTone.Gold),
+            HomeTitleCell(tone = CellTone.Blue),
+            HomeTitleCell(letter = topWord.getOrNull(0)?.toString(), tone = CellTone.Cyan),
+            HomeTitleCell(letter = bottomWord.getOrNull(0)?.toString(), tone = CellTone.Blue),
+        ),
+        mutableListOf<HomeTitleCell?>(
+            null,
+            HomeTitleCell(tone = CellTone.Gold),
+            HomeTitleCell(letter = topWord.getOrNull(1)?.toString(), tone = CellTone.Gold),
+            HomeTitleCell(letter = bottomWord.getOrNull(1)?.toString(), tone = CellTone.Lime),
+        ),
+        mutableListOf<HomeTitleCell?>(
+            HomeTitleCell(tone = CellTone.Violet),
+            HomeTitleCell(tone = CellTone.Emerald),
+            HomeTitleCell(letter = topWord.getOrNull(2)?.toString(), tone = CellTone.Violet),
+            HomeTitleCell(letter = bottomWord.getOrNull(2)?.toString(), tone = CellTone.Amber),
+        ),
+        mutableListOf<HomeTitleCell?>(
+            null,
+            HomeTitleCell(tone = CellTone.Violet),
+            HomeTitleCell(letter = topWord.getOrNull(3)?.toString(), tone = CellTone.Emerald),
+            HomeTitleCell(letter = bottomWord.getOrNull(3)?.toString(), tone = CellTone.Rose),
+        ),
+        mutableListOf<HomeTitleCell?>(
+            HomeTitleCell(tone = CellTone.Blue),
+            HomeTitleCell(tone = CellTone.Coral),
+            HomeTitleCell(letter = topWord.getOrNull(4)?.toString(), tone = CellTone.Gold),
+            HomeTitleCell(letter = bottomWord.getOrNull(4)?.toString(), tone = CellTone.Cyan),
+        ),
+    )
+
+    blockSortHomeBannerMoves().take(completedMoves.coerceAtLeast(0)).forEach { move ->
+        val movedCell = columns[move.sourceColumn][move.sourceRow]
+        columns[move.sourceColumn][move.sourceRow] = null
+        columns[move.targetColumn][move.targetRow] = movedCell
+    }
+
+    return columns.map { it.toList() }
+}
+
+internal fun blockSortHomeBannerMoves(): List<BlockSortHomeBannerMove> = listOf(
+    BlockSortHomeBannerMove(sourceColumn = 0, sourceRow = 0, targetColumn = 1, targetRow = 0, tone = CellTone.Gold),
+    BlockSortHomeBannerMove(sourceColumn = 2, sourceRow = 0, targetColumn = 3, targetRow = 0, tone = CellTone.Violet),
+    BlockSortHomeBannerMove(sourceColumn = 4, sourceRow = 0, targetColumn = 0, targetRow = 0, tone = CellTone.Blue),
+)
+
+internal data class BlockSortHomeBannerMove(
+    val sourceColumn: Int,
+    val sourceRow: Int,
+    val targetColumn: Int,
+    val targetRow: Int,
+    val tone: CellTone,
+)
+
+@Composable
+private fun HomeTitleTapEffect(
+    x: Dp,
+    y: Dp,
+    size: Dp,
+    progress: Float,
+    color: Color,
+) {
+    val clamped = progress.coerceIn(0f, 1f)
+    Box(
+        modifier = Modifier
+            .offset(x = x, y = y)
+            .size(size)
+            .graphicsLayer {
+                alpha = 0.28f * (1f - (clamped * 0.35f))
+                scaleX = 0.92f + (0.18f * clamped)
+                scaleY = 0.92f + (0.18f * clamped)
+            }
+            .clip(RoundedCornerShape(18.dp))
+            .background(color.copy(alpha = 0.26f)),
+    )
 }
 
 @Composable

@@ -102,7 +102,7 @@ expect object GameSessionStorage {
 }
 
 internal object GameSessionCodec {
-    private const val Version = 5
+    private const val Version = 7
     private const val SectionSeparator = '|'
     private const val FieldSeparator = ','
     private const val ListSeparator = ';'
@@ -159,8 +159,10 @@ internal object GameSessionCodec {
         val visual = decodeVisualState(parts[16]) ?: return null
         val message = decodeGameText(parts[17]) ?: GameText(GameTextKey.GameMessageSelectColumn)
         val inferredGameplayStyle = inferLegacyGameplayStyle(nextQueue)
-        val activity = if (version >= 4) {
+        val activity = if (version >= 7) {
             decodeActivityState(parts[18]) ?: return null
+        } else if (version >= 4) {
+            decodeActivityStateV6(parts[18]) ?: return null
         } else if (version >= 3) {
             decodeLegacyActivityState(parts[18], inferredGameplayStyle) ?: return null
         } else {
@@ -206,6 +208,8 @@ internal object GameSessionCodec {
             nextPieceId = activity.nextPieceId,
             message = message,
             activeChallenge = activeChallenge,
+            blockSortBonusEmptyColumnUsed = activity.blockSortBonusEmptyColumnUsed,
+            blockSortScoredMoveSignatures = activity.blockSortScoredMoveSignatures,
         )
     }
 
@@ -541,6 +545,8 @@ internal object GameSessionCodec {
         val rewardedReviveUsed: Boolean = false,
         val gameplayStyle: GameplayStyle = GameplayStyle.StackShift,
         val nextPieceId: Long = 1L,
+        val blockSortBonusEmptyColumnUsed: Boolean = false,
+        val blockSortScoredMoveSignatures: Set<String> = emptySet(),
     )
 
     private fun encodeVisualState(state: GameState): String = listOf(
@@ -568,16 +574,33 @@ internal object GameSessionCodec {
         state.rewardedReviveUsed,
         state.gameplayStyle.ordinal,
         state.nextPieceId.toString(),
+        state.blockSortBonusEmptyColumnUsed,
+        encodeStringSet(state.blockSortScoredMoveSignatures),
     ).joinToString(separator = FieldSeparator.toString())
 
     private fun decodeActivityState(value: String): ActivityState? {
         val parts = value.split(FieldSeparator)
-        if (parts.size != 3 && parts.size != 4) return null
+        if (parts.size !in 3..6) return null
         return ActivityState(
             recentlyClearedColumns = decodeIntSet(parts[0]) ?: return null,
             rewardedReviveUsed = parts[1].toBooleanStrictOrNull() ?: return null,
             gameplayStyle = GameplayStyle.entries.getOrNull(parts[2].toIntOrNull() ?: return null) ?: return null,
             nextPieceId = if (parts.size >= 4) parts[3].toLongOrNull() ?: 1L else 1L,
+            blockSortBonusEmptyColumnUsed = if (parts.size >= 5) parts[4].toBooleanStrictOrNull() ?: return null else false,
+            blockSortScoredMoveSignatures = if (parts.size >= 6) decodeStringSet(parts[5]) ?: return null else emptySet(),
+        )
+    }
+
+    private fun decodeActivityStateV6(value: String): ActivityState? {
+        val parts = value.split(FieldSeparator)
+        if (parts.size !in 3..5) return null
+        return ActivityState(
+            recentlyClearedColumns = decodeIntSet(parts[0]) ?: return null,
+            rewardedReviveUsed = parts[1].toBooleanStrictOrNull() ?: return null,
+            gameplayStyle = GameplayStyle.entries.getOrNull(parts[2].toIntOrNull() ?: return null) ?: return null,
+            nextPieceId = if (parts.size >= 4) parts[3].toLongOrNull() ?: 1L else 1L,
+            blockSortBonusEmptyColumnUsed = false,
+            blockSortScoredMoveSignatures = if (parts.size >= 5) decodeStringSet(parts[4]) ?: return null else emptySet(),
         )
     }
 
@@ -661,9 +684,16 @@ internal object GameSessionCodec {
 
     private fun encodeIntSet(values: Set<Int>): String = values.sorted().joinToString(separator = ListSeparator.toString())
 
+    private fun encodeStringSet(values: Set<String>): String = values.sorted().joinToString(separator = ListSeparator.toString())
+
     private fun decodeIntSet(value: String): Set<Int>? {
         if (value.isBlank()) return emptySet()
         return value.split(ListSeparator).mapNotNull { token -> token.toIntOrNull() }.toSet()
+    }
+
+    private fun decodeStringSet(value: String): Set<String>? {
+        if (value.isBlank()) return emptySet()
+        return value.split(ListSeparator).filter(String::isNotBlank).toSet()
     }
 
     private fun decodePoints(value: String): List<GridPoint>? {

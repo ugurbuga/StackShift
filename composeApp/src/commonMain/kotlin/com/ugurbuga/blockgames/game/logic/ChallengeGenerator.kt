@@ -42,12 +42,16 @@ object ChallengeGenerator {
                 ChallengeTaskType.PerfectPlacement -> random.nextInt(10, 20)
                 ChallengeTaskType.ChainReaction -> random.nextInt(1, 3)
                 ChallengeTaskType.ClearRows -> random.nextInt(3, 9)
-                ChallengeTaskType.ClearColumns -> random.nextInt(3, 9)
+                ChallengeTaskType.ClearColumns -> when (gameplayStyle) {
+                    GameplayStyle.BlockSort -> random.nextInt(4, 10)
+                    else -> random.nextInt(3, 9)
+                }
                 ChallengeTaskType.PlacePieces -> when (gameplayStyle) {
                     GameplayStyle.BoomBlocks -> random.nextInt(40, 100)
                     GameplayStyle.BlockSort -> random.nextInt(10, 24)
                     else -> random.nextInt(12, 28)
                 }
+                ChallengeTaskType.ClearRounds -> random.nextInt(1, 4)
                 ChallengeTaskType.ClearBothDirections -> random.nextInt(1, 4)
             }
             tasks.add(ChallengeTask(type, target))

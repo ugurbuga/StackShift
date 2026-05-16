@@ -442,6 +442,7 @@ internal class StackShiftGameLogic(
                 ChallengeTaskType.ClearRows -> 0
                 ChallengeTaskType.ClearColumns -> 0
                 ChallengeTaskType.PlacePieces -> 0
+                ChallengeTaskType.ClearRounds -> 0
                 ChallengeTaskType.ClearBothDirections -> 0
             }
             task.copy(current = task.current + progressGain)

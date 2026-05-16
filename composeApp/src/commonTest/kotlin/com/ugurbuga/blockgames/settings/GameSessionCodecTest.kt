@@ -73,5 +73,24 @@ class GameSessionCodecTest {
             challengeState.sessionSlot(),
         )
     }
+
+    @Test
+    fun encodeDecode_preservesBlockSortScoreSuppressionState() {
+        val state = GameLogic.create(random = Random(8)).newGame(
+            config = GameConfig.default(GameplayStyle.BlockSort),
+            mode = GameMode.Classic,
+        ).copy(
+            gameplayStyle = GameplayStyle.BlockSort,
+            blockSortBonusEmptyColumnUsed = true,
+            blockSortScoredMoveSignatures = setOf("c0x1x101x102", "c2x3x205"),
+        )
+
+        val decoded = GameSessionCodec.decode(GameSessionCodec.encode(state))
+
+        assertNotNull(decoded)
+        assertEquals(GameplayStyle.BlockSort, decoded.gameplayStyle)
+        assertTrue(decoded.blockSortBonusEmptyColumnUsed)
+        assertEquals(state.blockSortScoredMoveSignatures, decoded.blockSortScoredMoveSignatures)
+    }
 }
 

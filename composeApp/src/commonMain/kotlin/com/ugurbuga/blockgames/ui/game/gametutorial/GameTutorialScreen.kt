@@ -1247,7 +1247,6 @@ private fun TutorialBlockSortBoardDemo(
     val settings = LocalAppSettings.current
     val boardStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
     val logic = remember { BlockSortGameLogic() }
-    val targetColumn = remember(scene) { scene.acceptedTargetColumns.firstOrNull() ?: scene.guideSourceColumn }
 
     TutorialMiniBoardShell(modifier = modifier) {
         Box(

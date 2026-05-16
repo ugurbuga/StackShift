@@ -173,7 +173,9 @@
     <string name="challenge_info_chain_reaction_title">Zincir Reaksiyonlar</string>
     <string name="challenge_info_chain_reaction">Tek bir hamleden sonra ek temizlikler oluşması için ardışık patlamalar hazırla.</string>
     <string name="challenge_info_clear_columns_title">Sütunlar</string>
-    <string name="challenge_info_clear_columns">Tam dolu sütunlar tahtadan temizlenir.</string>
+    <string name="challenge_info_clear_columns">BlockSort'ta tek renk tamamlanan sütunlar ilerleme için sayılır.</string>
+    <string name="challenge_info_clear_rounds_title">Turlar</string>
+    <string name="challenge_info_clear_rounds">Dolu her sütunu tek renge dönüştürüp tam BlockSort turları bitir.</string>
     <string name="challenge_info_place_pieces_title">Yerleştirmeler</string>
     <string name="challenge_info_place_pieces">Temizlik olmasa bile her başarılı yerleşim sayılır.</string>
     <string name="challenge_info_clear_both_directions_title">Satır + Sütun</string>
@@ -185,8 +187,10 @@
     <string name="challenge_task_trigger_special">%1$d özel blok tetikle</string>
     <string name="challenge_task_perfect_placement">%1$d mükemmel yerleştirme yap</string>
     <string name="challenge_task_chain_reaction">%1$d zincirleme reaksiyon oluştur</string>
-    <string name="challenge_task_clear_columns">%1$d sütun temizle</string>
+    <string name="challenge_task_clear_columns">%1$d sütun tamamla</string>
+    <string name="challenge_task_complete_columns">%1$d sütun tamamla</string>
     <string name="challenge_task_place_pieces">%1$d parça yerleştir</string>
+    <string name="challenge_task_clear_rounds">%1$d tur bitir</string>
     <string name="challenge_task_clear_both_directions">%1$d kez satır + sütun temizle</string>
     <string name="month_january">Ocak</string>
     <string name="month_february">Şubat</string>
@@ -365,7 +369,7 @@
     <string name="app_title_blocksort">BlockSort</string>
     <string name="app_title_banner_blocksort_top">BLOCK</string>
     <string name="app_title_banner_blocksort_bottom">SORT</string>
-    <string name="game_message_ad_reward_blocksort">Tahta yeniden karıştırıldı! Yeni yollar açıldı.</string>
+    <string name="game_message_ad_reward_blocksort">Bu tur için fazladan boş bir kolon eklendi.</string>
     <string name="tutorial_blocksort_intro_title">Eşit boydaki üst blokları sütunlar arasında taşı</string>
     <string name="tutorial_blocksort_intro_body">Her round’da tüm sütunlar aynı slot yüksekliğini kullanır. Karışık bir sütuna dokunup üstteki renk grubunu seç, ardından bunu boş bir sütuna ya da üst rengi aynı olan bir sütuna taşı.</string>
     <string name="tutorial_blocksort_rules_title">Sadece eşleşen renkler üst üste gelebilir</string>
