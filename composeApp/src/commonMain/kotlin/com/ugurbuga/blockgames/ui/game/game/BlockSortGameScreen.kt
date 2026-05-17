@@ -81,9 +81,11 @@ import com.ugurbuga.blockgames.game.model.CellTone
 import com.ugurbuga.blockgames.game.model.GameConfig
 import com.ugurbuga.blockgames.game.model.GameState
 import com.ugurbuga.blockgames.game.model.GameStatus
+import com.ugurbuga.blockgames.game.model.GameTextKey
 import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.GridPoint
 import com.ugurbuga.blockgames.game.model.PlacementPreview
+import com.ugurbuga.blockgames.game.model.gameText
 import com.ugurbuga.blockgames.localization.LocalAppSettings
 import com.ugurbuga.blockgames.settings.AppSettings
 import com.ugurbuga.blockgames.settings.BlockSortOnboardingScene
@@ -92,7 +94,9 @@ import com.ugurbuga.blockgames.ui.game.BlockCellPreview
 import com.ugurbuga.blockgames.ui.game.GameOverDialog
 import com.ugurbuga.blockgames.ui.game.InteractiveOnboardingCompletionDialog
 import com.ugurbuga.blockgames.ui.game.MinimalTopBar
+import com.ugurbuga.blockgames.ui.game.RestartConfirmDialog
 import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
+import com.ugurbuga.blockgames.ui.game.resolveGameText
 import com.ugurbuga.blockgames.ui.game.dailychallenge.ChallengeTasksDock
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
 import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
@@ -162,6 +166,7 @@ fun BlockSortGameScreen(
     }
     var previousDisplayedRoundLevel by remember { mutableIntStateOf(gameState.level) }
     var showGameOverDialog by remember(gameState.status) { mutableStateOf(gameState.status == GameStatus.GameOver) }
+    var showRestartDialog by remember { mutableStateOf(false) }
     var rewardedReviveLoading by remember(gameState.status) { mutableStateOf(false) }
     var rewardedAddColumnLoading by remember(gameState.level, gameState.config.columns) { mutableStateOf(false) }
     val roundDisplayTransitionProgress = remember { Animatable(1f) }
@@ -200,6 +205,7 @@ fun BlockSortGameScreen(
     LaunchedEffect(gameState.status) {
         if (gameState.status == GameStatus.GameOver) {
             showGameOverDialog = true
+            showRestartDialog = false
         } else {
             showGameOverDialog = false
             rewardedReviveLoading = false
@@ -229,11 +235,41 @@ fun BlockSortGameScreen(
             revealProgressProvider = { 1f },
             canUseExtraLife = !gameState.rewardedReviveUsed,
             isExtraLifeLoading = rewardedReviveLoading,
-            showExtraLifeButton = !gameState.rewardedReviveUsed,
-            onPlayAgain = onRestart,
+            showExtraLifeButton = adController !== NoOpGameAdController && gameState.activeChallenge?.isCompleted != true,
+            onPlayAgain = {
+                if (gameState.activeChallenge?.isCompleted == true) {
+                    onBack()
+                } else {
+                    adController.showRestartInterstitial {
+                        onRestart()
+                    }
+                }
+            },
             onUseExtraLife = {
+                if (rewardedReviveLoading || gameState.rewardedReviveUsed) return@GameOverDialog
                 rewardedReviveLoading = true
-                onRewardedRevive()
+                adController.showRewardedRevive { rewarded ->
+                    rewardedReviveLoading = false
+                    if (rewarded) {
+                        onRewardedRevive()
+                    }
+                }
+            },
+        )
+    }
+
+    if (showRestartDialog) {
+        RestartConfirmDialog(
+            onDismissRequest = { showRestartDialog = false },
+            title = resolveGameText(gameText(GameTextKey.RestartConfirmTitle)),
+            message = resolveGameText(gameText(GameTextKey.RestartConfirmBody)),
+            confirmLabel = resolveGameText(gameText(GameTextKey.RestartConfirm)),
+            dismissLabel = resolveGameText(gameText(GameTextKey.RestartCancel)),
+            onConfirm = {
+                showRestartDialog = false
+                adController.showRestartInterstitial {
+                    onRestart()
+                }
             },
         )
     }
@@ -260,7 +296,7 @@ fun BlockSortGameScreen(
                     scoreHighlightScaleProvider = { 1f },
                     remainingTimeLabel = stringResource(Res.string.time_remaining),
                     onBack = onBack,
-                    onRestart = onRestart,
+                    onRestart = { showRestartDialog = true },
                     controlsEnabled = interactiveOnboardingScene == null,
                     stylePulse = interactionPulse,
                 )

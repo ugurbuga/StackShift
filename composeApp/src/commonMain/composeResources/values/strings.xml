@@ -1,20 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_title_stackshift">StackShift</string>
-    <string name="app_title_blockwise">BlockWise</string>
-    <string name="app_title_mergeshift">MergeShift</string>
-    <string name="app_title_boomblocks">BoomBlocks</string>
-    <string name="app_title_blocksort">BlockSort</string>
-    <string name="app_title_banner_stackshift_top">STACK</string>
-    <string name="app_title_banner_stackshift_bottom">SHIFT</string>
-    <string name="app_title_banner_blockwise_top">BLOCK</string>
-    <string name="app_title_banner_blockwise_bottom">WISE</string>
-    <string name="app_title_banner_mergeshift_top">MERGE</string>
-    <string name="app_title_banner_mergeshift_bottom">SHIFT</string>
-    <string name="app_title_banner_boomblocks_top">BOOM</string>
-    <string name="app_title_banner_boomblocks_bottom">BLOCKS</string>
-    <string name="app_title_banner_blocksort_top">BLOCK</string>
-    <string name="app_title_banner_blocksort_bottom">SORT</string>
     <string name="settings_title">Settings</string>
     <string name="settings_language">Language</string>
     <string name="settings_sound">Sound</string>
@@ -40,17 +25,6 @@
     <string name="settings_tutorial">Tutorial</string>
     <string name="settings_tutorial_body">Open the tutorial or guided practice any time to revisit free placement, row/column clears, and the three-piece tray flow.</string>
     <string name="settings_tutorial_replay">Practice</string>
-    <string name="app_language_english">English</string>
-    <string name="app_language_turkish">Türkçe</string>
-    <string name="app_language_spanish">Español</string>
-    <string name="app_language_french">Français</string>
-    <string name="app_language_german">Deutsch</string>
-    <string name="app_language_russian">Русский</string>
-    <string name="app_language_chinese_simplified">简体中文</string>
-    <string name="app_language_hindi">हिन्दी</string>
-    <string name="app_language_arabic">العربية</string>
-    <string name="app_language_portuguese">Português</string>
-    <string name="app_language_indonesian">Bahasa Indonesia</string>
     <string name="app_theme_system">System</string>
     <string name="app_theme_light">Light</string>
     <string name="app_theme_dark">Dark</string>
@@ -157,7 +131,6 @@
     <string name="game_message_resumed">Resume. Choose the column and launch.</string>
     <string name="game_message_extra_life_used">Extra life activated! %1$s rows cleared.</string>
     <string name="notification_reminders_channel_name">Reminders</string>
-    <string name="notification_miss_you_title">StackShift</string>
     <string name="notification_miss_you_body">We missed you! Come back and play some more.</string>
     <string name="notification_daily_challenge_title">Daily Challenge</string>
     <string name="notification_daily_challenge_body">Have you completed today\'s daily challenge tasks yet?</string>

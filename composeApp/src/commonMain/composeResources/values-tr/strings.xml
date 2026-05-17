@@ -1,17 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_title_stackshift">StackShift</string>
-    <string name="app_title_blockwise">BlockWise</string>
-    <string name="app_title_mergeshift">MergeShift</string>
-    <string name="app_title_boomblocks">BoomBlocks</string>
-    <string name="app_title_banner_stackshift_top">STACK</string>
-    <string name="app_title_banner_stackshift_bottom">SHIFT</string>
-    <string name="app_title_banner_blockwise_top">BLOCK</string>
-    <string name="app_title_banner_blockwise_bottom">WISE</string>
-    <string name="app_title_banner_mergeshift_top">MERGE</string>
-    <string name="app_title_banner_mergeshift_bottom">SHIFT</string>
-    <string name="app_title_banner_boomblocks_top">BOOM</string>
-    <string name="app_title_banner_boomblocks_bottom">BLOCKS</string>
     <string name="settings_title">Ayarlar</string>
     <string name="settings_language">Dil</string>
     <string name="settings_sound">Ses</string>
@@ -37,17 +25,6 @@
     <string name="settings_tutorial">Rehber</string>
     <string name="settings_tutorial_body">Serbest yerleştirme, satır/sütun temizleme ve üçlü parça havuzu akışını tekrar görmek istediğinde rehberi veya yönlendirmeli alıştırmayı yeniden aç.</string>
     <string name="settings_tutorial_replay">Alıştırma</string>
-    <string name="app_language_english">English</string>
-    <string name="app_language_turkish">Türkçe</string>
-    <string name="app_language_spanish">Español</string>
-    <string name="app_language_french">Français</string>
-    <string name="app_language_german">Deutsch</string>
-    <string name="app_language_russian">Русский</string>
-    <string name="app_language_chinese_simplified">简体中文</string>
-    <string name="app_language_hindi">हिन्दी</string>
-    <string name="app_language_arabic">العربية</string>
-    <string name="app_language_portuguese">Português</string>
-    <string name="app_language_indonesian">Bahasa Indonesia</string>
     <string name="app_theme_system">Sistem</string>
     <string name="app_theme_light">Açık</string>
     <string name="app_theme_dark">Koyu</string>
@@ -55,7 +32,7 @@
     <string name="theme_palette_aurora">Şafak</string>
     <string name="theme_palette_sunset">Gün Batımı</string>
     <string name="theme_palette_modern_neon">Modern Neon</string>
-    <string name="theme_palette_soft_pastel">Pastel</string>
+    <string name="theme_palette_soft_pastel">Yumuşak Pastel</string>
     <string name="theme_palette_minimal_monochrome">Monokrom</string>
     <string name="block_palette_classic">Klasik</string>
     <string name="block_palette_candy">Şeker</string>
@@ -153,7 +130,6 @@
     <string name="game_message_resumed">Devam. Sütunu seç ve fırlat.</string>
     <string name="game_message_extra_life_used">Ekstra can aktif! %1$s satır temizlendi.</string>
     <string name="notification_reminders_channel_name">Hatırlatıcılar</string>
-    <string name="notification_miss_you_title">StackShift</string>
     <string name="notification_miss_you_body">Seni özledik! Hadi gel biraz daha oyna.</string>
     <string name="notification_daily_challenge_title">Günlük Meydan Okuma</string>
     <string name="notification_daily_challenge_body">Bugünkü günlük meydan okuma görevlerini henüz tamamladın mı?</string>
@@ -355,7 +331,7 @@
     <string name="color_coral">Mercan</string>
     <string name="color_blue">Mavi</string>
     <string name="color_rose">Pembe</string>
-    <string name="color_lime">Lime</string>
+    <string name="color_lime">Limon Yeşili</string>
     <string name="color_amber">Kehribar</string>
     <string name="challenge_task_explode_groups">%1$d blok grubu patlat</string>
 
@@ -366,9 +342,6 @@
     <string name="selection_boomblocks_desc">Patlatmak için 3 veya daha fazla bloktan oluşan gruplara dokunun.</string>
     <string name="selection_switch_game">Oyunu Değiştir</string>
     <string name="selection_active_game_badge">AKTİF</string>
-    <string name="app_title_blocksort">BlockSort</string>
-    <string name="app_title_banner_blocksort_top">BLOCK</string>
-    <string name="app_title_banner_blocksort_bottom">SORT</string>
     <string name="game_message_ad_reward_blocksort">Bu tur için fazladan boş bir kolon eklendi.</string>
     <string name="tutorial_blocksort_intro_title">Eşit boydaki üst blokları sütunlar arasında taşı</string>
     <string name="tutorial_blocksort_intro_body">Her round’da tüm sütunlar aynı slot yüksekliğini kullanır. Karışık bir sütuna dokunup üstteki renk grubunu seç, ardından bunu boş bir sütuna ya da üst rengi aynı olan bir sütuna taşı.</string>

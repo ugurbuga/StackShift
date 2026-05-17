@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_title_stackshift" translatable="false">StackShift</string>
+    <string name="app_title_blockwise" translatable="false">BlockWise</string>
+    <string name="app_title_mergeshift" translatable="false">MergeShift</string>
+    <string name="app_title_boomblocks" translatable="false">BoomBlocks</string>
+    <string name="app_title_blocksort" translatable="false">BlockSort</string>
+
+    <string name="app_title_banner_stackshift_top" translatable="false">STACK</string>
+    <string name="app_title_banner_stackshift_bottom" translatable="false">SHIFT</string>
+    <string name="app_title_banner_blockwise_top" translatable="false">BLOCK</string>
+    <string name="app_title_banner_blockwise_bottom" translatable="false">WISE</string>
+    <string name="app_title_banner_mergeshift_top" translatable="false">MERGE</string>
+    <string name="app_title_banner_mergeshift_bottom" translatable="false">SHIFT</string>
+    <string name="app_title_banner_boomblocks_top" translatable="false">BOOM</string>
+    <string name="app_title_banner_boomblocks_bottom" translatable="false">BLOCKS</string>
+    <string name="app_title_banner_blocksort_top" translatable="false">BLOCK</string>
+    <string name="app_title_banner_blocksort_bottom" translatable="false">SORT</string>
+
+    <string name="app_language_english" translatable="false">English</string>
+    <string name="app_language_turkish" translatable="false">Türkçe</string>
+    <string name="app_language_spanish" translatable="false">Español</string>
+    <string name="app_language_french" translatable="false">Français</string>
+    <string name="app_language_german" translatable="false">Deutsch</string>
+    <string name="app_language_russian" translatable="false">Русский</string>
+    <string name="app_language_chinese_simplified" translatable="false">简体中文</string>
+    <string name="app_language_hindi" translatable="false">हिन्दी</string>
+    <string name="app_language_arabic" translatable="false">العربية</string>
+    <string name="app_language_portuguese" translatable="false">Português</string>
+    <string name="app_language_indonesian" translatable="false">Bahasa Indonesia</string>
+    <string name="app_language_japanese" translatable="false">日本語</string>
+    <string name="app_language_korean" translatable="false">한국어</string>
+    <string name="app_language_italian" translatable="false">Italiano</string>
+    <string name="app_language_dutch" translatable="false">Nederlands</string>
+
+    <string name="notification_miss_you_title" translatable="false">StackShift</string>
+</resources>
+

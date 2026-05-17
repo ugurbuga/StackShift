@@ -12,43 +12,52 @@ class LocalizedStringsParityTest {
         File("composeApp/src/commonMain/composeResources"),
     ).firstOrNull(File::exists)
         ?: error("Could not locate compose resources directory from the current test working directory.")
-    private val baseStringsFile = resourcesRoot.resolve("values/strings.xml")
+    private val stringRegex = Regex("""<string\s+name="([^"]+)"([^>]*)>([\s\S]*?)</string>""")
     private val placeholderRegex = Regex("""%(?:\d+\$)?[a-zA-Z]""")
-    private val stringRegex = Regex("""<string\s+name="([^"]+)">([\s\S]*?)</string>""")
+
+    private data class StringEntry(
+        val value: String,
+        val translatable: Boolean,
+    )
 
     @Test
     fun everySupportedLanguageHasAStringsFile() {
-        assertTrue(baseStringsFile.exists(), "Base strings.xml should exist at ${baseStringsFile.path}")
+        val baseFiles = resourceFiles("values")
+        assertTrue(baseFiles.isNotEmpty(), "Base values folder should contain at least one XML resource file.")
 
         val missingFolders = AppLanguage.entries.mapNotNull { language ->
-            val file = localizedStringsFile(language)
-            file.takeUnless(File::exists)?.path
+            val folderName = localizedFolderName(language)
+            val files = resourceFiles(folderName)
+            folderName.takeIf { files.isEmpty() }
         }
 
         assertTrue(
             missingFolders.isEmpty(),
-            "Every supported language should have a strings.xml file. Missing: ${missingFolders.joinToString()}",
+            "Every supported language should have localized XML resource files. Missing: ${missingFolders.joinToString()}",
         )
     }
 
     @Test
     fun localizedStringKeysAndPlaceholdersMatchBase() {
-        val baseStrings = parseStrings(baseStringsFile)
-        val baseKeys = baseStrings.keys.toSet()
+        val baseStrings = parseStrings(resourceFiles("values"))
+        val baseTranslatableKeys = baseStrings
+            .filterValues(StringEntry::translatable)
+            .keys
+            .toSet()
 
         AppLanguage.entries.forEach { language ->
-            val localizedFile = localizedStringsFile(language)
-            val localizedStrings = parseStrings(localizedFile)
+            val localizedStrings = parseStrings(resourceFiles(localizedFolderName(language)))
+            val localizedTranslatableStrings = localizedStrings.filterValues(StringEntry::translatable)
 
             assertEquals(
-                baseKeys,
-                localizedStrings.keys.toSet(),
+                baseTranslatableKeys,
+                localizedTranslatableStrings.keys.toSet(),
                 "${language.localeTag} should define the same string keys as the base resource file.",
             )
 
-            baseStrings.keys.forEach { key ->
-                val basePlaceholders = placeholders(baseStrings.getValue(key))
-                val localizedPlaceholders = placeholders(localizedStrings.getValue(key))
+            baseTranslatableKeys.forEach { key ->
+                val basePlaceholders = placeholders(baseStrings.getValue(key).value)
+                val localizedPlaceholders = placeholders(localizedTranslatableStrings.getValue(key).value)
                 assertEquals(
                     basePlaceholders,
                     localizedPlaceholders,
@@ -58,20 +67,37 @@ class LocalizedStringsParityTest {
         }
     }
 
-    private fun localizedStringsFile(language: AppLanguage): File {
-        val folderName = when (language) {
+    private fun localizedFolderName(language: AppLanguage): String {
+        return when (language) {
             AppLanguage.English -> "values"
             AppLanguage.ChineseSimplified -> "values-zh"
             else -> "values-${language.localeTag.substringBefore('-')}"
         }
-        return resourcesRoot.resolve("$folderName/strings.xml")
     }
 
-    private fun parseStrings(file: File): LinkedHashMap<String, String> {
-        val content = file.readText()
-        return LinkedHashMap<String, String>().apply {
-            stringRegex.findAll(content).forEach { match ->
-                put(match.groupValues[1], match.groupValues[2].trim())
+    private fun resourceFiles(folderName: String): List<File> {
+        val folder = resourcesRoot.resolve(folderName)
+        return folder
+            .takeIf(File::exists)
+            ?.listFiles { file -> file.isFile && file.extension == "xml" }
+            ?.sortedBy { it.name }
+            .orEmpty()
+    }
+
+    private fun parseStrings(files: List<File>): LinkedHashMap<String, StringEntry> {
+        return LinkedHashMap<String, StringEntry>().apply {
+            files.forEach { file ->
+                val content = file.readText()
+                stringRegex.findAll(content).forEach { match ->
+                    val attributes = match.groupValues[2]
+                    put(
+                        match.groupValues[1],
+                        StringEntry(
+                            value = match.groupValues[3].trim(),
+                            translatable = !attributes.contains("translatable=\"false\""),
+                        ),
+                    )
+                }
             }
         }
     }
