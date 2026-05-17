@@ -8,150 +8,168 @@ This document contains the metadata for Google Play Store.
 ## English (default)
 
 ### Localized Title
-StackShift: Block Puzzle Game
+StackShift: Block Puzzle Games
 
 ### Short Description
-Innovative reverse block puzzle! Launch blocks, solve daily tasks & relax.
+Switch between 5 block puzzle games! Launch, place, merge, sort, blast & relax.
 
 ### Full Description
-Experience a fresh twist on the classic block puzzle! <b>StackShift</b> reverses the rules: pieces spawn at the bottom, and you launch them upwards to clear the board. Master the unique "launch and snap" mechanic to build massive combos and reach high scores in this addictive brain teaser.
+Discover <b>5 different block puzzle games in one app</b> with <b>StackShift</b>. Switch between five distinct modes any time, settle into the one that fits your mood, and enjoy quick sessions, satisfying combos, daily goals, and relaxing visuals.
 
-<b>NEW: DAILY CHALLENGES</b>
-Test your skills every day with unique logic puzzles. Explode blocks, reach target scores, and create chain reactions to earn trophies. Track your progress on the monthly calendar and become a block puzzle master!
+<b>PLAY 5 UNIQUE MODES</b>
+• <b>StackShift</b>: Launch pieces upward from the bottom and clear the board.
+• <b>BlockWise</b>: Place shapes freely and clear rows + columns.
+• <b>MergeShift</b>: Merge matching numbers and create chain reactions.
+• <b>BoomBlocks</b>: Tap color groups to explode clusters and reshape the board.
+• <b>BlockSort</b>: Sort colored stacks into clean single-color columns.
 
-<b>CORE FEATURES:</b>
-• <b>Reverse Gameplay</b>: Launch pieces from the dock instead of watching them fall.
-• <b>Special Power-ups</b>: Use Column Clearers, Row Clearers, Ghost blocks, and Heavy blocks to master the grid.
-• <b>Visual Customization</b>: Choose from 10+ visual styles like Dynamic Liquid, Bubble, or Crystal with beautiful color palettes.
-• <b>Play Anywhere</b>: Fully localized in 11 languages. Works offline - no Wi-Fi needed!
-• <b>Satisfying Feedback</b>: Enjoy smooth animations, haptic feedback, and stunning visual effects.
+<b>MORE REASONS TO PLAY</b>
+• <b>Daily Challenges</b>: Complete fresh tasks, earn trophies, and track progress on the monthly calendar.
+• <b>Deep Customization</b>: Choose from 10+ block styles, color palettes, and theme combinations.
+• <b>Play Anywhere</b>: Expanded language options for major markets and fully offline gameplay.
+• <b>Satisfying Feel</b>: Enjoy smooth animations, haptics, and polished visual feedback.
 
-Whether you're looking for a relaxing zen experience or a challenging logic puzzle, StackShift is the perfect game for you. Download now and start shifting!
+Whether you want a calm logic puzzle, a quick daily task, or a high-score chase, StackShift lets you jump between games and play the mode that feels right for you. Download now and find your favorite!
 
 ---
 
 ## Türkçe
 
 ### Localized Title
-StackShift: Blok Bulmaca
+StackShift: Blok Bulmaca Oyunları
 
 ### Kısa Açıklama
-Yenilikçi ters blok bulmaca! Blokları fırlat, görevleri yap ve rahatla.
+Tek uygulamada 5 blok bulmaca! Fırlat, yerleştir, birleştir, sırala, patlat.
 
 ### Tam Açıklama
-Klasik blok bulmaca oyunlarına yepyeni bir soluk getirin! <b>StackShift</b> kuralları tersine çeviriyor: parçalar altta oluşur ve siz onları yukarı fırlatarak tahtayı temizlersiniz. Bu bağımlılık yapıcı zeka oyununda devasa kombolar yapın ve rekorları kırın.
+<b>StackShift</b> ile <b>tek uygulamada 5 farklı bulmaca oyununu</b> keşfedin. Hızlı oturumlar, tatmin edici kombolar, günlük hedefler ve rahatlatıcı görseller etrafında tasarlanan beş farklı blok deneyimi arasında geçiş yapın.
 
-<b>YENİ: GÜNLÜK MEYDAN OKUMALAR</b>
-Her gün yenilenen özel mantık bulmacalarıyla becerilerinizi test edin. Blokları patlatın, hedef skorlara ulaşın ve kupalar kazanın. Aylık takvim üzerinden ilerlemenizi takip edin ve bir bulmaca ustası olun!
+<b>TEK UYGULAMADA 5 FARKLI MOD</b>
+• <b>StackShift</b>: Parçaları aşağıdan yukarı fırlatın ve tahtayı temizleyin.
+• <b>BlockWise</b>: Şekilleri serbestçe yerleştirip satır + sütun temizleyin.
+• <b>MergeShift</b>: Eşleşen sayıları birleştirip zincir reaksiyonlar oluşturun.
+• <b>BoomBlocks</b>: Renk gruplarına dokunup patlatın ve tahtayı yeniden şekillendirin.
+• <b>BlockSort</b>: Renkli yığınları tek renk sütunlar halinde sıralayın.
 
-<b>ANA ÖZELLİKLER:</b>
-• <b>Ters Oynanış</b>: Parçaların düşmesini beklemek yerine onları aşağıdan yukarıya fırlatın.
-• <b>Özel Güçlendiriciler</b>: Sütun Temizleyici, Satır Temizleyici, Hayalet blok ve Ağır bloklarla tahtaya hükmedin.
-• <b>Geniş Özelleştirme</b>: Dinamik Sıvı, Baloncuk veya Kristal gibi 10'dan fazla görsel stil ve harika renk paletleri.
-• <b>İnternetsiz Oyna</b>: 11 dilde tam yerelleştirme. İnternet (Wi-Fi) gerektirmez.
-• <b>Tatmin Edici Deneyim</b>: Akıcı animasyonlar, dokunsal geri bildirim ve dinamik efektlerin tadını çıkarın.
+<b>DAHA FAZLA OYNAMA NEDENİ</b>
+• <b>Günlük Meydan Okumalar</b>: Her gün yeni görevler tamamlayın, kupalar kazanın ve aylık takvimde ilerlemenizi takip edin.
+• <b>Derin Özelleştirme</b>: 10+ blok stili, renk paleti ve tema kombinasyonu arasından seçim yapın.
+• <b>Her Yerde Oyna</b>: Önemli pazarlar için genişletilmiş dil seçenekleri ve tamamen çevrimdışı oynanış.
+• <b>Tatmin Edici His</b>: Akıcı animasyonlar, dokunsal geri bildirim ve özenli görsel efektlerin keyfini çıkarın.
 
-İster rahatlamak için ister zekanızı zorlamak için oynayın, StackShift size benzersiz bir deneyim sunar. Hemen indirin ve blokları fırlatmaya başlayın!
+İster sakin bir zeka oyunu ister yüksek skor kovalamacası arayın, StackShift tüm blok bulmaca deneyimini tek yerde sunar. Hemen indirin ve favori modunuzu bulun!
 
 ---
 
 ## Spanish
 
 ### Localized Title
-StackShift: Puzle de Bloques
+StackShift: Juegos de Puzles de Bloques
 
 ### Descripción corta
-¡Puzle de bloques inverso! Lanza bloques, completa tareas y relájate.
+¡5 juegos de bloques en 1 app! Lanza, coloca, fusiona, ordena y explota.
 
 ### Descripción completa
-¡Experimenta un giro refrescante en el clásico puzle de bloques! <b>StackShift</b> invierte las reglas: las piezas aparecen abajo y tú las lanzas hacia arriba para limpiar el tablero. Domina la mecánica única de "lanzar y encajar" para crear combos masivos y alcanzar puntuaciones récord en este adictivo juego mental.
+Descubre <b>5 juegos de puzles en una sola app</b> con <b>StackShift</b>. Cambia entre cinco experiencias distintas de bloques diseñadas para partidas rápidas, combos satisfactorios, objetivos diarios y una presentación relajante.
 
-<b>NUEVO: DESAFÍOS DIARIOS</b>
-Pon a prueba tus habilidades cada día con acertijos lógicos únicos. Explota bloques, alcanza puntuaciones objetivo y crea reacciones en cadena para ganar trofeos. ¡Sigue tu progreso en el calendario mensual y conviértete en un maestro de los puzles!
+<b>JUEGA 5 MODOS ÚNICOS</b>
+• <b>StackShift</b>: Lanza piezas desde abajo hacia arriba y limpia el tablero.
+• <b>BlockWise</b>: Coloca formas libremente y limpia filas + columnas.
+• <b>MergeShift</b>: Fusiona números iguales y crea reacciones en cadena.
+• <b>BoomBlocks</b>: Toca grupos de colores para hacerlos explotar y remodelar el tablero.
+• <b>BlockSort</b>: Ordena pilas de colores hasta formar columnas limpias de un solo color.
 
-<b>CARACTERÍSTICAS PRINCIPALES:</b>
-• <b>Mecánica Inversa</b>: Lanza piezas desde la base en lugar de verlas caer.
-• <b>Poderes Especiales</b>: Usa Limpiadores de Columnas, Limpiadores de Filas, bloques Fantasma y bloques Pesados para dominar la cuadrícula.
-• <b>Personalización Extrema</b>: Elige entre más de 10 estilos visuales como Líquido Dinámico, Burbuja o Cristal, y hermosas paletas de colores.
-• <b>Juega en Cualquier Lugar</b>: Totalmente localizado en 11 idiomas. Funciona sin conexión - ¡no requiere Wi-Fi!
-• <b>Feedback Satisfactorio</b>: Disfruta de animaciones fluidas, vibración háptica y efectos visuales dinámicos.
+<b>MÁS MOTIVOS PARA JUGAR</b>
+• <b>Desafíos Diarios</b>: Completa tareas nuevas, gana trofeos y sigue tu progreso en el calendario mensual.
+• <b>Personalización Profunda</b>: Elige entre más de 10 estilos de bloques, paletas de color y combinaciones de tema.
+• <b>Juega en Cualquier Lugar</b>: Opciones de idioma ampliadas para mercados clave y juego totalmente offline.
+• <b>Sensación Satisfactoria</b>: Disfruta de animaciones fluidas, vibración háptica y efectos visuales pulidos.
 
-Ya sea que busques una experiencia zen relajante o un desafío de lógica, StackShift es el juego perfecto para ti. ¡Descárgalo ahora y empieza a lanzar!
+Tanto si buscas un reto lógico relajante como una carrera por el récord, StackShift te ofrece una colección completa de puzles de bloques en un solo lugar. ¡Descárgalo ahora y encuentra tu modo favorito!
 
 ---
 
 ## French
 
 ### Localized Title
-StackShift : Puzzle de Blocs
+StackShift : Jeux de Puzzle Blocs
 
 ### Courte description
-Puzzle de blocs inversé ! Lancez des blocs, relevez les défis et relaxez-vous.
+5 puzzles de blocs en 1 app ! Lancez, placez, fusionnez, triez et explosez.
 
 ### Description complète
-Découvrez une version revisitée du puzzle de blocs classique ! <b>StackShift</b> inverse les règles : les pièces apparaissent en bas et vous les lancez vers le haut pour vider le plateau. Maîtrisez la mécanique unique de "lancer et fixer" pour créer d'énormes combos et battre des records dans ce casse-tête addictif.
+Découvrez <b>5 jeux de réflexion dans une seule application</b> avec <b>StackShift</b>. Passez d'une expérience de blocs à l'autre avec cinq styles de jeu conçus pour des sessions rapides, des combos satisfaisants, des objectifs quotidiens et une ambiance relaxante.
 
-<b>NOUVEAU : DÉFIS QUOTIDIENS</b>
-Testez vos compétences chaque jour avec des énigmes logiques uniques. Explosez des blocs, atteignez des scores cibles et créez des réactions en chaîne pour gagner des trophées. Suivez votre progression sur le calendrier mensuel et devenez un maître du puzzle !
+<b>JOUEZ À 5 MODES UNIQUES</b>
+• <b>StackShift</b> : Lancez les pièces du bas vers le haut et videz le plateau.
+• <b>BlockWise</b> : Placez librement les formes et effacez lignes + colonnes.
+• <b>MergeShift</b> : Fusionnez les nombres identiques et provoquez des réactions en chaîne.
+• <b>BoomBlocks</b> : Touchez des groupes colorés pour les faire exploser et remodeler le plateau.
+• <b>BlockSort</b> : Triez les piles colorées pour former des colonnes d'une seule couleur.
 
-<b>CARACTÉRISTIQUES PRINCIPALES :</b>
-• <b>Gameplay Inversé</b> : Lancez les pièces depuis le dock au lieu de les regarder tomber.
-• <b>Bonus Spéciaux</b> : Utilisez les Nettoyeurs de Colonne, Nettoyeurs de Rangée, blocs Fantômes et blocs Lourds pour maîtriser la grille.
-• <b>Personnalisation Totale</b> : Choisissez parmi plus de 10 styles visuels comme Liquide Dynamique, Bulle ou Cristal, et de superbes palettes de couleurs.
-• <b>Jouez Partout</b> : Entièrement traduit en 11 langues. Fonctionne hors ligne - pas besoin de Wi-Fi !
-• <b>Sensations Uniques</b> : Profitez d'animations fluides, de retours haptiques et d'effets visuels dynamiques.
+<b>ENCORE PLUS DE RAISONS DE JOUER</b>
+• <b>Défis Quotidiens</b> : Réalisez de nouvelles missions, gagnez des trophées et suivez votre progression sur le calendrier mensuel.
+• <b>Personnalisation Avancée</b> : Choisissez parmi plus de 10 styles de blocs, palettes de couleurs et combinaisons de thèmes.
+• <b>Jouez Partout</b> : Options de langue étendues pour les marchés clés et jeu entièrement hors ligne.
+• <b>Sensations Satisfaisantes</b> : Profitez d'animations fluides, de retours haptiques et d'effets visuels soignés.
 
-Que vous recherchiez une expérience zen relaxante ou un défi logique stimulant, StackShift est le jeu idéal pour vous. Téléchargez-le maintenant !
+Que vous cherchiez une énigme zen ou une chasse au meilleur score, StackShift réunit toute une collection de puzzles de blocs au même endroit. Téléchargez-le dès maintenant et trouvez votre mode préféré !
 
 ---
 
 ## German
 
 ### Localized Title
-StackShift: Block-Puzzle
+StackShift: Block-Puzzle-Spiele
 
 ### Kurze Beschreibung
-Innovatives Block-Puzzle! Schieße Blöcke, löse Aufgaben & entspanne dich.
+5 Blockspiele in 1 App! Schieße, platziere, kombiniere, sortiere & sprenge.
 
 ### Ausführliche Beschreibung
-Erlebe eine frische Variante des klassischen Block-Puzzles! <b>StackShift</b> stellt die Regeln auf den Kopf: Die Steine erscheinen unten, und du feuerst sie nach oben, um das Spielfeld zu leeren. Meistere die einzigartige "Abschuss"-Mechanik, um riesige Kombos zu erzielen und Highscores in diesem fesselnden Denkspiel zu knacken.
+Entdecke mit <b>StackShift</b> <b>5 verschiedene Puzzle-Spiele in einer App</b>. Wechsle zwischen fünf unterschiedlichen Block-Erlebnissen mit kurzen Sessions, starken Kombos, täglichen Zielen und einer entspannten Präsentation.
 
-<b>NEU: TÄGLICHE HERAUSFORDERUNGEN</b>
-Teste dein Können jeden Tag mit einzigartigen Logikrätseln. Lasse Blöcke explodieren, erreiche Zielpunktzahlen und erstelle Kettenreaktionen, um Trophäen zu gewinnen. Verfolge deinen Fortschritt im Monatskalender und werde zum Puzzle-Meister!
+<b>SPIELE 5 EINZIGARTIGE MODI</b>
+• <b>StackShift</b>: Schieße Steine von unten nach oben und räume das Spielfeld.
+• <b>BlockWise</b>: Platziere Formen frei und lösche Reihen + Spalten.
+• <b>MergeShift</b>: Kombiniere gleiche Zahlen und löse Kettenreaktionen aus.
+• <b>BoomBlocks</b>: Tippe auf Farbgruppen, sprenge Cluster und forme das Spielfeld neu.
+• <b>BlockSort</b>: Sortiere farbige Stapel zu sauberen einfarbigen Spalten.
 
-<b>HAUPTMERKMALE:</b>
-• <b>Umgekehrtes Gameplay</b>: Schieße Steine von unten ab, anstatt sie fallen zu sehen.
-• <b>Spezial-Power-ups</b>: Nutze Spaltenreiniger, Zeilenreiniger, Geisterblöcke und schwere Blöcke, um das Spielfeld zu beherrschen.
-• <b>Extreme Anpassung</b>: Wähle aus über 10 visuellen Stilen wie Dynamic Liquid, Bubble oder Crystal und wunderschönen Farbpaletten.
-• <b>Überall spielen</b>: In 11 Sprachen lokalisiert. Funktioniert offline - kein WLAN erforderlich!
-• <b>Spürbares Feedback</b>: Genieße flüssige Animationen, haptisches Feedback und dynamische visuelle Effekte.
+<b>MEHR GRÜNDE ZU SPIELEN</b>
+• <b>Tägliche Herausforderungen</b>: Erfülle neue Aufgaben, verdiene Trophäen und verfolge deinen Fortschritt im Monatskalender.
+• <b>Tiefe Anpassung</b>: Wähle aus 10+ Blockstilen, Farbpaletten und Themen-Kombinationen.
+• <b>Überall spielen</b>: Erweiterte Sprachoptionen für wichtige Märkte und komplett offline spielbar.
+• <b>Zufriedenstellendes Spielgefühl</b>: Genieße flüssige Animationen, haptisches Feedback und starke visuelle Effekte.
 
-Egal, ob du ein entspannendes Zen-Erlebnis oder ein herausforderndes Logikrätsel suchst, StackShift ist das perfekte Spiel für dich. Jetzt herunterladen und loslegen!
+Ob entspanntes Logikrätsel oder Highscore-Jagd: StackShift vereint eine komplette Block-Puzzle-Sammlung an einem Ort. Jetzt herunterladen und deinen Lieblingsmodus finden!
 
 ---
 
 ## Russian
 
 ### Localized Title
-StackShift: Блок-Пазл
+StackShift: Игры-Головоломки с Блоками
 
 ### Краткое описание
-Обратный пазл с блоками. Взрывай блоки, выполняй задания и отдыхай!
+5 игр с блоками в 1 приложении! Запускай, ставь, объединяй, сортируй.
 
 ### Полное описание
-Взгляните по-новому на классическую головоломку с блоками! <b>StackShift</b> меняет правила: фигуры появляются внизу, и вы запускаете их вверх, чтобы очистить поле. Освойте уникальную механику запуска и фиксации, чтобы создавать мощные комбо и ставить рекорды в этой увлекательной тренировке для мозга.
+Откройте для себя <b>5 разных головоломок в одном приложении</b> вместе с <b>StackShift</b>. Переключайтесь между пятью форматами игры с блоками, созданными для быстрых сессий, приятных комбо, ежедневных целей и расслабляющей визуальной подачи.
 
-<b>НОВОЕ: ЕЖЕДНЕВНЫЕ ИСПЫТАНИЯ</b>
-Проверяйте свои навыки каждый день в уникальных логических задачах. Взрывайте блоки, достигайте целевых очков и создавайте цепные реакции, чтобы получать трофеи. Отслеживайте свой прогресс в календаре и станьте мастером пазлов!
+<b>ИГРАЙТЕ В 5 УНИКАЛЬНЫХ РЕЖИМАХ</b>
+• <b>StackShift</b>: Запускайте фигуры снизу вверх и очищайте поле.
+• <b>BlockWise</b>: Свободно размещайте формы и очищайте ряды + колонки.
+• <b>MergeShift</b>: Объединяйте одинаковые числа и запускайте цепные реакции.
+• <b>BoomBlocks</b>: Нажимайте на цветовые группы, взрывайте кластеры и меняйте поле.
+• <b>BlockSort</b>: Сортируйте цветные стопки в аккуратные одноцветные колонки.
 
-<b>ОСНОВНЫЕ ХАРАКТЕРИСТИКИ:</b>
-• <b>Обратный геймплей</b>: Запускайте фигуры снизу вверх вместо того, чтобы смотреть, как они падают.
-• <b>Особые бонусы</b>: Используйте Очистители колонок, Очистители рядов, блоки-Призраки и Тяжелые блоки для контроля игрового поля.
-• <b>Глубокая настройка</b>: Выбирайте из 10+ визуальных стилей (Жидкий, Пузырьковый, Кристальный и др.) и прекрасных цветовых палитр.
-• <b>Играйте везде</b>: Полная локализация на 11 языков. Работает без интернета — Wi-Fi не нужен!
-• <b>Приятные ощущения</b>: Наслаждайтесь плавной анимацией, тактильной отдачей и динамичными эффектами.
+<b>ЕЩЁ БОЛЬШЕ ПРИЧИН ИГРАТЬ</b>
+• <b>Ежедневные испытания</b>: Выполняйте новые задания, получайте трофеи и отслеживайте прогресс в месячном календаре.
+• <b>Глубокая настройка</b>: Выбирайте из 10+ стилей блоков, цветовых палитр и комбинаций тем.
+• <b>Играйте где угодно</b>: Расширенные языковые опции для ключевых рынков и полностью офлайн-режим.
+• <b>Приятные ощущения</b>: Наслаждайтесь плавной анимацией, тактильной отдачей и качественными визуальными эффектами.
 
-Ищете ли вы дзен-релакс или сложную головоломку, StackShift — идеальный выбор. Скачайте сейчас и начните игру!
+Хотите спокойную логическую игру или погоню за рекордом? StackShift собрал полную коллекцию блок-пазлов в одном месте. Скачайте сейчас и найдите любимый режим!
 
 ---
 
@@ -161,119 +179,246 @@ StackShift: Блок-Пазл
 StackShift: 方块益智游戏
 
 ### 简短描述
-创新的反向方块消除！发射方块，完成每日任务，放松心情。
+1款应用含5种方块玩法！发射、摆放、合并、排序、爆破。
 
 ### 详细描述
-体验经典方块游戏的全新玩法！<b>StackShift</b> 颠覆了规则：方块从底部生成，你需要将它们向上发射来消除棋盘。掌握独特的“发射并贴合”机制，在这款令人上瘾的脑力游戏中创造超大连击并挑战最高分。
+通过 <b>StackShift</b> 体验<b>一款应用中的 5 种不同益智玩法</b>。在五种独特的方块游戏之间自由切换，享受快节奏局内体验、爽快连击、每日目标与轻松的视觉风格。
 
-<b>全新功能：每日挑战</b>
-每天测试你的技巧！解决独特的逻辑谜题，引爆方块、达到目标分数、制造连锁反应以赢得奖杯。通过月度日历追踪你的进度，成为真正的方块大师！
+<b>畅玩 5 种独特模式</b>
+• <b>StackShift</b>：从底部向上发射方块，清理棋盘。
+• <b>BlockWise</b>：自由摆放形状，同时消除行 + 列。
+• <b>MergeShift</b>：合并相同数字，触发连锁反应。
+• <b>BoomBlocks</b>：点击同色方块组引爆连块，重塑棋盘。
+• <b>BlockSort</b>：整理彩色堆叠，完成整齐的单色列。
 
-<b>核心特色：</b>
-• <b>反向玩法</b>：从底部发射方块，而不是看它们掉落。
-• <b>特殊道具</b>：使用列消除、行消除、幽灵方块和重型方块来掌控棋盘。
-• <b>极致个性化</b>：提供 10 多种视觉风格（如动态液体、气泡、水晶）以及精美的配色方案。
-• <b>随时随地畅玩</b>：支持 11 种语言。可离线运行，无需 Wi-Fi！
-• <b>极佳的反馈感</b>：享受流畅的动画、震动反馈和震撼的视觉效果。
+<b>更多值得游玩的理由</b>
+• <b>每日挑战</b>：完成全新任务、赢取奖杯，并在月历中追踪进度。
+• <b>深度自定义</b>：可选择 10+ 种方块风格、配色方案与主题组合。
+• <b>随时随地畅玩</b>：针对重点市场扩展语言选项，并支持完全离线游玩。
+• <b>手感爽快</b>：享受流畅动画、震动反馈和精致视觉效果。
 
-无论你是想寻找放松的禅意体验，还是充满挑战的逻辑拼图，StackShift 都是你的不二之选。立即下载，开始发射方块吧！
+无论你想要轻松的逻辑益智，还是冲击高分的挑战，StackShift 都能在一款应用中带来完整的方块益智合集。立即下载，找到你最喜欢的模式！
 
 ---
 
 ## Hindi
 
 ### Localized Title
-StackShift: ब्लॉक पहेली गेम
+StackShift: ब्लॉक पहेली गेम्स
 
 ### संक्षिप्त विवरण
-अनूठा उल्टा ब्लॉक पहेली! ब्लॉक लॉन्च करें, कार्य पूरा करें और आराम करें।
+1 ऐप में 5 ब्लॉक पहेलियाँ! लॉन्च करें, रखें, मिलाएँ, सजाएँ और फोड़ें।
 
 ### पूर्ण विवरण
-क्लासिक ब्लॉक पहेली का एक नया अंदाज़ अनुभव करें! <b>StackShift</b> नियमों को उलट देता है: टुकड़े नीचे पैदा होते हैं, और आप उन्हें बोर्ड साफ़ करने के लिए ऊपर की ओर लॉन्च करते हैं। इस व्यसनी दिमागी खेल में बड़े कॉम्बो बनाने और उच्च स्कोर तक पहुँचने के लिए अद्वितीय "लॉन्च और स्नैप" मैकेनिक में महारत हासिल करें।
+<b>StackShift</b> के साथ <b>एक ही ऐप में 5 अलग-अलग पहेली गेम</b> खोजें। तेज़ सत्रों, संतोषजनक कॉम्बो, दैनिक लक्ष्यों और आरामदायक विज़ुअल्स के साथ पाँच अलग ब्लॉक अनुभवों के बीच स्विच करें।
 
-<b>नया: दैनिक चुनौतियाँ</b>
-हर दिन अद्वितीय तर्क पहेलियों के साथ अपने कौशल का परीक्षण करें। ब्लॉक फोड़ें, लक्ष्य स्कोर तक पहुँचें और ट्रॉफी जीतने के लिए चेन रिएक्शन बनाएँ। मासिक कैलेंडर पर अपनी प्रगति को ट्रैक करें और पहेली मास्टर बनें!
+<b>5 अनोखे मोड खेलें</b>
+• <b>StackShift</b>: टुकड़ों को नीचे से ऊपर लॉन्च करें और बोर्ड साफ़ करें।
+• <b>BlockWise</b>: आकारों को स्वतंत्र रूप से रखें और पंक्तियाँ + कॉलम साफ़ करें।
+• <b>MergeShift</b>: समान नंबर मिलाएँ और चेन रिएक्शन बनाएँ।
+• <b>BoomBlocks</b>: रंग समूहों पर टैप करें, क्लस्टर फोड़ें और बोर्ड को नया आकार दें।
+• <b>BlockSort</b>: रंगीन स्टैक्स को एक-रंग वाले साफ़ कॉलम में व्यवस्थित करें।
 
-<b>मुख्य विशेषताएं:</b>
-• <b>उल्टा गेमप्ले</b>: टुकड़ों को गिरते हुए देखने के बजाय उन्हें नीचे से लॉन्च करें।
-• <b>विशेष शक्तियाँ</b>: बोर्ड पर महारत हासिल करने के लिए कॉलम क्लियरर, रो क्लियरर, घोस्ट ब्लॉक और हैवी ब्लॉक का उपयोग करें।
-• <b>गहन कस्टमाइजेशन</b>: डायनेमिक लिक्वid, बबल, या क्रिस्टल जैसे 10+ विज़ुअल स्टाइल और सुंदर रंगों में से चुनें।
-• <b>कहीं भी खेलें</b>: 11 भाषाओं में उपलब्ध। ऑफ़लाइन काम करता है - वाई-फाई की आवश्यकता नहीं!
-• <b>शानदार अनुभव</b>: सुचारू एनिमेशन, हैप्टिक फीडबैक और गतिशील विज़ुअल इफेक्ट्स का आनंद लें।
+<b>खेलने के और कारण</b>
+• <b>दैनिक चुनौतियाँ</b>: नए कार्य पूरे करें, ट्रॉफियाँ कमाएँ और मासिक कैलेंडर पर अपनी प्रगति ट्रैक करें।
+• <b>गहरा कस्टमाइज़ेशन</b>: 10+ ब्लॉक स्टाइल, रंग पैलेट और थीम संयोजन में से चुनें।
+• <b>कहीं भी खेलें</b>: प्रमुख बाज़ारों के लिए विस्तारित भाषा विकल्प और पूरी तरह ऑफ़लाइन गेमप्ले।
+• <b>संतोषजनक अनुभव</b>: सुचारू एनिमेशन, हैप्टिक फीडबैक और आकर्षक विज़ुअल इफेक्ट्स का आनंद लें।
 
-चाहे आप आराम के लिए खेल रहे हों या दिमाग को चुनौती देने के लिए, StackShift आपके लिए एकदम सही गेम है। अभी डाउनलोड करें!
+चाहे आप शांत दिमागी खेल चाहते हों या हाई स्कोर की दौड़, StackShift एक ही जगह पर पूरा ब्लॉक पहेली संग्रह देता है। अभी डाउनलोड करें और अपना पसंदीदा मोड खोजें!
 
 ---
 
 ## Arabic
 
 ### Localized Title
-StackShift: لغز الكتل
+StackShift: ألعاب ألغاز الكتل
 
 ### وصف قصير
-لغز كتل معكوس ومبتكر! أطلق الكتل، حل المهام اليومية واستمتع بالاسترخاء.
+5 ألعاب ألغاز كتل في تطبيق واحد! أطلق، ضع، ادمج، رتّب وفجّر.
 
 ### وصف كامل
-استمتع بتجربة جديدة كلياً في عالم ألغاز الكتل الكلاسيكية! تعكس لعبة <b>StackShift</b> القواعد التقليدية: تظهر القطع في الأسفل، وتقوم أنت بإطلاقها للأعلى لمسح اللوحة. أتقن ميكانيكية "الإطلاق والمطابقة" الفريدة لبناء مجموعات ضخمة وتحقيق أعلى النقاط في هذا التحدي الذهني الممتع.
+اكتشف مع <b>StackShift</b> <b>5 ألعاب ألغاز مختلفة في تطبيق واحد</b>. تنقّل بين خمس تجارب مميزة لعالم الكتل، مصممة لجلسات سريعة، وكومبوهات مُرضية، وأهداف يومية، وأجواء بصرية مريحة.
 
-<b>جديد: التحديات اليومية</b>
-اختبر مهاراتك كل يوم بألغاز منطقية فريدة. فجّر الكتل، وحقق النتائج المستهدفة، واصنع تفاعلات متسلسلة لتربح الكؤوس. تتبع تقدمك في التقويم الشهري لتصبح سيد الألغاز!
+<b>العب 5 أنماط فريدة</b>
+• <b>StackShift</b>: أطلق القطع من الأسفل إلى الأعلى ونظّف اللوحة.
+• <b>BlockWise</b>: ضع الأشكال بحرية وامسح الصفوف + الأعمدة.
+• <b>MergeShift</b>: ادمج الأرقام المتطابقة واصنع تفاعلات متسلسلة.
+• <b>BoomBlocks</b>: اضغط على مجموعات الألوان لتفجير التجمعات وإعادة تشكيل اللوحة.
+• <b>BlockSort</b>: رتّب الأكوام الملوّنة في أعمدة نظيفة بلون واحد.
 
-<b>الميزات الرئيسية:</b>
-• <b>أسلوب لعب معكوس</b>: أطلق القطع من الأسفل بدلاً من انتظار سقوطها.
-• <b>تعزيزات خاصة</b>: استخدم "ماسح الأعمدة"، و"ماسح الصفوف"، و"كتل الشبح"، و"الكتل الثقيلة" للسيطرة على الشبكة.
-• <b>تخصيص مذهل</b>: اختر من بين أكثر من 10 أنماط بصرية مثل "السائل الديناميكي" أو "الفقاعة" أو "الكريستال"، مع مجموعات ألوان رائعة.
-• <b>العب في أي مكان</b>: مترجمة بالكامل إلى 11 لغة. تعمل بدون إنترنت - لا حاجة لـ Wi-Fi!
-• <b>تفاعل مُرضٍ</b>: استمتع برسوم متحركة سلسة، وردود فعل لمسية، وتأثيرات بصرية ديناميكية.
+<b>المزيد من الأسباب للعب</b>
+• <b>التحديات اليومية</b>: أكمل مهام جديدة، اربح الكؤوس، وتابع تقدمك في التقويم الشهري.
+• <b>تخصيص عميق</b>: اختر من بين أكثر من 10 أنماط للكتل، ولوحات ألوان، وتركيبات للسمات.
+• <b>العب في أي مكان</b>: خيارات لغات موسّعة للأسواق المهمة مع لعب كامل بدون إنترنت.
+• <b>إحساس مُرضٍ</b>: استمتع برسوم متحركة سلسة، وردود فعل لمسية، وتأثيرات بصرية مصقولة.
 
-سواء كنت تبحث عن الاسترخاء أو تحدي ذكائك، توفر StackShift تجربة مثالية لك. حمّلها الآن وابدأ الإطلاق!
+سواء كنت تريد لغزاً منطقياً هادئاً أو مطاردة لأعلى النقاط، فإن StackShift يجمع لك مجموعة كاملة من ألغاز الكتل في مكان واحد. حمّله الآن واختر وضعك المفضل!
 
 ---
 
 ## Portuguese
 
 ### Localized Title
-StackShift: Puzzle de Blocos
+StackShift: Jogos de Puzzle de Blocos
 
 ### Descrição curta
-Puzzle de blocos invertido! Lance blocos, vença desafios e relaxe.
+5 jogos de blocos em 1 app! Lance, encaixe, junte, organize e exploda.
 
 ### Descrição completa
-Experimente uma reviravolta inovadora no clássico puzzle de blocos! <b>StackShift</b> inverte as reglas: as peças surgem na base e você as lança para cima para limpar o tabuleiro. Domine a mecânica única de "lançar e encaixar" para criar combos massivos e alcançar pontuações recordes neste viciante desafio mental.
+Descobre com <b>StackShift</b> <b>5 jogos de puzzle num só aplicativo</b>. Alterna entre cinco experiências distintas com blocos, criadas para sessões rápidas, combos satisfatórios, objetivos diários e um visual relaxante.
 
-<b>NOVO: DESAFIOS DIÁRIOS</b>
-Teste suas habilidades todos os dias com quebra-cabeças lógicos únicos. Exploda blocos, atinja metas de pontuação e crie reações em cadeia para ganhar troféus. Acompanhe seu progresso no calendário mensal e torne-se um mestre dos puzzles!
+<b>JOGA 5 MODOS ÚNICOS</b>
+• <b>StackShift</b>: Lança peças de baixo para cima e limpa o tabuleiro.
+• <b>BlockWise</b>: Coloca formas livremente e limpa linhas + colunas.
+• <b>MergeShift</b>: Junta números iguais e cria reações em cadeia.
+• <b>BoomBlocks</b>: Toca em grupos de cores para explodir blocos e remodelar o tabuleiro.
+• <b>BlockSort</b>: Organiza pilhas coloridas em colunas limpas de uma só cor.
 
-<b>PRINCIPAIS CARACTERÍSTICAS:</b>
-• <b>Jogabilidade Invertida</b>: Lance as peças do dock em vez de apenas vê-las cair.
-• <b>Poderes Especiales</b>: Use Limpadores de Colunas, Limpadores de Linhas, blocos Fantasma e blocos Pesados para dominar o tabuleiro.
-• <b>Customização Extrema</b>: Escolha entre mais de 10 estilos visuais, como Líquido Dinâmico, Bolha ou Cristal, além de belas paletas de cores.
-• <b>Jogue em Qualquer Lugar</b>: Totalmente localizado em 11 idiomas. Funciona offline - sem necessidade de Wi-Fi!
-• <b>Feedback Satisfatório</b>: Desfrute de animações fluidas, vibração háptica e efeitos visuais dinâmicos.
+<b>MAIS RAZÕES PARA JOGAR</b>
+• <b>Desafios Diários</b>: Completa novas tarefas, ganha troféus e acompanha o teu progresso no calendário mensal.
+• <b>Personalização Profunda</b>: Escolhe entre mais de 10 estilos de blocos, paletas de cores e combinações de tema.
+• <b>Joga em Qualquer Lugar</b>: Opções de idioma expandidas para mercados importantes e jogabilidade totalmente offline.
+• <b>Sensação Satisfatória</b>: Desfruta de animações fluidas, feedback háptico e efeitos visuais polidos.
 
-Seja para relaxar ou para um desafio lógico, StackShift é o jogo perfeito para você. Baixe agora e comece a lançar blocos!
+Quer procures um puzzle calmo de lógica ou uma corrida ao recorde, StackShift oferece uma coleção completa de puzzles de blocos num só lugar. Faz já o download e encontra o teu modo favorito!
 
 ---
 
 ## Indonesian
 
 ### Localized Title
-StackShift: Puzzle Blok
+StackShift: Game Puzzle Blok
 
 ### Deskripsi Singkat
-Puzzle blok terbalik! Luncurkan blok, selesaikan tugas & bersantai.
+5 game puzzle blok dalam 1 aplikasi! Luncurkan, susun, gabung, urutkan, ledakkan.
 
 ### Deskripsi Lengkap
-Nikmati sensasi baru dalam permainan puzzle blok klasik! <b>StackShift</b> membalikkan aturan: kepingan muncul di bagian bawah, dan Anda meluncurkannya ke atas untuk membersihkan papan. Kuasai mekanik "luncurkan dan pasang" yang unik untuk membangun kombo besar dan mencetak skor tertinggi dalam asah otak yang adiktif ini.
+Temukan <b>5 game puzzle berbeda dalam satu aplikasi</b> bersama <b>StackShift</b>. Berpindahlah di antara lima pengalaman blok yang unik dengan sesi cepat, kombo memuaskan, target harian, dan visual yang menenangkan.
 
-<b>BARU: TANTANGAN HARIAN</b>
-Uji kemampuan Anda setiap hari dengan puzzle logika yang unik. Ledakkan blok, capai target skor, ve ciptakan reaksi berantai untuk mendapatkan trofi. Pantau progres Anda di kalender bulanan dan jadilah master puzzle!
+<b>MAINKAN 5 MODE UNIK</b>
+• <b>StackShift</b>: Luncurkan kepingan dari bawah ke atas dan bersihkan papan.
+• <b>BlockWise</b>: Tempatkan bentuk secara bebas dan bersihkan baris + kolom.
+• <b>MergeShift</b>: Gabungkan angka yang sama dan ciptakan reaksi berantai.
+• <b>BoomBlocks</b>: Ketuk grup warna untuk meledakkan klaster dan membentuk ulang papan.
+• <b>BlockSort</b>: Urutkan tumpukan warna menjadi kolom rapi satu warna.
 
-<b>FITUR UTAMA:</b>
-• <b>Gameplay Terbalik</b>: Luncurkan kepingan dari bawah alih-alih melihatnya jatuh.
-• <b>Power-up Spesial</b>: Gunakan Pembersih Kolom, Pembersih Baris, blok Hantu, dan blok Berat untuk menguasai papan.
-• <b>Kustomisasi Ekstrem</b>: Pilih lebih dari 10 gaya visual seperti Cairan Dinamis, Gelembung, atau Kristal, serta palet warna yang indah.
-• <b>Main di Mana Saja</b>: Tersedia sepenuhnya dalam 11 bahasa. Bisa dimainkan offline - tidak butuh Wi-Fi!
-• <b>Feedback Memuaskan</b>: Nikmati animasi halus, getaran haptik, ve efek visual dinamis.
+<b>LEBIH BANYAK ALASAN UNTUK BERMAIN</b>
+• <b>Tantangan Harian</b>: Selesaikan tugas baru, dapatkan trofi, dan pantau progres di kalender bulanan.
+• <b>Kustomisasi Mendalam</b>: Pilih dari 10+ gaya blok, palet warna, dan kombinasi tema.
+• <b>Main di Mana Saja</b>: Opsi bahasa yang diperluas untuk pasar penting dan gameplay sepenuhnya offline.
+• <b>Rasa Bermain yang Memuaskan</b>: Nikmati animasi halus, getaran haptik, dan efek visual yang rapi.
 
-Baik Anda mencari pengalaman zen yang santai atau tantangan logika, StackShift adalah game yang sempurna untuk Anda. Unduh sekarang ve mulai meluncurkan!
+Baik Anda mencari puzzle logika yang santai maupun perburuan skor tinggi, StackShift menghadirkan koleksi puzzle blok lengkap dalam satu tempat. Unduh sekarang dan temukan mode favorit Anda!
+
+---
+
+## Japanese
+
+### Localized Title
+StackShift: ブロックパズルゲーム
+
+### Short Description
+1つのアプリで5つのブロックパズル。発射、配置、合体、並べ替え、爆破！
+
+### Full Description
+<b>StackShift</b>で、<b>1つのアプリに入った5種類のパズルゲーム</b>を楽しみましょう。テンポのよいセッション、気持ちいいコンボ、毎日の目標、リラックスできるビジュアルを備えた5つのブロック体験を自由に切り替えられます。
+
+<b>5つのユニークなモードをプレイ</b>
+• <b>StackShift</b>: ピースを下から上へ打ち上げて盤面を整理。
+• <b>BlockWise</b>: 形を自由に配置して行 + 列を消去。
+• <b>MergeShift</b>: 同じ数字を合体させて連鎖を作成。
+• <b>BoomBlocks</b>: 色グループをタップして爆破し、盤面を再構築。
+• <b>BlockSort</b>: 色付きスタックを単色の列に整理。
+
+<b>さらに遊びたくなる要素</b>
+• <b>デイリーチャレンジ</b>: 新しい課題をこなし、トロフィーを獲得し、月間カレンダーで進行を確認。
+• <b>豊富なカスタマイズ</b>: 10種類以上のブロックスタイル、カラーパレット、テーマの組み合わせを選択。
+• <b>いつでもどこでも</b>: 主要市場向けに拡張された言語オプションと完全オフラインプレイに対応。
+• <b>気持ちいい操作感</b>: 滑らかなアニメーション、触覚フィードバック、美しい視覚効果を楽しめます。
+
+落ち着いたロジックパズルを遊びたい人も、ハイスコアを狙いたい人も、StackShiftならブロックパズルの楽しさを1か所で味わえます。今すぐダウンロードして、お気に入りのモードを見つけてください！
+
+---
+
+## Korean
+
+### Localized Title
+StackShift: 블록 퍼즐 게임
+
+### Short Description
+앱 하나에 블록 퍼즐 5종! 발사, 배치, 합치기, 정렬, 폭파를 즐기세요.
+
+### Full Description
+<b>StackShift</b>에서 <b>하나의 앱으로 5가지 퍼즐 게임</b>을 만나보세요. 빠른 플레이 세션, 손맛 좋은 콤보, 일일 목표, 편안한 비주얼을 갖춘 다섯 가지 블록 게임을 자유롭게 오갈 수 있습니다.
+
+<b>5가지 개성 있는 모드</b>
+• <b>StackShift</b>: 블록을 아래에서 위로 발사해 보드를 정리하세요.
+• <b>BlockWise</b>: 도형을 자유롭게 배치하고 행 + 열을 지우세요.
+• <b>MergeShift</b>: 같은 숫자를 합쳐 연쇄 반응을 만드세요.
+• <b>BoomBlocks</b>: 색상 그룹을 눌러 폭파하고 보드를 다시 구성하세요.
+• <b>BlockSort</b>: 색상 스택을 한 가지 색의 깔끔한 열로 정렬하세요.
+
+<b>더 즐거운 이유</b>
+• <b>일일 도전</b>: 새로운 과제를 완료하고 트로피를 모으며 월간 캘린더에서 진행도를 확인하세요.
+• <b>깊이 있는 꾸미기</b>: 10가지 이상의 블록 스타일, 색상 팔레트, 테마 조합을 선택할 수 있습니다.
+• <b>어디서나 플레이</b>: 주요 시장을 위한 확장 언어 옵션과 완전한 오프라인 플레이를 지원합니다.
+• <b>만족스러운 손맛</b>: 부드러운 애니메이션, 햅틱 피드백, 세련된 시각 효과를 즐겨보세요.
+
+차분한 두뇌 퍼즐을 원하든 최고 점수를 노리든, StackShift는 블록 퍼즐 컬렉션을 한곳에 담아 제공합니다. 지금 다운로드하고 가장 마음에 드는 모드를 찾아보세요!
+
+---
+
+## Italian
+
+### Localized Title
+StackShift: Giochi di Puzzle con Blocchi
+
+### Descrizione breve
+5 puzzle di blocchi in 1 app! Lancia, posiziona, unisci, ordina ed esplodi.
+
+### Descrizione completa
+Scopri con <b>StackShift</b> <b>5 giochi di puzzle in una sola app</b>. Passa da una modalità all'altra tra cinque esperienze con i blocchi pensate per sessioni rapide, combo appaganti, obiettivi giornalieri e un look rilassante.
+
+<b>GIOCA A 5 MODALITÀ UNICHE</b>
+• <b>StackShift</b>: Lancia i pezzi dal basso verso l'alto e ripulisci la griglia.
+• <b>BlockWise</b>: Posiziona le forme liberamente e cancella righe + colonne.
+• <b>MergeShift</b>: Unisci i numeri uguali e crea reazioni a catena.
+• <b>BoomBlocks</b>: Tocca i gruppi di colore per far esplodere i cluster e rimodellare il tabellone.
+• <b>BlockSort</b>: Ordina le pile colorate fino a ottenere colonne pulite di un solo colore.
+
+<b>ALTRI MOTIVI PER GIOCARE</b>
+• <b>Sfide Giornaliere</b>: Completa nuove missioni, guadagna trofei e segui i tuoi progressi nel calendario mensile.
+• <b>Personalizzazione Profonda</b>: Scegli tra più di 10 stili di blocchi, palette colori e combinazioni di tema.
+• <b>Gioca Ovunque</b>: Opzioni lingua ampliate per i mercati chiave e gameplay completamente offline.
+• <b>Sensazioni Appaganti</b>: Goditi animazioni fluide, feedback aptico ed effetti visivi curati.
+
+Che tu voglia un rompicapo rilassante o una caccia al punteggio più alto, StackShift riunisce una collezione completa di puzzle di blocchi in un solo posto. Scaricalo ora e trova la tua modalità preferita!
+
+---
+
+## Dutch
+
+### Localized Title
+StackShift: Blokpuzzelspellen
+
+### Korte beschrijving
+5 blokpuzzelspellen in 1 app! Lanceer, plaats, combineer, sorteer en knal.
+
+### Volledige beschrijving
+Ontdek met <b>StackShift</b> <b>5 verschillende puzzelspellen in één app</b>. Wissel tussen vijf unieke blokervaringen met snelle sessies, bevredigende combo's, dagelijkse doelen en een ontspannen uitstraling.
+
+<b>SPEEL 5 UNIEKE MODI</b>
+• <b>StackShift</b>: Lanceer stukken van onder naar boven en maak het bord vrij.
+• <b>BlockWise</b>: Plaats vormen vrij en wis rijen + kolommen.
+• <b>MergeShift</b>: Combineer gelijke cijfers en creëer kettingreacties.
+• <b>BoomBlocks</b>: Tik op kleurgroepen om clusters te laten ontploffen en het bord te hervormen.
+• <b>BlockSort</b>: Sorteer gekleurde stapels tot nette kolommen in één kleur.
+
+<b>NOG MEER REDENEN OM TE SPELEN</b>
+• <b>Dagelijkse Uitdagingen</b>: Voltooi nieuwe taken, verdien trofeeën en volg je voortgang op de maandkalender.
+• <b>Diepe Aanpassing</b>: Kies uit 10+ blokstijlen, kleurenpaletten en themacombinaties.
+• <b>Speel Overal</b>: Uitgebreide taalopties voor belangrijke markten en volledig offline speelbaar.
+• <b>Bevredigend Gevoel</b>: Geniet van vloeiende animaties, haptische feedback en verzorgde visuele effecten.
+
+Of je nu een rustig denkspel zoekt of voor een topscore gaat, StackShift brengt een complete blokpuzzelcollectie samen op één plek. Download nu en ontdek je favoriete modus!

@@ -21,6 +21,10 @@ import blockgames.composeapp.generated.resources.app_language_french
 import blockgames.composeapp.generated.resources.app_language_german
 import blockgames.composeapp.generated.resources.app_language_hindi
 import blockgames.composeapp.generated.resources.app_language_indonesian
+import blockgames.composeapp.generated.resources.app_language_italian
+import blockgames.composeapp.generated.resources.app_language_japanese
+import blockgames.composeapp.generated.resources.app_language_korean
+import blockgames.composeapp.generated.resources.app_language_dutch
 import blockgames.composeapp.generated.resources.app_language_portuguese
 import blockgames.composeapp.generated.resources.app_language_russian
 import blockgames.composeapp.generated.resources.app_language_spanish
@@ -45,6 +49,10 @@ enum class AppLanguage(
     Arabic(localeTag = "ar", labelRes = Res.string.app_language_arabic, flag = "🇸🇦"),
     Portuguese(localeTag = "pt", labelRes = Res.string.app_language_portuguese, flag = "🇵🇹"),
     Indonesian(localeTag = "id", labelRes = Res.string.app_language_indonesian, flag = "🇮🇩"),
+    Japanese(localeTag = "ja", labelRes = Res.string.app_language_japanese, flag = "🇯🇵"),
+    Korean(localeTag = "ko", labelRes = Res.string.app_language_korean, flag = "🇰🇷"),
+    Italian(localeTag = "it", labelRes = Res.string.app_language_italian, flag = "🇮🇹"),
+    Dutch(localeTag = "nl", labelRes = Res.string.app_language_dutch, flag = "🇳🇱"),
 
     ;
 
