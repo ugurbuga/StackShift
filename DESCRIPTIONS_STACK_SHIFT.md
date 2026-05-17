@@ -1,6 +1,7 @@
-# StackShift App Store Descriptions (Google Play Formatted)
+# Puzzle Shift: Block Puzzle App Store Descriptions (Google Play Formatted)
 
 This document contains the metadata for Google Play Store.
+Localized title format keeps <b>Puzzle Shift:</b> fixed and localizes only the subtitle for each language.
 **Full Description supports HTML tags:** <b>bold</b>, <i>italic</i>, <u>underline</u>.
 
 ---
@@ -8,7 +9,7 @@ This document contains the metadata for Google Play Store.
 ## English (default)
 
 ### Localized Title
-StackShift: Block Puzzle Games
+Puzzle Shift: Block Puzzle
 
 ### Short Description
 Switch between 5 block puzzle games! Launch, place, merge, sort, blast & relax.
@@ -36,7 +37,7 @@ Whether you want a calm logic puzzle, a quick daily task, or a high-score chase,
 ## Türkçe
 
 ### Localized Title
-StackShift: Blok Bulmaca Oyunları
+Puzzle Shift: Blok Bulmaca
 
 ### Kısa Açıklama
 Tek uygulamada 5 blok bulmaca! Fırlat, yerleştir, birleştir, sırala, patlat.
@@ -64,7 +65,7 @@ Tek uygulamada 5 blok bulmaca! Fırlat, yerleştir, birleştir, sırala, patlat.
 ## Spanish
 
 ### Localized Title
-StackShift: Juegos de Puzles de Bloques
+Puzzle Shift: Puzle de bloques
 
 ### Descripción corta
 ¡5 juegos de bloques en 1 app! Lanza, coloca, fusiona, ordena y explota.
@@ -92,7 +93,7 @@ Tanto si buscas un reto lógico relajante como una carrera por el récord, Stack
 ## French
 
 ### Localized Title
-StackShift : Jeux de Puzzle Blocs
+Puzzle Shift: Puzzle Blocs
 
 ### Courte description
 5 puzzles de blocs en 1 app ! Lancez, placez, fusionnez, triez et explosez.
@@ -120,7 +121,7 @@ Que vous cherchiez une énigme zen ou une chasse au meilleur score, StackShift r
 ## German
 
 ### Localized Title
-StackShift: Block-Puzzle-Spiele
+Puzzle Shift: Blockpuzzle
 
 ### Kurze Beschreibung
 5 Blockspiele in 1 App! Schieße, platziere, kombiniere, sortiere & sprenge.
@@ -148,7 +149,7 @@ Ob entspanntes Logikrätsel oder Highscore-Jagd: StackShift vereint eine komplet
 ## Russian
 
 ### Localized Title
-StackShift: Игры-Головоломки с Блоками
+Puzzle Shift: Блок-пазл
 
 ### Краткое описание
 5 игр с блоками в 1 приложении! Запускай, ставь, объединяй, сортируй.
@@ -176,7 +177,7 @@ StackShift: Игры-Головоломки с Блоками
 ## Chinese (Simplified)
 
 ### Localized Title
-StackShift: 方块益智游戏
+Puzzle Shift: 方块拼图
 
 ### 简短描述
 1款应用含5种方块玩法！发射、摆放、合并、排序、爆破。
@@ -204,7 +205,7 @@ StackShift: 方块益智游戏
 ## Hindi
 
 ### Localized Title
-StackShift: ब्लॉक पहेली गेम्स
+Puzzle Shift: ब्लॉक पहेली
 
 ### संक्षिप्त विवरण
 1 ऐप में 5 ब्लॉक पहेलियाँ! लॉन्च करें, रखें, मिलाएँ, सजाएँ और फोड़ें।
@@ -232,7 +233,7 @@ StackShift: ब्लॉक पहेली गेम्स
 ## Arabic
 
 ### Localized Title
-StackShift: ألعاب ألغاز الكتل
+Puzzle Shift: لغز الكتل
 
 ### وصف قصير
 5 ألعاب ألغاز كتل في تطبيق واحد! أطلق، ضع، ادمج، رتّب وفجّر.
@@ -260,7 +261,7 @@ StackShift: ألعاب ألغاز الكتل
 ## Portuguese
 
 ### Localized Title
-StackShift: Jogos de Puzzle de Blocos
+Puzzle Shift: Puzzle Blocos
 
 ### Descrição curta
 5 jogos de blocos em 1 app! Lance, encaixe, junte, organize e exploda.
@@ -288,10 +289,10 @@ Quer procures um puzzle calmo de lógica ou uma corrida ao recorde, StackShift o
 ## Indonesian
 
 ### Localized Title
-StackShift: Game Puzzle Blok
+Puzzle Shift: Puzzle Blok
 
 ### Deskripsi Singkat
-5 game puzzle blok dalam 1 aplikasi! Luncurkan, susun, gabung, urutkan, ledakkan.
+5 game puzzle blok di 1 aplikasi! Luncurkan, susun, gabung, urutkan, ledakkan.
 
 ### Deskripsi Lengkap
 Temukan <b>5 game puzzle berbeda dalam satu aplikasi</b> bersama <b>StackShift</b>. Berpindahlah di antara lima pengalaman blok yang unik dengan sesi cepat, kombo memuaskan, target harian, dan visual yang menenangkan.
@@ -316,7 +317,7 @@ Baik Anda mencari puzzle logika yang santai maupun perburuan skor tinggi, StackS
 ## Japanese
 
 ### Localized Title
-StackShift: ブロックパズルゲーム
+Puzzle Shift: ブロックパズル
 
 ### Short Description
 1つのアプリで5つのブロックパズル。発射、配置、合体、並べ替え、爆破！
@@ -344,7 +345,7 @@ StackShift: ブロックパズルゲーム
 ## Korean
 
 ### Localized Title
-StackShift: 블록 퍼즐 게임
+Puzzle Shift: 블록 퍼즐
 
 ### Short Description
 앱 하나에 블록 퍼즐 5종! 발사, 배치, 합치기, 정렬, 폭파를 즐기세요.
@@ -372,7 +373,7 @@ StackShift: 블록 퍼즐 게임
 ## Italian
 
 ### Localized Title
-StackShift: Giochi di Puzzle con Blocchi
+Puzzle Shift: Puzzle Blocchi
 
 ### Descrizione breve
 5 puzzle di blocchi in 1 app! Lancia, posiziona, unisci, ordina ed esplodi.
@@ -400,7 +401,7 @@ Che tu voglia un rompicapo rilassante o una caccia al punteggio più alto, Stack
 ## Dutch
 
 ### Localized Title
-StackShift: Blokpuzzelspellen
+Puzzle Shift: Blokpuzzel
 
 ### Korte beschrijving
 5 blokpuzzelspellen in 1 app! Lanceer, plaats, combineer, sorteer en knal.

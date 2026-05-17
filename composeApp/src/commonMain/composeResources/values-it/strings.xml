@@ -375,7 +375,7 @@
 
     <string name="selection_stackshift_desc">Lancia pezzi dal basso per eliminare righe e colonne.</string>
     <string name="selection_blockwise_desc">Trascina e rilascia i pezzi ovunque sul tabellone.</string>
-    <string name="selection_blocksort_desc">Sposta le pile di colore superiori tra colonne miste finché ogni colonna piena non diventa di un solo colore, anche quando i round cambiano il numero di slot e dividono il tabellone in due righe.</string>
+    <string name="selection_blocksort_desc">Riordina le pile di colori misti finché ogni colonna piena non diventa di un solo colore.</string>
     <string name="selection_mergeshift_desc">Fondi pezzi dello stesso valore per raggiungere punteggi più alti.</string>
     <string name="selection_boomblocks_desc">Tocca gruppi di 3 o più blocchi per farli esplodere.</string>
     <string name="selection_switch_game">Cambia gioco</string>

@@ -43,6 +43,7 @@ private fun keystoreProperty(flavorName: String, suffix: String): String {
 
 private data class AndroidFlavorConfig(
     val name: String,
+    val displayName: String = name,
     val applicationId: String,
     val versionCode: Int,
     val versionName: String,
@@ -53,9 +54,10 @@ private data class AndroidFlavorConfig(
 private val androidFlavorConfigs = listOf(
     AndroidFlavorConfig(
         name = "StackShift",
+        displayName = "Puzzle Shift",
         applicationId = "com.ugurbuga.stackshift",
-        versionCode = 8,
-        versionName = "1.1.0",
+        versionCode = 9,
+        versionName = "1.1.1",
     ),
     AndroidFlavorConfig(
         name = "BlockWise",
@@ -258,7 +260,7 @@ android {
                 applicationId = flavor.applicationId
                 versionCode = flavor.versionCode
                 versionName = flavor.versionName
-                resValue("string", "app_name", flavor.name)
+                resValue("string", "app_name", flavor.displayName)
                 signingConfig = signingConfigs.getByName(flavor.flavorName)
                 manifestPlaceholders["adsApplicationId"] =
                     adsProperty(flavor.flavorName, "applicationId")

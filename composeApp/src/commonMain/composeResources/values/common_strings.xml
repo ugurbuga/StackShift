@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_title_puzzle_shift" translatable="false">Puzzle Shift</string>
     <string name="app_title_stackshift" translatable="false">StackShift</string>
     <string name="app_title_blockwise" translatable="false">BlockWise</string>
     <string name="app_title_mergeshift" translatable="false">MergeShift</string>
@@ -33,6 +34,6 @@
     <string name="app_language_italian" translatable="false">Italiano</string>
     <string name="app_language_dutch" translatable="false">Nederlands</string>
 
-    <string name="notification_miss_you_title" translatable="false">StackShift</string>
+    <string name="notification_miss_you_title" translatable="false">Puzzle Shift</string>
 </resources>
 

@@ -375,7 +375,7 @@
 
     <string name="selection_stackshift_desc">Lanceer stukken van onderen om rijen en kolommen te wissen.</string>
     <string name="selection_blockwise_desc">Sleep en plaats stukken overal op het bord.</string>
-    <string name="selection_blocksort_desc">Verplaats bovenste kleurstapels tussen gemengde kolommen totdat elke gevulde kolom uit één kleur bestaat, zelfs wanneer rondes het aantal slots veranderen en het bord zich in twee rijen splitst.</string>
+    <string name="selection_blocksort_desc">Sorteer gemengde kleurstapels totdat elke gevulde kolom uit één kleur bestaat.</string>
     <string name="selection_mergeshift_desc">Voeg stukken met dezelfde waarde samen om hogere scores te halen.</string>
     <string name="selection_boomblocks_desc">Tik op groepen van 3 of meer blokken om ze te laten ontploffen.</string>
     <string name="selection_switch_game">Wissel van spel</string>

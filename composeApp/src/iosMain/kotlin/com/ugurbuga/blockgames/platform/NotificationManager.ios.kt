@@ -32,7 +32,7 @@ import platform.UserNotifications.UNNotificationSound
 import platform.UserNotifications.UNTimeIntervalNotificationTrigger
 import platform.UserNotifications.UNUserNotificationCenter
 import blockgames.composeapp.generated.resources.Res
-import blockgames.composeapp.generated.resources.app_title_stackshift
+import blockgames.composeapp.generated.resources.app_title_puzzle_shift
 import blockgames.composeapp.generated.resources.notification_daily_challenge_body
 import blockgames.composeapp.generated.resources.notification_daily_challenge_title
 import blockgames.composeapp.generated.resources.notification_miss_you_body
@@ -227,7 +227,7 @@ class IosNotificationManager : NotificationManager {
     override fun sendTestNotification() {
         val localeTag = AppSettingsStorage.load().language.localeTag
         val content = UNMutableNotificationContent().apply {
-            setTitle(localizedText(localeTag, Res.string.app_title_stackshift))
+            setTitle(localizedText(localeTag, Res.string.app_title_puzzle_shift))
             setBody(localizedText(localeTag, Res.string.notification_test_body))
             setSound(UNNotificationSound.defaultSound)
         }

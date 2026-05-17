@@ -366,6 +366,6 @@
     <string name="blocksort_round_label">Ronda</string>
     <string name="blocksort_select_source_hint">Toca una columna mixta no vacía para recoger su pila superior de color.</string>
     <string name="blocksort_selected_hint">Ahora toca una columna vacía o una columna con el mismo color superior para mover la pila.</string>
-    <string name="selection_blocksort_desc">Mueve pilas superiores de color entre columnas mixtas hasta que cada columna llena sea de un solo color, incluso cuando las rondas cambien el número de casillas y el tablero se divida en dos filas.</string>
+    <string name="selection_blocksort_desc">Ordena pilas de colores mezcladas hasta que cada columna llena tenga un solo color.</string>
 </resources>
 

@@ -375,5 +375,5 @@
     <string name="blocksort_round_label">回合</string>
     <string name="blocksort_select_source_hint">点击一个非空的混合列以拿起顶部颜色堆叠。</string>
     <string name="blocksort_selected_hint">现在点击一个空列，或点击一个顶部颜色相同的列来移动堆叠。</string>
-    <string name="selection_blocksort_desc">在混合列之间移动顶部颜色堆叠，直到每个已填充列都变成单一颜色；即使回合会改变槽位数量、棋盘会分成两排也一样。</string>
+    <string name="selection_blocksort_desc">整理混色堆叠，直到每个已填充列都只剩一种颜色。</string>
 </resources>

@@ -32,6 +32,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -54,17 +56,19 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.app_title_blocksort
@@ -81,6 +85,7 @@ import blockgames.composeapp.generated.resources.selection_mergeshift_desc
 import blockgames.composeapp.generated.resources.selection_stackshift_desc
 import blockgames.composeapp.generated.resources.selection_title
 import com.ugurbuga.blockgames.BlockGamesTheme
+import com.ugurbuga.blockgames.ads.AppFooterBannerHeight
 import com.ugurbuga.blockgames.game.model.BoardMatrix
 import com.ugurbuga.blockgames.game.model.CellTone
 import com.ugurbuga.blockgames.game.model.GameConfig
@@ -180,7 +185,7 @@ private data class SelectionGameSpec(
 
 @Composable
 fun AppSelectionScreen(
-    currentStyle: GameplayStyle,
+    currentStyle: GameplayStyle?,
     onGameplayStyleSelected: (GameplayStyle) -> Unit,
     telemetry: AppTelemetry,
     onBack: () -> Unit,
@@ -199,8 +204,11 @@ fun AppSelectionScreen(
     }
 
     val listState = rememberLazyListState()
-    val coroutineScope = rememberCoroutineScope()
     var expandedStyle by remember { mutableStateOf<GameplayStyle?>(null) }
+    val density = LocalDensity.current
+    val footerClearance = AppFooterBannerHeight + with(density) {
+        WindowInsets.navigationBars.getBottom(this).toDp()
+    } + 20.dp
 
     val transition = rememberInfiniteTransition(label = "selectionStylePulse")
     val stylePulse by transition.animateFloat(
@@ -227,7 +235,7 @@ fun AppSelectionScreen(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                contentPadding = PaddingValues(bottom = 32.dp),
+                contentPadding = PaddingValues(bottom = footerClearance + 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 item {
@@ -258,7 +266,7 @@ fun AppSelectionScreen(
                     }
                 }
 
-                itemsIndexed(items) { index, item ->
+                itemsIndexed(items) { _, item ->
                     val style = item.style
                     val isExpanded = expandedStyle == style
                     SelectionItem(
@@ -271,13 +279,9 @@ fun AppSelectionScreen(
                         style = style,
                         isExpanded = isExpanded,
                         isActive = style == currentStyle,
+                        footerClearance = footerClearance,
                         onExpandToggle = {
                             expandedStyle = if (isExpanded) null else style
-                            if (!isExpanded) {
-                                coroutineScope.launch {
-                                    listState.animateScrollToItem(index + 1)
-                                }
-                            }
                         },
                         onPlayClick = { onGameplayStyleSelected(style) },
                         stylePulse = stylePulse,
@@ -296,6 +300,7 @@ private fun SelectionItem(
     style: GameplayStyle,
     isExpanded: Boolean,
     isActive: Boolean,
+    footerClearance: Dp,
     onExpandToggle: () -> Unit,
     onPlayClick: () -> Unit,
     stylePulse: Float,
@@ -303,24 +308,30 @@ private fun SelectionItem(
 ) {
     val uiColors = BlockGamesThemeTokens.uiColors
     val accentColor = remember(style, uiColors) { uiColors.selectionAccentFor(style) }
-    val playButtonBringIntoViewRequester = remember { BringIntoViewRequester() }
+    val cardInteractionSource = remember { MutableInteractionSource() }
+    val itemBringIntoViewRequester = remember { BringIntoViewRequester() }
 
-    LaunchedEffect(isExpanded) {
+    LaunchedEffect(isExpanded, footerClearance) {
         if (isExpanded) {
             delay(250)
-            playButtonBringIntoViewRequester.bringIntoView()
+            itemBringIntoViewRequester.bringIntoView()
         }
     }
 
     Card(
         modifier = modifier
             .fillMaxWidth()
+            .bringIntoViewRequester(itemBringIntoViewRequester)
             .blockGamesSurfaceShadow(
                 shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
                 elevation = if (isExpanded) 12.dp else 8.dp,
             )
             .clip(RoundedCornerShape(GameUiShapeTokens.panelCorner))
-            .clickable(onClick = onExpandToggle),
+            .clickable(
+                interactionSource = cardInteractionSource,
+                indication = null,
+                onClick = onExpandToggle,
+            ),
         shape = RoundedCornerShape(GameUiShapeTokens.panelCorner),
         colors = CardDefaults.cardColors(
             containerColor = if (isExpanded) {
@@ -423,7 +434,6 @@ private fun SelectionItem(
                         text = stringResource(Res.string.home_play_cta),
                         onClick = onPlayClick,
                         modifier = Modifier
-                            .bringIntoViewRequester(playButtonBringIntoViewRequester)
                             .fillMaxWidth()
                             .height(56.dp),
                         tone = tone,
@@ -1374,7 +1384,7 @@ private fun findConnectedGroup(board: BoardMatrix, start: GridPoint): Set<GridPo
 fun AppSelectionScreenPreview() {
     BlockGamesTheme(settings = AppSettings()) {
         AppSelectionScreen(
-            currentStyle = GameplayStyle.StackShift,
+            currentStyle = null,
             onGameplayStyleSelected = {},
             telemetry = NoOpAppTelemetry,
             onBack = {},

@@ -375,5 +375,5 @@
     <string name="blocksort_round_label">Ronde</string>
     <string name="blocksort_select_source_hint">Ketuk kolom campuran yang tidak kosong untuk mengambil tumpukan warna teratasnya.</string>
     <string name="blocksort_selected_hint">Sekarang ketuk kolom kosong atau kolom dengan warna atas yang sama untuk memindahkan tumpukan ke sana.</string>
-    <string name="selection_blocksort_desc">Pindahkan tumpukan warna teratas antar kolom campuran sampai setiap kolom terisi menjadi satu warna, bahkan saat ronde mengubah jumlah slot dan papan terbagi menjadi dua baris.</string>
+    <string name="selection_blocksort_desc">Urutkan tumpukan warna campuran sampai setiap kolom terisi menjadi satu warna.</string>
 </resources>

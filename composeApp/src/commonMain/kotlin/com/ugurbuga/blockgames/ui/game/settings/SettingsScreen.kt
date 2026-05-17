@@ -168,6 +168,8 @@ fun AppSettingsScreen(
     onBack: () -> Unit,
     adController: GameAdController? = null,
     initialTabIndex: Int = 0,
+    selectedTabIndex: Int? = null,
+    onSelectedTabIndexChange: ((Int) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     LogScreen(telemetry, TelemetryScreenNames.Theme)
@@ -175,7 +177,14 @@ fun AppSettingsScreen(
     val uiColors = BlockGamesThemeTokens.uiColors
     val darkTheme = isBlockGamesDarkTheme(settings)
     val selectedBlockStyle = settings.blockVisualStyle
-    var selectedTabIndex by rememberSaveable { mutableIntStateOf(initialTabIndex) }
+    var internalSelectedTabIndex by rememberSaveable(initialTabIndex) { mutableIntStateOf(initialTabIndex) }
+    val activeSelectedTabIndex = selectedTabIndex ?: internalSelectedTabIndex
+    val updateSelectedTabIndex: (Int) -> Unit = { index ->
+        if (selectedTabIndex == null) {
+            internalSelectedTabIndex = index
+        }
+        onSelectedTabIndexChange?.invoke(index)
+    }
     var pendingUnlockRequest by remember { mutableStateOf<UnlockRequest?>(null) }
     val transition = rememberInfiniteTransition(label = "settingsStylePulse")
     val stylePulse by transition.animateFloat(
@@ -254,7 +263,7 @@ fun AppSettingsScreen(
                 )
 
                 SecondaryTabRow(
-                    selectedTabIndex = selectedTabIndex,
+                    selectedTabIndex = activeSelectedTabIndex,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
@@ -268,8 +277,8 @@ fun AppSettingsScreen(
                         Triple(SettingsTab.Language, stringResource(Res.string.settings_language), Icons.Filled.Translate),
                     ).forEachIndexed { index, (_, title, icon) ->
                         Tab(
-                            selected = selectedTabIndex == index,
-                            onClick = { selectedTabIndex = index },
+                            selected = activeSelectedTabIndex == index,
+                            onClick = { updateSelectedTabIndex(index) },
                             icon = {
                                 Icon(
                                     imageVector = icon,
@@ -281,7 +290,7 @@ fun AppSettingsScreen(
                                 Text(
                                     text = title,
                                     style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = if (selectedTabIndex == index) FontWeight.SemiBold else FontWeight.Medium,
+                                    fontWeight = if (activeSelectedTabIndex == index) FontWeight.SemiBold else FontWeight.Medium,
                                 )
                             },
                         )
@@ -296,7 +305,7 @@ fun AppSettingsScreen(
                         .padding(horizontal = 16.dp, vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    when (selectedTabIndex) {
+                    when (activeSelectedTabIndex) {
                         0 -> {
                             SettingsSectionCard(
                                 title = stringResource(Res.string.settings_theme),

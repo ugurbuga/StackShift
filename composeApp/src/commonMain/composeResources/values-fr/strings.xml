@@ -366,6 +366,6 @@
     <string name="blocksort_round_label">Manche</string>
     <string name="blocksort_select_source_hint">Touchez une colonne mixte non vide pour prendre sa pile de couleur supérieure.</string>
     <string name="blocksort_selected_hint">Touchez maintenant une colonne vide ou une colonne avec la même couleur supérieure pour y déplacer la pile.</string>
-    <string name="selection_blocksort_desc">Déplacez les piles de couleur supérieures entre des colonnes mixtes jusqu’à ce que chaque colonne remplie soit d’une seule couleur, même lorsque les manches changent le nombre d’emplacements et répartissent le plateau sur deux rangées.</string>
+    <string name="selection_blocksort_desc">Triez les piles colorées mélangées jusqu’à ce que chaque colonne remplie n’ait plus qu’une seule couleur.</string>
 </resources>
 

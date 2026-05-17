@@ -375,7 +375,7 @@
 
     <string name="selection_stackshift_desc">아래에서 피스를 발사해 행과 열을 제거합니다.</string>
     <string name="selection_blockwise_desc">보드 어디에나 피스를 드래그 앤 드롭합니다.</string>
-    <string name="selection_blocksort_desc">혼합 열 사이에서 맨 위 색상 스택을 이동시켜 각 열을 단색으로 만드세요. 라운드마다 슬롯 수가 바뀌고 보드가 두 줄로 나뉠 수 있습니다.</string>
+    <string name="selection_blocksort_desc">섞인 색상 스택을 정리해 모든 채워진 열을 단색으로 맞추세요.</string>
     <string name="selection_mergeshift_desc">같은 값을 가진 피스를 합쳐 더 높은 점수를 노립니다.</string>
     <string name="selection_boomblocks_desc">3개 이상 연결된 블록 그룹을 탭해 폭파합니다.</string>
     <string name="selection_switch_game">게임 전환</string>

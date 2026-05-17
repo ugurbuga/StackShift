@@ -375,7 +375,7 @@
 
     <string name="selection_stackshift_desc">Launch pieces from the bottom to clear rows and columns.</string>
     <string name="selection_blockwise_desc">Drag and drop pieces anywhere on the board.</string>
-    <string name="selection_blocksort_desc">Move top color stacks between mixed columns until each filled column becomes a single color, even as rounds change slot counts and wrap into two rows.</string>
+    <string name="selection_blocksort_desc">Sort mixed color stacks until every filled column becomes a single color.</string>
     <string name="selection_mergeshift_desc">Merge pieces of the same value to reach higher scores.</string>
     <string name="selection_boomblocks_desc">Tap groups of 3 or more blocks to explode them.</string>
     <string name="selection_switch_game">Switch Game</string>

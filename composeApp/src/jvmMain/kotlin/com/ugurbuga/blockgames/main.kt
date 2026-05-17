@@ -11,7 +11,7 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import blockgames.composeapp.generated.resources.Res
-import blockgames.composeapp.generated.resources.app_title_stackshift
+import blockgames.composeapp.generated.resources.app_title_puzzle_shift
 import com.ugurbuga.blockgames.localization.appStringResource
 import java.awt.Dimension
 import java.awt.Taskbar
@@ -24,7 +24,7 @@ import kotlin.math.roundToInt
 
 fun main() = application {
     val initialSnapshot = remember { DesktopWindowPrefs.load() }
-    val appTitle = appStringResource(Res.string.app_title_stackshift)
+    val appTitle = appStringResource(Res.string.app_title_puzzle_shift)
     val windowState = rememberWindowState(
         size = DpSize(initialSnapshot.width.dp, initialSnapshot.height.dp),
         position = initialSnapshot.x?.let { x ->

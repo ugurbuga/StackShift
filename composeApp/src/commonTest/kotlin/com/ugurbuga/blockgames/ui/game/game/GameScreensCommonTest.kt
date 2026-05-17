@@ -17,6 +17,7 @@ import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStateFactory
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -111,6 +112,19 @@ class GameScreensCommonTest {
             Rect(left = 20f, top = 20f, right = 80f, bottom = 60f),
             pieceRect.toBlockWiseLocalRect(hostRect),
         )
+    }
+
+    @Test
+    fun resolveDraggedTrayPiece_fallsBackToSnapshotWhenTrayNoLongerContainsDraggedPiece() {
+        val dragged = dominoPiece()
+        val resolved = resolveDraggedTrayPiece(
+            draggedPieceId = dragged.id,
+            trayPieces = emptyList(),
+            draggedPieceSnapshot = dragged,
+        )
+
+        assertNotNull(resolved)
+        assertEquals(dragged.id, resolved.id)
     }
 
     @Test

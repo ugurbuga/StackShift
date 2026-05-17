@@ -375,7 +375,7 @@
 
     <string name="selection_stackshift_desc">下からピースを発射して行と列を消去します。</string>
     <string name="selection_blockwise_desc">盤面の好きな場所にピースをドラッグ＆ドロップします。</string>
-    <string name="selection_blocksort_desc">混色列の上段スタックを動かし、各列を単色にそろえましょう。ラウンドごとにスロット数が変わり、盤面が2段になることもあります。</string>
+    <string name="selection_blocksort_desc">混色スタックを並べ替え、埋まった列をすべて単色にそろえましょう。</string>
     <string name="selection_mergeshift_desc">同じ値のピースをマージして高得点を目指します。</string>
     <string name="selection_boomblocks_desc">3個以上つながったブロックグループをタップして爆破します。</string>
     <string name="selection_switch_game">ゲーム切替</string>

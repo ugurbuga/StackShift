@@ -375,5 +375,5 @@
     <string name="blocksort_round_label">جولة</string>
     <string name="blocksort_select_source_hint">اضغط على عمود مختلط غير فارغ لالتقاط كومة اللون العليا منه.</string>
     <string name="blocksort_selected_hint">الآن اضغط على عمود فارغ أو عمود يملك اللون العلوي نفسه لنقل الكومة إليه.</string>
-    <string name="selection_blocksort_desc">حرّك أكوام الألوان العلوية بين الأعمدة المختلطة حتى يصبح كل عمود ممتلئ بلون واحد، حتى عندما تغيّر الجولات عدد الخانات وتنقسم اللوحة إلى صفين.</string>
+    <string name="selection_blocksort_desc">رتّب أكوام الألوان المختلطة حتى يصبح كل عمود ممتلئ بلون واحد.</string>
 </resources>

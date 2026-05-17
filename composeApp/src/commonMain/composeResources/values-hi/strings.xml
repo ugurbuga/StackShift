@@ -375,5 +375,5 @@
     <string name="blocksort_round_label">राउंड</string>
     <string name="blocksort_select_source_hint">किसी भरे हुए मिश्रित कॉलम पर टैप करके उसकी ऊपरी रंग-स्टैक उठाएँ।</string>
     <string name="blocksort_selected_hint">अब किसी खाली कॉलम या उसी ऊपर वाले रंग वाले कॉलम पर टैप करके स्टैक को वहाँ ले जाएँ।</string>
-    <string name="selection_blocksort_desc">मिश्रित कॉलमों के बीच ऊपरी रंग-स्टैक्स को तब तक ले जाएँ जब तक हर भरा हुआ कॉलम एक ही रंग का न हो जाए, चाहे राउंड में स्लॉट संख्या बदले और बोर्ड दो पंक्तियों में बँट जाए।</string>
+    <string name="selection_blocksort_desc">मिश्रित रंग-स्टैक्स को तब तक सजाएँ जब तक हर भरा कॉलम एक ही रंग का न हो जाए।</string>
 </resources>

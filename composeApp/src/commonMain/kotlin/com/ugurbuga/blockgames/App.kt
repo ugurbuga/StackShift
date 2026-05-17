@@ -18,8 +18,10 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -90,7 +92,6 @@ import com.ugurbuga.blockgames.ui.game.game.BlockGamesGameApp
 import com.ugurbuga.blockgames.ui.game.gametutorial.GameTutorialScreen
 import com.ugurbuga.blockgames.ui.game.home.HomeScreen
 import com.ugurbuga.blockgames.ui.game.selection.AppSelectionScreen
-import com.ugurbuga.blockgames.ui.game.settings.AppLanguageScreen
 import com.ugurbuga.blockgames.ui.game.settings.AppSettingsScreen
 import com.ugurbuga.blockgames.ui.theme.LocalBlockGamesUiColors
 import com.ugurbuga.blockgames.ui.theme.blockGamesThemeSpec
@@ -142,6 +143,22 @@ private fun resolveStartupGameplayStyle(
     loadedSettings: AppSettings,
     startupGameplayStyleOverride: GameplayStyle? = null,
 ): GameplayStyle = startupGameplayStyleOverride ?: loadedSettings.selectedGameplayStyle ?: GlobalPlatformConfig.gameplayStyle
+
+internal fun resolveStartupRoute(
+    loadedSettings: AppSettings,
+    startupGameplayStyleOverride: GameplayStyle? = null,
+): AppRoute {
+    return if (loadedSettings.selectedGameplayStyle == null && startupGameplayStyleOverride == null) {
+        AppRoute.Selection
+    } else {
+        AppRoute.Home
+    }
+}
+
+private fun resolvePersistedStartupGameplayStyle(
+    loadedSettings: AppSettings,
+    startupGameplayStyleOverride: GameplayStyle? = null,
+): GameplayStyle? = startupGameplayStyleOverride?.takeIf { it != loadedSettings.selectedGameplayStyle }
 
 @Composable
 fun BlockGamesTheme(
@@ -242,6 +259,8 @@ fun BlockGamesRoot(
     onInteractiveOnboardingReturnHome: (GameState) -> Unit,
     onGameplayStyleSelected: (GameplayStyle) -> Unit,
     onNavigateToSelection: () -> Unit,
+    settingsTabIndex: Int,
+    onSettingsTabIndexChange: (Int) -> Unit,
     currentRoute: AppRoute = AppRoute.Home,
     showLeaveSessionDialog: Boolean = false,
     onDismissLeaveSessionDialog: () -> Unit = {},
@@ -329,16 +348,23 @@ fun BlockGamesRoot(
                                     onRewardedTokensRequested = onRewardedTokensEarned,
                                     onBack = onNavigateBack,
                                     adController = adController,
+                                    selectedTabIndex = settingsTabIndex,
+                                    onSelectedTabIndexChange = onSettingsTabIndexChange,
                                 )
                             }
 
                             AppRoute.Language -> {
-                                AppLanguageScreen(
+                                AppSettingsScreen(
                                     modifier = Modifier.fillMaxSize(),
                                     telemetry = telemetry,
                                     settings = settings,
                                     onSettingsChange = onSettingsChange,
+                                    onRewardedTokensRequested = onRewardedTokensEarned,
                                     onBack = onNavigateBack,
+                                    adController = adController,
+                                    initialTabIndex = 2,
+                                    selectedTabIndex = settingsTabIndex,
+                                    onSelectedTabIndexChange = onSettingsTabIndexChange,
                                 )
                             }
 
@@ -373,7 +399,7 @@ fun BlockGamesRoot(
 
                             AppRoute.Selection -> {
                                 AppSelectionScreen(
-                                    currentStyle = GlobalPlatformConfig.gameplayStyle,
+                                    currentStyle = settings.selectedGameplayStyle,
                                     onGameplayStyleSelected = onGameplayStyleSelected,
                                     telemetry = telemetry,
                                     onBack = onNavigateBack,
@@ -383,7 +409,10 @@ fun BlockGamesRoot(
                         }
                     }
 
-                    AppFooterAdSlot(adController = adController)
+                    AppFooterAdSlot(
+                        adController = adController,
+                        onOpenSelection = onNavigateToSelection,
+                    )
                 }
 
                 if (showLeaveSessionDialog) {
@@ -428,9 +457,12 @@ fun BlockGamesAppHost(
             loadedSettings = loadedSettings,
             startupGameplayStyleOverride = startupGameplayStyleOverride,
         )
-        val shouldPersistStartupGameplayStyle = loadedSettings.selectedGameplayStyle != startupGameplayStyle
-        val settingsToBootstrap = if (shouldPersistStartupGameplayStyle) {
-            loadedSettings.copy(selectedGameplayStyle = startupGameplayStyle)
+        val persistedStartupGameplayStyle = resolvePersistedStartupGameplayStyle(
+            loadedSettings = loadedSettings,
+            startupGameplayStyleOverride = startupGameplayStyleOverride,
+        )
+        val settingsToBootstrap = if (persistedStartupGameplayStyle != null) {
+            loadedSettings.copy(selectedGameplayStyle = persistedStartupGameplayStyle)
         } else {
             loadedSettings
         }
@@ -438,14 +470,13 @@ fun BlockGamesAppHost(
             settings = settingsToBootstrap,
             deviceLocaleTag = currentDeviceLocaleTag(),
         )
-        bootstrapResult.settings.selectedGameplayStyle?.let {
-            GlobalPlatformConfig.gameplayStyle = it
-        }
+        GlobalPlatformConfig.gameplayStyle = bootstrapResult.settings.selectedGameplayStyle ?: startupGameplayStyle
         bootstrapResult.copy(
-            shouldPersist = bootstrapResult.shouldPersist || shouldPersistStartupGameplayStyle,
+            shouldPersist = bootstrapResult.shouldPersist || persistedStartupGameplayStyle != null,
         )
     }
     var settings by remember(initialBootstrapResult) { mutableStateOf(initialBootstrapResult.settings.sanitized()) }
+    var settingsTabIndex by rememberSaveable { mutableIntStateOf(0) }
 
     LaunchedEffect(settings.selectedGameplayStyle) {
         settings.selectedGameplayStyle?.let {
@@ -456,7 +487,14 @@ fun BlockGamesAppHost(
     var rewardFeedback by remember { mutableStateOf(RewardFeedbackState()) }
 
     var routeStack by remember(initialBootstrapResult) {
-        mutableStateOf(listOf(AppRoute.Home))
+        mutableStateOf(
+            listOf(
+                resolveStartupRoute(
+                    loadedSettings = initialBootstrapResult.settings,
+                    startupGameplayStyleOverride = startupGameplayStyleOverride,
+                )
+            )
+        )
     }
     var showLeaveSessionDialog by remember { mutableStateOf(false) }
     val persistActiveSession = remember { mutableStateOf(true) }
@@ -691,7 +729,10 @@ fun BlockGamesAppHost(
             telemetry.logUserAction(TelemetryActionNames.StartTimeAttackFromHome)
             startPlayFlow(GameMode.TimeAttack)
         },
-        onNavigateToTheme = { navigateTo(AppRoute.Settings) },
+        onNavigateToTheme = {
+            settingsTabIndex = 0
+            navigateTo(AppRoute.Settings)
+        },
         onPlayChallengeRequested = { challenge ->
             restoreOrRestartSession(
                 slot = sessionSlotFor(GameMode.Classic, challenge),
@@ -716,7 +757,10 @@ fun BlockGamesAppHost(
             }
             navigateTo(AppRoute.Game)
         },
-        onNavigateToLanguage = { navigateTo(AppRoute.Language) },
+        onNavigateToLanguage = {
+            settingsTabIndex = 2
+            navigateTo(AppRoute.Language)
+        },
         onNavigateToTutorial = {
             pendingRequestedGameMode = null
             navigateTo(AppRoute.Tutorial)
@@ -786,6 +830,8 @@ fun BlockGamesAppHost(
         onNavigateToSelection = {
             navigateTo(AppRoute.Selection)
         },
+        settingsTabIndex = settingsTabIndex,
+        onSettingsTabIndexChange = { settingsTabIndex = it },
         currentRoute = currentRoute,
         showLeaveSessionDialog = showLeaveSessionDialog,
         onDismissLeaveSessionDialog = { showLeaveSessionDialog = false },

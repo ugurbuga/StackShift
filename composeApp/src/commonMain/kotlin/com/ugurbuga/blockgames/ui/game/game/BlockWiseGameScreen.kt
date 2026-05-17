@@ -195,11 +195,19 @@ fun BlockWiseGameScreen(
     } else {
         FreePlacementTrayPieceCellSize
     }
-    val insetPx = with(density) { 1.dp.toPx() }
-    val boardRect = boardRectInRoot
-        .toBlockWiseLocalRect(hostRectInRoot)
-        .deflate(insetPx)
-    val cellSizePx = if (boardRect == Rect.Zero) 0f else boardRect.width / currentGameState.config.columns.toFloat()
+    val boardRect by remember {
+        derivedStateOf {
+            val insetPx = with(density) { 1.dp.toPx() }
+            boardRectInRoot
+                .toBlockWiseLocalRect(hostRectInRoot)
+                .deflate(insetPx)
+        }
+    }
+    val cellSizePx by remember {
+        derivedStateOf {
+            if (boardRect == Rect.Zero) 0f else boardRect.width / currentGameState.config.columns.toFloat()
+        }
+    }
     val overlayTopLeft by remember {
         derivedStateOf {
             val pointer = dragPointerInHost ?: return@derivedStateOf null

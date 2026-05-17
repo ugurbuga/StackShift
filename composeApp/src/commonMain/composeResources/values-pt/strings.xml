@@ -375,5 +375,5 @@
     <string name="blocksort_round_label">Ronda</string>
     <string name="blocksort_select_source_hint">Toca numa coluna mista não vazia para pegar na pilha de cor do topo.</string>
     <string name="blocksort_selected_hint">Agora toca numa coluna vazia ou numa coluna com a mesma cor no topo para mover a pilha.</string>
-    <string name="selection_blocksort_desc">Move pilhas de cor do topo entre colunas mistas até que cada coluna preenchida fique com uma só cor, mesmo quando as rondas mudam a contagem de slots e o tabuleiro se divide em duas filas.</string>
+    <string name="selection_blocksort_desc">Organiza pilhas de cores misturadas até que cada coluna preenchida fique com uma só cor.</string>
 </resources>

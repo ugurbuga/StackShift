@@ -1,6 +1,7 @@
 package com.ugurbuga.blockgames
 
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Bundle
@@ -28,6 +29,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         GlobalPlatformConfig.isDebug = BuildConfig.DEBUG
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         AppContextHolder.context = applicationContext
         AndroidAdMobIds.BannerAdUnitId = BuildConfig.ADS_BANNER_UNIT_ID
         AndroidAdMobIds.InterstitialAdUnitId = BuildConfig.ADS_INTERSTITIAL_UNIT_ID

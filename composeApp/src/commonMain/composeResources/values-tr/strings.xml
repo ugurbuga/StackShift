@@ -368,5 +368,5 @@
     <string name="blocksort_round_label">Tur</string>
     <string name="blocksort_select_source_hint">Üstteki renk grubunu almak için dolu bir karışık sütuna dokun.</string>
     <string name="blocksort_selected_hint">Şimdi boş bir sütuna ya da üst rengi aynı olan bir sütuna dokunarak grubu taşı.</string>
-    <string name="selection_blocksort_desc">Karışık sütunlar arasındaki üst renk gruplarını taşı; her dolu sütun tek renk olana kadar ilerle. Round’lar slot sayısını değiştirir ve tahta iki sıraya bölünebilir.</string>
+    <string name="selection_blocksort_desc">Karışık renk yığınlarını taşı ve her dolu sütunu tek renge dönüştür.</string>
 </resources>

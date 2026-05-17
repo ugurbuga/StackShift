@@ -366,6 +366,6 @@
     <string name="blocksort_round_label">Runde</string>
     <string name="blocksort_select_source_hint">Tippe auf eine nicht leere Mischspalte, um ihren obersten Farbstapel aufzunehmen.</string>
     <string name="blocksort_selected_hint">Tippe nun auf eine leere Spalte oder eine Spalte mit derselben oberen Farbe, um den Stapel zu verschieben.</string>
-    <string name="selection_blocksort_desc">Bewege obere Farbstapel zwischen gemischten Spalten, bis jede gefüllte Spalte nur noch aus einer Farbe besteht – auch wenn Runden die Slot-Anzahl ändern und das Spielfeld in zwei Reihen aufteilen.</string>
+    <string name="selection_blocksort_desc">Sortiere gemischte Farbstapel, bis jede gefüllte Spalte nur noch eine Farbe hat.</string>
 </resources>
 
