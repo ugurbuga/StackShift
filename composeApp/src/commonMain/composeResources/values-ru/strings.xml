@@ -72,7 +72,7 @@
     <string name="launch_label">Запуск</string>
     <string name="launch_bar">Шкала запуска</string>
     <string name="launch_boost_active">Ускорение активно • %1$s ходов</string>
-    <string name="launch_special_chance">Шанс специального блока +%1$s%%</string>
+    <string name="launch_special_chance">Шанс специального блока +%1$s%</string>
     <string name="launch_soft_lock_message">Мягкая блокировка активна • микронастройка включена</string>
     <string name="launch_chain_message">Ряд + колонка • +%2$s</string>
     <string name="launch_paused">Пауза</string>
@@ -287,9 +287,10 @@
     <string name="interactive_onboarding_mergeshift_merge_multi_body">Одно размещение может вызвать объединения в нескольких направлениях (сверху, слева, справа). Используйте это, чтобы освободить больше места и набрать много очков!</string>
 
     <string name="settings_tokens_title">Токены</string>
-    <string name="settings_tokens_balance">Баланс: %1$d</string>
-    <string name="settings_tokens_earn_challenge">Награда за ежедневное испытание: +%1$d токенов</string>
-    <string name="settings_tokens_earn_score">Награда за игру: +1 токен за каждые %1$d очков</string>
+    <string name="settings_tokens_balance">Token: %1$d</string>
+    <string name="settings_tokens_earn_challenge">• Награда за ежедневное испытание: +%1$d токенов</string>
+    <string name="settings_tokens_earn_score">• Награда за игру: +1 токен за каждые %1$d очков</string>
+    <string name="rewarded_tokens_button_bullet">• Посмотри рекламу и получи %1$d токенов</string>
     <string name="rewarded_tokens_button">Посмотри рекламу и получи %1$d токенов</string>
     <string name="reward_earned_message">Вы заработали %1$d токенов!</string>
     <string name="reward_piece_row_message">Установлен горизонтальный очиститель строк!</string>
@@ -301,6 +302,11 @@
     <string name="block_style_flame">Пламя</string>
     <string name="block_style_gears">Шестерёнки</string>
     <string name="block_style_pixel">Пиксель</string>
+    <string name="block_style_cyberpunk">Киберпанк</string>
+    <string name="block_style_holographic">Голографический</string>
+    <string name="block_style_glitch_tech">Глитч-технологии</string>
+    <string name="block_style_aura_energy">Энергия ауры</string>
+    <string name="block_style_circuit_board">Печатная плата</string>
     <string name="ad_reward_blockwise_refresh">Обновить лоток</string>
     <string name="ad_reward_mergeshift_swap">Изменить число</string>
     <string name="ad_reward_boomblocks_clear">Очистить цвет</string>

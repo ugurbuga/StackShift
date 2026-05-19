@@ -5,7 +5,6 @@ import com.ugurbuga.blockgames.game.model.AppLanguage
 import com.ugurbuga.blockgames.game.model.AppThemeMode
 import com.ugurbuga.blockgames.game.model.BlockColorPalette
 import com.ugurbuga.blockgames.game.model.BlockVisualStyle
-import com.ugurbuga.blockgames.game.model.BoardBlockStyleMode
 import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.gameplayStyleFromPersistedValue
 import com.ugurbuga.blockgames.game.model.normalizeBlockVisualStyle
@@ -32,7 +31,6 @@ actual object AppSettingsStorage {
             blockVisualStyle = normalizeBlockVisualStyle(
                 BlockVisualStyle.entries.getOrElse(prefs.getInt(KeyBlockVisualStyle, defaultSettings.blockVisualStyle.ordinal)) { defaultSettings.blockVisualStyle }
             ),
-            boardBlockStyleMode = BoardBlockStyleMode.entries.getOrElse(prefs.getInt(KeyBoardBlockStyleMode, defaultSettings.boardBlockStyleMode.ordinal)) { defaultSettings.boardBlockStyleMode },
             hasSeenTutorial = prefs.getBoolean(KeyHasSeenTutorial, defaultSettings.hasSeenTutorial),
             hasShownInteractiveOnboarding = prefs.getBoolean(KeyHasShownInteractiveOnboarding, defaultSettings.hasShownInteractiveOnboarding),
             seenTutorialStyles = decodeEnumSet(prefs.getSafeString(KeySeenTutorialStyles, null), GameplayStyle.entries),
@@ -70,7 +68,6 @@ actual object AppSettingsStorage {
         prefs.putInt(KeyThemeColorPalette, sanitized.themeColorPalette.ordinal)
         prefs.putInt(KeyBlockColorPalette, sanitized.blockColorPalette.ordinal)
         prefs.putInt(KeyBlockVisualStyle, normalizeBlockVisualStyle(sanitized.blockVisualStyle).ordinal)
-        prefs.putInt(KeyBoardBlockStyleMode, sanitized.boardBlockStyleMode.ordinal)
         prefs.putBoolean(KeyHasSeenTutorial, sanitized.hasSeenTutorial)
         prefs.putBoolean(KeyHasShownInteractiveOnboarding, sanitized.hasShownInteractiveOnboarding)
         prefs.put(KeySeenTutorialStyles, encodeEnumSet(sanitized.seenTutorialStyles))
@@ -114,7 +111,6 @@ actual object AppSettingsStorage {
     private const val KeyThemeColorPalette = "themeColorPalette"
     private const val KeyBlockColorPalette = "blockColorPalette"
     private const val KeyBlockVisualStyle = "blockVisualStyle"
-    private const val KeyBoardBlockStyleMode = "boardBlockStyleMode"
     private const val KeyHasSeenTutorial = "hasSeenTutorial"
     private const val KeyHasShownInteractiveOnboarding = "hasShownInteractiveOnboarding"
     private const val KeySeenTutorialStyles = "seenTutorialStyles"

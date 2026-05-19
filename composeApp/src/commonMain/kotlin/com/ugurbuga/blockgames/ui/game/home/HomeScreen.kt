@@ -52,7 +52,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
@@ -64,10 +63,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import blockgames.composeapp.generated.resources.Res
-import blockgames.composeapp.generated.resources.app_title_banner_blockwise_bottom
-import blockgames.composeapp.generated.resources.app_title_banner_blockwise_top
 import blockgames.composeapp.generated.resources.app_title_banner_blocksort_bottom
 import blockgames.composeapp.generated.resources.app_title_banner_blocksort_top
+import blockgames.composeapp.generated.resources.app_title_banner_blockwise_bottom
+import blockgames.composeapp.generated.resources.app_title_banner_blockwise_top
 import blockgames.composeapp.generated.resources.app_title_banner_boomblocks_bottom
 import blockgames.composeapp.generated.resources.app_title_banner_boomblocks_top
 import blockgames.composeapp.generated.resources.app_title_banner_stackshift_bottom
@@ -2160,6 +2159,7 @@ private fun HomeQuickActionButton(
             pulse = pulse,
         )
         val contentColor = blockStyleIconTint(style = resolvedStyle)
+        val isDark = isBlockGamesDarkTheme(settings)
 
         Box(
             modifier = Modifier
@@ -2187,18 +2187,13 @@ private fun HomeQuickActionButton(
                         tone = tone,
                         palette = settings.blockColorPalette,
                         style = resolvedStyle,
+                        isDark = isDark,
                         topLeft = Offset.Zero,
                         size = this.size,
                         cornerRadius = CornerRadius(cornerRadiusPx, cornerRadiusPx),
                         pulse = effectivePulse,
                     )
                 }
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(BlockGamesThemeTokens.uiColors.gameSurface.copy(alpha = 0.35f))
-                )
 
                 Column(
                     modifier = Modifier
@@ -2286,7 +2281,7 @@ fun HomeScreenBlockWisePreview() {
 fun HomeScreenMergeShiftPreview() {
     GlobalPlatformConfig.gameplayStyle = GameplayStyle.MergeShift
     val settings = AppSettings(
-        blockVisualStyle = BlockVisualStyle.NeonGlow
+        blockVisualStyle = BlockVisualStyle.Cosmic
     )
     BlockGamesTheme(settings = settings) {
         HomeScreen(

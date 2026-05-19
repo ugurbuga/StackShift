@@ -1,5 +1,7 @@
 package com.ugurbuga.blockgames.ui.game.settings
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -11,28 +13,35 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.BrightnessAuto
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Stars
@@ -40,50 +49,62 @@ import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.app_theme_dark
 import blockgames.composeapp.generated.resources.app_theme_light
 import blockgames.composeapp.generated.resources.app_theme_system
+import blockgames.composeapp.generated.resources.block_style_aura_energy
 import blockgames.composeapp.generated.resources.block_style_brick
 import blockgames.composeapp.generated.resources.block_style_bubble
+import blockgames.composeapp.generated.resources.block_style_circuit_board
 import blockgames.composeapp.generated.resources.block_style_cosmic
 import blockgames.composeapp.generated.resources.block_style_crystal
+import blockgames.composeapp.generated.resources.block_style_cyberpunk
 import blockgames.composeapp.generated.resources.block_style_dynamic_liquid
 import blockgames.composeapp.generated.resources.block_style_flame
 import blockgames.composeapp.generated.resources.block_style_flat
 import blockgames.composeapp.generated.resources.block_style_gears
+import blockgames.composeapp.generated.resources.block_style_glitch_tech
 import blockgames.composeapp.generated.resources.block_style_grid_split
+import blockgames.composeapp.generated.resources.block_style_holographic
 import blockgames.composeapp.generated.resources.block_style_honeycomb_texture
-import blockgames.composeapp.generated.resources.block_style_light_burst
 import blockgames.composeapp.generated.resources.block_style_liquid_marble
-import blockgames.composeapp.generated.resources.block_style_matte_soft
 import blockgames.composeapp.generated.resources.block_style_neon_glow
 import blockgames.composeapp.generated.resources.block_style_outline
 import blockgames.composeapp.generated.resources.block_style_pixel
@@ -91,11 +112,11 @@ import blockgames.composeapp.generated.resources.block_style_prism
 import blockgames.composeapp.generated.resources.block_style_sharp_3d
 import blockgames.composeapp.generated.resources.block_style_sound_wave
 import blockgames.composeapp.generated.resources.block_style_spider_web
-import blockgames.composeapp.generated.resources.block_style_stone_texture
 import blockgames.composeapp.generated.resources.block_style_tornado
 import blockgames.composeapp.generated.resources.block_style_wood
 import blockgames.composeapp.generated.resources.cancel
 import blockgames.composeapp.generated.resources.rewarded_tokens_button
+import blockgames.composeapp.generated.resources.rewarded_tokens_button_bullet
 import blockgames.composeapp.generated.resources.settings_block_style
 import blockgames.composeapp.generated.resources.settings_color_palette
 import blockgames.composeapp.generated.resources.settings_language
@@ -103,7 +124,6 @@ import blockgames.composeapp.generated.resources.settings_theme
 import blockgames.composeapp.generated.resources.settings_tokens_balance
 import blockgames.composeapp.generated.resources.settings_tokens_earn_challenge
 import blockgames.composeapp.generated.resources.settings_tokens_earn_score
-import blockgames.composeapp.generated.resources.settings_tokens_title
 import blockgames.composeapp.generated.resources.theme_palette_aurora
 import blockgames.composeapp.generated.resources.theme_palette_classic
 import blockgames.composeapp.generated.resources.theme_palette_minimal_monochrome
@@ -116,7 +136,10 @@ import blockgames.composeapp.generated.resources.unlock_dialog_message
 import blockgames.composeapp.generated.resources.unlock_dialog_not_enough
 import blockgames.composeapp.generated.resources.unlock_dialog_title
 import blockgames.composeapp.generated.resources.unlock_dialog_watch_ad
+import com.ugurbuga.blockgames.BlockGamesTheme
+import com.ugurbuga.blockgames.ads.AppFooterAdSlot
 import com.ugurbuga.blockgames.ads.GameAdController
+import com.ugurbuga.blockgames.ads.NoOpGameAdController
 import com.ugurbuga.blockgames.game.model.AppColorPalette
 import com.ugurbuga.blockgames.game.model.AppLanguage
 import com.ugurbuga.blockgames.game.model.AppThemeMode
@@ -149,15 +172,11 @@ import com.ugurbuga.blockgames.ui.theme.appBackgroundBrush
 import com.ugurbuga.blockgames.ui.theme.blockGamesSurfaceShadow
 import com.ugurbuga.blockgames.ui.theme.blockGamesThemeSpec
 import com.ugurbuga.blockgames.ui.theme.isBlockGamesDarkTheme
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
 private val ScreenContentMaxWidth = 920.dp
-
-private enum class SettingsTab {
-    Theme,
-    BlockStyle,
-    Language,
-}
 
 @Composable
 fun AppSettingsScreen(
@@ -166,28 +185,81 @@ fun AppSettingsScreen(
     onSettingsChange: (AppSettings) -> Unit,
     onRewardedTokensRequested: () -> Unit,
     onBack: () -> Unit,
+    onOpenSelection: () -> Unit,
     adController: GameAdController? = null,
+    selectedTabIndex: Int = 0,
+    onSelectedTabIndexChange: (Int) -> Unit = {},
     initialTabIndex: Int = 0,
-    selectedTabIndex: Int? = null,
-    onSelectedTabIndexChange: ((Int) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     LogScreen(telemetry, TelemetryScreenNames.Theme)
-    val scrollState = rememberScrollState()
-    val uiColors = BlockGamesThemeTokens.uiColors
-    val darkTheme = isBlockGamesDarkTheme(settings)
-    val selectedBlockStyle = settings.blockVisualStyle
-    var internalSelectedTabIndex by rememberSaveable(initialTabIndex) { mutableIntStateOf(initialTabIndex) }
-    val activeSelectedTabIndex = selectedTabIndex ?: internalSelectedTabIndex
-    val updateSelectedTabIndex: (Int) -> Unit = { index ->
-        if (selectedTabIndex == null) {
-            internalSelectedTabIndex = index
+    val scope = rememberCoroutineScope()
+    val isSystemDark = isSystemInDarkTheme()
+
+    // Animation States
+    var revealOrigin by remember { mutableStateOf<Offset?>(null) }
+    val revealProgress = remember { Animatable(0f) }
+    var pendingSettings by remember { mutableStateOf<AppSettings?>(null) }
+    var isAnimating by remember { mutableStateOf(false) }
+
+    val pagerState = rememberPagerState(
+        initialPage = if (selectedTabIndex != 0) selectedTabIndex else initialTabIndex
+    ) { 3 }
+
+    // Hoist UI states to share between animation layers
+    val scrollStates = List(3) { rememberScrollState() }
+    val tokenCardExpanded = remember { mutableStateOf(false) }
+
+    fun performThemeChange(nextSettings: AppSettings, offset: Offset) {
+        if (isAnimating || nextSettings == settings) return
+
+        // Check if theme or palette actually changed
+        val currentIsDark = settings.themeMode.isDark ?: isSystemDark
+        val nextIsDark = nextSettings.themeMode.isDark ?: isSystemDark
+        val themeChanged =
+            currentIsDark != nextIsDark || nextSettings.themeColorPalette != settings.themeColorPalette
+
+        if (!themeChanged) {
+            onSettingsChange(nextSettings)
+            return
         }
-        onSelectedTabIndexChange?.invoke(index)
+
+        isAnimating = true
+        revealOrigin = offset
+        pendingSettings = nextSettings
+
+        scope.launch {
+            try {
+                revealProgress.snapTo(0f)
+                delay(32) // Wait for Layer 2 to be ready
+                revealProgress.animateTo(
+                    targetValue = 1f,
+                    animationSpec = tween(durationMillis = 1000, easing = FastOutSlowInEasing)
+                )
+            } finally {
+                onSettingsChange(nextSettings)
+                pendingSettings = null
+                revealOrigin = null
+                revealProgress.snapTo(0f)
+                isAnimating = false
+            }
+        }
     }
-    var pendingUnlockRequest by remember { mutableStateOf<UnlockRequest?>(null) }
+
+    LaunchedEffect(selectedTabIndex) {
+        if (pagerState.currentPage != selectedTabIndex) {
+            pagerState.animateScrollToPage(selectedTabIndex)
+        }
+    }
+
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.settledPage }.collect { page ->
+            onSelectedTabIndexChange(page)
+        }
+    }
+
     val transition = rememberInfiniteTransition(label = "settingsStylePulse")
-    val stylePulse by transition.animateFloat(
+    val stylePulse = transition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
@@ -196,7 +268,7 @@ fun AppSettingsScreen(
         ),
         label = "stylePulse",
     )
-    val previewToneStep by transition.animateFloat(
+    val previewToneStep = transition.animateFloat(
         initialValue = 0f,
         targetValue = CellTone.entries.size.toFloat(),
         animationSpec = infiniteRepeatable(
@@ -208,180 +280,74 @@ fun AppSettingsScreen(
         ),
         label = "previewToneStep",
     )
-    val sharedPreviewColor = remember(previewToneStep, settings.blockColorPalette) {
-        interpolatedPreviewColor(
-            palette = settings.blockColorPalette,
-            progress = previewToneStep,
-        )
-    }
+
+    var pendingUnlockRequest by remember { mutableStateOf<UnlockRequest?>(null) }
 
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(appBackgroundBrush(uiColors)),
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .statusBarsPadding(),
-            ) {
-                // Header
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    TopBarActionBlockButton(
-                        tone = CellTone.Cyan,
-                        icon = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(Res.string.settings_theme),
-                        onClick = onBack,
-                        size = 44.dp,
-                        pulse = stylePulse,
-                    )
-                    Text(
-                        text = stringResource(Res.string.settings_theme),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.size(44.dp))
-                }
-
-                TokenBalanceCard(
+        Box(modifier = Modifier.fillMaxSize()) {
+                    // Layer 1: Base (Current)
+            BlockGamesTheme(settings = settings) {
+                SettingsMainContent(
                     settings = settings,
+                    pagerState = pagerState,
+                    scrollStates = scrollStates,
+                    tokenCardExpanded = tokenCardExpanded.value,
+                    onTokenCardExpandedChange = { tokenCardExpanded.value = it },
+                    stylePulse = stylePulse.value,
+                    previewToneStep = previewToneStep.value,
+                    onBack = onBack,
                     onRewardedTokensRequested = onRewardedTokensRequested,
+                    onSettingsChange = onSettingsChange,
+                    onThemeChangeRequest = { next, offset -> performThemeChange(next, offset) },
+                    onUnlockRequest = { pendingUnlockRequest = it },
+                    onOpenSelection = onOpenSelection,
                     adController = adController,
-                    modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp)
+                    isStatic = pendingSettings != null,
                 )
+            }
 
-                SecondaryTabRow(
-                    selectedTabIndex = activeSelectedTabIndex,
+            // Layer 2: Reveal (New)
+            if (pendingSettings != null) {
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .widthIn(max = ScreenContentMaxWidth),
-                    containerColor = uiColors.panel.copy(alpha = 0.90f),
-                    contentColor = MaterialTheme.colorScheme.primary,
+                        .fillMaxSize()
+                        .circularReveal(revealProgress.value, revealOrigin)
+                        .pointerInput(Unit) {
+                            awaitPointerEventScope {
+                                while (true) {
+                                    awaitPointerEvent()
+                                }
+                            }
+                        }
                 ) {
-                    listOf(
-                        Triple(SettingsTab.Theme, stringResource(Res.string.settings_theme), Icons.Filled.Palette),
-                        Triple(SettingsTab.BlockStyle, stringResource(Res.string.settings_block_style), Icons.Filled.Layers),
-                        Triple(SettingsTab.Language, stringResource(Res.string.settings_language), Icons.Filled.Translate),
-                    ).forEachIndexed { index, (_, title, icon) ->
-                        Tab(
-                            selected = activeSelectedTabIndex == index,
-                            onClick = { updateSelectedTabIndex(index) },
-                            icon = {
-                                Icon(
-                                    imageVector = icon,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            },
-                            text = {
-                                Text(
-                                    text = title,
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = if (activeSelectedTabIndex == index) FontWeight.SemiBold else FontWeight.Medium,
-                                )
-                            },
+                    BlockGamesTheme(settings = pendingSettings!!) {
+                        SettingsMainContent(
+                            settings = pendingSettings!!,
+                            pagerState = pagerState,
+                            scrollStates = scrollStates,
+                            tokenCardExpanded = tokenCardExpanded.value,
+                            onTokenCardExpandedChange = { tokenCardExpanded.value = it },
+                            stylePulse = stylePulse.value,
+                            previewToneStep = previewToneStep.value,
+                            onBack = onBack,
+                            onRewardedTokensRequested = onRewardedTokensRequested,
+                            onSettingsChange = onSettingsChange,
+                            onThemeChangeRequest = { next, offset -> performThemeChange(next, offset) },
+                            onUnlockRequest = { pendingUnlockRequest = it },
+                            onOpenSelection = onOpenSelection,
+                            adController = adController,
+                            isStatic = true,
                         )
                     }
                 }
+            }
 
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .verticalScroll(scrollState)
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    when (activeSelectedTabIndex) {
-                        0 -> {
-                            SettingsSectionCard(
-                                title = stringResource(Res.string.settings_theme),
-                            ) {
-                                SettingsGroup(
-                                    title = stringResource(Res.string.settings_theme),
-                                    selectedValue = settings.themeMode,
-                                    options = themeModeOptions(),
-                                    onSelected = { onSettingsChange(settings.selectThemeMode(it)) },
-                                )
-                                SettingsGroup(
-                                    title = stringResource(Res.string.settings_color_palette),
-                                    selectedValue = settings.themeColorPalette,
-                                    options = themePaletteOptions(settings = settings, darkTheme = darkTheme),
-                                    onSelected = { onSettingsChange(settings.selectThemePalette(it)) },
-                                    onLockedSelected = { option ->
-                                        pendingUnlockRequest = unlockRequest(
-                                            label = option.label,
-                                            priceTokens = option.priceTokens,
-                                            currentBalance = settings.tokenBalance,
-                                        ) { currentSettings ->
-                                            currentSettings.unlockThemePalette(option.value)
-                                        }
-                                    },
-                                )
-                            }
-                        }
-
-                        1 -> {
-                            SettingsSectionCard(
-                                title = stringResource(Res.string.settings_block_style),
-                                trailingContent = {
-                                    StyleFourBlockPreview(
-                                        settings = settings,
-                                        pulse = stylePulse,
-                                        previewColor = sharedPreviewColor,
-                                    )
-                                },
-                            ) {
-                                BlockStyleSettingsGroup(
-                                    title = stringResource(Res.string.settings_block_style),
-                                    selectedValue = selectedBlockStyle,
-                                    options = blockStyleOptions(
-                                        settings = settings,
-                                        pulse = stylePulse,
-                                        previewColor = sharedPreviewColor,
-                                    ),
-                                    onSelected = { onSettingsChange(settings.selectBlockStyle(it)) },
-                                    onLockedSelected = { option ->
-                                        pendingUnlockRequest = unlockRequest(
-                                            label = option.label,
-                                            priceTokens = option.priceTokens,
-                                            currentBalance = settings.tokenBalance,
-                                        ) { currentSettings ->
-                                            currentSettings.unlockBlockStyle(option.value)
-                                        }
-                                    },
-                                )
-                            }
-                        }
-
-                        else -> {
-                            SettingsSectionCard(
-                                title = stringResource(Res.string.settings_language),
-                            ) {
-                                SettingsGroup(
-                                    title = stringResource(Res.string.settings_language),
-                                    selectedValue = settings.language,
-                                    options = languageOptions(settings.language),
-                                    onSelected = { onSettingsChange(settings.copy(language = it)) },
-                                )
-                            }
-                        }
-                    }
-                }
-
+            // Global interaction blocker during animation
+            if (isAnimating) {
+                Box(modifier = Modifier.fillMaxSize().pointerInput(Unit) {})
             }
         }
 
@@ -401,78 +367,372 @@ fun AppSettingsScreen(
 }
 
 @Composable
-fun AppLanguageScreen(
-    telemetry: AppTelemetry = NoOpAppTelemetry,
+private fun SettingsMainContent(
     settings: AppSettings,
-    onSettingsChange: (AppSettings) -> Unit,
+    pagerState: androidx.compose.foundation.pager.PagerState,
+    scrollStates: List<androidx.compose.foundation.ScrollState>,
+    tokenCardExpanded: Boolean,
+    onTokenCardExpandedChange: (Boolean) -> Unit,
+    stylePulse: Float,
+    previewToneStep: Float,
     onBack: () -> Unit,
+    onRewardedTokensRequested: () -> Unit,
+    onSettingsChange: (AppSettings) -> Unit,
+    onThemeChangeRequest: (AppSettings, Offset) -> Unit,
+    onUnlockRequest: (UnlockRequest) -> Unit,
+    onOpenSelection: () -> Unit,
+    adController: GameAdController?,
     modifier: Modifier = Modifier,
+    isStatic: Boolean = false,
 ) {
-    LogScreen(telemetry, TelemetryScreenNames.Language)
-    val scrollState = rememberScrollState()
     val uiColors = BlockGamesThemeTokens.uiColors
+    val darkTheme = isBlockGamesDarkTheme(settings)
+    val scope = rememberCoroutineScope()
 
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
+    val pulseProvider: () -> Float = { stylePulse }
+    val previewColorProvider: () -> Color = {
+        interpolatedPreviewColor(
+            palette = settings.blockColorPalette,
+            progress = previewToneStep,
+            isDark = darkTheme,
+        )
+    }
+
+    val themeOptions = themeModeOptions(settings.themeMode)
+    val paletteOptions = themePaletteOptions(settings, darkTheme)
+    val styleOptions = blockStyleOptions(
+        settings = settings,
+        pulseProvider = pulseProvider,
+        previewColorProvider = previewColorProvider,
+    )
+    val langOptions = languageOptions(settings.language)
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .drawBehind {
+                drawRect(appBackgroundBrush(uiColors))
+            }
     ) {
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(appBackgroundBrush(uiColors)),
+                .statusBarsPadding(),
         ) {
-            Column(
+            // Header
+            Row(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .statusBarsPadding(),
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Header
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    TopBarActionBlockButton(
-                        tone = CellTone.Cyan,
-                        icon = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(Res.string.settings_language),
-                        onClick = onBack,
-                        size = 44.dp,
-                    )
-                    Text(
-                        text = stringResource(Res.string.settings_language),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.size(44.dp))
-                }
+                TopBarActionBlockButton(
+                    tone = CellTone.Cyan,
+                    icon = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(Res.string.settings_theme),
+                    onClick = onBack,
+                    size = 44.dp,
+                    pulse = stylePulse,
+                )
+                Text(
+                    text = stringResource(Res.string.settings_theme),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.size(44.dp))
+            }
 
+            TokenBalanceCard(
+                settings = settings,
+                onRewardedTokensRequested = onRewardedTokensRequested,
+                adController = adController,
+                expanded = tokenCardExpanded,
+                onExpandedChange = onTokenCardExpandedChange,
+                modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp)
+            )
+
+            SettingsTabSwitcher(
+                pagerState = pagerState,
+                onTabSelected = { index ->
+                    scope.launch {
+                        pagerState.animateScrollToPage(index)
+                    }
+                },
+            )
+
+            if (isStatic) {
+                val pageIndex = pagerState.currentPage.coerceIn(0, 2)
                 Column(
                     modifier = Modifier
-                        .weight(1f)
                         .fillMaxWidth()
-                        .verticalScroll(scrollState)
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                        .weight(1f)
+                        .padding(horizontal = 16.dp)
+                        .verticalScroll(scrollStates[pageIndex])
+                        .padding(vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    SettingsSectionCard(
-                        title = stringResource(Res.string.settings_language),
+                    SettingsPageContent(
+                        pageIndex = pageIndex,
+                        settings = settings,
+                        themeOptions = themeOptions,
+                        paletteOptions = paletteOptions,
+                        styleOptions = styleOptions,
+                        langOptions = langOptions,
+                        onSettingsChange = onSettingsChange,
+                        onThemeChangeRequest = onThemeChangeRequest,
+                        onUnlockRequest = onUnlockRequest
+                    )
+                    Spacer(modifier = Modifier.height(32.dp))
+                }
+            } else {
+                androidx.compose.foundation.pager.HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
+                    pageSpacing = 16.dp,
+                    verticalAlignment = Alignment.Top,
+                ) { pageIndex ->
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(scrollStates[pageIndex])
+                            .padding(vertical = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        SettingsGroup(
-                            title = stringResource(Res.string.settings_language),
-                            selectedValue = settings.language,
-                            options = languageOptions(settings.language),
-                            onSelected = { onSettingsChange(settings.copy(language = it)) },
+                        SettingsPageContent(
+                            pageIndex = pageIndex,
+                            settings = settings,
+                            themeOptions = themeOptions,
+                            paletteOptions = paletteOptions,
+                            styleOptions = styleOptions,
+                            langOptions = langOptions,
+                            onSettingsChange = onSettingsChange,
+                            onThemeChangeRequest = onThemeChangeRequest,
+                            onUnlockRequest = onUnlockRequest
+                        )
+                        Spacer(modifier = Modifier.height(32.dp))
+                    }
+                }
+            }
+            if (adController != null) {
+                AppFooterAdSlot(
+                    adController = adController,
+                    onOpenSelection = onOpenSelection,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsPageContent(
+    pageIndex: Int,
+    settings: AppSettings,
+    themeOptions: List<SettingsOption<AppThemeMode>>,
+    paletteOptions: List<SettingsOption<AppColorPalette>>,
+    styleOptions: List<SettingsOption<BlockVisualStyle>>,
+    langOptions: List<SettingsOption<AppLanguage>>,
+    onSettingsChange: (AppSettings) -> Unit,
+    onThemeChangeRequest: (AppSettings, Offset) -> Unit,
+    onUnlockRequest: (UnlockRequest) -> Unit,
+) {
+    when (pageIndex) {
+        0 -> {
+            SettingsSectionCard(title = "") {
+                SectionHeader(stringResource(Res.string.settings_theme))
+                SelectionGrid(
+                    columns = 3,
+                    selectedValue = settings.themeMode,
+                    options = themeOptions,
+                    onSelected = {},
+                    onOptionPositioned = { _, _ -> },
+                    onOptionClickWithOffset = { mode, offset ->
+                        onThemeChangeRequest(settings.selectThemeMode(mode), offset)
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                SectionHeader(stringResource(Res.string.settings_color_palette))
+                SelectionGrid(
+                    columns = 3,
+                    selectedValue = settings.themeColorPalette,
+                    options = paletteOptions,
+                    onSelected = {},
+                    onOptionClickWithOffset = { palette, offset ->
+                        onThemeChangeRequest(settings.selectThemePalette(palette), offset)
+                    },
+                    onLockedSelected = { option ->
+                        onUnlockRequest(
+                            unlockRequest(
+                                label = option.label,
+                                priceTokens = option.priceTokens,
+                                currentBalance = settings.tokenBalance,
+                            ) { it.unlockThemePalette(option.value) }
+                        )
+                    }
+                )
+            }
+        }
+
+        1 -> {
+            SettingsSectionCard(title = "") {
+                SectionHeader(stringResource(Res.string.settings_block_style))
+                SelectionGrid(
+                    columns = 3,
+                    selectedValue = settings.blockVisualStyle,
+                    options = styleOptions,
+                    onSelected = {
+                        onSettingsChange(
+                            settings.selectBlockStyle(
+                                it
+                            )
+                        )
+                    },
+                    onLockedSelected = { option ->
+                        onUnlockRequest(
+                            unlockRequest(
+                                label = option.label,
+                                priceTokens = option.priceTokens,
+                                currentBalance = settings.tokenBalance,
+                            ) { it.unlockBlockStyle(option.value) }
+                        )
+                    }
+                )
+            }
+        }
+
+        else -> {
+            SettingsSectionCard(title = "") {
+                SectionHeader(stringResource(Res.string.settings_language))
+                SelectionGrid(
+                    columns = 3,
+                    selectedValue = settings.language,
+                    options = langOptions,
+                    onSelected = { onSettingsChange(settings.copy(language = it)) }
+                )
+            }
+        }
+    }
+}
+
+fun Modifier.circularReveal(
+    progress: Float,
+    origin: Offset?
+) = graphicsLayer {
+    if (progress <= 0f || origin == null) {
+        clip = true
+        shape = object : Shape {
+            override fun createOutline(
+                size: Size,
+                layoutDirection: LayoutDirection,
+                density: Density
+            ): Outline = Outline.Generic(Path())
+        }
+    } else {
+        clip = true
+        shape = object : Shape {
+            override fun createOutline(
+                size: Size,
+                layoutDirection: LayoutDirection,
+                density: Density
+            ): Outline {
+                val maxRadius = size.width.coerceAtLeast(size.height) * 1.5f
+                val radius = maxRadius * progress
+                val path = Path().apply {
+                    addOval(Rect(center = origin, radius = radius))
+                }
+                return Outline.Generic(path)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsTabSwitcher(
+    pagerState: androidx.compose.foundation.pager.PagerState,
+    onTabSelected: (Int) -> Unit,
+) {
+    val uiColors = BlockGamesThemeTokens.uiColors
+    val shape = RoundedCornerShape(GameUiShapeTokens.buttonCorner)
+    val tabs = listOf(
+        Triple(Res.string.settings_theme, Icons.Filled.Palette, 0),
+        Triple(Res.string.settings_block_style, Icons.Filled.Layers, 1),
+        Triple(Res.string.settings_language, Icons.Filled.Translate, 2),
+    )
+
+    Box(
+        modifier = Modifier
+            .padding(horizontal = 16.dp)
+            .fillMaxWidth()
+            .widthIn(max = ScreenContentMaxWidth)
+            .height(72.dp)
+            .background(uiColors.panel.copy(alpha = 0.4f), shape)
+            .padding(4.dp)
+    ) {
+        // Indicator
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(1f / 3f)
+                .fillMaxHeight()
+                .graphicsLayer {
+                    translationX = (pagerState.currentPage + pagerState.currentPageOffsetFraction) * size.width
+                }
+                .blockGamesSurfaceShadow(shape, 4.dp)
+                .background(color = uiColors.actionPrimary, shape = shape)
+        )
+
+        Row(modifier = Modifier.fillMaxSize()) {
+            tabs.forEach { (titleRes, icon, index) ->
+                val isSelected = pagerState.currentPage == index
+                val contentColor = if (isSelected) uiColors.actionIcon else uiColors.subtitle.copy(alpha = 0.5f)
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clip(shape)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { onTabSelected(index) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                            tint = contentColor
+                        )
+                        Text(
+                            text = stringResource(titleRes),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = contentColor,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                         )
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun SectionHeader(text: String) {
+    val uiColors = BlockGamesThemeTokens.uiColors
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelMedium,
+        color = uiColors.subtitle.copy(alpha = 0.7f),
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(bottom = 8.dp)
+    )
 }
 
 @Composable
@@ -482,267 +742,173 @@ private fun SettingsSectionCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val uiColors = BlockGamesThemeTokens.uiColors
-    val panelShape = RoundedCornerShape(GameUiShapeTokens.panelCorner)
-    Card(
+    val shape = RoundedCornerShape(GameUiShapeTokens.panelCorner)
+
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .blockGamesSurfaceShadow(
-                shape = panelShape,
-                elevation = 5.dp,
-            )
-            .widthIn(max = ScreenContentMaxWidth),
-        shape = panelShape,
-        colors = CardDefaults.cardColors(containerColor = uiColors.panel),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = BorderStroke(1.dp, uiColors.panelStroke),
+            .widthIn(max = ScreenContentMaxWidth)
+            .blockGamesSurfaceShadow(shape, 4.dp)
+            .background(uiColors.panel.copy(alpha = 0.95f), shape)
+            .border(1.dp, uiColors.panelStroke.copy(alpha = 0.3f), shape)
+            .padding(20.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(uiColors.panel.copy(alpha = 0.96f))
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            SectionHeader(
-                title = title,
-                trailingContent = trailingContent,
-            )
-            content()
+        if (title.isNotEmpty() || trailingContent != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                if (title.isNotEmpty()) {
+                    Text(
+                        text = title.uppercase(),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Black,
+                        color = uiColors.actionPrimary,
+                        letterSpacing = 1.sp
+                    )
+                }
+                trailingContent?.invoke()
+            }
         }
+        content()
     }
 }
 
 @Composable
-private fun SectionHeader(
-    title: String,
-    trailingContent: (@Composable (() -> Unit))? = null,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        trailingContent?.invoke()
-    }
-}
-
-@Composable
-private fun <T> SettingsGroup(
-    title: String,
+private fun <T> SelectionGrid(
+    columns: Int,
     selectedValue: T,
     options: List<SettingsOption<T>>,
     onSelected: (T) -> Unit,
     onLockedSelected: (SettingsOption<T>) -> Unit = {},
+    onOptionPositioned: (T, androidx.compose.ui.geometry.Offset) -> Unit = { _, _ -> },
+    onOptionClickWithOffset: (T, androidx.compose.ui.geometry.Offset) -> Unit = { _, _ -> },
 ) {
-    val uiColors = BlockGamesThemeTokens.uiColors
-    val optionShape = RoundedCornerShape(GameUiShapeTokens.chipCorner)
-    Column(
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.labelMedium,
-            color = uiColors.subtitle,
-            modifier = Modifier.padding(horizontal = 4.dp),
-        )
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(-(6).dp),
-        ) {
-            options.forEach { option ->
-                val selected = option.value == selectedValue
-                FilterChip(
-                    modifier = Modifier.blockGamesSurfaceShadow(
-                        elevation = if (selected) 5.dp else 0.dp,
-                        shape = RoundedCornerShape(GameUiShapeTokens.chipCorner),
-                    ),
-                    selected = selected,
-                    onClick = {
-                        if (option.locked) {
-                            onLockedSelected(option)
-                        } else {
-                            onSelected(option.value)
-                        }
-                    },
-                    shape = RoundedCornerShape(GameUiShapeTokens.chipCorner),
-                    label = {
-                        Row(
-                            modifier = Modifier.wrapContentWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            option.preview?.invoke()
-                            Text(
-                                text = option.label,
-                                style = if (selected) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelMedium,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            if (option.locked) {
-                                Icon(
-                                    imageVector = Icons.Filled.Lock,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f),
-                                    modifier = Modifier.size(14.dp),
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        val chunks = options.chunked(columns)
+        chunks.forEach { rowOptions ->
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                rowOptions.forEach { option ->
+                    val isSelected = option.value == selectedValue
+                    var itemCenter by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .onGloballyPositioned { coords ->
+                                val position = coords.positionInWindow()
+                                itemCenter = androidx.compose.ui.geometry.Offset(
+                                    x = position.x + coords.size.width / 2f,
+                                    y = position.y + coords.size.height / 2f
                                 )
+                                onOptionPositioned(option.value, itemCenter)
                             }
-                        }
-                    },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = uiColors.chipSelected,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        containerColor = uiColors.chip.copy(alpha = 0.62f),
-                        labelColor = MaterialTheme.colorScheme.onSurface,
-                    ),
-                    border = FilterChipDefaults.filterChipBorder(
-                        enabled = true,
-                        selected = selected,
-                        borderColor = uiColors.panelStroke.copy(alpha = 0.42f),
-                        selectedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.82f),
-                    ),
-                    elevation = FilterChipDefaults.filterChipElevation(
-                        elevation = 0.dp,
-                        pressedElevation = 0.dp,
-                        focusedElevation = 0.dp,
-                        hoveredElevation = 0.dp,
-                        draggedElevation = 0.dp,
-                        disabledElevation = 0.dp,
-                    ),
-                )
+                    ) {
+                        GridSelectionItem(
+                            selected = isSelected,
+                            locked = option.locked,
+                            label = option.label,
+                            preview = option.preview,
+                            onClick = {
+                                onOptionClickWithOffset(option.value, itemCenter)
+                                if (option.locked) onLockedSelected(option) else onSelected(option.value)
+                            }
+                        )
+                    }
+                }
+                // Fill empty slots in the last row if necessary
+                if (rowOptions.size < columns) {
+                    repeat(columns - rowOptions.size) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
             }
         }
     }
 }
 
-private data class SettingsOption<T>(
-    val value: T,
-    val label: String,
-    val preview: (@Composable () -> Unit)? = null,
-    val locked: Boolean = false,
-    val priceTokens: Int = 0,
-)
-
-internal data class UnlockRequest(
-    val label: String,
-    val priceTokens: Int,
-    val currentBalance: Int,
-    val onUnlock: (AppSettings) -> AppSettings?,
-) {
-    val canAfford: Boolean get() = currentBalance >= priceTokens
-}
-
-internal fun unlockRequest(
-    label: String,
-    priceTokens: Int,
-    currentBalance: Int,
-    onUnlock: (AppSettings) -> AppSettings?,
-): UnlockRequest = UnlockRequest(
-    label = label,
-    priceTokens = priceTokens,
-    currentBalance = currentBalance,
-    onUnlock = onUnlock,
-)
-
 @Composable
-private fun BlockStyleSettingsGroup(
-    title: String,
-    selectedValue: BlockVisualStyle,
-    options: List<SettingsOption<BlockVisualStyle>>,
-    onSelected: (BlockVisualStyle) -> Unit,
-    onLockedSelected: (SettingsOption<BlockVisualStyle>) -> Unit = {},
+private fun GridSelectionItem(
+    selected: Boolean,
+    locked: Boolean,
+    label: String,
+    preview: (@Composable () -> Unit)?,
+    onClick: () -> Unit,
 ) {
     val uiColors = BlockGamesThemeTokens.uiColors
-    val optionShape = RoundedCornerShape(GameUiShapeTokens.chipCorner)
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxWidth(),
+    val shape = RoundedCornerShape(GameUiShapeTokens.chipCorner)
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.labelMedium,
-            color = uiColors.subtitle,
-            modifier = Modifier.padding(horizontal = 4.dp),
-        )
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    color = if (selected) uiColors.actionPrimary.copy(alpha = 0.1f) else uiColors.panelMuted.copy(
+                        alpha = 0.3f
+                    ),
+                    shape = shape
+                )
+                .border(
+                    width = if (selected) 2.dp else 1.dp,
+                    color = if (selected) uiColors.actionPrimary else uiColors.panelStroke.copy(alpha = 0.15f),
+                    shape = shape
+                )
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            options.forEach { option ->
-                val selected = option.value == selectedValue
-                Card(
-                    modifier = Modifier
-                        .width(104.dp)
-                        .blockGamesSurfaceShadow(
-                            elevation = if (selected) 5.dp else 0.dp,
-                            shape = optionShape,
-                        )
-                        .clip(optionShape)
-                        .clickable {
-                            if (option.locked) onLockedSelected(option) else onSelected(option.value)
-                        },
-                    shape = optionShape,
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (selected) uiColors.chipSelected else uiColors.chip.copy(alpha = 0.72f),
-                    ),
-                    border = BorderStroke(
-                        width = 1.dp,
-                        color = if (selected) {
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.84f)
-                        } else {
-                            uiColors.panelStroke.copy(alpha = 0.42f)
-                        },
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 7.dp, vertical = 10.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            option.preview?.invoke()
-                            if (option.locked) {
-                                Icon(
-                                    imageVector = Icons.Filled.Lock,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.76f),
-                                    modifier = Modifier.size(20.dp),
-                                )
-                            }
-                        }
-                        Box(
-                            modifier = Modifier.height(36.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                text = option.label,
-                                style = if (selected) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelMedium,
-                                color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-                                textAlign = TextAlign.Center,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                    }
+            Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                preview?.invoke()
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                color = if (selected) MaterialTheme.colorScheme.onSurface else uiColors.subtitle,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                minLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        if (locked) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(Color.Black.copy(alpha = 0.35f))
+            )
+            Column(
+                modifier = Modifier.matchParentSize().padding(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Default.Lock,
+                        null,
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.Transparent,
+                    maxLines = 2,
+                    minLines = 2
+                )
             }
         }
     }
@@ -752,6 +918,8 @@ private fun BlockStyleSettingsGroup(
 private fun TokenBalanceCard(
     settings: AppSettings,
     onRewardedTokensRequested: () -> Unit,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
     adController: GameAdController? = null,
     modifier: Modifier = Modifier,
 ) {
@@ -768,64 +936,95 @@ private fun TokenBalanceCard(
             )
             .widthIn(max = ScreenContentMaxWidth),
         shape = surfaceShape,
-        colors = CardDefaults.cardColors(containerColor = uiColors.panelHighlight.copy(alpha = 0.92f)),
+        colors = CardDefaults.cardColors(containerColor = uiColors.panel.copy(alpha = 0.95f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = BorderStroke(1.dp, uiColors.panelStroke),
+        border = BorderStroke(1.dp, uiColors.panelStroke.copy(alpha = 0.3f)),
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) { onExpandedChange(!expanded) }
                 .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = stringResource(Res.string.settings_tokens_title),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
                     text = stringResource(Res.string.settings_tokens_balance, settings.tokenBalance),
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.weight(1f)
                 )
-                Text(
-                    text = stringResource(Res.string.settings_tokens_earn_challenge, DailyChallengeTokenReward),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = uiColors.subtitle,
-                )
-                Text(
-                    text = stringResource(Res.string.settings_tokens_earn_score, ScorePointsPerToken),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = uiColors.subtitle,
+
+                if (adController != null) {
+                    TopBarActionBlockButton(
+                        tone = CellTone.Gold,
+                        icon = Icons.Filled.Stars,
+                        contentDescription = stringResource(
+                            Res.string.rewarded_tokens_button,
+                            RewardedTokenAdReward
+                        ),
+                        onClick = {
+                            if (adLoading) return@TopBarActionBlockButton
+                            adLoading = true
+                            adController.showRewardedAd { success ->
+                                adLoading = false
+                                if (success) {
+                                    onRewardedTokensRequested()
+                                }
+                            }
+                        },
+                        enabled = !adLoading,
+                        size = 44.dp,
+                        showAdIcon = true,
+                    )
+                }
+
+                Icon(
+                    imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = null,
+                    tint = uiColors.subtitle.copy(alpha = 0.7f),
+                    modifier = Modifier.size(24.dp)
                 )
             }
 
-            if (adController != null) {
-                TopBarActionBlockButton(
-                    tone = CellTone.Gold,
-                    icon = Icons.Filled.Stars,
-                    contentDescription = stringResource(Res.string.rewarded_tokens_button, RewardedTokenAdReward),
-                    onClick = {
-                        if (adLoading) return@TopBarActionBlockButton
-                        adLoading = true
-                        adController.showRewardedAd { success ->
-                            adLoading = false
-                            if (success) {
-                                onRewardedTokensRequested()
-                            }
-                        }
-                    },
-                    enabled = !adLoading,
-                    size = 56.dp,
-                    showAdIcon = true,
-                )
+            AnimatedVisibility(expanded) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.padding(bottom = 4.dp)
+                ) {
+                    Text(
+                        text = stringResource(
+                            Res.string.settings_tokens_earn_challenge,
+                            DailyChallengeTokenReward
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = uiColors.subtitle,
+                    )
+                    Text(
+                        text = stringResource(
+                            Res.string.settings_tokens_earn_score,
+                            ScorePointsPerToken
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = uiColors.subtitle,
+                    )
+                    Text(
+                        text = stringResource(
+                            Res.string.rewarded_tokens_button_bullet,
+                            RewardedTokenAdReward
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = uiColors.subtitle,
+                    )
+                }
             }
         }
     }
@@ -879,7 +1078,6 @@ private fun UnlockOptionDialog(
                         }
                     }
                 } else {
-                    // Fallback for previews or if adController is missing
                     onWatchAd()
                     onDismissRequest()
                 }
@@ -895,12 +1093,12 @@ private fun languageOptions(selected: AppLanguage): List<SettingsOption<AppLangu
         SettingsOption(
             value = language,
             label = stringResource(language.labelRes),
-            preview = { LanguagePreview(language = language, selected = language == selected) },
+            preview = { LanguagePreview(language = language) },
         )
     }
 
 @Composable
-private fun themeModeOptions(): List<SettingsOption<AppThemeMode>> =
+private fun themeModeOptions(selected: AppThemeMode): List<SettingsOption<AppThemeMode>> =
     AppThemeMode.entries.map { mode ->
         SettingsOption(
             value = mode,
@@ -935,6 +1133,56 @@ private fun themePaletteOptions(
         )
     }
 
+@Composable
+private fun blockStyleOptions(
+    settings: AppSettings,
+    pulseProvider: () -> Float,
+    previewColorProvider: () -> Color,
+): List<SettingsOption<BlockVisualStyle>> {
+    return visibleBlockStyles().map { style ->
+        SettingsOption(
+            value = style,
+            label = when (style) {
+                BlockVisualStyle.Flat -> stringResource(Res.string.block_style_flat)
+                BlockVisualStyle.Bubble -> stringResource(Res.string.block_style_bubble)
+                BlockVisualStyle.Outline -> stringResource(Res.string.block_style_outline)
+                BlockVisualStyle.Sharp3D -> stringResource(Res.string.block_style_sharp_3d)
+                BlockVisualStyle.Wood -> stringResource(Res.string.block_style_wood)
+                BlockVisualStyle.GridSplit -> stringResource(Res.string.block_style_grid_split)
+                BlockVisualStyle.Crystal -> stringResource(Res.string.block_style_crystal)
+                BlockVisualStyle.DynamicLiquid -> stringResource(Res.string.block_style_dynamic_liquid)
+                BlockVisualStyle.Tornado -> stringResource(Res.string.block_style_tornado)
+                BlockVisualStyle.HoneycombTexture -> stringResource(Res.string.block_style_honeycomb_texture)
+                BlockVisualStyle.SpiderWeb -> stringResource(Res.string.block_style_spider_web)
+                BlockVisualStyle.Cosmic -> stringResource(Res.string.block_style_cosmic)
+                BlockVisualStyle.Brick -> stringResource(Res.string.block_style_brick)
+                BlockVisualStyle.SoundWave -> stringResource(Res.string.block_style_sound_wave)
+                BlockVisualStyle.Prism -> stringResource(Res.string.block_style_prism)
+                BlockVisualStyle.Flame -> stringResource(Res.string.block_style_flame)
+                BlockVisualStyle.Gears -> stringResource(Res.string.block_style_gears)
+                BlockVisualStyle.Pixel -> stringResource(Res.string.block_style_pixel)
+                BlockVisualStyle.Cyberpunk -> stringResource(Res.string.block_style_cyberpunk)
+                BlockVisualStyle.NeonGlow -> stringResource(Res.string.block_style_neon_glow)
+                BlockVisualStyle.LiquidMarble -> stringResource(Res.string.block_style_liquid_marble)
+                BlockVisualStyle.Holographic -> stringResource(Res.string.block_style_holographic)
+                BlockVisualStyle.GlitchTech -> stringResource(Res.string.block_style_glitch_tech)
+                BlockVisualStyle.AuraEnergy -> stringResource(Res.string.block_style_aura_energy)
+                BlockVisualStyle.CircuitBoard -> stringResource(Res.string.block_style_circuit_board)
+            },
+            preview = {
+                BlockCellPreview(
+                    baseColor = previewColorProvider(),
+                    style = style,
+                    size = 40.dp,
+                    pulse = if (style == BlockVisualStyle.Pixel) 0f else pulseProvider(),
+                )
+            },
+            locked = !settings.isBlockStyleUnlocked(style),
+            priceTokens = style.tokenCost(),
+        )
+    }
+}
+
 internal fun visibleBlockStyles(): List<BlockVisualStyle> = listOf(
     BlockVisualStyle.Flat,
     BlockVisualStyle.Bubble,
@@ -954,121 +1202,19 @@ internal fun visibleBlockStyles(): List<BlockVisualStyle> = listOf(
     BlockVisualStyle.Flame,
     BlockVisualStyle.Gears,
     BlockVisualStyle.Pixel,
+    BlockVisualStyle.Cyberpunk,
+    BlockVisualStyle.NeonGlow,
+    BlockVisualStyle.LiquidMarble,
+    BlockVisualStyle.Holographic,
+    BlockVisualStyle.GlitchTech,
+    BlockVisualStyle.AuraEnergy,
+    BlockVisualStyle.CircuitBoard,
 )
-
-@Composable
-private fun blockStyleOptions(
-    settings: AppSettings,
-    pulse: Float,
-    previewColor: Color,
-): List<SettingsOption<BlockVisualStyle>> {
-    return visibleBlockStyles().map { style ->
-        SettingsOption(
-            value = style,
-            label = when (style) {
-                BlockVisualStyle.Flat -> stringResource(Res.string.block_style_flat)
-                BlockVisualStyle.Bubble -> stringResource(Res.string.block_style_bubble)
-                BlockVisualStyle.Outline -> stringResource(Res.string.block_style_outline)
-                BlockVisualStyle.Sharp3D -> stringResource(Res.string.block_style_sharp_3d)
-                BlockVisualStyle.Wood -> stringResource(Res.string.block_style_wood)
-                BlockVisualStyle.GridSplit -> stringResource(Res.string.block_style_grid_split)
-                BlockVisualStyle.Crystal -> stringResource(Res.string.block_style_crystal)
-                BlockVisualStyle.DynamicLiquid -> stringResource(Res.string.block_style_dynamic_liquid)
-                BlockVisualStyle.MatteSoft -> stringResource(Res.string.block_style_matte_soft)
-                BlockVisualStyle.NeonGlow -> stringResource(Res.string.block_style_neon_glow)
-                BlockVisualStyle.Tornado -> stringResource(Res.string.block_style_tornado)
-                BlockVisualStyle.StoneTexture -> stringResource(Res.string.block_style_stone_texture)
-                BlockVisualStyle.HoneycombTexture -> stringResource(Res.string.block_style_honeycomb_texture)
-                BlockVisualStyle.LightBurst -> stringResource(Res.string.block_style_light_burst)
-                BlockVisualStyle.LiquidMarble -> stringResource(Res.string.block_style_liquid_marble)
-                BlockVisualStyle.SpiderWeb -> stringResource(Res.string.block_style_spider_web)
-                BlockVisualStyle.Cosmic -> stringResource(Res.string.block_style_cosmic)
-                BlockVisualStyle.Brick -> stringResource(Res.string.block_style_brick)
-                BlockVisualStyle.SoundWave -> stringResource(Res.string.block_style_sound_wave)
-                BlockVisualStyle.Prism -> stringResource(Res.string.block_style_prism)
-                BlockVisualStyle.Electric -> stringResource(Res.string.block_style_flat)
-                BlockVisualStyle.Flame -> stringResource(Res.string.block_style_flame)
-                BlockVisualStyle.Gears -> stringResource(Res.string.block_style_gears)
-                BlockVisualStyle.Pixel -> stringResource(Res.string.block_style_pixel)
-            },
-            preview = {
-                BlockStylePreview(
-                    style = style,
-                    pulse = pulse,
-                    previewColor = previewColor,
-                    previewPalette = settings.blockColorPalette,
-                )
-            },
-            locked = !settings.isBlockStyleUnlocked(style),
-            priceTokens = style.tokenCost(),
-        )
-    }
-}
-
-@Composable
-private fun ThemeModePreview(mode: AppThemeMode) {
-    val colors = when (mode) {
-        AppThemeMode.System -> listOf(Color(0xFF7AA8FF), Color(0xFFE7EEF8))
-        AppThemeMode.Light -> listOf(Color(0xFFFFD76A), Color(0xFFFFF7D8))
-        AppThemeMode.Dark -> listOf(Color(0xFF8F83FF), Color(0xFF1D2233))
-    }
-    BoxPreview(colors = colors, size = 16.dp)
-}
-
-@Composable
-private fun ThemePalettePreview(
-    palette: AppColorPalette,
-    darkTheme: Boolean,
-) {
-    val scheme = blockGamesThemeSpec(palette = palette, darkTheme = darkTheme).colorScheme
-    val colors = listOf(
-        scheme.primary,
-        scheme.secondary,
-        scheme.tertiary,
-        scheme.surfaceVariant,
-    )
-    BoxPreview(colors = colors, size = 16.dp)
-}
-
-
-@Composable
-private fun BlockStylePreview(
-    style: BlockVisualStyle,
-    pulse: Float,
-    previewColor: Color,
-    previewPalette: BlockColorPalette,
-) {
-    BlockCellPreview(
-        baseColor = settingsPreviewColor(
-            style = style,
-            animatedPreviewColor = previewColor,
-            palette = previewPalette,
-        ),
-        style = style,
-        size = 54.dp,
-        pulse = settingsPreviewPulse(style = style, pulse = pulse),
-    )
-}
-
-private fun settingsPreviewPulse(
-    style: BlockVisualStyle,
-    pulse: Float,
-): Float = when (style) {
-    BlockVisualStyle.Pixel,
-        -> 0f
-
-    else -> pulse
-}
-
-private fun settingsPreviewColor(
-    style: BlockVisualStyle,
-    animatedPreviewColor: Color,
-    palette: BlockColorPalette,
-): Color = animatedPreviewColor
 
 private fun interpolatedPreviewColor(
     palette: BlockColorPalette,
     progress: Float,
+    isDark: Boolean,
 ): Color {
     val tones = CellTone.entries
     val normalized = ((progress % tones.size) + tones.size) % tones.size
@@ -1076,106 +1222,128 @@ private fun interpolatedPreviewColor(
     val endIndex = (startIndex + 1) % tones.size
     val blend = normalized - startIndex
     return lerp(
-        tones[startIndex].paletteColor(palette),
-        tones[endIndex].paletteColor(palette),
+        tones[startIndex].paletteColor(palette, isDark),
+        tones[endIndex].paletteColor(palette, isDark),
         blend,
     )
 }
 
 @Composable
-private fun LanguagePreview(
-    language: AppLanguage,
-    selected: Boolean,
-) {
-    val uiColors = BlockGamesThemeTokens.uiColors
-    Box(
-        modifier = Modifier
-            .background(
-                color = if (selected) {
-                    uiColors.panelHighlight.copy(alpha = 0.96f)
-                } else {
-                    uiColors.panelMuted.copy(alpha = 0.96f)
-                },
-                shape = RoundedCornerShape(GameUiShapeTokens.chipCorner)
-            )
-            .padding(horizontal = 6.dp, vertical = 2.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = language.flag,
-            style = MaterialTheme.typography.titleMedium,
-        )
-    }
+private fun LanguagePreview(language: AppLanguage) {
+    Text(text = language.flag, style = MaterialTheme.typography.titleLarge)
 }
 
 @Composable
-private fun StyleFourBlockPreview(settings: AppSettings, pulse: Float, previewColor: Color) {
-    BlockCellPreview(
-        baseColor = settingsPreviewColor(
-            style = settings.blockVisualStyle,
-            animatedPreviewColor = previewColor,
-            palette = settings.blockColorPalette,
-        ),
-        style = settings.blockVisualStyle,
-        size = 44.dp,
-        pulse = settingsPreviewPulse(style = settings.blockVisualStyle, pulse = pulse),
+private fun ThemeModePreview(mode: AppThemeMode) {
+    val icon = when (mode) {
+        AppThemeMode.System -> Icons.Default.BrightnessAuto
+        AppThemeMode.Light -> Icons.Default.LightMode
+        AppThemeMode.Dark -> Icons.Default.DarkMode
+    }
+    Icon(
+        imageVector = icon,
+        contentDescription = null,
+        modifier = Modifier.size(24.dp),
+        tint = BlockGamesThemeTokens.uiColors.actionPrimary
     )
 }
 
 @Composable
-private fun BoxPreview(
-    colors: List<Color>,
-    icon: ImageVector? = null,
-    size: Dp = 10.dp,
-) {
-    val uiColors = BlockGamesThemeTokens.uiColors
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        colors.forEachIndexed { index, color ->
-            Box(
-                modifier = Modifier
-                    .size(size)
-                    .background(color, shape = RoundedCornerShape((size.value * 0.35f).dp))
-                    .border(
-                        width = 1.dp,
-                        color = uiColors.panelStroke.copy(alpha = 0.32f),
-                        shape = RoundedCornerShape((size.value * 0.35f).dp),
-                    ),
-            ) {
-                if (icon != null && index == colors.lastIndex) {
-                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(size * 0.52f),
-                        )
-                    }
+private fun ThemePalettePreview(palette: AppColorPalette, darkTheme: Boolean) {
+    val scheme = blockGamesThemeSpec(palette = palette, darkTheme = darkTheme).colorScheme
+    BoxPreview(
+        colors = listOf(scheme.primary, scheme.secondary, scheme.tertiary, scheme.outlineVariant),
+        size = 18.dp
+    )
+}
+
+@Composable
+private fun BoxPreview(colors: List<Color>, size: androidx.compose.ui.unit.Dp = 12.dp) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        val rows = colors.chunked(2)
+        rows.forEach { rowColors ->
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                rowColors.forEach { color ->
+                    Box(
+                        modifier = Modifier
+                            .size(size)
+                            .background(color, CircleShape)
+                            .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape)
+                    )
                 }
             }
         }
     }
 }
 
+private data class SettingsOption<T>(
+    val value: T,
+    val label: String,
+    val preview: (@Composable () -> Unit)? = null,
+    val locked: Boolean = false,
+    val priceTokens: Int = 0,
+)
+
+internal data class UnlockRequest(
+    val label: String,
+    val priceTokens: Int,
+    val currentBalance: Int,
+    val onUnlock: (AppSettings) -> AppSettings?,
+) {
+    val canAfford: Boolean get() = currentBalance >= priceTokens
+}
+
+internal fun unlockRequest(
+    label: String,
+    priceTokens: Int,
+    currentBalance: Int,
+    onUnlock: (AppSettings) -> AppSettings?,
+): UnlockRequest = UnlockRequest(label, priceTokens, currentBalance, onUnlock)
+
 @Preview
 @Composable
-private fun AppSettingsScreenPreview() {
-    AppSettingsScreen(
-        settings = AppSettings(themeMode = AppThemeMode.Light),
-        onSettingsChange = {},
-        onRewardedTokensRequested = {},
-        onBack = {},
-    )
+private fun PreviewThemeTab() {
+    val settings =
+        AppSettings(themeMode = AppThemeMode.Dark, themeColorPalette = AppColorPalette.ModernNeon)
+    BlockGamesTheme(settings = settings) {
+        AppSettingsScreen(
+            settings = settings,
+            adController = NoOpGameAdController,
+            onSettingsChange = {},
+            onRewardedTokensRequested = {},
+            onBack = {},
+            onOpenSelection = {},
+            initialTabIndex = 0
+        )
+    }
 }
 
 @Preview
 @Composable
-private fun AppLanguageScreenPreview() {
-    AppLanguageScreen(
-        settings = AppSettings(themeMode = AppThemeMode.Light),
+private fun PreviewBlockStyleTab() {
+    val settings = AppSettings(blockVisualStyle = BlockVisualStyle.Cyberpunk, tokenBalance = 500)
+    BlockGamesTheme(settings = settings) {
+    AppSettingsScreen(
+        settings = settings,
         onSettingsChange = {},
+        onRewardedTokensRequested = {},
         onBack = {},
+        onOpenSelection = {},
+        initialTabIndex = 1
+    )
+}
+}
+
+@Preview
+@Composable
+private fun PreviewLanguageTab() {
+    val settings = AppSettings(language = AppLanguage.French, blockVisualStyle = BlockVisualStyle.Crystal)
+    AppSettingsScreen(
+        settings = settings,
+        onSettingsChange = {},
+        onRewardedTokensRequested = {},
+        onBack = {},
+        onOpenSelection = {},
+        initialTabIndex = 2
     )
 }

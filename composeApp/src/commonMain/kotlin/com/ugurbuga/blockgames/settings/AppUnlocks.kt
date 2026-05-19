@@ -66,7 +66,16 @@ fun BlockVisualStyle.tokenCost(): Int = when (normalizeBlockVisualStyle(this)) {
     BlockVisualStyle.Brick -> 24
     BlockVisualStyle.SoundWave -> 34
     BlockVisualStyle.Prism -> 36
-    else -> 18
+    BlockVisualStyle.Flame -> 40
+    BlockVisualStyle.Gears -> 30
+    BlockVisualStyle.Pixel -> 26
+    BlockVisualStyle.Cyberpunk -> 45
+    BlockVisualStyle.NeonGlow -> 48
+    BlockVisualStyle.LiquidMarble -> 48
+    BlockVisualStyle.Holographic -> 48
+    BlockVisualStyle.GlitchTech -> 48
+    BlockVisualStyle.AuraEnergy -> 48
+    BlockVisualStyle.CircuitBoard -> 48
 }
 
 fun AppSettings.isThemeModeUnlocked(mode: AppThemeMode): Boolean = mode in availableThemeModes()
@@ -115,7 +124,6 @@ fun AppSettings.sanitized(): AppSettings {
         hasShownInteractiveOnboarding = sanitizedShownInteractiveOnboardingStyles.isNotEmpty(),
         seenTutorialStyles = sanitizedSeenTutorialStyles,
         shownInteractiveOnboardingStyles = sanitizedShownInteractiveOnboardingStyles,
-        soundEnabled = this.soundEnabled,
     )
 }
 

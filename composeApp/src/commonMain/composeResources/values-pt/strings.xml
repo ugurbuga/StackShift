@@ -10,9 +10,10 @@
     <string name="settings_block_palette">Paleta de cores dos blocos</string>
     <string name="settings_block_style">Estilo dos blocos</string>
     <string name="settings_tokens_title">Fichas</string>
-    <string name="settings_tokens_balance">Saldo: %1$d</string>
-    <string name="settings_tokens_earn_challenge">Recompensa do desafio diário: +%1$d tokens</string>
-    <string name="settings_tokens_earn_score">Recompensa da partida: +1 token a cada %1$d pontos</string>
+    <string name="settings_tokens_balance">Token: %1$d</string>
+    <string name="settings_tokens_earn_challenge">• Recompensa do desafio diário: +%1$d tokens</string>
+    <string name="settings_tokens_earn_score">• Recompensa da partida: +1 token a cada %1$d pontos</string>
+    <string name="rewarded_tokens_button_bullet">• Assista a um anúncio e ganhe %1$d tokens</string>
     <string name="rewarded_tokens_button">Assista a um anúncio e ganhe %1$d tokens</string>
     <string name="reward_earned_message">Você ganhou %1$d tokens!</string>
     <string name="reward_piece_row_message">Peça de limpeza de linha horizontal equipada!</string>
@@ -55,6 +56,11 @@
     <string name="block_style_honeycomb_texture">Honeycomb Texture</string>
     <string name="block_style_light_burst">Explosão de Luz</string>
     <string name="block_style_liquid_marble">Mármore Líquido</string>
+    <string name="block_style_holographic">Holográfico</string>
+    <string name="block_style_glitch_tech">Tecnologia Glitch</string>
+    <string name="block_style_aura_energy">Energia de Aura</string>
+    <string name="block_style_circuit_board">Placa de Circuito</string>
+    <string name="block_style_cyberpunk">Cyberpunk</string>
     <string name="board_block_style_always_flat">Sempre plano</string>
     <string name="board_block_style_match_selected">Combinar com o estilo selecionado</string>
     <string name="hold">Reserva</string>
@@ -82,7 +88,7 @@
     <string name="launch_label">Lançar</string>
     <string name="launch_bar">Barra de lançamento</string>
     <string name="launch_boost_active">Impulso ativo • %1$s turnos</string>
-    <string name="launch_special_chance">Chance de bloco especial +%1$s%%</string>
+    <string name="launch_special_chance">Chance de bloco especial +%1$s%</string>
     <string name="launch_soft_lock_message">Travamento suave ativo • microajuste ativado</string>
     <string name="launch_chain_message">Linha + Coluna • +%2$s</string>
     <string name="launch_paused">Pausado</string>
@@ -310,6 +316,7 @@
     <string name="block_style_flame">Chama</string>
     <string name="block_style_gears">Engrenagens</string>
     <string name="block_style_pixel">Píxel</string>
+    <string name="block_style_lava">Lava</string>
     <string name="ad_reward_blockwise_refresh">Atualizar bandeja</string>
     <string name="ad_reward_mergeshift_swap">Alterar número</string>
     <string name="ad_reward_boomblocks_clear">Limpar cor</string>

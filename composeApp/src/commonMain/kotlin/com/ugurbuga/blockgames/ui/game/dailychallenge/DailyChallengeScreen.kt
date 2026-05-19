@@ -135,7 +135,6 @@ import com.ugurbuga.blockgames.game.model.DailyChallenge
 import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.color
 import com.ugurbuga.blockgames.game.model.paletteColor
-import com.ugurbuga.blockgames.game.model.resolveBoardBlockStyle
 import com.ugurbuga.blockgames.localization.LocalAppSettings
 import com.ugurbuga.blockgames.settings.AppSettings
 import com.ugurbuga.blockgames.settings.GameSessionSlot
@@ -207,7 +206,7 @@ fun DailyChallengeScreen(
     }
 
     val settings = LocalAppSettings.current
-    val blockStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
+    val blockStyle = settings.blockVisualStyle
     val stylePulse = rememberBlockStylePulse(style = blockStyle)
 
     LaunchedEffect(months) {
@@ -368,7 +367,7 @@ fun TrophyIcon(
     val palette = settings.blockColorPalette
     val isDark = isBlockGamesDarkTheme(settings)
 
-    val baseColor = CellTone.Gold.paletteColor(palette)
+    val baseColor = CellTone.Gold.paletteColor(palette, isDark)
     val emptyColor =
         if (isDark) Color.DarkGray.copy(alpha = 0.3f) else Color.LightGray.copy(alpha = 0.3f)
 
@@ -532,10 +531,11 @@ fun DayCell(
 ) {
     val uiColors = BlockGamesThemeTokens.uiColors
     val settings = LocalAppSettings.current
+    val isDark = isBlockGamesDarkTheme(settings)
     val palette = settings.blockColorPalette
 
     val baseColor = when {
-        isCompleted -> CellTone.Emerald.paletteColor(palette)
+        isCompleted -> CellTone.Emerald.paletteColor(palette, isDark)
         isSelected -> MaterialTheme.colorScheme.primary
         !isEnabled -> uiColors.panelMuted.copy(alpha = 0.2f)
         else -> uiColors.panelMuted.copy(alpha = 0.5f)
@@ -543,7 +543,7 @@ fun DayCell(
 
     val borderColor = when {
         isSelected -> Color.White
-        isInProgress && !isCompleted -> CellTone.Amber.paletteColor(palette)
+        isInProgress && !isCompleted -> CellTone.Amber.paletteColor(palette, isDark)
         else -> Color.Transparent
     }
 

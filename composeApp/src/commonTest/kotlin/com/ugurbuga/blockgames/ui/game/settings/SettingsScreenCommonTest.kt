@@ -33,14 +33,8 @@ class SettingsScreenCommonTest {
         val styles = visibleBlockStyles()
 
         assertEquals(BlockVisualStyle.Flat, styles.first())
-        assertEquals(BlockVisualStyle.Pixel, styles.last())
-        assertEquals(18, styles.size)
-        assertFalse(BlockVisualStyle.MatteSoft in styles)
-        assertFalse(BlockVisualStyle.NeonGlow in styles)
-        assertFalse(BlockVisualStyle.StoneTexture in styles)
-        assertFalse(BlockVisualStyle.LightBurst in styles)
-        assertFalse(BlockVisualStyle.LiquidMarble in styles)
-        assertFalse(BlockVisualStyle.Electric in styles)
+        assertEquals(BlockVisualStyle.CircuitBoard, styles.last())
+        assertEquals(25, styles.size)
         assertTrue(BlockVisualStyle.DynamicLiquid in styles)
         assertTrue(BlockVisualStyle.Prism in styles)
     }

@@ -28,8 +28,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.cancel
-import blockgames.composeapp.generated.resources.game_message_ad_reward_blockwise
 import blockgames.composeapp.generated.resources.game_message_ad_reward_blocksort
+import blockgames.composeapp.generated.resources.game_message_ad_reward_blockwise
 import blockgames.composeapp.generated.resources.game_message_ad_reward_boomblocks
 import blockgames.composeapp.generated.resources.game_message_ad_reward_mergeshift
 import blockgames.composeapp.generated.resources.leave_session_confirm
@@ -52,19 +52,17 @@ import com.ugurbuga.blockgames.localization.appStringResource
 import com.ugurbuga.blockgames.localization.currentDeviceLocaleTag
 import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
 import com.ugurbuga.blockgames.platform.currentEpochMillis
-import com.ugurbuga.blockgames.platform.feedback.GameSound
-import com.ugurbuga.blockgames.platform.feedback.rememberSoundEffectPlayer
 import com.ugurbuga.blockgames.platform.getCurrentDate
 import com.ugurbuga.blockgames.platform.rememberNotificationManager
 import com.ugurbuga.blockgames.presentation.game.GameViewModel
 import com.ugurbuga.blockgames.settings.AppSettings
 import com.ugurbuga.blockgames.settings.AppSettingsStorage
+import com.ugurbuga.blockgames.settings.BlockSortOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.BoomBlocksOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.GameSessionSlot
 import com.ugurbuga.blockgames.settings.GameSessionStorage
 import com.ugurbuga.blockgames.settings.HighScoreStorage
-import com.ugurbuga.blockgames.settings.BlockSortOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.MergeShiftOnboardingStateFactory
 import com.ugurbuga.blockgames.settings.RewardedTokenAdReward
 import com.ugurbuga.blockgames.settings.StackShiftGameOnboardingStateFactory
@@ -106,7 +104,6 @@ enum class AppRoute {
     Game,
     InteractiveOnboarding,
     Settings,
-    Language,
     Tutorial,
     DailyChallenges,
     Selection,
@@ -139,26 +136,26 @@ internal fun isUsableSavedSession(
     }
 }
 
+private fun resolveStartupRoute(
+    loadedSettings: AppSettings,
+    startupGameplayStyleOverride: GameplayStyle?,
+): AppRoute = when {
+    startupGameplayStyleOverride != null -> AppRoute.Home
+    loadedSettings.selectedGameplayStyle == null -> AppRoute.Selection
+    else -> AppRoute.Home
+}
+
 private fun resolveStartupGameplayStyle(
     loadedSettings: AppSettings,
-    startupGameplayStyleOverride: GameplayStyle? = null,
-): GameplayStyle = startupGameplayStyleOverride ?: loadedSettings.selectedGameplayStyle ?: GlobalPlatformConfig.gameplayStyle
-
-internal fun resolveStartupRoute(
-    loadedSettings: AppSettings,
-    startupGameplayStyleOverride: GameplayStyle? = null,
-): AppRoute {
-    return if (loadedSettings.selectedGameplayStyle == null && startupGameplayStyleOverride == null) {
-        AppRoute.Selection
-    } else {
-        AppRoute.Home
-    }
-}
+    startupGameplayStyleOverride: GameplayStyle?,
+): GameplayStyle =
+    startupGameplayStyleOverride ?: loadedSettings.selectedGameplayStyle ?: GameplayStyle.StackShift
 
 private fun resolvePersistedStartupGameplayStyle(
     loadedSettings: AppSettings,
-    startupGameplayStyleOverride: GameplayStyle? = null,
-): GameplayStyle? = startupGameplayStyleOverride?.takeIf { it != loadedSettings.selectedGameplayStyle }
+    startupGameplayStyleOverride: GameplayStyle?,
+): GameplayStyle? =
+    startupGameplayStyleOverride?.takeIf { it != loadedSettings.selectedGameplayStyle }
 
 @Composable
 fun BlockGamesTheme(
@@ -268,15 +265,6 @@ fun BlockGamesRoot(
 ) {
     val adController = rememberPlatformGameAdController()
     val notificationManager = rememberNotificationManager()
-    val soundPlayer = rememberSoundEffectPlayer(settings.soundEnabled)
-
-    LaunchedEffect(currentRoute, settings.soundEnabled) {
-        if (!settings.soundEnabled || currentRoute == AppRoute.Game || currentRoute == AppRoute.InteractiveOnboarding) {
-            soundPlayer.stop(GameSound.Bgm)
-        } else {
-            soundPlayer.play(GameSound.Bgm)
-        }
-    }
 
     AppEnvironment(settings = settings) {
         LaunchedEffect(Unit) {
@@ -347,22 +335,8 @@ fun BlockGamesRoot(
                                     onSettingsChange = onSettingsChange,
                                     onRewardedTokensRequested = onRewardedTokensEarned,
                                     onBack = onNavigateBack,
+                                    onOpenSelection = onNavigateToSelection,
                                     adController = adController,
-                                    selectedTabIndex = settingsTabIndex,
-                                    onSelectedTabIndexChange = onSettingsTabIndexChange,
-                                )
-                            }
-
-                            AppRoute.Language -> {
-                                AppSettingsScreen(
-                                    modifier = Modifier.fillMaxSize(),
-                                    telemetry = telemetry,
-                                    settings = settings,
-                                    onSettingsChange = onSettingsChange,
-                                    onRewardedTokensRequested = onRewardedTokensEarned,
-                                    onBack = onNavigateBack,
-                                    adController = adController,
-                                    initialTabIndex = 2,
                                     selectedTabIndex = settingsTabIndex,
                                     onSelectedTabIndexChange = onSettingsTabIndexChange,
                                 )
@@ -393,7 +367,6 @@ fun BlockGamesRoot(
                                     onReplaceActivePieceRewarded = onReplaceActivePieceRewarded,
                                     onBack = onNavigateBack,
                                     adController = adController,
-                                    soundPlayer = soundPlayer,
                                 )
                             }
 
@@ -409,10 +382,12 @@ fun BlockGamesRoot(
                         }
                     }
 
-                    AppFooterAdSlot(
-                        adController = adController,
-                        onOpenSelection = onNavigateToSelection,
-                    )
+                    if (currentRoute != AppRoute.Settings) {
+                        AppFooterAdSlot(
+                            adController = adController,
+                            onOpenSelection = onNavigateToSelection,
+                        )
+                    }
                 }
 
                 if (showLeaveSessionDialog) {
@@ -759,7 +734,7 @@ fun BlockGamesAppHost(
         },
         onNavigateToLanguage = {
             settingsTabIndex = 2
-            navigateTo(AppRoute.Language)
+            navigateTo(AppRoute.Settings)
         },
         onNavigateToTutorial = {
             pendingRequestedGameMode = null
@@ -852,10 +827,6 @@ fun BlockGamesAppHost(
         telemetry.logUserProperty(
             TelemetryUserPropertyNames.BlockStyle,
             settings.blockVisualStyle.name
-        )
-        telemetry.logUserProperty(
-            TelemetryUserPropertyNames.BoardBlockStyleMode,
-            settings.boardBlockStyleMode.name
         )
     }
 }
