@@ -1125,8 +1125,8 @@ internal fun BoxScope.LaunchGuideLineOverlay(
             selectedStyle = settings.blockVisualStyle,
             mode = settings.boardBlockStyleMode,
         )
-    val baseColor = remember(activePiece.id, activePiece.tone, settings.blockColorPalette) {
-        activePiece.tone.paletteColor(settings.blockColorPalette)
+    val baseColor = remember(activePiece.id, activePiece.tone, settings.blockColorPalette, isDarkTheme) {
+        activePiece.tone.paletteColor(settings.blockColorPalette, isDarkTheme)
     }
     val guideSegments = remember(preview, activePiece.id, pieceTopLeft, boardRect, cellSizePx) {
         launchGuideSegments(

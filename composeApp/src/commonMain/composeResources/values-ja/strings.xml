@@ -63,6 +63,7 @@
     <string name="block_style_flame">フレイム</string>
     <string name="block_style_gears">ギア</string>
     <string name="block_style_pixel">ピクセル</string>
+    <string name="block_style_lava">ラーバ</string>
     <string name="board_block_style_always_flat">常にフラット</string>
     <string name="board_block_style_match_selected">選択中のブロックスタイルに合わせる</string>
     <string name="hold">ホールド</string>

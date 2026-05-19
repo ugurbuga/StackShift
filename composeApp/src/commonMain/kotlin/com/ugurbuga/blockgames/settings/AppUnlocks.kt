@@ -66,6 +66,7 @@ fun BlockVisualStyle.tokenCost(): Int = when (normalizeBlockVisualStyle(this)) {
     BlockVisualStyle.Brick -> 24
     BlockVisualStyle.SoundWave -> 34
     BlockVisualStyle.Prism -> 36
+    BlockVisualStyle.Cyberpunk -> 45
     else -> 18
 }
 

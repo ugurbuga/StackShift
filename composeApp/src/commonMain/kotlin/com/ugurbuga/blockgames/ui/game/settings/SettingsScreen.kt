@@ -78,20 +78,16 @@ import blockgames.composeapp.generated.resources.block_style_crystal
 import blockgames.composeapp.generated.resources.block_style_dynamic_liquid
 import blockgames.composeapp.generated.resources.block_style_flame
 import blockgames.composeapp.generated.resources.block_style_flat
+import blockgames.composeapp.generated.resources.block_style_cyberpunk
 import blockgames.composeapp.generated.resources.block_style_gears
 import blockgames.composeapp.generated.resources.block_style_grid_split
 import blockgames.composeapp.generated.resources.block_style_honeycomb_texture
-import blockgames.composeapp.generated.resources.block_style_light_burst
-import blockgames.composeapp.generated.resources.block_style_liquid_marble
-import blockgames.composeapp.generated.resources.block_style_matte_soft
-import blockgames.composeapp.generated.resources.block_style_neon_glow
 import blockgames.composeapp.generated.resources.block_style_outline
 import blockgames.composeapp.generated.resources.block_style_pixel
 import blockgames.composeapp.generated.resources.block_style_prism
 import blockgames.composeapp.generated.resources.block_style_sharp_3d
 import blockgames.composeapp.generated.resources.block_style_sound_wave
 import blockgames.composeapp.generated.resources.block_style_spider_web
-import blockgames.composeapp.generated.resources.block_style_stone_texture
 import blockgames.composeapp.generated.resources.block_style_tornado
 import blockgames.composeapp.generated.resources.block_style_wood
 import blockgames.composeapp.generated.resources.cancel
@@ -208,10 +204,11 @@ fun AppSettingsScreen(
         ),
         label = "previewToneStep",
     )
-    val sharedPreviewColor = remember(previewToneStep, settings.blockColorPalette) {
+    val sharedPreviewColor = remember(previewToneStep, settings.blockColorPalette, darkTheme) {
         interpolatedPreviewColor(
             palette = settings.blockColorPalette,
             progress = previewToneStep,
+            isDark = darkTheme,
         )
     }
 
@@ -954,6 +951,7 @@ internal fun visibleBlockStyles(): List<BlockVisualStyle> = listOf(
     BlockVisualStyle.Flame,
     BlockVisualStyle.Gears,
     BlockVisualStyle.Pixel,
+    BlockVisualStyle.Cyberpunk,
 )
 
 @Composable
@@ -974,22 +972,17 @@ private fun blockStyleOptions(
                 BlockVisualStyle.GridSplit -> stringResource(Res.string.block_style_grid_split)
                 BlockVisualStyle.Crystal -> stringResource(Res.string.block_style_crystal)
                 BlockVisualStyle.DynamicLiquid -> stringResource(Res.string.block_style_dynamic_liquid)
-                BlockVisualStyle.MatteSoft -> stringResource(Res.string.block_style_matte_soft)
-                BlockVisualStyle.NeonGlow -> stringResource(Res.string.block_style_neon_glow)
                 BlockVisualStyle.Tornado -> stringResource(Res.string.block_style_tornado)
-                BlockVisualStyle.StoneTexture -> stringResource(Res.string.block_style_stone_texture)
                 BlockVisualStyle.HoneycombTexture -> stringResource(Res.string.block_style_honeycomb_texture)
-                BlockVisualStyle.LightBurst -> stringResource(Res.string.block_style_light_burst)
-                BlockVisualStyle.LiquidMarble -> stringResource(Res.string.block_style_liquid_marble)
                 BlockVisualStyle.SpiderWeb -> stringResource(Res.string.block_style_spider_web)
                 BlockVisualStyle.Cosmic -> stringResource(Res.string.block_style_cosmic)
                 BlockVisualStyle.Brick -> stringResource(Res.string.block_style_brick)
                 BlockVisualStyle.SoundWave -> stringResource(Res.string.block_style_sound_wave)
                 BlockVisualStyle.Prism -> stringResource(Res.string.block_style_prism)
-                BlockVisualStyle.Electric -> stringResource(Res.string.block_style_flat)
                 BlockVisualStyle.Flame -> stringResource(Res.string.block_style_flame)
                 BlockVisualStyle.Gears -> stringResource(Res.string.block_style_gears)
                 BlockVisualStyle.Pixel -> stringResource(Res.string.block_style_pixel)
+                BlockVisualStyle.Cyberpunk -> stringResource(Res.string.block_style_cyberpunk)
             },
             preview = {
                 BlockStylePreview(
@@ -1069,6 +1062,7 @@ private fun settingsPreviewColor(
 private fun interpolatedPreviewColor(
     palette: BlockColorPalette,
     progress: Float,
+    isDark: Boolean,
 ): Color {
     val tones = CellTone.entries
     val normalized = ((progress % tones.size) + tones.size) % tones.size
@@ -1076,8 +1070,8 @@ private fun interpolatedPreviewColor(
     val endIndex = (startIndex + 1) % tones.size
     val blend = normalized - startIndex
     return lerp(
-        tones[startIndex].paletteColor(palette),
-        tones[endIndex].paletteColor(palette),
+        tones[startIndex].paletteColor(palette, isDark),
+        tones[endIndex].paletteColor(palette, isDark),
         blend,
     )
 }

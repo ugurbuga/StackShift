@@ -526,7 +526,7 @@ internal fun GameEventDialogCard(
     secondaryButtonLabel: String? = null,
     primaryButtonIcon: ImageVector? = icon,
     secondaryButtonIcon: ImageVector? = if (secondaryButtonLabel != null) Icons.AutoMirrored.Filled.ArrowBack else null,
-    secondaryButtonColor: Color? = null,
+    secondaryButtonContentColor: Color? = null,
     onSecondaryAction: (() -> Unit)? = null,
 ) {
     val uiColors = BlockGamesThemeTokens.uiColors
@@ -600,7 +600,7 @@ internal fun GameEventDialogCard(
                         modifier = Modifier.fillMaxWidth(),
                         emphasized = false,
                         icon = secondaryButtonIcon,
-                        textColor = secondaryButtonColor
+                        contentColor = secondaryButtonContentColor
                             ?: MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f),
                     )
                 }
@@ -627,8 +627,9 @@ internal fun DialogHeroIcon(
         3 -> CellTone.Emerald
         else -> CellTone.Cyan
     }
-    val heroColor = remember(settings.blockColorPalette, heroTone) {
-        heroTone.paletteColor(settings.blockColorPalette)
+    val isDarkTheme = isBlockGamesDarkTheme(settings)
+    val heroColor = remember(settings.blockColorPalette, heroTone, isDarkTheme) {
+        heroTone.paletteColor(settings.blockColorPalette, isDarkTheme)
     }
 
     Box(
@@ -667,7 +668,7 @@ internal fun DialogActionButton(
     enabled: Boolean = true,
     emphasized: Boolean = true,
     icon: ImageVector? = null,
-    textColor: Color? = null,
+    contentColor: Color? = null,
 ) {
     BlockStyleActionButton(
         text = text,
@@ -676,7 +677,7 @@ internal fun DialogActionButton(
         enabled = enabled,
         emphasized = emphasized,
         icon = icon,
-        textColor = textColor,
+        contentColor = contentColor,
     )
 }
 
@@ -688,7 +689,7 @@ internal fun BlockStyleActionButton(
     enabled: Boolean = true,
     emphasized: Boolean = true,
     icon: ImageVector? = null,
-    textColor: Color? = null,
+    contentColor: Color? = null,
     tone: CellTone = if (emphasized) CellTone.Cyan else CellTone.Violet,
     height: Dp = 52.dp,
     pulse: Float = 0f,
@@ -710,7 +711,13 @@ internal fun BlockStyleActionButton(
         enabled = enabled,
         emphasized = emphasized,
     )
-    val contentColor = textColor ?: buttonColors.content
+    val resolvedContentColor = resolveActionButtonContentColor(
+        contentColor = contentColor,
+        fallbackColor = blockStyleIconTint(
+            style = resolvedStyle,
+            enabled = enabled,
+        ),
+    )
     val buttonShape = RoundedCornerShape(boardCellCornerRadiusDp(height, resolvedStyle))
 
     Box(
@@ -755,14 +762,14 @@ internal fun BlockStyleActionButton(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = contentColor,
+                    tint = resolvedContentColor,
                     modifier = Modifier.size(20.dp),
                 )
                 Spacer(modifier = Modifier.width(12.dp))
             }
             Text(
                 text = text,
-                color = contentColor,
+                color = resolvedContentColor,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
@@ -773,13 +780,18 @@ internal fun BlockStyleActionButton(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = contentColor,
+                    tint = resolvedContentColor,
                     modifier = Modifier.size(20.dp),
                 )
             }
         }
     }
 }
+
+internal fun resolveActionButtonContentColor(
+    contentColor: Color?,
+    fallbackColor: Color,
+): Color = contentColor ?: fallbackColor
 
 @Composable
 internal fun MinimalTopBar(
@@ -997,7 +1009,7 @@ internal fun InteractiveOnboardingCompletionDialog(
             secondaryButtonLabel = stringResource(Res.string.return_home),
             primaryButtonIcon = Icons.Filled.PlayArrow,
             secondaryButtonIcon = Icons.AutoMirrored.Filled.ArrowBack,
-            secondaryButtonColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.78f),
+            secondaryButtonContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.78f),
             onSecondaryAction = onReturnHome,
         )
     }
@@ -1255,7 +1267,10 @@ internal fun TopBarActionBlockButton(
         enabled = enabled,
         emphasized = true,
     )
-    val contentTint = buttonColors.content
+    val contentTint = blockStyleIconTint(
+        style = resolvedBlockStyle,
+        enabled = enabled,
+    )
 
     Box(
         modifier = Modifier

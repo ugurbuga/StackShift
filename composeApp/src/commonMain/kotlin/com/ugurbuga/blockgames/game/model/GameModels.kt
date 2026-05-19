@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import blockgames.composeapp.generated.resources.Res
 import blockgames.composeapp.generated.resources.app_language_arabic
 import blockgames.composeapp.generated.resources.app_language_chinese_simplified
+import blockgames.composeapp.generated.resources.app_language_dutch
 import blockgames.composeapp.generated.resources.app_language_english
 import blockgames.composeapp.generated.resources.app_language_french
 import blockgames.composeapp.generated.resources.app_language_german
@@ -24,7 +25,6 @@ import blockgames.composeapp.generated.resources.app_language_indonesian
 import blockgames.composeapp.generated.resources.app_language_italian
 import blockgames.composeapp.generated.resources.app_language_japanese
 import blockgames.composeapp.generated.resources.app_language_korean
-import blockgames.composeapp.generated.resources.app_language_dutch
 import blockgames.composeapp.generated.resources.app_language_portuguese
 import blockgames.composeapp.generated.resources.app_language_russian
 import blockgames.composeapp.generated.resources.app_language_spanish
@@ -157,22 +157,17 @@ enum class BlockVisualStyle {
     GridSplit,
     Crystal,
     DynamicLiquid,
-    MatteSoft,
-    NeonGlow,
     Tornado,
-    StoneTexture,
     HoneycombTexture,
-    LightBurst,
-    LiquidMarble,
     SpiderWeb,
     Cosmic,
     Brick,
     SoundWave,
     Prism,
-    Electric,
     Flame,
     Gears,
     Pixel,
+    Cyberpunk,
     ;
 
     fun cornerScale(): Float = when (this) {
@@ -184,22 +179,17 @@ enum class BlockVisualStyle {
         GridSplit -> 0.54f
         Crystal -> 0f
         DynamicLiquid -> 0.85f
-        MatteSoft -> 1.0f
-        NeonGlow -> 1.20f
         Tornado -> 1.00f
-        StoneTexture -> 0.76f
         HoneycombTexture -> 0.78f
-        LightBurst -> 1.04f
-        LiquidMarble -> 0.98f
         SpiderWeb -> 0.34f
         Cosmic -> 0.54f
         Brick -> 0.46f
         SoundWave -> 0.88f
         Prism -> 0f
-        Electric -> 0.64f
         Flame -> 1.15f
         Gears -> 0.12f
         Pixel -> 0.10f
+        Cyberpunk -> 0.44f
     }
 
     fun frameCornerRadius(): Dp = when (this) {
@@ -211,22 +201,17 @@ enum class BlockVisualStyle {
         GridSplit -> 10.dp
         Crystal -> 0.dp
         DynamicLiquid -> 18.dp
-        MatteSoft -> 18.dp
-        NeonGlow -> 22.dp
         Tornado -> 18.dp
-        StoneTexture -> 12.dp
         HoneycombTexture -> 12.dp
-        LightBurst -> 20.dp
-        LiquidMarble -> 18.dp
         SpiderWeb -> 6.dp
         Cosmic -> 10.dp
         Brick -> 8.dp
         SoundWave -> 16.dp
         Prism -> 0.dp
-        Electric -> 10.dp
         Flame -> 20.dp
         Gears -> 4.dp
         Pixel -> 4.dp
+        Cyberpunk -> 8.dp
     }
 }
 
@@ -1029,103 +1014,215 @@ fun formatMergeValue(value: Int): String {
     }
 }
 
-fun CellTone.color(): Color = paletteColor(BlockColorPalette.Classic)
+fun CellTone.color(): Color = paletteColor(BlockColorPalette.Classic, isDark = true)
 
-fun CellTone.paletteColor(palette: BlockColorPalette): Color = when (palette) {
-    BlockColorPalette.Classic -> when (this) {
-        CellTone.Cyan -> Color(0xFF22D3EE)
-        CellTone.Gold -> Color(0xFFFACC15)
-        CellTone.Violet -> Color(0xFF8B5CF6)
-        CellTone.Emerald -> Color(0xFF22C55E)
-        CellTone.Coral -> Color(0xFFFB7185)
-        CellTone.Blue -> Color(0xFF2563EB)
-        CellTone.Rose -> Color(0xFFF472B6)
-        CellTone.Lime -> Color(0xFF84CC16)
-        CellTone.Amber -> Color(0xFFF59E0B)
+fun CellTone.paletteColor(palette: BlockColorPalette, isDark: Boolean = true): Color = when (palette) {
+    BlockColorPalette.Classic -> if (isDark) {
+        when (this) {
+            CellTone.Cyan -> Color(0xFF22D3EE)
+            CellTone.Gold -> Color(0xFFFACC15)
+            CellTone.Violet -> Color(0xFF8B5CF6)
+            CellTone.Emerald -> Color(0xFF22C55E)
+            CellTone.Coral -> Color(0xFFFB7185)
+            CellTone.Blue -> Color(0xFF2563EB)
+            CellTone.Rose -> Color(0xFFF472B6)
+            CellTone.Lime -> Color(0xFF84CC16)
+            CellTone.Amber -> Color(0xFFF59E0B)
+        }
+    } else {
+        when (this) {
+            CellTone.Cyan -> Color(0xFF0891B2)
+            CellTone.Gold -> Color(0xFFCA8A04)
+            CellTone.Violet -> Color(0xFF7C3AED)
+            CellTone.Emerald -> Color(0xFF059669)
+            CellTone.Coral -> Color(0xFFE11D48)
+            CellTone.Blue -> Color(0xFF1D4ED8)
+            CellTone.Rose -> Color(0xFFDB2777)
+            CellTone.Lime -> Color(0xFF4D7C0F)
+            CellTone.Amber -> Color(0xFFB45309)
+        }
     }
 
-    BlockColorPalette.Candy -> when (this) {
-        CellTone.Cyan -> Color(0xFF6EE7F9)
-        CellTone.Gold -> Color(0xFFFDE047)
-        CellTone.Violet -> Color(0xFFC084FC)
-        CellTone.Emerald -> Color(0xFF86EFAC)
-        CellTone.Coral -> Color(0xFFFF8FAB)
-        CellTone.Blue -> Color(0xFF60A5FA)
-        CellTone.Rose -> Color(0xFFF9A8D4)
-        CellTone.Lime -> Color(0xFFBEF264)
-        CellTone.Amber -> Color(0xFFF9BA8F)
+    BlockColorPalette.Candy -> if (isDark) {
+        when (this) {
+            CellTone.Cyan -> Color(0xFF6EE7F9)
+            CellTone.Gold -> Color(0xFFFDE047)
+            CellTone.Violet -> Color(0xFFC084FC)
+            CellTone.Emerald -> Color(0xFF86EFAC)
+            CellTone.Coral -> Color(0xFFFF8FAB)
+            CellTone.Blue -> Color(0xFF60A5FA)
+            CellTone.Rose -> Color(0xFFF9A8D4)
+            CellTone.Lime -> Color(0xFFBEF264)
+            CellTone.Amber -> Color(0xFFF9BA8F)
+        }
+    } else {
+        when (this) {
+            CellTone.Cyan -> Color(0xFF06B6D4)
+            CellTone.Gold -> Color(0xFFEAB308)
+            CellTone.Violet -> Color(0xFF9333EA)
+            CellTone.Emerald -> Color(0xFF10B981)
+            CellTone.Coral -> Color(0xFFF43F5E)
+            CellTone.Blue -> Color(0xFF3B82F6)
+            CellTone.Rose -> Color(0xFFEC4899)
+            CellTone.Lime -> Color(0xFF84CC16)
+            CellTone.Amber -> Color(0xFFF59E0B)
+        }
     }
 
-    BlockColorPalette.Neon -> when (this) {
-        CellTone.Cyan -> Color(0xFF00F5FF)
-        CellTone.Gold -> Color(0xFFFFE600)
-        CellTone.Violet -> Color(0xFFB517FF)
-        CellTone.Emerald -> Color(0xFF00FF85)
-        CellTone.Coral -> Color(0xFFFF4D8D)
-        CellTone.Blue -> Color(0xFF2962FF)
-        CellTone.Rose -> Color(0xFFFF2FB3)
-        CellTone.Lime -> Color(0xFFA3FF12)
-        CellTone.Amber -> Color(0xFFFF9F1C)
+    BlockColorPalette.Neon -> if (isDark) {
+        when (this) {
+            CellTone.Cyan -> Color(0xFF00F5FF)
+            CellTone.Gold -> Color(0xFFFFE600)
+            CellTone.Violet -> Color(0xFFB517FF)
+            CellTone.Emerald -> Color(0xFF00FF85)
+            CellTone.Coral -> Color(0xFFFF4D8D)
+            CellTone.Blue -> Color(0xFF2962FF)
+            CellTone.Rose -> Color(0xFFFF2FB3)
+            CellTone.Lime -> Color(0xFFA3FF12)
+            CellTone.Amber -> Color(0xFFFF9F1C)
+        }
+    } else {
+        when (this) {
+            CellTone.Cyan -> Color(0xFF00CED1)
+            CellTone.Gold -> Color(0xFFD4AF37)
+            CellTone.Violet -> Color(0xFF9400D3)
+            CellTone.Emerald -> Color(0xFF2E8B57)
+            CellTone.Coral -> Color(0xFFCD5C5C)
+            CellTone.Blue -> Color(0xFF0000FF)
+            CellTone.Rose -> Color(0xFFC71585)
+            CellTone.Lime -> Color(0xFF32CD32)
+            CellTone.Amber -> Color(0xFFFF8C00)
+        }
     }
 
-    BlockColorPalette.Earth -> when (this) {
-        CellTone.Cyan -> Color(0xFF3C8DAD)
-        CellTone.Gold -> Color(0xFFD4A373)
-        CellTone.Violet -> Color(0xFF7B6D9C)
-        CellTone.Emerald -> Color(0xFF5B8C5A)
-        CellTone.Coral -> Color(0xFFC06C52)
-        CellTone.Blue -> Color(0xFF4666C8)
-        CellTone.Rose -> Color(0xFFA55C78)
-        CellTone.Lime -> Color(0xFF92B84B)
-        CellTone.Amber -> Color(0xFFB97A3D)
+    BlockColorPalette.Earth -> if (isDark) {
+        when (this) {
+            CellTone.Cyan -> Color(0xFF3C8DAD)
+            CellTone.Gold -> Color(0xFFD4A373)
+            CellTone.Violet -> Color(0xFF7B6D9C)
+            CellTone.Emerald -> Color(0xFF5B8C5A)
+            CellTone.Coral -> Color(0xFFC06C52)
+            CellTone.Blue -> Color(0xFF4666C8)
+            CellTone.Rose -> Color(0xFFA55C78)
+            CellTone.Lime -> Color(0xFF92B84B)
+            CellTone.Amber -> Color(0xFFB97A3D)
+        }
+    } else {
+        when (this) {
+            CellTone.Cyan -> Color(0xFF2E6B82)
+            CellTone.Gold -> Color(0xFFA67C52)
+            CellTone.Violet -> Color(0xFF5D5276)
+            CellTone.Emerald -> Color(0xFF446944)
+            CellTone.Coral -> Color(0xFF90513E)
+            CellTone.Blue -> Color(0xFF354D96)
+            CellTone.Rose -> Color(0xFF7C455A)
+            CellTone.Lime -> Color(0xFF6E8A38)
+            CellTone.Amber -> Color(0xFF8B5C2E)
+        }
     }
 
-    BlockColorPalette.Monochrome -> when (this) {
-        CellTone.Cyan -> Color(0xFFF8FAFC)
-        CellTone.Gold -> Color(0xFFE2E8F0)
-        CellTone.Violet -> Color(0xFFCBD5E1)
-        CellTone.Emerald -> Color(0xFF94A3B8)
-        CellTone.Coral -> Color(0xFF64748B)
-        CellTone.Blue -> Color(0xFF334155)
-        CellTone.Rose -> Color(0xFF475569)
-        CellTone.Lime -> Color(0xFF1E293B)
-        CellTone.Amber -> Color(0xFF0F172A)
+    BlockColorPalette.Monochrome -> if (isDark) {
+        when (this) {
+            CellTone.Cyan -> Color(0xFFF8FAFC)
+            CellTone.Gold -> Color(0xFFE2E8F0)
+            CellTone.Violet -> Color(0xFFCBD5E1)
+            CellTone.Emerald -> Color(0xFF94A3B8)
+            CellTone.Coral -> Color(0xFF64748B)
+            CellTone.Blue -> Color(0xFF334155)
+            CellTone.Rose -> Color(0xFF475569)
+            CellTone.Lime -> Color(0xFF1E293B)
+            CellTone.Amber -> Color(0xFF0F172A)
+        }
+    } else {
+        when (this) {
+            CellTone.Cyan -> Color(0xFF0F172A)
+            CellTone.Gold -> Color(0xFF1E293B)
+            CellTone.Violet -> Color(0xFF334155)
+            CellTone.Emerald -> Color(0xFF475569)
+            CellTone.Coral -> Color(0xFF64748B)
+            CellTone.Blue -> Color(0xFF94A3B8)
+            CellTone.Rose -> Color(0xFFCBD5E1)
+            CellTone.Lime -> Color(0xFFE2E8F0)
+            CellTone.Amber -> Color(0xFFF8FAFC)
+        }
     }
 
-    BlockColorPalette.Aurora -> when (this) {
-        CellTone.Cyan -> Color(0xFF7DD3FC)
-        CellTone.Gold -> Color(0xFFFDE68A)
-        CellTone.Violet -> Color(0xFFA78BFA)
-        CellTone.Emerald -> Color(0xFF5EEAD4)
-        CellTone.Coral -> Color(0xFFF9A8D4)
-        CellTone.Blue -> Color(0xFF3B82F6)
-        CellTone.Rose -> Color(0xFFE9A8FF)
-        CellTone.Lime -> Color(0xFFA7F3D0)
-        CellTone.Amber -> Color(0xFFFBBF24)
+    BlockColorPalette.Aurora -> if (isDark) {
+        when (this) {
+            CellTone.Cyan -> Color(0xFF7DD3FC)
+            CellTone.Gold -> Color(0xFFFDE68A)
+            CellTone.Violet -> Color(0xFFA78BFA)
+            CellTone.Emerald -> Color(0xFF5EEAD4)
+            CellTone.Coral -> Color(0xFFF9A8D4)
+            CellTone.Blue -> Color(0xFF3B82F6)
+            CellTone.Rose -> Color(0xFFE9A8FF)
+            CellTone.Lime -> Color(0xFFA7F3D0)
+            CellTone.Amber -> Color(0xFFFBBF24)
+        }
+    } else {
+        when (this) {
+            CellTone.Cyan -> Color(0xFF0284C7)
+            CellTone.Gold -> Color(0xFFD97706)
+            CellTone.Violet -> Color(0xFF7C3AED)
+            CellTone.Emerald -> Color(0xFF0D9488)
+            CellTone.Coral -> Color(0xFFDB2777)
+            CellTone.Blue -> Color(0xFF2563EB)
+            CellTone.Rose -> Color(0xFF9333EA)
+            CellTone.Lime -> Color(0xFF059669)
+            CellTone.Amber -> Color(0xFFB45309)
+        }
     }
 
-    BlockColorPalette.Sunset -> when (this) {
-        CellTone.Cyan -> Color(0xFFFF9F68)
-        CellTone.Gold -> Color(0xFFFCD34D)
-        CellTone.Violet -> Color(0xFFC084FC)
-        CellTone.Emerald -> Color(0xFFFB923C)
-        CellTone.Coral -> Color(0xFFFF5D73)
-        CellTone.Blue -> Color(0xFF6366F1)
-        CellTone.Rose -> Color(0xFFFF8FB1)
-        CellTone.Lime -> Color(0xFFFBBF24)
-        CellTone.Amber -> Color(0xFFEA580C)
+    BlockColorPalette.Sunset -> if (isDark) {
+        when (this) {
+            CellTone.Cyan -> Color(0xFFFF9F68)
+            CellTone.Gold -> Color(0xFFFCD34D)
+            CellTone.Violet -> Color(0xFFC084FC)
+            CellTone.Emerald -> Color(0xFFFB923C)
+            CellTone.Coral -> Color(0xFFFF5D73)
+            CellTone.Blue -> Color(0xFF6366F1)
+            CellTone.Rose -> Color(0xFFFF8FB1)
+            CellTone.Lime -> Color(0xFFFBBF24)
+            CellTone.Amber -> Color(0xFFEA580C)
+        }
+    } else {
+        when (this) {
+            CellTone.Cyan -> Color(0xFFD97706)
+            CellTone.Gold -> Color(0xFFB45309)
+            CellTone.Violet -> Color(0xFF9333EA)
+            CellTone.Emerald -> Color(0xFFEA580C)
+            CellTone.Coral -> Color(0xFFBE123C)
+            CellTone.Blue -> Color(0xFF4338CA)
+            CellTone.Rose -> Color(0xFFDB2777)
+            CellTone.Lime -> Color(0xFFD97706)
+            CellTone.Amber -> Color(0xFF9A3412)
+        }
     }
 
-    BlockColorPalette.SoftPastel -> when (this) {
-        CellTone.Cyan -> Color(0xFFB7E9F7)
-        CellTone.Gold -> Color(0xFFF7E3A1)
-        CellTone.Violet -> Color(0xFFD5C2FF)
-        CellTone.Emerald -> Color(0xFFB7F0D1)
-        CellTone.Coral -> Color(0xFFF8B4C7)
-        CellTone.Blue -> Color(0xFFA9C7FF)
-        CellTone.Rose -> Color(0xFFFBCFE8)
-        CellTone.Lime -> Color(0xFFD9F99D)
-        CellTone.Amber -> Color(0xFFF5C38B)
+    BlockColorPalette.SoftPastel -> if (isDark) {
+        when (this) {
+            CellTone.Cyan -> Color(0xFFB7E9F7)
+            CellTone.Gold -> Color(0xFFF7E3A1)
+            CellTone.Violet -> Color(0xFFD5C2FF)
+            CellTone.Emerald -> Color(0xFFB7F0D1)
+            CellTone.Coral -> Color(0xFFF8B4C7)
+            CellTone.Blue -> Color(0xFFA9C7FF)
+            CellTone.Rose -> Color(0xFFFBCFE8)
+            CellTone.Lime -> Color(0xFFD9F99D)
+            CellTone.Amber -> Color(0xFFF5C38B)
+        }
+    } else {
+        when (this) {
+            CellTone.Cyan -> Color(0xFF5AB9D1)
+            CellTone.Gold -> Color(0xFFD1B55A)
+            CellTone.Violet -> Color(0xFF8B5AD1)
+            CellTone.Emerald -> Color(0xFF5AD18B)
+            CellTone.Coral -> Color(0xFFD15A7C)
+            CellTone.Blue -> Color(0xFF5A8BD1)
+            CellTone.Rose -> Color(0xFFD15AB9)
+            CellTone.Lime -> Color(0xFFB9D15A)
+            CellTone.Amber -> Color(0xFFD18B5A)
+        }
     }
 }
 
@@ -1137,14 +1234,7 @@ fun resolveBoardBlockStyle(
     BoardBlockStyleMode.MatchSelectedBlockStyle -> normalizeBlockVisualStyle(selectedStyle)
 }
 
-fun normalizeBlockVisualStyle(style: BlockVisualStyle): BlockVisualStyle = when (style) {
-    BlockVisualStyle.MatteSoft -> BlockVisualStyle.Flat
-    BlockVisualStyle.NeonGlow -> BlockVisualStyle.Bubble
-    BlockVisualStyle.LightBurst -> BlockVisualStyle.Outline
-    BlockVisualStyle.LiquidMarble -> BlockVisualStyle.Crystal
-    BlockVisualStyle.Electric -> BlockVisualStyle.Flat
-    else -> style
-}
+fun normalizeBlockVisualStyle(style: BlockVisualStyle): BlockVisualStyle = style
 
 fun boardSpecialIcon(type: SpecialBlockType): ImageVector = when (type) {
     SpecialBlockType.ColumnClearer -> Icons.Filled.SwapVert

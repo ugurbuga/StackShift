@@ -310,6 +310,7 @@
     <string name="block_style_flame">लौ</string>
     <string name="block_style_gears">गियर्स</string>
     <string name="block_style_pixel">पिक्सेल</string>
+    <string name="block_style_lava">लावा</string>
     <string name="ad_reward_blockwise_refresh">ट्रे रीफ्रेश करें</string>
     <string name="ad_reward_mergeshift_swap">संख्या बदलें</string>
     <string name="ad_reward_boomblocks_clear">रंग साफ़ करें</string>

@@ -310,6 +310,7 @@
     <string name="block_style_flame">Chama</string>
     <string name="block_style_gears">Engrenagens</string>
     <string name="block_style_pixel">Píxel</string>
+    <string name="block_style_lava">Lava</string>
     <string name="ad_reward_blockwise_refresh">Atualizar bandeja</string>
     <string name="ad_reward_mergeshift_swap">Alterar número</string>
     <string name="ad_reward_boomblocks_clear">Limpar cor</string>

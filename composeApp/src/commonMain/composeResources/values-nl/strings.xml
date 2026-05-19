@@ -63,6 +63,7 @@
     <string name="block_style_flame">Vlam</string>
     <string name="block_style_gears">Tandwielen</string>
     <string name="block_style_pixel">Pixel</string>
+    <string name="block_style_lava">Lava</string>
     <string name="board_block_style_always_flat">Altijd vlak</string>
     <string name="board_block_style_match_selected">Volg geselecteerde blokstijl</string>
     <string name="hold">Vasthouden</string>

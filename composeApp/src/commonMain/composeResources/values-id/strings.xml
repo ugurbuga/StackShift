@@ -310,6 +310,7 @@
     <string name="block_style_flame">Api</string>
     <string name="block_style_gears">Roda Gigi</string>
     <string name="block_style_pixel">Piksel</string>
+    <string name="block_style_lava">Lava</string>
     <string name="ad_reward_blockwise_refresh">Segarkan Tray</string>
     <string name="ad_reward_mergeshift_swap">Ubah Angka</string>
     <string name="ad_reward_boomblocks_clear">Bersihkan Warna</string>

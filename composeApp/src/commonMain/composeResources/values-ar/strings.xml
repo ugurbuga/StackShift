@@ -310,6 +310,7 @@
     <string name="block_style_flame">لهب</string>
     <string name="block_style_gears">تروس</string>
     <string name="block_style_pixel">بكسل</string>
+    <string name="block_style_lava">لافا</string>
     <string name="ad_reward_blockwise_refresh">تحديث الحاوية</string>
     <string name="ad_reward_mergeshift_swap">تغيير الرقم</string>
     <string name="ad_reward_boomblocks_clear">مسح اللون</string>

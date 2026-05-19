@@ -301,6 +301,7 @@
     <string name="block_style_flame">Пламя</string>
     <string name="block_style_gears">Шестерёнки</string>
     <string name="block_style_pixel">Пиксель</string>
+    <string name="block_style_cyberpunk">Киберпанк</string>
     <string name="ad_reward_blockwise_refresh">Обновить лоток</string>
     <string name="ad_reward_mergeshift_swap">Изменить число</string>
     <string name="ad_reward_boomblocks_clear">Очистить цвет</string>

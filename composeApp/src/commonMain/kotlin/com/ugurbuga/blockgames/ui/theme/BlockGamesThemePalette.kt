@@ -208,17 +208,17 @@ fun blockGamesThemeSpec(
 	)
 }
 
-private fun classicColorScheme(darkTheme: Boolean): ColorScheme = seededColorScheme(themeSeed(AppColorPalette.Classic), darkTheme)
+private fun classicColorScheme(darkTheme: Boolean): ColorScheme = seededColorScheme(themeSeed(AppColorPalette.Classic, darkTheme), darkTheme)
 
-private fun auroraColorScheme(darkTheme: Boolean): ColorScheme = seededColorScheme(themeSeed(AppColorPalette.Aurora), darkTheme)
+private fun auroraColorScheme(darkTheme: Boolean): ColorScheme = seededColorScheme(themeSeed(AppColorPalette.Aurora, darkTheme), darkTheme)
 
-private fun sunsetColorScheme(darkTheme: Boolean): ColorScheme = seededColorScheme(themeSeed(AppColorPalette.Sunset), darkTheme)
+private fun sunsetColorScheme(darkTheme: Boolean): ColorScheme = seededColorScheme(themeSeed(AppColorPalette.Sunset, darkTheme), darkTheme)
 
-private fun modernNeonColorScheme(darkTheme: Boolean): ColorScheme = seededColorScheme(themeSeed(AppColorPalette.ModernNeon), darkTheme)
+private fun modernNeonColorScheme(darkTheme: Boolean): ColorScheme = seededColorScheme(themeSeed(AppColorPalette.ModernNeon, darkTheme), darkTheme)
 
-private fun softPastelColorScheme(darkTheme: Boolean): ColorScheme = seededColorScheme(themeSeed(AppColorPalette.SoftPastel), darkTheme)
+private fun softPastelColorScheme(darkTheme: Boolean): ColorScheme = seededColorScheme(themeSeed(AppColorPalette.SoftPastel, darkTheme), darkTheme)
 
-private fun minimalMonochromeColorScheme(darkTheme: Boolean): ColorScheme = seededColorScheme(themeSeed(AppColorPalette.MinimalMonochrome), darkTheme)
+private fun minimalMonochromeColorScheme(darkTheme: Boolean): ColorScheme = seededColorScheme(themeSeed(AppColorPalette.MinimalMonochrome, darkTheme), darkTheme)
 
 @Immutable
 private data class ThemeSeed(
@@ -235,9 +235,9 @@ private data class ThemeSeed(
 	val styleBoomBlocks: Color,
 )
 
-private fun themeSeed(palette: AppColorPalette): ThemeSeed {
+private fun themeSeed(palette: AppColorPalette, darkTheme: Boolean): ThemeSeed {
 	val blockPalette = palette.toBlockColorPalette()
-	fun tone(tone: CellTone): Color = tone.paletteColor(blockPalette)
+	fun tone(tone: CellTone): Color = tone.paletteColor(blockPalette, darkTheme)
 
 	return when (palette) {
 		AppColorPalette.Classic -> ThemeSeed(
@@ -435,7 +435,7 @@ private fun gradientStops(
 	palette: AppColorPalette,
 	darkTheme: Boolean,
 ): GradientStops = gradientStopsForSeed(
-	seed = themeSeed(palette),
+	seed = themeSeed(palette, darkTheme),
 	darkTheme = darkTheme,
 )
 
@@ -452,7 +452,7 @@ private fun feedbackColors(
 	palette: AppColorPalette,
 	darkTheme: Boolean,
 ): FeedbackColors = feedbackColorsForSeed(
-	seed = themeSeed(palette),
+	seed = themeSeed(palette, darkTheme),
 	darkTheme = darkTheme,
 )
 
@@ -460,7 +460,7 @@ private fun guideAccentColor(
 	palette: AppColorPalette,
 	darkTheme: Boolean,
 ): Color {
-	val seed = themeSeed(palette)
+	val seed = themeSeed(palette, darkTheme)
 	return if (darkTheme) lighten(seed.accent, 0.08f) else darken(seed.accent, 0.12f)
 }
 
@@ -477,7 +477,7 @@ private fun actionAccentColors(
 	palette: AppColorPalette,
 	darkTheme: Boolean,
 ): ActionAccentColors {
-	val seed = themeSeed(palette)
+	val seed = themeSeed(palette, darkTheme)
 	return ActionAccentColors(
 		primary = if (darkTheme) lighten(seed.primary, 0.08f) else darken(seed.primary, 0.10f),
 		secondary = if (darkTheme) lighten(seed.secondary, 0.08f) else darken(seed.secondary, 0.10f),
@@ -499,7 +499,7 @@ private fun selectionAccentColors(
 	palette: AppColorPalette,
 	darkTheme: Boolean,
 ): SelectionAccentColors {
-	val seed = themeSeed(palette)
+	val seed = themeSeed(palette, darkTheme)
 	fun normalize(color: Color): Color = if (darkTheme) lighten(color, 0.08f) else darken(color, 0.12f)
 	return SelectionAccentColors(
 		stackShift = normalize(seed.styleStackShift),
@@ -527,7 +527,7 @@ private fun boardSignatureColors(
 	palette: AppColorPalette,
 	darkTheme: Boolean,
 ): BoardSignatureColors = boardSignatureColorsForSeed(
-	seed = themeSeed(palette),
+	seed = themeSeed(palette, darkTheme),
 	darkTheme = darkTheme,
 )
 

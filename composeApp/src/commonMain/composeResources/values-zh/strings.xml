@@ -310,6 +310,7 @@
     <string name="block_style_flame">火焰</string>
     <string name="block_style_gears">齿轮</string>
     <string name="block_style_pixel">像素</string>
+    <string name="block_style_lava">熔岩</string>
     <string name="ad_reward_blockwise_refresh">刷新托盘</string>
     <string name="ad_reward_mergeshift_swap">更换数字</string>
     <string name="ad_reward_boomblocks_clear">清除颜色</string>

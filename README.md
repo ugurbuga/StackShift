@@ -1,165 +1,114 @@
-# BlockGames
+# Puzzle Shift
 
 <p align="center">
-  <img src="./branding/generated/stackshift-board.svg" alt="StackShift logo" width="160" />
-  <img src="./branding/generated/blockwise-board.svg" alt="BlockWise logo" width="160" />
+  <img src="./branding/generated/stackshift-board.svg" alt="Puzzle Shift logo" width="160" />
 </p>
 
-`BlockGames` is a shared puzzle-game workspace built with **Kotlin** and **Compose Multiplatform**. The repository currently contains **four distinct game apps** built on the same core architecture:
+`Puzzle Shift` is a multi-game puzzle platform built with **Kotlin** and **Compose Multiplatform**. The repository contains **five distinct games** integrated into a single unified experience:
 
 - `StackShift`
 - `BlockWise`
+- `BlockSort`
 - `MergeShift`
 - `BoomBlocks`
 
-In addition to these standalone experiences, the Android project also includes a `BlockGames` flavor that acts as a multi-game launcher and lets players switch between the four styles from one app shell.
+Players can access all games through the **Puzzle Shift** launcher, which serves as a seamless multi-game shell. Individual standalone versions are also supported for each gameplay style.
 
 ## Quick links
 
-- [BlockGames](#blockgames)
+- [Puzzle Shift](#puzzle-shift)
 - [Apps in this repository](#apps-in-this-repository)
 - [Shared player experience](#shared-player-experience)
 - [Technology stack](#technology-stack)
 - [Repository layout](#repository-layout)
 
-## BlockGames
+## Puzzle Shift
 
-This repository is not a single-game codebase anymore; it is a **multi-app puzzle platform**.
+This repository is a **multi-app puzzle platform**. At the product level, it delivers five unique gameplay identities. At the code level, those identities are backed by a common shared module, a shared design system, shared persistence, and flavor-specific application entry points.
 
-At the product level, the project is organized around four gameplay identities. At the code level, those identities are backed by a common shared module, a shared design system, shared persistence/session logic, shared localization, and flavor-specific application entry points.
+### Game overview
 
-### App overview
-
-| App | Core idea | Android application id |
+| Game | Core idea | Android application id |
 | --- | --- | --- |
 | `StackShift` | Reverse-gravity block launcher with specials and lane pressure | `com.ugurbuga.stackshift` |
 | `BlockWise` | Free-placement spatial puzzle with tray management and row/column clears | `com.ugurbuga.blockwise` |
+| `BlockSort` | Color-stack sorting puzzle with level-based logic and round progression | `com.ugurbuga.blocksort` |
 | `MergeShift` | Number-merging launcher focused on chaining equal-value blocks | `com.ugurbuga.mergeshift` |
 | `BoomBlocks` | Group-clearing color puzzle with directional gravity shifts | `com.ugurbuga.boomblocks` |
-
-### Multi-game flavor
-
-The Android app module also defines a `BlockGames` flavor (`com.ugurbuga.blockgames`). This flavor reuses the same shared game code, but exposes the collection as a single launcher-style app where the active gameplay style can be selected by the player.
 
 ## Apps in this repository
 
 ### `StackShift`
 
-<p align="center">
-  <img src="./branding/generated/stackshift-feature-graphic-1024x500.svg" alt="StackShift feature graphic" width="600" />
-</p>
+`StackShift` is the action-oriented title in the collection. It takes the familiar block-puzzle language of lanes and line clears, then flips the flow: pieces begin in the dock and are launched upward into the board instead of falling from the top.
 
-`StackShift` is the most action-oriented title in the collection. It takes the familiar block-puzzle language of lanes, queue management, and line clears, then flips the flow: pieces begin in the dock and are launched upward into the board instead of falling from the top.
-
-What defines `StackShift`:
-
-- **Reverse-gravity placement**: the current piece starts below the board, and the player chooses a landing lane by dragging and releasing.
-- **Real-time placement preview**: the UI shows where the current piece will settle before the move is committed.
-- **Queue and hold management**: players manage the active piece, the next queue, and hold swaps to survive longer runs.
-- **Horizontal line-clearing loop**: success comes from maintaining clean columns and setting up efficient row clears.
-- **Special block types**: row clears, column clears, ghost-like movement, heavy behavior, and other special interactions help recover from tight boards.
-- **Pressure-driven pacing**: the board becomes riskier as space disappears, so the game rewards fast tactical decisions rather than purely slow planning.
-
-`StackShift` is best thought of as the project’s signature arcade puzzle: readable, fast, combo-friendly, and built around lane control.
+- **Reverse-gravity placement**: Launch pieces upward into selected lanes.
+- **Real-time placement preview**: See where the piece will land before committing.
+- **Queue and hold management**: Strategically swap and plan for upcoming pieces.
+- **Special block types**: Clear rows/columns, use ghosts for gaps, or heavy blocks for impact.
 
 ### `BlockWise`
 
-<p align="center">
-  <img src="./branding/generated/blockwise-feature-graphic-1024x500.svg" alt="BlockWise feature graphic" width="600" />
-</p>
+`BlockWise` shifts the focus from launch timing to spatial strategy. The player works with a **tray of three shapes** and can place them freely anywhere they fit on the grid.
 
-`BlockWise` shifts the focus from launch timing to board reading. Instead of handling a single falling or launching piece, the player works with a **tray of three shapes** and can place them freely anywhere they fit on the board.
+- **Free placement gameplay**: Drag pieces directly from the tray to any valid origin.
+- **Three-piece tray strategy**: Only get a new set once all three current shapes are used.
+- **Simultaneous clears**: Clear rows and columns at the same time for massive scores.
+- **No-pressure flow**: Focus on spatial planning rather than speed.
 
-What defines `BlockWise`:
+### `BlockSort`
 
-- **Free placement gameplay**: pieces are dragged directly from the tray to any valid origin on the grid.
-- **Three-piece tray strategy**: after placing one piece, the remaining tray stays visible; only when all three pieces are used does a new set appear.
-- **Row and column clearing**: unlike classic single-axis line systems, `BlockWise` clears both full rows and full columns.
-- **Simultaneous clears**: if a move completes both a row and a column, both resolve together for larger scoring swings.
-- **No special-piece dependency**: the core challenge is spatial planning, not waiting for power-ups.
-- **Low-pressure, high-depth puzzle flow**: the pace is calmer than `StackShift`, but the difficulty comes from preserving space for future shapes.
+`BlockSort` introduces a logic-heavy sorting challenge to the platform. Inspired by liquid-sorting puzzles but adapted for a block-based grid, it requires players to organize mixed stacks into single-color columns.
 
-`BlockWise` is the collection’s most meditative strategy game: tactile, readable, and highly dependent on foresight across the whole tray.
+- **Contiguous stack movement**: Tap a column to pick up its top color run, then move it to a matching color or an empty slot.
+- **Level-based progression**: Challenges grow in complexity with more colors and taller columns.
+- **Dynamic board layout**: As columns increase, the board wraps into multiple rows to maintain visibility.
+- **Bonus slots**: Use special "Add Column" power-ups to rescue a locked board state.
+- **Time Attack mode**: Solve mixed layouts against the clock to earn bonus time.
 
 ### `MergeShift`
 
-`MergeShift` combines launch-based placement with number-merging progression. It starts on a compact grid and asks the player to create larger values by dropping a block onto another block with the same value.
+`MergeShift` combines launch-based placement with numeric progression. It asks the player to create larger values by dropping a block onto another with the same value.
 
-What defines `MergeShift`:
-
-- **Launch-to-merge core loop**: pieces are launched from the dock into a selected column.
-- **Equal-value fusion**: when a block lands adjacent to or onto matching values in a mergeable configuration, they combine into a higher-value block.
-- **Chain reactions**: a single placement can trigger follow-up merges, creating combo-heavy turns and large score jumps.
-- **Column overflow tension**: each move grows a column upward, so space management matters as much as merge planning.
-- **Board growth with progression**: as higher-value tiles appear, the playable board expands from its initial compact size to support longer runs.
-- **2048-like satisfaction inside a launch puzzle shell**: the game rewards both numeric planning and positional accuracy.
-
-`MergeShift` sits between arcade and logic design: it has the immediacy of a launcher game, but its mastery comes from engineering merge chains and protecting future board space.
+- **Launch-to-merge core loop**: Direct numeric blocks into lanes to trigger fusions.
+- **Chain reactions**: Single placements can trigger a cascade of merges across the board.
+- **Column overflow tension**: Growth is vertical, so space management is critical for survival.
+- **Board scaling**: The playable grid expands as higher-value tiles are unlocked.
 
 ### `BoomBlocks`
 
-`BoomBlocks` moves away from piece placement entirely. Instead of dragging or launching shapes, the player interacts directly with the board by clearing connected color groups.
+`BoomBlocks` is about direct board interaction. Instead of placing shapes, players clear connected color groups with a single tap.
 
-What defines `BoomBlocks`:
-
-- **Tap-to-explode interaction**: players look for groups of **three or more touching blocks** of the same color and clear them with a tap.
-- **Group-size scoring**: larger connected explosions deliver better score returns and more dramatic board changes.
-- **Directional gravity shifts**: after an explosion, surrounding blocks are pulled based on where the cleared group was located, so the board can collapse from different directions.
-- **Automatic refill system**: newly opened spaces are repopulated, keeping the board dense and the decision space constantly changing.
-- **Board-reading over shape-fitting**: success depends on spotting future clusters and understanding how each explosion will reshape the playfield.
-- **Fast session structure**: the rules are immediately readable, but the evolving gravity behavior creates strong depth.
-
-`BoomBlocks` is the most direct and instantly readable app in the set, yet it still fits the broader `BlockGames` family through combo planning, score chasing, and daily puzzle hooks.
+- **Tap-to-explode**: Find and clear groups of three or more touching blocks.
+- **Directional gravity shifts**: After an explosion, the board collapses toward the void from different directions.
+- **Automatic refill system**: The board stays dense, requiring constant reading of the changing color clusters.
+- **Fast-paced sessions**: Simple rules with deep emerging tactical complexity.
 
 ## Shared player experience
 
-Although the four games are mechanically different, they share a consistent product layer across the repository:
+Although the five games are mechanically different, they share a consistent core:
 
-- **Daily challenge infrastructure** with style-aware challenge generation and progress tracking
-- **Interactive onboarding flows** tailored to each gameplay style
-- **Session persistence** so active runs and challenge progress can be restored safely
-- **Localization support** across multiple languages
-- **Theme and visual customization** including palette and block-style options
-- **Shared HUD, settings, and progression patterns** so the collection feels cohesive even when the mechanics change
-
-This shared layer is what makes the repository valuable: each game has its own rules, but the surrounding app experience is intentionally unified.
+- **Daily challenge infrastructure** with style-aware tasks and monthly calendar progress.
+- **Interactive onboarding** tailored specifically to each of the five gameplay styles.
+- **Session persistence** ensuring active runs and challenge progress are always saved.
+- **Localization support** across English, Turkish, Spanish, French, German, Russian, and more.
+- **Deep customization**: 10+ block styles (Flat, Bubble, Neon, Crystal, etc.) and multiple color palettes.
 
 ## Technology stack
 
-- **Kotlin Multiplatform** for shared logic and shared UI layers
-- **Compose Multiplatform** for the majority of interface code
-- **Android app flavors** for per-game packaging and branding
-- **Shared state-driven game logic** in `composeApp`
-- **Firebase / Google integrations** in mobile app shells where configured
-
-The shared codebase targets Android, iOS, Web/Wasm, macOS, Windows, and Desktop JVM, while flavor-specific packaging and branding live in the platform app layers.
+- **Kotlin Multiplatform** for shared logic and UI.
+- **Compose Multiplatform** for the entire interface layer.
+- **Android app flavors** for per-game packaging and the unified launcher.
+- **Firebase / Google integrations** for crashlytics and ads (where applicable).
 
 ## Repository layout
 
-Core locations in the workspace:
-
-- `composeApp/`
-  - Shared multiplatform game logic and UI
-  - Common gameplay models, reducers, onboarding flows, challenge systems, settings, and theming
-- `androidApp/`
-  - Android application shell
-  - Flavor-specific source sets for `stackshift`, `blockwise`, `mergeshift`, `boomblocks`, and `blockgames`
-- `iosApp/`
-  - iOS-specific host application and Xcode project
-- `branding/`
-  - Generated graphics, background assets, board art, and icon-generation scripts
-- `artifacts/`
-  - Collected build outputs and packaged binaries produced outside the README workflow
-
-Within shared code, the most important directories are:
-
-- `composeApp/src/commonMain/kotlin/com/ugurbuga/blockgames/game/model`
-- `composeApp/src/commonMain/kotlin/com/ugurbuga/blockgames/game/logic`
-- `composeApp/src/commonMain/kotlin/com/ugurbuga/blockgames/presentation`
-- `composeApp/src/commonMain/kotlin/com/ugurbuga/blockgames/settings`
-- `composeApp/src/commonMain/kotlin/com/ugurbuga/blockgames/ui`
+- `composeApp/`: Shared multiplatform game logic, UI, and common assets.
+- `androidApp/`: Android host application with flavor-sets for each game identity.
+- `iosApp/`: iOS host application.
+- `branding/`: Source assets for icons, feature graphics, and board art.
+- `artifacts/`: Packaging outputs and release binaries.
 
 ## Notes
 
-- The repository has evolved from a smaller game set into a broader shared-game platform, so the README now describes the project as a **four-app collection** rather than a two-mode demo.
-- The sound, haptic, telemetry, and packaging layers are intentionally abstracted so each platform shell or app flavor can stay thin while reusing the same gameplay core.
+The repository has evolved from a single-game demo into a **5-game puzzle ecosystem**. The flagship entry point is now branded as **Puzzle Shift**, serving as the primary multi-game experience for the platform.

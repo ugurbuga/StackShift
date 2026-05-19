@@ -63,6 +63,7 @@
     <string name="block_style_flame">플레임</string>
     <string name="block_style_gears">기어</string>
     <string name="block_style_pixel">픽셀</string>
+    <string name="block_style_lava">용암</string>
     <string name="board_block_style_always_flat">항상 플랫</string>
     <string name="board_block_style_match_selected">선택한 블록 스타일과 동일하게</string>
     <string name="hold">홀드</string>

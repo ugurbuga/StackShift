@@ -63,6 +63,7 @@
     <string name="block_style_flame">Fiamma</string>
     <string name="block_style_gears">Ingranaggi</string>
     <string name="block_style_pixel">Pixel</string>
+    <string name="block_style_lava">Lava</string>
     <string name="board_block_style_always_flat">Sempre piatto</string>
     <string name="board_block_style_match_selected">Usa lo stile blocchi selezionato</string>
     <string name="hold">Tieni</string>

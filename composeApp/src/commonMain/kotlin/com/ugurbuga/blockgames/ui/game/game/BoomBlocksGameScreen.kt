@@ -76,6 +76,7 @@ import com.ugurbuga.blockgames.ui.game.onboarding.BoomBlocksInteractiveGameOnboa
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
 import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
 import com.ugurbuga.blockgames.ui.theme.blockGamesSurfaceShadow
+import com.ugurbuga.blockgames.ui.theme.isBlockGamesDarkTheme
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.PI
 import kotlin.math.cos
@@ -423,6 +424,7 @@ internal fun GameGrid(
     stylePulse: Float = 0f,
 ) {
     val settings = LocalAppSettings.current
+    val isDarkTheme = isBlockGamesDarkTheme(settings)
     val resolvedStyle = resolveBoardBlockStyle(
         selectedStyle = settings.blockVisualStyle,
         mode = settings.boardBlockStyleMode,
@@ -638,7 +640,7 @@ internal fun GameGrid(
                 )
 
                 if (isExplodable && emphasis > 0f) {
-                    val toneColor = block.tone.paletteColor(settings.blockColorPalette)
+                    val toneColor = block.tone.paletteColor(settings.blockColorPalette, isDarkTheme)
                     val glowSize = drawSize * (1.10f + (0.06f * emphasis))
                     val glowTopLeft = Offset(
                         x = blockTopLeft.x - (glowSize - drawSize) / 2f,
@@ -665,6 +667,7 @@ internal fun GameGrid(
                     tone = block.tone,
                     palette = settings.blockColorPalette,
                     style = resolvedStyle,
+                    isDark = isDarkTheme,
                     topLeft = blockTopLeft,
                     size = Size(drawSize, drawSize),
                     cornerRadius = CornerRadius(cornerRadiusPx, cornerRadiusPx),
@@ -677,7 +680,7 @@ internal fun GameGrid(
 
                 explodedPoints.forEach { point ->
                     val tone = explosionTones[point] ?: CellTone.Cyan
-                    val toneColor = tone.paletteColor(settings.blockColorPalette)
+                    val toneColor = tone.paletteColor(settings.blockColorPalette, isDarkTheme)
                     val centerX = point.column * cellWidth + cellWidth / 2
                     val centerY = point.row * cellHeight + cellHeight / 2
 

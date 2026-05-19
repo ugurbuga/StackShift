@@ -301,6 +301,7 @@
     <string name="block_style_flame">Flamme</string>
     <string name="block_style_gears">Zahnräder</string>
     <string name="block_style_pixel">Pixel</string>
+    <string name="block_style_cyberpunk">Cyberpunk</string>
     <string name="ad_reward_blockwise_refresh">Ablage aktualisieren</string>
     <string name="ad_reward_mergeshift_swap">Zahl ändern</string>
     <string name="ad_reward_boomblocks_clear">Farbe löschen</string>
