@@ -508,6 +508,20 @@ enum class PieceKind(
             GridPoint(1, 2),
         ),
     ),
+    Square3x3(
+        unlockLevel = 5,
+        template = listOf(
+            GridPoint(0, 0),
+            GridPoint(1, 0),
+            GridPoint(2, 0),
+            GridPoint(0, 1),
+            GridPoint(1, 1),
+            GridPoint(2, 1),
+            GridPoint(0, 2),
+            GridPoint(1, 2),
+            GridPoint(2, 2),
+        ),
+    ),
 }
 
 @Immutable

@@ -117,6 +117,7 @@ fun BoardGrid(
     )
     val isDarkTheme = isBlockGamesDarkTheme(settings)
     val showDangerDecorations = gameState.status != GameStatus.GameOver
+            val mergeShiftBoardFontFamily = MaterialTheme.typography.titleMedium.fontFamily
     val hasDangerPulse = showDangerDecorations && (
             gameState.criticalColumns.isNotEmpty() ||
                     gameState.columnPressure.any { pressure ->
@@ -657,6 +658,7 @@ fun BoardGrid(
                                     val fontSize = (minOf(cellWidthPx, cellHeightPx) * 0.44f)
                                     val textStyle = TextStyle(
                                         color = Color.White.copy(alpha = boardDecorAlpha),
+                                        fontFamily = mergeShiftBoardFontFamily,
                                         fontWeight = FontWeight.ExtraBold,
                                         fontSize = with(density) { fontSize.toSp() },
                                         textAlign = TextAlign.Center,
@@ -810,6 +812,7 @@ fun BoardGrid(
                         val fontSize = (minOf(cellWidthPx, cellHeightPx) * 0.44f)
                         val textStyle = TextStyle(
                             color = Color.White.copy(alpha = boardDecorAlpha),
+                            fontFamily = mergeShiftBoardFontFamily,
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = with(density) { fontSize.toSp() },
                             textAlign = TextAlign.Center,
@@ -900,6 +903,7 @@ fun BoardGrid(
                         val fontSize = (minOf(cellWidthPx, cellHeightPx) * 0.44f)
                         val textStyle = TextStyle(
                             color = Color.White.copy(alpha = boardDecorAlpha),
+                            fontFamily = mergeShiftBoardFontFamily,
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = with(density) { fontSize.toSp() },
                             textAlign = TextAlign.Center,

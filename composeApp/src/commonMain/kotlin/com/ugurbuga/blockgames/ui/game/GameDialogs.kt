@@ -399,7 +399,7 @@ internal fun GameOverDialogContent(
                         modifier = Modifier.fillMaxWidth(),
                         enabled = canUseExtraLife && !isExtraLifeLoading,
                         emphasized = true,
-                        icon = Icons.Filled.PlayArrow,
+                        icon = Icons.Outlined.Videocam,
                     )
                 }
 

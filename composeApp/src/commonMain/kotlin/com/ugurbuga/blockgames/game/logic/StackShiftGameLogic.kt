@@ -1139,7 +1139,7 @@ internal class StackShiftGameLogic(
     ): Pair<Piece, Long> {
         val availableKinds = PieceKind.entries.filter { it.unlockLevel <= level }
         val kind = availableKinds.random(random)
-        val rotationCount = if (kind == PieceKind.Square || kind == PieceKind.Plus) 0 else random.nextInt(4)
+        val rotationCount = if (kind == PieceKind.Square || kind == PieceKind.Plus || kind == PieceKind.Square3x3) 0 else random.nextInt(4)
         val rotatedCells = rotateAndNormalize(kind.template, rotationCount)
         val special = rollSpecialBlock(level = level, launchBar = launchBar)
         return Piece(

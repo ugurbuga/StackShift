@@ -204,7 +204,7 @@ fun AppSelectionScreen(
     }
 
     val listState = rememberLazyListState()
-    var expandedStyle by remember { mutableStateOf<GameplayStyle?>(null) }
+    val expandedStyleState = remember(currentStyle) { mutableStateOf(initialExpandedSelectionStyle(currentStyle)) }
     val density = LocalDensity.current
     val footerClearance = AppFooterBannerHeight + with(density) {
         WindowInsets.navigationBars.getBottom(this).toDp()
@@ -268,7 +268,7 @@ fun AppSelectionScreen(
 
                 itemsIndexed(items) { _, item ->
                     val style = item.style
-                    val isExpanded = expandedStyle == style
+                    val isExpanded = expandedStyleState.value == style
                     SelectionItem(
                         modifier = Modifier
                             .padding(horizontal = 24.dp)
@@ -281,7 +281,7 @@ fun AppSelectionScreen(
                         isActive = style == currentStyle,
                         footerClearance = footerClearance,
                         onExpandToggle = {
-                            expandedStyle = if (isExpanded) null else style
+                            expandedStyleState.value = if (isExpanded) null else style
                         },
                         onPlayClick = { onGameplayStyleSelected(style) },
                         stylePulse = stylePulse,
@@ -832,11 +832,14 @@ internal fun GameplayStyle.selectionTone(): CellTone = when (this) {
 
 private fun com.ugurbuga.blockgames.ui.theme.BlockGamesUiColors.selectionAccentFor(style: GameplayStyle): Color = when (style) {
     GameplayStyle.StackShift -> selectionStackShift
-    GameplayStyle.BlockWise -> selectionBlockWise
-    GameplayStyle.BlockSort -> guideAccent
+    GameplayStyle.BlockWise -> warning
+    GameplayStyle.BlockSort -> success
     GameplayStyle.MergeShift -> selectionMergeShift
-    GameplayStyle.BoomBlocks -> selectionBoomBlocks
+    GameplayStyle.BoomBlocks -> danger
 }
+
+internal fun initialExpandedSelectionStyle(currentStyle: GameplayStyle?): GameplayStyle? =
+    if (currentStyle == null) GameplayStyle.StackShift else null
 
 private fun buildBlockSortDemoScenario(): List<BlockSortDemoStep> {
     val logic = com.ugurbuga.blockgames.game.logic.GameLogic.create(random = Random(0))

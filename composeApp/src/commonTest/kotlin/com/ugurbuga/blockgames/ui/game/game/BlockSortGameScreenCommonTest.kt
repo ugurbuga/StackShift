@@ -77,6 +77,19 @@ class BlockSortGameScreenCommonTest {
     }
 
     @Test
+    fun rowClearAlphaFromBottom_clearsRowsFromBottomToTop() {
+        assertEquals(1f, rowClearAlphaFromBottom(row = 3, rowCount = 4, clearProgress = 0f))
+        assertEquals(0f, rowClearAlphaFromBottom(row = 3, rowCount = 4, clearProgress = 0.25f))
+        assertEquals(1f, rowClearAlphaFromBottom(row = 2, rowCount = 4, clearProgress = 0.25f))
+
+        val midLower = rowClearAlphaFromBottom(row = 2, rowCount = 4, clearProgress = 0.5f)
+        val midUpper = rowClearAlphaFromBottom(row = 0, rowCount = 4, clearProgress = 0.5f)
+        assertTrue(midLower < midUpper)
+
+        assertEquals(0f, rowClearAlphaFromBottom(row = 0, rowCount = 4, clearProgress = 1f))
+    }
+
+    @Test
     fun resolveBlockSortLevelTransitionPhases_startsClearingImmediately() {
         val phases = resolveBlockSortLevelTransitionPhases(progress = 0.15f)
 

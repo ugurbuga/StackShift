@@ -92,12 +92,13 @@ import com.ugurbuga.blockgames.settings.BlockSortOnboardingScene
 import com.ugurbuga.blockgames.settings.BlockSortOnboardingStage
 import com.ugurbuga.blockgames.ui.game.BlockCellPreview
 import com.ugurbuga.blockgames.ui.game.GameOverDialog
+import com.ugurbuga.blockgames.ui.game.GameOverDialogRevealDurationMillis
 import com.ugurbuga.blockgames.ui.game.InteractiveOnboardingCompletionDialog
 import com.ugurbuga.blockgames.ui.game.MinimalTopBar
 import com.ugurbuga.blockgames.ui.game.RestartConfirmDialog
 import com.ugurbuga.blockgames.ui.game.TopBarActionBlockButton
-import com.ugurbuga.blockgames.ui.game.resolveGameText
 import com.ugurbuga.blockgames.ui.game.dailychallenge.ChallengeTasksDock
+import com.ugurbuga.blockgames.ui.game.resolveGameText
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
 import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
 import com.ugurbuga.blockgames.ui.theme.appBackgroundBrush
@@ -106,6 +107,7 @@ import org.jetbrains.compose.resources.stringResource
 
 private const val BlockSortStylePulseTransitionLabel = "blockSortInteractionPulse"
 private const val BlockSortStylePulseAnimationLabel = "interactionPulse"
+private const val BlockSortGameOverRowClearDurationMillis = 92
 internal const val BlockSortMoveAnimationDurationMillis = 2720
 internal const val BlockSortFinalMoveAnimationDurationMillis = 720
 internal const val BlockSortLevelAnimationDurationMillis = 2200
@@ -165,7 +167,9 @@ fun BlockSortGameScreen(
         mutableStateOf<Int?>(null)
     }
     var previousDisplayedRoundLevel by remember { mutableIntStateOf(gameState.level) }
-    var showGameOverDialog by remember(gameState.status) { mutableStateOf(gameState.status == GameStatus.GameOver) }
+    val gameOverBoardClearProgress = remember { Animatable(0f) }
+    val gameOverDialogRevealProgress = remember { Animatable(0f) }
+    var showGameOverDialog by remember { mutableStateOf(false) }
     var showRestartDialog by remember { mutableStateOf(false) }
     var rewardedReviveLoading by remember(gameState.status) { mutableStateOf(false) }
     var rewardedAddColumnLoading by remember(gameState.level, gameState.config.columns) { mutableStateOf(false) }
@@ -204,9 +208,25 @@ fun BlockSortGameScreen(
 
     LaunchedEffect(gameState.status) {
         if (gameState.status == GameStatus.GameOver) {
+            gameOverBoardClearProgress.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(
+                    durationMillis = (BlockSortGameOverRowClearDurationMillis * gameState.config.rows).coerceAtLeast(1200),
+                    easing = FastOutSlowInEasing,
+                ),
+            )
             showGameOverDialog = true
+            gameOverDialogRevealProgress.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(
+                    durationMillis = GameOverDialogRevealDurationMillis,
+                    easing = FastOutSlowInEasing,
+                ),
+            )
             showRestartDialog = false
         } else {
+            gameOverBoardClearProgress.snapTo(0f)
+            gameOverDialogRevealProgress.snapTo(0f)
             showGameOverDialog = false
             rewardedReviveLoading = false
             rewardedAddColumnLoading = false
@@ -232,7 +252,7 @@ fun BlockSortGameScreen(
             gameState = gameState,
             highestScore = highestScore,
             showNewHighScoreMessage = showNewHighScoreMessage,
-            revealProgressProvider = { 1f },
+            revealProgressProvider = { gameOverDialogRevealProgress.value },
             canUseExtraLife = !gameState.rewardedReviveUsed,
             isExtraLifeLoading = rewardedReviveLoading,
             showExtraLifeButton = adController !== NoOpGameAdController && gameState.activeChallenge?.isCompleted != true,
@@ -353,6 +373,7 @@ fun BlockSortGameScreen(
                     palette = palette,
                     boardStylePulse = interactionPulse,
                     boardStyle = boardStyle,
+                    gameOverClearProgress = gameOverBoardClearProgress.value,
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),
@@ -394,6 +415,7 @@ internal fun BlockSortBoard(
     palette: com.ugurbuga.blockgames.game.model.BlockColorPalette,
     boardStylePulse: Float,
     boardStyle: com.ugurbuga.blockgames.game.model.BlockVisualStyle,
+    gameOverClearProgress: Float = 0f,
     modifier: Modifier = Modifier,
 ) {
     val uiColors = BlockGamesThemeTokens.uiColors
@@ -615,7 +637,8 @@ internal fun BlockSortBoard(
                     hiddenCells = hiddenAnimatedTargets,
                     validTargetColumns = validTargetColumns,
                     interactionsEnabled = !isLevelTransitioning,
-                    rowClearProgress = 0f,
+                    rowClearProgress = if (gameState.status == GameStatus.GameOver) gameOverClearProgress else 0f,
+                    clearFromBottom = gameState.status == GameStatus.GameOver,
                     rowRevealProgress = transitionPhases.newBoardRevealProgress,
                     revealFromBottom = isLevelTransitioning,
                     columnFrameProgress = transitionPhases.newBoardColumnEntryProgress,
@@ -642,6 +665,7 @@ internal fun BlockSortBoard(
                         validTargetColumns = emptySet(),
                         interactionsEnabled = false,
                         rowClearProgress = transitionPhases.oldBoardClearProgress,
+                        clearFromBottom = false,
                         rowRevealProgress = 1f,
                         revealFromBottom = false,
                         columnFrameProgress = 1f - transitionPhases.oldBoardColumnExitProgress,
@@ -752,6 +776,7 @@ private fun BlockSortBoardColumnsLayer(
     validTargetColumns: Set<Int>,
     interactionsEnabled: Boolean,
     rowClearProgress: Float,
+    clearFromBottom: Boolean,
     rowRevealProgress: Float,
     revealFromBottom: Boolean,
     columnFrameProgress: Float,
@@ -797,6 +822,7 @@ private fun BlockSortBoardColumnsLayer(
                         hiddenCells = hiddenCells,
                         interactionsEnabled = interactionsEnabled,
                         rowClearProgress = rowClearProgress,
+                        clearFromBottom = clearFromBottom,
                         rowRevealProgress = rowRevealProgress,
                         revealFromBottom = revealFromBottom,
                         columnFrameProgress = columnFrameProgress,
@@ -829,6 +855,7 @@ private fun BlockSortColumn(
     hiddenCells: Set<GridPoint>,
     interactionsEnabled: Boolean,
     rowClearProgress: Float,
+    clearFromBottom: Boolean,
     rowRevealProgress: Float,
     revealFromBottom: Boolean,
     columnFrameProgress: Float,
@@ -882,7 +909,11 @@ private fun BlockSortColumn(
             for (row in 0 until rowCount) {
                 val point = GridPoint(column, row)
                 val cell = board.cellAt(column, row)
-                val cellAlpha = rowClearAlpha(row = row, rowCount = rowCount, clearProgress = rowClearProgress)
+                val cellAlpha = if (clearFromBottom) {
+                    rowClearAlphaFromBottom(row = row, rowCount = rowCount, clearProgress = rowClearProgress)
+                } else {
+                    rowClearAlpha(row = row, rowCount = rowCount, clearProgress = rowClearProgress)
+                }
                 val revealAlpha = if (revealFromBottom) {
                     rowRevealAlphaFromBottom(row = row, rowCount = rowCount, revealProgress = rowRevealProgress)
                 } else {
@@ -1319,6 +1350,14 @@ internal fun rowClearAlpha(row: Int, rowCount: Int, clearProgress: Float): Float
     if (clearProgress >= 1f) return 0f
     val revealIndex = clearProgress * rowCount
     return (1f - (revealIndex - row).coerceIn(0f, 1f)).coerceIn(0f, 1f)
+}
+
+internal fun rowClearAlphaFromBottom(row: Int, rowCount: Int, clearProgress: Float): Float {
+    return rowClearAlpha(
+        row = (rowCount - 1 - row).coerceAtLeast(0),
+        rowCount = rowCount,
+        clearProgress = clearProgress,
+    )
 }
 
 internal fun rowRevealAlpha(row: Int, rowCount: Int, revealProgress: Float): Float {

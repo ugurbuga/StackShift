@@ -144,6 +144,7 @@ fun BlockWiseGameScreen(
     var trayRectInRoot by remember { mutableStateOf(Rect.Zero) }
     val trayPieceRectsInRoot = remember { mutableStateMapOf<Long, Rect>() }
     var draggedPieceId by remember { mutableStateOf<Long?>(null) }
+    var draggedPieceSnapshot by remember { mutableStateOf<Piece?>(null) }
     var dragPointerInHost by remember { mutableStateOf<Offset?>(null) }
     var showRestartDialog by remember { mutableStateOf(false) }
     var rewardedReviveLoading by remember { mutableStateOf(false) }
@@ -181,7 +182,13 @@ fun BlockWiseGameScreen(
         derivedStateOf { currentGameState.trayPieces }
     }
     val draggedPiece by remember {
-        derivedStateOf { trayPieces.firstOrNull { it.id == draggedPieceId } }
+        derivedStateOf {
+            resolveDraggedTrayPiece(
+                draggedPieceId = draggedPieceId,
+                trayPieces = trayPieces,
+                draggedPieceSnapshot = draggedPieceSnapshot,
+            )
+        }
     }
     val density = LocalDensity.current
     val hasActiveChallenge = gameState.activeChallenge != null
@@ -403,12 +410,14 @@ fun BlockWiseGameScreen(
                     onPositioned = { trayRectInRoot = it },
                     onStartDrag = { piece, dragStartOffset ->
                         val rect = trayPieceRectsInRoot[piece.id] ?: return@TrayDock
-                        draggedPieceId = piece.id
-                        dragPointerInHost = initialDragPointerPosition(
+                        val initialPointer = initialDragPointerPosition(
                             pieceRectInRoot = rect,
                             pointerOffsetInPieceCard = dragStartOffset,
                             hostRectInRoot = hostRectInRoot,
-                        )
+                        ) ?: return@TrayDock
+                        draggedPieceId = piece.id
+                        draggedPieceSnapshot = piece
+                        dragPointerInHost = initialPointer
                     },
                     onDrag = { dragAmount ->
                         val current = dragPointerInHost ?: return@TrayDock
@@ -416,6 +425,7 @@ fun BlockWiseGameScreen(
                     },
                     onCancelDrag = {
                         draggedPieceId = null
+                        draggedPieceSnapshot = null
                         dragPointerInHost = null
                     },
                     onEndDrag = {
@@ -425,6 +435,7 @@ fun BlockWiseGameScreen(
                             currentOnPlacePiece(pieceId, preview.landingAnchor)
                         }
                         draggedPieceId = null
+                        draggedPieceSnapshot = null
                         dragPointerInHost = null
                     },
                     pieceCardHeight = trayCardHeight,
@@ -803,6 +814,16 @@ internal fun resolveNearestFreePlacementPreview(
     } else {
         null
     }
+}
+
+internal fun resolveDraggedTrayPiece(
+    draggedPieceId: Long?,
+    trayPieces: List<Piece>,
+    draggedPieceSnapshot: Piece?,
+): Piece? {
+    if (draggedPieceId == null) return null
+    return trayPieces.firstOrNull { it.id == draggedPieceId }
+        ?: draggedPieceSnapshot?.takeIf { it.id == draggedPieceId }
 }
 
 internal fun initialDragPointerPosition(
