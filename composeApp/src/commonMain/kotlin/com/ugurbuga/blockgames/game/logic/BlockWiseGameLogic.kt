@@ -563,7 +563,7 @@ internal class BlockWiseGameLogic(
     private fun createPiece(level: Int, nextPieceId: Long): Pair<Piece, Long> {
         val availableKinds = PieceKind.entries.filter { it.unlockLevel <= level }
         val kind = availableKinds.random(random)
-        val rotationCount = if (kind == PieceKind.Square || kind == PieceKind.Plus) 0 else random.nextInt(4)
+        val rotationCount = if (kind == PieceKind.Square || kind == PieceKind.Plus || kind == PieceKind.Square3x3) 0 else random.nextInt(4)
         val rotatedCells = rotateAndNormalize(kind.template, rotationCount)
         return Piece(
             id = nextPieceId,

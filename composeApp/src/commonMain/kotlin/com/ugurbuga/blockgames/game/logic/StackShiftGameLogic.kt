@@ -838,10 +838,10 @@ internal class StackShiftGameLogic(
         var triggeredCount = 0
         var blocksCleared = 0
         val visited = mutableSetOf<GridPoint>()
-        val queue = ArrayDeque(pendingTriggers)
+        val queue = pendingTriggers.toMutableList()
 
         while (queue.isNotEmpty()) {
-            val trigger = queue.removeFirst()
+            val trigger = queue.removeAt(0)
             if (!visited.add(trigger.point)) continue
 
             val effect = buildTriggeredEffect(resolvedBoard, trigger)
@@ -853,7 +853,7 @@ internal class StackShiftGameLogic(
             resolvedBoard = applyTriggeredEffect(resolvedBoard, effect)
             blocksCleared += (countBefore - resolvedBoard.occupiedCount)
             triggeredCount += 1
-            nextTriggers.filterNot { it.point in visited }.forEach(queue::addLast)
+            nextTriggers.filterNot { it.point in visited }.forEach(queue::add)
         }
 
         return TriggerBurstResult(
@@ -891,10 +891,10 @@ internal class StackShiftGameLogic(
         var resolvedBoard = board
         val impactedPoints = mutableSetOf<GridPoint>()
         val visited = mutableSetOf<GridPoint>()
-        val queue = ArrayDeque(pendingTriggers)
+        val queue = pendingTriggers.toMutableList()
 
         while (queue.isNotEmpty()) {
-            val trigger = queue.removeFirst()
+            val trigger = queue.removeAt(0)
             if (!visited.add(trigger.point)) continue
 
             val effect = buildTriggeredEffect(resolvedBoard, trigger)
@@ -907,7 +907,7 @@ internal class StackShiftGameLogic(
                 effect = effect,
             )
             resolvedBoard = applyTriggeredEffect(resolvedBoard, effect)
-            nextTriggers.filterNot { it.point in visited }.forEach(queue::addLast)
+            nextTriggers.filterNot { it.point in visited }.forEach(queue::add)
         }
 
         return PreviewImpactResult(
@@ -1139,7 +1139,7 @@ internal class StackShiftGameLogic(
     ): Pair<Piece, Long> {
         val availableKinds = PieceKind.entries.filter { it.unlockLevel <= level }
         val kind = availableKinds.random(random)
-        val rotationCount = if (kind == PieceKind.Square || kind == PieceKind.Plus) 0 else random.nextInt(4)
+        val rotationCount = if (kind == PieceKind.Square || kind == PieceKind.Plus || kind == PieceKind.Square3x3) 0 else random.nextInt(4)
         val rotatedCells = rotateAndNormalize(kind.template, rotationCount)
         val special = rollSpecialBlock(level = level, launchBar = launchBar)
         return Piece(

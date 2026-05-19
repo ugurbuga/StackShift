@@ -1,7 +1,6 @@
 package com.ugurbuga.blockgames
 
 import android.content.Intent
-import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Bundle
@@ -18,8 +17,8 @@ import androidx.core.graphics.drawable.toDrawable
 import com.ugurbuga.blockgames.ads.AndroidAdMobIds
 import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.gameplayStyleFromPersistedValue
-import com.ugurbuga.blockgames.platform.NotificationWorker
 import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
+import com.ugurbuga.blockgames.platform.NotificationWorker
 import com.ugurbuga.blockgames.settings.AppContextHolder
 import com.ugurbuga.blockgames.settings.AppSettingsStorage
 import com.ugurbuga.blockgames.ui.theme.blockGamesThemeSpec
@@ -29,7 +28,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         GlobalPlatformConfig.isDebug = BuildConfig.DEBUG
-        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         AppContextHolder.context = applicationContext
         AndroidAdMobIds.BannerAdUnitId = BuildConfig.ADS_BANNER_UNIT_ID
         AndroidAdMobIds.InterstitialAdUnitId = BuildConfig.ADS_INTERSTITIAL_UNIT_ID

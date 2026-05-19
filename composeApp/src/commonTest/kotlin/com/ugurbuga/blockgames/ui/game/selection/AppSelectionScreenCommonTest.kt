@@ -18,6 +18,16 @@ import kotlin.test.assertNotNull
 class AppSelectionScreenCommonTest {
 
     @Test
+    fun initialExpandedSelectionStyle_defaultsToStackShiftWhenNothingIsSelected() {
+        assertEquals(GameplayStyle.StackShift, initialExpandedSelectionStyle(currentStyle = null))
+    }
+
+    @Test
+    fun initialExpandedSelectionStyle_collapsesAllCardsWhenAnAppIsAlreadySelected() {
+        assertEquals(null, initialExpandedSelectionStyle(currentStyle = GameplayStyle.MergeShift))
+    }
+
+    @Test
     fun selectionTone_mapsEachGameplayStyleToItsAccentTone() {
         assertEquals(CellTone.Cyan, GameplayStyle.StackShift.selectionTone())
         assertEquals(CellTone.Amber, GameplayStyle.BlockWise.selectionTone())

@@ -56,7 +56,7 @@ private val androidFlavorConfigs = listOf(
         name = "StackShift",
         displayName = "Puzzle Shift",
         applicationId = "com.ugurbuga.stackshift",
-        versionCode = 9,
+        versionCode = 10,
         versionName = "1.1.1",
     ),
     AndroidFlavorConfig(

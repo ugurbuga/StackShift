@@ -363,7 +363,7 @@ internal class BlockSortGameLogic(
 
                 val transfer = 1 + random.nextInt(maxTransfer)
                 repeat(transfer) {
-                    containers[source].add(containers[target].removeLast())
+                    containers[source].add(containers[target].removeAt(containers[target].lastIndex))
                 }
             }
 
