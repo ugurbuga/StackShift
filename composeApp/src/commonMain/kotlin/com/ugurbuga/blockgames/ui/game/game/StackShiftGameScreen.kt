@@ -110,7 +110,6 @@ import com.ugurbuga.blockgames.game.model.PlacementPreview
 import com.ugurbuga.blockgames.game.model.SpecialBlockType
 import com.ugurbuga.blockgames.game.model.gameText
 import com.ugurbuga.blockgames.game.model.paletteColor
-import com.ugurbuga.blockgames.game.model.resolveBoardBlockStyle
 import com.ugurbuga.blockgames.game.model.toTopLeft
 import com.ugurbuga.blockgames.localization.LocalAppSettings
 import com.ugurbuga.blockgames.localization.appNameStringResource
@@ -363,10 +362,7 @@ fun GameScreen(
     val uiColors = BlockGamesThemeTokens.uiColors
     val colorScheme = MaterialTheme.colorScheme
     val settings = LocalAppSettings.current
-    val resolvedPreviewStyle = resolveBoardBlockStyle(
-        selectedStyle = settings.blockVisualStyle,
-        mode = settings.boardBlockStyleMode,
-    )
+    val resolvedPreviewStyle = settings.blockVisualStyle
     val updatedPreviewProvider by rememberUpdatedState(onRequestPreview)
     val updatedPreviewImpactProvider by rememberUpdatedState(onResolvePreviewImpact)
     val updatedPlacePiece by rememberUpdatedState(onPlacePiece)
@@ -1120,11 +1116,7 @@ internal fun BoxScope.LaunchGuideLineOverlay(
 
     val settings = LocalAppSettings.current
     val isDarkTheme = isBlockGamesDarkTheme(settings)
-    val resolvedPreviewStyle =
-        resolveBoardBlockStyle(
-            selectedStyle = settings.blockVisualStyle,
-            mode = settings.boardBlockStyleMode,
-        )
+    val resolvedPreviewStyle = settings.blockVisualStyle
     val baseColor = remember(activePiece.id, activePiece.tone, settings.blockColorPalette, isDarkTheme) {
         activePiece.tone.paletteColor(settings.blockColorPalette, isDarkTheme)
     }
@@ -1274,11 +1266,7 @@ private fun ActivePieceOverlay(
         }
     }
     val pieceCellDp = with(density) { cellSizePx.toDp() }
-    val resolvedPreviewStyle =
-        resolveBoardBlockStyle(
-            selectedStyle = settings.blockVisualStyle,
-            mode = settings.boardBlockStyleMode,
-        )
+    val resolvedPreviewStyle = settings.blockVisualStyle
     val launchCellCornerRadius =
         boardCellCornerRadiusDp(
             cellSize = pieceCellDp,

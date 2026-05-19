@@ -233,11 +233,6 @@ enum class BlockVisualStyle {
     }
 }
 
-enum class BoardBlockStyleMode {
-    AlwaysFlat,
-    MatchSelectedBlockStyle,
-}
-
 @Immutable
 data class GridPoint(
     val column: Int,
@@ -1242,14 +1237,6 @@ fun CellTone.paletteColor(palette: BlockColorPalette, isDark: Boolean = true): C
             CellTone.Amber -> Color(0xFFD18B5A)
         }
     }
-}
-
-fun resolveBoardBlockStyle(
-    selectedStyle: BlockVisualStyle,
-    mode: BoardBlockStyleMode,
-): BlockVisualStyle = when (mode) {
-    BoardBlockStyleMode.AlwaysFlat -> BlockVisualStyle.Flat
-    BoardBlockStyleMode.MatchSelectedBlockStyle -> normalizeBlockVisualStyle(selectedStyle)
 }
 
 fun normalizeBlockVisualStyle(style: BlockVisualStyle): BlockVisualStyle = style

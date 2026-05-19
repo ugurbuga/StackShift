@@ -74,7 +74,6 @@ import com.ugurbuga.blockgames.game.model.SpecialBlockType
 import com.ugurbuga.blockgames.game.model.boardSpecialIcon
 import com.ugurbuga.blockgames.game.model.formatMergeValue
 import com.ugurbuga.blockgames.game.model.paletteColor
-import com.ugurbuga.blockgames.game.model.resolveBoardBlockStyle
 import com.ugurbuga.blockgames.localization.LocalAppSettings
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
 import com.ugurbuga.blockgames.ui.theme.BlockGamesUiColors
@@ -111,10 +110,7 @@ fun BoardGrid(
     val colorScheme = MaterialTheme.colorScheme
     val uiColors = BlockGamesThemeTokens.uiColors
     val textMeasurer = rememberTextMeasurer()
-    val boardBlockStyle = resolveBoardBlockStyle(
-        selectedStyle = settings.blockVisualStyle,
-        mode = settings.boardBlockStyleMode,
-    )
+    val boardBlockStyle = settings.blockVisualStyle
     val isDarkTheme = isBlockGamesDarkTheme(settings)
     val showDangerDecorations = gameState.status != GameStatus.GameOver
     val mergeShiftBoardFontFamily = MaterialTheme.typography.titleMedium.fontFamily
@@ -1259,10 +1255,7 @@ private fun BoardSpecialIconOverlay(
     ) {
         val settings = LocalAppSettings.current
         val isDarkTheme = isBlockGamesDarkTheme(settings)
-        val resolvedBoardStyle = resolveBoardBlockStyle(
-            selectedStyle = settings.blockVisualStyle,
-            mode = settings.boardBlockStyleMode,
-        )
+        val resolvedBoardStyle = settings.blockVisualStyle
         Icon(
             imageVector = boardSpecialIcon(cell.special),
             contentDescription = null,
@@ -1593,10 +1586,7 @@ fun PieceBlocks(
     ) {
         val settings = LocalAppSettings.current
         val density = LocalDensity.current
-        val visualStyle = resolveBoardBlockStyle(
-            selectedStyle = settings.blockVisualStyle,
-            mode = settings.boardBlockStyleMode,
-        )
+        val visualStyle = settings.blockVisualStyle
         val isDarkTheme = isBlockGamesDarkTheme(settings)
         val resolvedCellInset = cellInset ?: boardCellInsetDp(cellSize)
         val resolvedCellCornerRadius =

@@ -56,7 +56,6 @@ import com.ugurbuga.blockgames.game.model.GameStatus
 import com.ugurbuga.blockgames.game.model.GridPoint
 import com.ugurbuga.blockgames.game.model.SpecialBlockType
 import com.ugurbuga.blockgames.game.model.paletteColor
-import com.ugurbuga.blockgames.game.model.resolveBoardBlockStyle
 import com.ugurbuga.blockgames.localization.LocalAppSettings
 import com.ugurbuga.blockgames.platform.currentEpochMillis
 import com.ugurbuga.blockgames.settings.AppSettings
@@ -425,10 +424,7 @@ internal fun GameGrid(
 ) {
     val settings = LocalAppSettings.current
     val isDarkTheme = isBlockGamesDarkTheme(settings)
-    val resolvedStyle = resolveBoardBlockStyle(
-        selectedStyle = settings.blockVisualStyle,
-        mode = settings.boardBlockStyleMode,
-    )
+    val resolvedStyle = settings.blockVisualStyle
     val board = gameState.board
     
     var previousBoard by remember { mutableStateOf<BoardMatrix?>(null) }

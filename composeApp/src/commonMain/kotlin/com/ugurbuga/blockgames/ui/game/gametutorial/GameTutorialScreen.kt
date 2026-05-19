@@ -98,10 +98,10 @@ import blockgames.composeapp.generated.resources.game_message_select_column
 import blockgames.composeapp.generated.resources.game_message_special_chain_board
 import blockgames.composeapp.generated.resources.game_message_special_lines
 import blockgames.composeapp.generated.resources.game_message_tempo_up
-import blockgames.composeapp.generated.resources.interactive_onboarding_boomblocks_tap_hint
 import blockgames.composeapp.generated.resources.interactive_onboarding_blocksort_finish_hint
 import blockgames.composeapp.generated.resources.interactive_onboarding_blocksort_match_hint
 import blockgames.composeapp.generated.resources.interactive_onboarding_blocksort_pick_hint
+import blockgames.composeapp.generated.resources.interactive_onboarding_boomblocks_tap_hint
 import blockgames.composeapp.generated.resources.launch_drag_hint
 import blockgames.composeapp.generated.resources.launch_drag_hint_blockwise
 import blockgames.composeapp.generated.resources.launch_soft_lock_message
@@ -113,13 +113,6 @@ import blockgames.composeapp.generated.resources.settings_challenges
 import blockgames.composeapp.generated.resources.settings_theme
 import blockgames.composeapp.generated.resources.settings_tutorial
 import blockgames.composeapp.generated.resources.tutorial_back
-import blockgames.composeapp.generated.resources.tutorial_boomblocks_gravity_body
-import blockgames.composeapp.generated.resources.tutorial_boomblocks_gravity_title
-import blockgames.composeapp.generated.resources.tutorial_boomblocks_intro_body
-import blockgames.composeapp.generated.resources.tutorial_boomblocks_intro_title
-import blockgames.composeapp.generated.resources.tutorial_boomblocks_ready_body
-import blockgames.composeapp.generated.resources.tutorial_boomblocks_ready_title
-import blockgames.composeapp.generated.resources.tutorial_finish
 import blockgames.composeapp.generated.resources.tutorial_blocksort_finish_body
 import blockgames.composeapp.generated.resources.tutorial_blocksort_finish_title
 import blockgames.composeapp.generated.resources.tutorial_blocksort_intro_body
@@ -128,6 +121,13 @@ import blockgames.composeapp.generated.resources.tutorial_blocksort_ready_body
 import blockgames.composeapp.generated.resources.tutorial_blocksort_ready_title
 import blockgames.composeapp.generated.resources.tutorial_blocksort_rules_body
 import blockgames.composeapp.generated.resources.tutorial_blocksort_rules_title
+import blockgames.composeapp.generated.resources.tutorial_boomblocks_gravity_body
+import blockgames.composeapp.generated.resources.tutorial_boomblocks_gravity_title
+import blockgames.composeapp.generated.resources.tutorial_boomblocks_intro_body
+import blockgames.composeapp.generated.resources.tutorial_boomblocks_intro_title
+import blockgames.composeapp.generated.resources.tutorial_boomblocks_ready_body
+import blockgames.composeapp.generated.resources.tutorial_boomblocks_ready_title
+import blockgames.composeapp.generated.resources.tutorial_finish
 import blockgames.composeapp.generated.resources.tutorial_intro_body
 import blockgames.composeapp.generated.resources.tutorial_intro_title
 import blockgames.composeapp.generated.resources.tutorial_mergeshift_intro_body
@@ -175,7 +175,6 @@ import com.ugurbuga.blockgames.game.model.Piece
 import com.ugurbuga.blockgames.game.model.PieceKind
 import com.ugurbuga.blockgames.game.model.SpecialBlockType
 import com.ugurbuga.blockgames.game.model.gameText
-import com.ugurbuga.blockgames.game.model.resolveBoardBlockStyle
 import com.ugurbuga.blockgames.localization.LocalAppSettings
 import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
 import com.ugurbuga.blockgames.settings.AppSettings
@@ -887,7 +886,7 @@ private fun TutorialMiniBoardShell(
 ) {
     val uiColors = BlockGamesThemeTokens.uiColors
     val settings = LocalAppSettings.current
-    val boardStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
+    val boardStyle = settings.blockVisualStyle
     Card(
         modifier = modifier.blockGamesSurfaceShadow(
             shape = RoundedCornerShape(
@@ -1245,7 +1244,7 @@ private fun TutorialBlockSortBoardDemo(
     modifier: Modifier = Modifier,
 ) {
     val settings = LocalAppSettings.current
-    val boardStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
+    val boardStyle = settings.blockVisualStyle
     val logic = remember { BlockSortGameLogic() }
 
     TutorialMiniBoardShell(modifier = modifier) {
@@ -1393,7 +1392,7 @@ private fun TutorialPracticeTrayPieceChip(
 private fun TutorialBlockWisePlacementDemo() {
     val settings = LocalAppSettings.current
     val density = LocalDensity.current
-    val boardStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
+    val boardStyle = settings.blockVisualStyle
     val gameLogic = remember { GameLogic.create() }
     val initialState = remember {
         GameState(
@@ -1657,7 +1656,7 @@ private fun TutorialMiniGameDemo(
 ) {
     val settings = LocalAppSettings.current
     val density = LocalDensity.current
-    val boardStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
+    val boardStyle = settings.blockVisualStyle
     val gameLogic = remember { GameLogic.create() }
     var gameState by remember(scene, lockedColumn) { mutableStateOf(scene.gameState) }
     val activePiece = gameState.activePiece
@@ -2244,7 +2243,7 @@ private fun TutorialActionTile(
 ) {
     val uiColors = BlockGamesThemeTokens.uiColors
     val settings = LocalAppSettings.current
-    val blockStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
+    val blockStyle = settings.blockVisualStyle
     val stylePulse = rememberBlockStylePulse(style = blockStyle)
     val iconTint = blockStyleIconTint(style = blockStyle)
 
@@ -2307,10 +2306,7 @@ private fun TutorialSpecialCard(
             BlockCellPreview(
                 tone = tone,
                 palette = LocalAppSettings.current.blockColorPalette,
-                style = resolveBoardBlockStyle(
-                    LocalAppSettings.current.blockVisualStyle,
-                    LocalAppSettings.current.boardBlockStyleMode
-                ),
+                style = LocalAppSettings.current.blockVisualStyle,
                 size = 34.dp,
                 special = special,
             )

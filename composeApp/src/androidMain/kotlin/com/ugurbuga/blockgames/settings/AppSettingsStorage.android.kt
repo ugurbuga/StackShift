@@ -7,7 +7,6 @@ import com.ugurbuga.blockgames.game.model.AppLanguage
 import com.ugurbuga.blockgames.game.model.AppThemeMode
 import com.ugurbuga.blockgames.game.model.BlockColorPalette
 import com.ugurbuga.blockgames.game.model.BlockVisualStyle
-import com.ugurbuga.blockgames.game.model.BoardBlockStyleMode
 import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.gameplayStyleFromPersistedValue
 import com.ugurbuga.blockgames.game.model.persistedKeys
@@ -58,12 +57,6 @@ actual object AppSettingsStorage {
                     defaultSettings.blockVisualStyle.ordinal
                 )
             ) { defaultSettings.blockVisualStyle },
-            boardBlockStyleMode = BoardBlockStyleMode.entries.getOrElse(
-                prefs.getInt(
-                    KeyBoardBlockStyleMode,
-                    defaultSettings.boardBlockStyleMode.ordinal
-                )
-            ) { defaultSettings.boardBlockStyleMode },
             hasSeenTutorial = prefs.getBoolean(KeyHasSeenTutorial, defaultSettings.hasSeenTutorial),
             hasShownInteractiveOnboarding = prefs.getBoolean(
                 KeyHasShownInteractiveOnboarding,
@@ -131,7 +124,6 @@ actual object AppSettingsStorage {
             .putInt(KeyThemeColorPalette, sanitized.themeColorPalette.ordinal)
             .putInt(KeyBlockColorPalette, sanitized.blockColorPalette.ordinal)
             .putInt(KeyBlockVisualStyle, sanitized.blockVisualStyle.ordinal)
-            .putInt(KeyBoardBlockStyleMode, sanitized.boardBlockStyleMode.ordinal)
             .putBoolean(KeyHasSeenTutorial, sanitized.hasSeenTutorial)
             .putBoolean(KeyHasShownInteractiveOnboarding, sanitized.hasShownInteractiveOnboarding)
             .putString(KeySeenTutorialStyles, encodeEnumSet(sanitized.seenTutorialStyles))
@@ -177,7 +169,6 @@ actual object AppSettingsStorage {
     private const val KeyThemeColorPalette = "themeColorPalette"
     private const val KeyBlockColorPalette = "blockColorPalette"
     private const val KeyBlockVisualStyle = "blockVisualStyle"
-    private const val KeyBoardBlockStyleMode = "boardBlockStyleMode"
     private const val KeyHasSeenTutorial = "hasSeenTutorial"
     private const val KeyHasShownInteractiveOnboarding = "hasShownInteractiveOnboarding"
     private const val KeySeenTutorialStyles = "seenTutorialStyles"

@@ -52,8 +52,6 @@ import com.ugurbuga.blockgames.localization.appStringResource
 import com.ugurbuga.blockgames.localization.currentDeviceLocaleTag
 import com.ugurbuga.blockgames.platform.GlobalPlatformConfig
 import com.ugurbuga.blockgames.platform.currentEpochMillis
-import com.ugurbuga.blockgames.platform.feedback.GameSound
-import com.ugurbuga.blockgames.platform.feedback.rememberSoundEffectPlayer
 import com.ugurbuga.blockgames.platform.getCurrentDate
 import com.ugurbuga.blockgames.platform.rememberNotificationManager
 import com.ugurbuga.blockgames.presentation.game.GameViewModel
@@ -267,15 +265,6 @@ fun BlockGamesRoot(
 ) {
     val adController = rememberPlatformGameAdController()
     val notificationManager = rememberNotificationManager()
-    val soundPlayer = rememberSoundEffectPlayer(settings.soundEnabled)
-
-    LaunchedEffect(currentRoute, settings.soundEnabled) {
-        if (!settings.soundEnabled || currentRoute == AppRoute.Game || currentRoute == AppRoute.InteractiveOnboarding) {
-            soundPlayer.stop(GameSound.Bgm)
-        } else {
-            soundPlayer.play(GameSound.Bgm)
-        }
-    }
 
     AppEnvironment(settings = settings) {
         LaunchedEffect(Unit) {
@@ -378,7 +367,6 @@ fun BlockGamesRoot(
                                     onReplaceActivePieceRewarded = onReplaceActivePieceRewarded,
                                     onBack = onNavigateBack,
                                     adController = adController,
-                                    soundPlayer = soundPlayer,
                                 )
                             }
 
@@ -839,10 +827,6 @@ fun BlockGamesAppHost(
         telemetry.logUserProperty(
             TelemetryUserPropertyNames.BlockStyle,
             settings.blockVisualStyle.name
-        )
-        telemetry.logUserProperty(
-            TelemetryUserPropertyNames.BoardBlockStyleMode,
-            settings.boardBlockStyleMode.name
         )
     }
 }

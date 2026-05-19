@@ -124,7 +124,6 @@ fun AppSettings.sanitized(): AppSettings {
         hasShownInteractiveOnboarding = sanitizedShownInteractiveOnboardingStyles.isNotEmpty(),
         seenTutorialStyles = sanitizedSeenTutorialStyles,
         shownInteractiveOnboardingStyles = sanitizedShownInteractiveOnboardingStyles,
-        soundEnabled = this.soundEnabled,
     )
 }
 

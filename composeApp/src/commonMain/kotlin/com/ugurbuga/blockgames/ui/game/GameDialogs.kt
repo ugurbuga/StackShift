@@ -162,7 +162,6 @@ import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.SpecialBlockType
 import com.ugurbuga.blockgames.game.model.gameText
 import com.ugurbuga.blockgames.game.model.paletteColor
-import com.ugurbuga.blockgames.game.model.resolveBoardBlockStyle
 import com.ugurbuga.blockgames.localization.LocalAppSettings
 import com.ugurbuga.blockgames.localization.appNameResourceId
 import com.ugurbuga.blockgames.localization.formatAppString
@@ -704,10 +703,7 @@ internal fun BlockStyleActionButton(
 ) {
     val uiColors = BlockGamesThemeTokens.uiColors
     val settings = LocalAppSettings.current
-    val resolvedStyle = resolveBoardBlockStyle(
-        selectedStyle = settings.blockVisualStyle,
-        mode = settings.boardBlockStyleMode,
-    )
+    val resolvedStyle = settings.blockVisualStyle
     val effectivePulse = rememberBlockStylePulse(
         style = resolvedStyle,
         pulse = pulse,
@@ -1250,10 +1246,7 @@ internal fun TopBarActionBlockButton(
     extraAlpha: Float = 1f,
 ) {
     val settings = LocalAppSettings.current
-    val resolvedBlockStyle = resolveBoardBlockStyle(
-        selectedStyle = settings.blockVisualStyle,
-        mode = settings.boardBlockStyleMode,
-    )
+    val resolvedBlockStyle = settings.blockVisualStyle
     val launchCellCornerRadius = boardCellCornerRadiusDp(
         cellSize = size,
         style = resolvedBlockStyle,

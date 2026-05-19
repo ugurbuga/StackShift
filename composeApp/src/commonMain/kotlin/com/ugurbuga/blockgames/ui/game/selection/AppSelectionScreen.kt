@@ -94,7 +94,6 @@ import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.GridPoint
 import com.ugurbuga.blockgames.game.model.Piece
 import com.ugurbuga.blockgames.game.model.PlacementPreview
-import com.ugurbuga.blockgames.game.model.resolveBoardBlockStyle
 import com.ugurbuga.blockgames.localization.LocalAppSettings
 import com.ugurbuga.blockgames.settings.AppSettings
 import com.ugurbuga.blockgames.settings.BlockWiseOnboardingStage
@@ -450,8 +449,8 @@ private fun SelectionItem(
 private fun GameDemoView(style: GameplayStyle, stylePulse: Float) {
     val uiColors = BlockGamesThemeTokens.uiColors
     val settings = LocalAppSettings.current
-    val boardStyle = remember(settings.blockVisualStyle, settings.boardBlockStyleMode) {
-        resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
+    val boardStyle = remember(settings.blockVisualStyle) {
+        settings.blockVisualStyle
     }
     val stackShiftScenario = remember(style) {
         if (style == GameplayStyle.StackShift) buildStackShiftDemoScenario() else null

@@ -135,7 +135,6 @@ import com.ugurbuga.blockgames.game.model.DailyChallenge
 import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.color
 import com.ugurbuga.blockgames.game.model.paletteColor
-import com.ugurbuga.blockgames.game.model.resolveBoardBlockStyle
 import com.ugurbuga.blockgames.localization.LocalAppSettings
 import com.ugurbuga.blockgames.settings.AppSettings
 import com.ugurbuga.blockgames.settings.GameSessionSlot
@@ -207,7 +206,7 @@ fun DailyChallengeScreen(
     }
 
     val settings = LocalAppSettings.current
-    val blockStyle = resolveBoardBlockStyle(settings.blockVisualStyle, settings.boardBlockStyleMode)
+    val blockStyle = settings.blockVisualStyle
     val stylePulse = rememberBlockStylePulse(style = blockStyle)
 
     LaunchedEffect(months) {

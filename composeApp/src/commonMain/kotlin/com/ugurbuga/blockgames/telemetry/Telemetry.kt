@@ -89,7 +89,6 @@ object TelemetryUserPropertyNames {
     const val ThemePalette = "theme_palette"
     const val BlockPalette = "block_palette"
     const val BlockStyle = "block_style"
-    const val BoardBlockStyleMode = "board_block_style_mode"
     const val SharedClientId = "shared_client_id"
 }
 

@@ -149,10 +149,7 @@ fun MergeShiftGameScreen(
     val updatedRestart by rememberUpdatedState(onRestart)
     val updatedRewardedRevive by rememberUpdatedState(onRewardedRevive)
 
-    val resolvedStyle = com.ugurbuga.blockgames.game.model.resolveBoardBlockStyle(
-        selectedStyle = settings.blockVisualStyle,
-        mode = settings.boardBlockStyleMode,
-    )
+    val resolvedStyle = settings.blockVisualStyle
     
     var showRestartDialog by remember { mutableStateOf(false) }
 

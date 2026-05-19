@@ -5,7 +5,6 @@ import com.ugurbuga.blockgames.game.model.AppLanguage
 import com.ugurbuga.blockgames.game.model.AppThemeMode
 import com.ugurbuga.blockgames.game.model.BlockColorPalette
 import com.ugurbuga.blockgames.game.model.BlockVisualStyle
-import com.ugurbuga.blockgames.game.model.BoardBlockStyleMode
 import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.gameplayStyleFromPersistedValue
 import com.ugurbuga.blockgames.game.model.normalizeBlockVisualStyle
@@ -28,20 +27,19 @@ actual object AppSettingsStorage {
             blockVisualStyle = normalizeBlockVisualStyle(
                 BlockVisualStyle.entries.getOrElse(parts[4].toIntOrNull() ?: -1) { defaultSettings.blockVisualStyle }
             ),
-            boardBlockStyleMode = BoardBlockStyleMode.entries.getOrElse(parts[5].toIntOrNull() ?: -1) { defaultSettings.boardBlockStyleMode },
-            hasSeenTutorial = (parts[6].toIntOrNull() ?: 0) == 1,
-            hasInitializedLanguage = (parts.getOrNull(7)?.toIntOrNull() ?: 0) == 1 || parts.isNotEmpty(),
-            hasShownInteractiveOnboarding = (parts.getOrNull(8)?.toIntOrNull() ?: 0) == 1,
-            tokenBalance = parts.getOrNull(11)?.toIntOrNull() ?: defaultSettings.tokenBalance,
-            unlockedThemeModes = decodeEnumSet(parts.getOrNull(12), AppThemeMode.entries),
-            unlockedThemePalettes = decodeEnumSet(parts.getOrNull(13), AppColorPalette.entries),
-            unlockedBlockStyles = decodeEnumSet(parts.getOrNull(14), BlockVisualStyle.entries),
-            styleChallengeProgress = decodeStyleChallengeProgress(parts.getOrNull(10) ?: parts.getOrNull(9)),
-            lastAppOpenedAtEpochMillis = parts.getOrNull(15)?.toLongOrNull() ?: defaultSettings.lastAppOpenedAtEpochMillis,
-            lastActiveSlot = parts.getOrNull(17)?.let { GameSessionSlot.fromKey(it) },
-            selectedGameplayStyle = parts.getOrNull(18)?.takeIf(String::isNotBlank)?.let(::gameplayStyleFromPersistedValue),
-            seenTutorialStyles = decodeEnumSet(parts.getOrNull(19), GameplayStyle.entries),
-            shownInteractiveOnboardingStyles = decodeEnumSet(parts.getOrNull(20), GameplayStyle.entries),
+            hasSeenTutorial = (parts[5].toIntOrNull() ?: 0) == 1,
+            hasInitializedLanguage = (parts.getOrNull(6)?.toIntOrNull() ?: 0) == 1 || parts.isNotEmpty(),
+            hasShownInteractiveOnboarding = (parts.getOrNull(7)?.toIntOrNull() ?: 0) == 1,
+            tokenBalance = parts.getOrNull(10)?.toIntOrNull() ?: defaultSettings.tokenBalance,
+            unlockedThemeModes = decodeEnumSet(parts.getOrNull(11), AppThemeMode.entries),
+            unlockedThemePalettes = decodeEnumSet(parts.getOrNull(12), AppColorPalette.entries),
+            unlockedBlockStyles = decodeEnumSet(parts.getOrNull(13), BlockVisualStyle.entries),
+            styleChallengeProgress = decodeStyleChallengeProgress(parts.getOrNull(9) ?: parts.getOrNull(8)),
+            lastAppOpenedAtEpochMillis = parts.getOrNull(14)?.toLongOrNull() ?: defaultSettings.lastAppOpenedAtEpochMillis,
+            lastActiveSlot = parts.getOrNull(16)?.let { GameSessionSlot.fromKey(it) },
+            selectedGameplayStyle = parts.getOrNull(17)?.takeIf(String::isNotBlank)?.let(::gameplayStyleFromPersistedValue),
+            seenTutorialStyles = decodeEnumSet(parts.getOrNull(18), GameplayStyle.entries),
+            shownInteractiveOnboardingStyles = decodeEnumSet(parts.getOrNull(19), GameplayStyle.entries),
         ).sanitized()
     }
 
@@ -55,7 +53,6 @@ actual object AppSettingsStorage {
                 sanitized.themeColorPalette.ordinal,
                 sanitized.blockColorPalette.ordinal,
                 normalizeBlockVisualStyle(sanitized.blockVisualStyle).ordinal,
-                sanitized.boardBlockStyleMode.ordinal,
                 if (sanitized.hasSeenTutorial) 1 else 0,
                 if (sanitized.hasInitializedLanguage) 1 else 0,
                 if (sanitized.hasShownInteractiveOnboarding) 1 else 0,

@@ -5,7 +5,6 @@ import com.ugurbuga.blockgames.game.model.AppLanguage
 import com.ugurbuga.blockgames.game.model.AppThemeMode
 import com.ugurbuga.blockgames.game.model.BlockColorPalette
 import com.ugurbuga.blockgames.game.model.BlockVisualStyle
-import com.ugurbuga.blockgames.game.model.BoardBlockStyleMode
 import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.gameplayStyleFromPersistedValue
 import com.ugurbuga.blockgames.game.model.persistedKeys
@@ -29,7 +28,6 @@ actual object AppSettingsStorage {
             themeMode = AppThemeMode.entries.getOrElse(defaults.integerForKey(KeyThemeMode).toInt()) { defaultSettings.themeMode },
             themeColorPalette = resolveUnifiedThemePalette(themePalette = legacyThemePalette, blockPalette = legacyBlockPalette),
             blockVisualStyle = BlockVisualStyle.entries.getOrElse(defaults.integerForKey(KeyBlockVisualStyle).toInt()) { defaultSettings.blockVisualStyle },
-            boardBlockStyleMode = BoardBlockStyleMode.entries.getOrElse(defaults.integerForKey(KeyBoardBlockStyleMode).toInt()) { defaultSettings.boardBlockStyleMode },
             hasSeenTutorial = defaults.boolForKey(KeyHasSeenTutorial),
             hasShownInteractiveOnboarding = defaults.boolForKey(KeyHasShownInteractiveOnboarding),
             seenTutorialStyles = decodeEnumSet(defaults.getSafeString(KeySeenTutorialStyles), GameplayStyle.entries),
@@ -70,7 +68,6 @@ actual object AppSettingsStorage {
         defaults.setInteger(sanitized.themeColorPalette.ordinal.toLong(), forKey = KeyThemeColorPalette)
         defaults.setInteger(sanitized.blockColorPalette.ordinal.toLong(), forKey = KeyBlockColorPalette)
         defaults.setInteger(sanitized.blockVisualStyle.ordinal.toLong(), forKey = KeyBlockVisualStyle)
-        defaults.setInteger(sanitized.boardBlockStyleMode.ordinal.toLong(), forKey = KeyBoardBlockStyleMode)
         defaults.setBool(sanitized.hasSeenTutorial, forKey = KeyHasSeenTutorial)
         defaults.setBool(sanitized.hasShownInteractiveOnboarding, forKey = KeyHasShownInteractiveOnboarding)
         defaults.setObject(encodeEnumSet(sanitized.seenTutorialStyles), forKey = KeySeenTutorialStyles)
@@ -113,7 +110,6 @@ actual object AppSettingsStorage {
     private const val KeyThemeColorPalette = "themeColorPalette"
     private const val KeyBlockColorPalette = "blockColorPalette"
     private const val KeyBlockVisualStyle = "blockVisualStyle"
-    private const val KeyBoardBlockStyleMode = "boardBlockStyleMode"
     private const val KeyHasSeenTutorial = "hasSeenTutorial"
     private const val KeyHasShownInteractiveOnboarding = "hasShownInteractiveOnboarding"
     private const val KeySeenTutorialStyles = "seenTutorialStyles"

@@ -2,9 +2,6 @@
 <resources>
     <string name="settings_title">Settings</string>
     <string name="settings_language">Language</string>
-    <string name="settings_sound">Sound</string>
-    <string name="settings_sound_on">On</string>
-    <string name="settings_sound_off">Off</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_theme_palette">Theme Color Palette</string>
     <string name="settings_color_palette">Color Palette</string>
@@ -21,7 +18,6 @@
     <string name="reward_piece_column_message">Vertical Column Clearer piece equipped!</string>
     <string name="unlock_dialog_watch_ad">Watch ad to earn tokens</string>
     <string name="token_label">Token</string>
-    <string name="settings_board_block_style">Board Block Style</string>
     <string name="settings_challenges">Challenges</string>
     <string name="settings_tutorial">Tutorial</string>
     <string name="settings_tutorial_body">Open the tutorial or guided practice any time to revisit free placement, row/column clears, and the three-piece tray flow.</string>
@@ -66,8 +62,6 @@
     <string name="block_style_pixel">Pixel</string>
     <string name="block_style_cyberpunk">Cyberpunk</string>
     <string name="block_style_electric">Electric</string>
-    <string name="board_block_style_always_flat">Always flat</string>
-    <string name="board_block_style_match_selected">Match selected block style</string>
     <string name="hold">Hold</string>
     <string name="pause">Pause</string>
     <string name="resume">Resume</string>

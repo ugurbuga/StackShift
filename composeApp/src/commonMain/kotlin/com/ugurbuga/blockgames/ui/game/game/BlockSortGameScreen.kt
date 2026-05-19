@@ -157,10 +157,7 @@ fun BlockSortGameScreen(
 ) {
     val uiColors = BlockGamesThemeTokens.uiColors
     val settings = LocalAppSettings.current
-    val boardStyle = com.ugurbuga.blockgames.game.model.resolveBoardBlockStyle(
-        selectedStyle = settings.blockVisualStyle,
-        mode = settings.boardBlockStyleMode,
-    )
+    val boardStyle = settings.blockVisualStyle
     val palette = settings.blockColorPalette
 
     var selectedSourceColumn by remember(gameState.board, interactiveOnboardingScene?.stage) {
