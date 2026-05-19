@@ -287,9 +287,10 @@
     <string name="interactive_onboarding_mergeshift_merge_multi_body">Одно размещение может вызвать объединения в нескольких направлениях (сверху, слева, справа). Используйте это, чтобы освободить больше места и набрать много очков!</string>
 
     <string name="settings_tokens_title">Токены</string>
-    <string name="settings_tokens_balance">Баланс: %1$d</string>
-    <string name="settings_tokens_earn_challenge">Награда за ежедневное испытание: +%1$d токенов</string>
-    <string name="settings_tokens_earn_score">Награда за игру: +1 токен за каждые %1$d очков</string>
+    <string name="settings_tokens_balance">Token: %1$d</string>
+    <string name="settings_tokens_earn_challenge">• Награда за ежедневное испытание: +%1$d токенов</string>
+    <string name="settings_tokens_earn_score">• Награда за игру: +1 токен за каждые %1$d очков</string>
+    <string name="rewarded_tokens_button_bullet">• Посмотри рекламу и получи %1$d токенов</string>
     <string name="rewarded_tokens_button">Посмотри рекламу и получи %1$d токенов</string>
     <string name="reward_earned_message">Вы заработали %1$d токенов!</string>
     <string name="reward_piece_row_message">Установлен горизонтальный очиститель строк!</string>

@@ -11,9 +11,10 @@
     <string name="settings_block_palette">블록 색상 팔레트</string>
     <string name="settings_block_style">블록 스타일</string>
     <string name="settings_tokens_title">토큰</string>
-    <string name="settings_tokens_balance">보유량: %1$d</string>
-    <string name="settings_tokens_earn_challenge">일일 도전 보상: +%1$d 토큰</string>
-    <string name="settings_tokens_earn_score">게임 보상: 점수 %1$d 마다 +1 토큰</string>
+    <string name="settings_tokens_balance">Token: %1$d</string>
+    <string name="settings_tokens_earn_challenge">• 일일 도전 보상: +%1$d 토큰</string>
+    <string name="settings_tokens_earn_score">• 게임 보상: 점수 %1$d 마다 +1 토큰</string>
+    <string name="rewarded_tokens_button_bullet">• 광고를 보고 %1$d 토큰 받기</string>
     <string name="rewarded_tokens_button">광고를 보고 %1$d 토큰 받기</string>
     <string name="reward_earned_message">%1$d 토큰을 획득했습니다!</string>
     <string name="reward_piece_row_message">가로 줄 제거 피스를 장착했습니다!</string>

@@ -10,9 +10,10 @@
     <string name="settings_block_palette">Paleta de cores dos blocos</string>
     <string name="settings_block_style">Estilo dos blocos</string>
     <string name="settings_tokens_title">Fichas</string>
-    <string name="settings_tokens_balance">Saldo: %1$d</string>
-    <string name="settings_tokens_earn_challenge">Recompensa do desafio diário: +%1$d tokens</string>
-    <string name="settings_tokens_earn_score">Recompensa da partida: +1 token a cada %1$d pontos</string>
+    <string name="settings_tokens_balance">Token: %1$d</string>
+    <string name="settings_tokens_earn_challenge">• Recompensa do desafio diário: +%1$d tokens</string>
+    <string name="settings_tokens_earn_score">• Recompensa da partida: +1 token a cada %1$d pontos</string>
+    <string name="rewarded_tokens_button_bullet">• Assista a um anúncio e ganhe %1$d tokens</string>
     <string name="rewarded_tokens_button">Assista a um anúncio e ganhe %1$d tokens</string>
     <string name="reward_earned_message">Você ganhou %1$d tokens!</string>
     <string name="reward_piece_row_message">Peça de limpeza de linha horizontal equipada!</string>

@@ -11,9 +11,10 @@
     <string name="settings_block_palette">Blok Renkleri</string>
     <string name="settings_block_style">Blok Şekilleri</string>
     <string name="settings_tokens_title">Jetonlar</string>
-    <string name="settings_tokens_balance">Bakiye: %1$d</string>
-    <string name="settings_tokens_earn_challenge">Günlük görev ödülü: +%1$d jeton</string>
-    <string name="settings_tokens_earn_score">Oyun ödülü: Her %1$d skor için +1 jeton</string>
+    <string name="settings_tokens_balance">Token: %1$d</string>
+    <string name="settings_tokens_earn_challenge">• Günlük görev ödülü: +%1$d jeton</string>
+    <string name="settings_tokens_earn_score">• Oyun ödülü: Her %1$d skor için +1 jeton</string>
+    <string name="rewarded_tokens_button_bullet">• Reklam izle ve %1$d jeton kazan</string>
     <string name="rewarded_tokens_button">Reklam izle ve %1$d jeton kazan</string>
     <string name="reward_earned_message">%1$d jeton kazandın!</string>
     <string name="reward_piece_row_message">Yatay Satır Temizleyici parça alındı!</string>

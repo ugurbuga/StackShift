@@ -10,9 +10,10 @@
     <string name="settings_block_palette">ब्लॉक रंग पैलेट</string>
     <string name="settings_block_style">ब्लॉक शैली</string>
     <string name="settings_tokens_title">टोकन</string>
-    <string name="settings_tokens_balance">बैलेंस: %1$d</string>
-    <string name="settings_tokens_earn_challenge">डेली चैलेंज इनाम: +%1$d टोकन</string>
-    <string name="settings_tokens_earn_score">गेम इनाम: हर %1$d स्कोर पर +1 टोकन</string>
+    <string name="settings_tokens_balance">Token: %1$d</string>
+    <string name="settings_tokens_earn_challenge">• डेली चैलेंज इनाम: +%1$d टोकन</string>
+    <string name="settings_tokens_earn_score">• गेम इनाम: हर %1$d स्कोर पर +1 टोकन</string>
+    <string name="rewarded_tokens_button_bullet">• विज्ञापन देखें और %1$d टोकन पाएं</string>
     <string name="rewarded_tokens_button">विज्ञापन देखें और %1$d टोकन पाएं</string>
     <string name="reward_earned_message">आपने %1$d टोकन जीते!</string>
     <string name="reward_piece_row_message">क्षैतिज पंक्ति साफ़ करने वाला टुकड़ा सुसज्जित!</string>

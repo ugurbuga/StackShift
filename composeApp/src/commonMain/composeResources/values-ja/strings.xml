@@ -11,9 +11,10 @@
     <string name="settings_block_palette">ブロックカラーパレット</string>
     <string name="settings_block_style">ブロックスタイル</string>
     <string name="settings_tokens_title">トークン</string>
-    <string name="settings_tokens_balance">残高: %1$d</string>
-    <string name="settings_tokens_earn_challenge">デイリーチャレンジ報酬: +%1$d トークン</string>
-    <string name="settings_tokens_earn_score">ゲーム報酬: スコア %1$d ごとに +1 トークン</string>
+    <string name="settings_tokens_balance">Token: %1$d</string>
+    <string name="settings_tokens_earn_challenge">• デイリーチャレンジ報酬: +%1$d トークン</string>
+    <string name="settings_tokens_earn_score">• ゲーム報酬: スコア %1$d ごとに +1 トークン</string>
+    <string name="rewarded_tokens_button_bullet">• 広告を見て %1$d トークンを獲得</string>
     <string name="rewarded_tokens_button">広告を見て %1$d トークンを獲得</string>
     <string name="reward_earned_message">%1$d トークンを獲得しました！</string>
     <string name="reward_piece_row_message">横一列クリアピースを装備しました！</string>

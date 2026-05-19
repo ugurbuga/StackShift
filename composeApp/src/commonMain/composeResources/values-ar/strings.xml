@@ -11,9 +11,10 @@
     <string name="settings_block_palette">لوحة ألوان الكتل</string>
     <string name="settings_block_style">نمط الكتل</string>
     <string name="settings_tokens_title">الرموز</string>
-    <string name="settings_tokens_balance">الرصيد: %1$d</string>
-    <string name="settings_tokens_earn_challenge">مكافأة التحدي اليومي: +%1$d رمز</string>
-    <string name="settings_tokens_earn_score">مكافأة اللعبة: +1 رمز لكل %1$d نقطة</string>
+    <string name="settings_tokens_balance">Token: %1$d</string>
+    <string name="settings_tokens_earn_challenge">• مكافأة التحدي اليومي: +%1$d رمز</string>
+    <string name="settings_tokens_earn_score">• مكافأة اللعبة: +1 رمز لكل %1$d نقطة</string>
+    <string name="rewarded_tokens_button_bullet">• شاهد إعلانًا واحصل على %1$d رمز</string>
     <string name="rewarded_tokens_button">شاهد إعلانًا واحصل على %1$d رمز</string>
     <string name="reward_earned_message">لقد ربحت %1$d من الرموز!</string>
     <string name="reward_piece_row_message">تم تجهيز قطعة ممسحة الصف الأفقي!</string>

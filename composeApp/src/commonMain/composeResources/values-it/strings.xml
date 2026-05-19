@@ -11,9 +11,10 @@
     <string name="settings_block_palette">Palette colori blocchi</string>
     <string name="settings_block_style">Stile blocchi</string>
     <string name="settings_tokens_title">Token</string>
-    <string name="settings_tokens_balance">Saldo: %1$d</string>
-    <string name="settings_tokens_earn_challenge">Ricompensa sfida giornaliera: +%1$d token</string>
-    <string name="settings_tokens_earn_score">Ricompensa partita: +1 token ogni %1$d punti</string>
+    <string name="settings_tokens_balance">Token: %1$d</string>
+    <string name="settings_tokens_earn_challenge">• Ricompensa sfida giornaliera: +%1$d token</string>
+    <string name="settings_tokens_earn_score">• Ricompensa partita: +1 token ogni %1$d punti</string>
+    <string name="rewarded_tokens_button_bullet">• Guarda un annuncio e ottieni %1$d token</string>
     <string name="rewarded_tokens_button">Guarda un annuncio e ottieni %1$d token</string>
     <string name="reward_earned_message">Hai ottenuto %1$d token!</string>
     <string name="reward_piece_row_message">Pezzo eliminazione riga orizzontale equipaggiato!</string>
