@@ -45,16 +45,21 @@
     <string name="block_style_prism">Prisme</string>
     <string name="block_style_crystal">Cristal</string>
     <string name="block_style_dynamic_liquid">Liquide dynamique</string>
-    <string name="block_style_matte_soft">Mat doux</string>
     <string name="block_style_neon_glow">Lueur néon</string>
-    <string name="block_style_tornado">Vent</string>
+    <string name="block_style_tornado">Tornade</string>
     <string name="block_style_brick">Brique</string>
+    <string name="block_style_honeycomb_texture">Texture Nid d\'Abeille</string>
+    <string name="block_style_liquid_marble">Marbre liquide</string>
+    <string name="block_style_holographic">Holographique</string>
+    <string name="block_style_glitch_tech">Technologie Glitch</string>
+    <string name="block_style_aura_energy">Énergie d\'Aura</string>
+    <string name="block_style_circuit_board">Carte de Circuit</string>
     <string name="block_style_spider_web">Toile d\'araignée</string>
     <string name="block_style_cosmic">Cosmique</string>
-    <string name="block_style_stone_texture">Texture pierre</string>
-    <string name="block_style_honeycomb_texture">Honeycomb Texture</string>
-    <string name="block_style_light_burst">Éclat lumineux</string>
-    <string name="block_style_liquid_marble">Marbre liquide</string>
+    <string name="block_style_flame">Flamme</string>
+    <string name="block_style_gears">Engranages</string>
+    <string name="block_style_pixel">Pixel</string>
+    <string name="block_style_cyberpunk">Cyberpunk</string>
     <string name="board_block_style_always_flat">Toujours plat</string>
     <string name="board_block_style_match_selected">Utiliser le style sélectionné</string>
     <string name="hold">Réserve</string>
@@ -82,7 +87,7 @@
     <string name="launch_label">Lancer</string>
     <string name="launch_bar">Barre de lancement</string>
     <string name="launch_boost_active">Élan actif • %1$s tours</string>
-    <string name="launch_special_chance">Chance de bloc spécial +%1$s%%</string>
+    <string name="launch_special_chance">Chance de bloc spécial +%1$s%</string>
     <string name="launch_soft_lock_message">Verrouillage souple actif • micro-ajustement activé</string>
     <string name="launch_chain_message">Ligne + Colonne • +%2$s</string>
     <string name="launch_paused">En pause</string>
@@ -298,10 +303,6 @@
 
     <string name="settings_color_palette">Palette de couleurs</string>
     <string name="block_style_electric">Électrique</string>
-    <string name="block_style_flame">Flamme</string>
-    <string name="block_style_gears">Engrenages</string>
-    <string name="block_style_pixel">Pixel</string>
-    <string name="block_style_cyberpunk">Cyberpunk</string>
     <string name="ad_reward_blockwise_refresh">Rafraîchir le plateau</string>
     <string name="ad_reward_mergeshift_swap">Changer le nombre</string>
     <string name="ad_reward_boomblocks_clear">Effacer la couleur</string>
@@ -341,7 +342,7 @@
     <string name="selection_boomblocks_desc">Touchez des groupes de 3 blocs ou plus pour les faire exploser.</string>
     <string name="selection_switch_game">Changer de Jeu</string>
     <string name="selection_active_game_badge">ACTIF</string>
-    <string name="game_message_ad_reward_blocksort">Board remixed! Fresh routes are open.</string>
+    <string name="game_message_ad_reward_blocksort">Plateau réorganisé ! De nouvelles routes sont ouvertes.</string>
     <string name="tutorial_blocksort_intro_title">Déplacez des piles supérieures de taille égale entre les colonnes</string>
     <string name="tutorial_blocksort_intro_body">Chaque manche utilise une taille d’emplacement commune pour toutes les colonnes. Touchez une colonne mixte non vide pour prendre sa pile de couleur supérieure, puis déplacez-la vers une colonne vide ou une colonne dont la couleur du dessus correspond.</string>
     <string name="tutorial_blocksort_rules_title">Seules les couleurs identiques peuvent s’empiler ensemble</string>

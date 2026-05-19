@@ -2195,12 +2195,6 @@ private fun HomeQuickActionButton(
                     )
                 }
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(BlockGamesThemeTokens.uiColors.gameSurface.copy(alpha = 0.35f))
-                )
-
                 Column(
                     modifier = Modifier
                         .fillMaxSize()

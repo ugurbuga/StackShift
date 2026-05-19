@@ -79,6 +79,12 @@ import blockgames.composeapp.generated.resources.block_style_dynamic_liquid
 import blockgames.composeapp.generated.resources.block_style_flame
 import blockgames.composeapp.generated.resources.block_style_flat
 import blockgames.composeapp.generated.resources.block_style_cyberpunk
+import blockgames.composeapp.generated.resources.block_style_neon_glow
+import blockgames.composeapp.generated.resources.block_style_liquid_marble
+import blockgames.composeapp.generated.resources.block_style_holographic
+import blockgames.composeapp.generated.resources.block_style_glitch_tech
+import blockgames.composeapp.generated.resources.block_style_aura_energy
+import blockgames.composeapp.generated.resources.block_style_circuit_board
 import blockgames.composeapp.generated.resources.block_style_gears
 import blockgames.composeapp.generated.resources.block_style_grid_split
 import blockgames.composeapp.generated.resources.block_style_honeycomb_texture
@@ -952,6 +958,12 @@ internal fun visibleBlockStyles(): List<BlockVisualStyle> = listOf(
     BlockVisualStyle.Gears,
     BlockVisualStyle.Pixel,
     BlockVisualStyle.Cyberpunk,
+    BlockVisualStyle.NeonGlow,
+    BlockVisualStyle.LiquidMarble,
+    BlockVisualStyle.Holographic,
+    BlockVisualStyle.GlitchTech,
+    BlockVisualStyle.AuraEnergy,
+    BlockVisualStyle.CircuitBoard,
 )
 
 @Composable
@@ -983,6 +995,12 @@ private fun blockStyleOptions(
                 BlockVisualStyle.Gears -> stringResource(Res.string.block_style_gears)
                 BlockVisualStyle.Pixel -> stringResource(Res.string.block_style_pixel)
                 BlockVisualStyle.Cyberpunk -> stringResource(Res.string.block_style_cyberpunk)
+                BlockVisualStyle.NeonGlow -> stringResource(Res.string.block_style_neon_glow)
+                BlockVisualStyle.LiquidMarble -> stringResource(Res.string.block_style_liquid_marble)
+                BlockVisualStyle.Holographic -> stringResource(Res.string.block_style_holographic)
+                BlockVisualStyle.GlitchTech -> stringResource(Res.string.block_style_glitch_tech)
+                BlockVisualStyle.AuraEnergy -> stringResource(Res.string.block_style_aura_energy)
+                BlockVisualStyle.CircuitBoard -> stringResource(Res.string.block_style_circuit_board)
             },
             preview = {
                 BlockStylePreview(

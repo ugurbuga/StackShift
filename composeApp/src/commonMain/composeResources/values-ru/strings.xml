@@ -72,7 +72,7 @@
     <string name="launch_label">Запуск</string>
     <string name="launch_bar">Шкала запуска</string>
     <string name="launch_boost_active">Ускорение активно • %1$s ходов</string>
-    <string name="launch_special_chance">Шанс специального блока +%1$s%%</string>
+    <string name="launch_special_chance">Шанс специального блока +%1$s%</string>
     <string name="launch_soft_lock_message">Мягкая блокировка активна • микронастройка включена</string>
     <string name="launch_chain_message">Ряд + колонка • +%2$s</string>
     <string name="launch_paused">Пауза</string>
@@ -302,6 +302,10 @@
     <string name="block_style_gears">Шестерёнки</string>
     <string name="block_style_pixel">Пиксель</string>
     <string name="block_style_cyberpunk">Киберпанк</string>
+    <string name="block_style_holographic">Голографический</string>
+    <string name="block_style_glitch_tech">Глитч-технологии</string>
+    <string name="block_style_aura_energy">Энергия ауры</string>
+    <string name="block_style_circuit_board">Печатная плата</string>
     <string name="ad_reward_blockwise_refresh">Обновить лоток</string>
     <string name="ad_reward_mergeshift_swap">Изменить число</string>
     <string name="ad_reward_boomblocks_clear">Очистить цвет</string>

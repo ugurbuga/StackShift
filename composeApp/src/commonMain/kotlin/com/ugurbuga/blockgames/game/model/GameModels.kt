@@ -168,6 +168,12 @@ enum class BlockVisualStyle {
     Gears,
     Pixel,
     Cyberpunk,
+    NeonGlow,
+    LiquidMarble,
+    Holographic,
+    GlitchTech,
+    AuraEnergy,
+    CircuitBoard,
     ;
 
     fun cornerScale(): Float = when (this) {
@@ -190,6 +196,12 @@ enum class BlockVisualStyle {
         Gears -> 0.12f
         Pixel -> 0.10f
         Cyberpunk -> 0.44f
+        NeonGlow -> 0.90f
+        LiquidMarble -> 1.10f
+        Holographic -> 0.20f
+        GlitchTech -> 0.15f
+        AuraEnergy -> 1.30f
+        CircuitBoard -> 0.45f
     }
 
     fun frameCornerRadius(): Dp = when (this) {
@@ -212,6 +224,12 @@ enum class BlockVisualStyle {
         Gears -> 4.dp
         Pixel -> 4.dp
         Cyberpunk -> 8.dp
+        NeonGlow -> 16.dp
+        LiquidMarble -> 20.dp
+        Holographic -> 4.dp
+        GlitchTech -> 2.dp
+        AuraEnergy -> 24.dp
+        CircuitBoard -> 8.dp
     }
 }
 

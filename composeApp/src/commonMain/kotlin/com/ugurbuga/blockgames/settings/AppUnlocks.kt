@@ -66,8 +66,16 @@ fun BlockVisualStyle.tokenCost(): Int = when (normalizeBlockVisualStyle(this)) {
     BlockVisualStyle.Brick -> 24
     BlockVisualStyle.SoundWave -> 34
     BlockVisualStyle.Prism -> 36
+    BlockVisualStyle.Flame -> 40
+    BlockVisualStyle.Gears -> 30
+    BlockVisualStyle.Pixel -> 26
     BlockVisualStyle.Cyberpunk -> 45
-    else -> 18
+    BlockVisualStyle.NeonGlow -> 48
+    BlockVisualStyle.LiquidMarble -> 48
+    BlockVisualStyle.Holographic -> 48
+    BlockVisualStyle.GlitchTech -> 48
+    BlockVisualStyle.AuraEnergy -> 48
+    BlockVisualStyle.CircuitBoard -> 48
 }
 
 fun AppSettings.isThemeModeUnlocked(mode: AppThemeMode): Boolean = mode in availableThemeModes()

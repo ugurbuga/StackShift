@@ -45,16 +45,21 @@
     <string name="block_style_prism">Prisma</string>
     <string name="block_style_crystal">Cristal</string>
     <string name="block_style_dynamic_liquid">Líquido dinámico</string>
-    <string name="block_style_matte_soft">Mate suave</string>
     <string name="block_style_neon_glow">Brillo neón</string>
-    <string name="block_style_tornado">Viento</string>
+    <string name="block_style_tornado">Tornado</string>
     <string name="block_style_brick">Ladrillo</string>
+    <string name="block_style_honeycomb_texture">Panal</string>
+    <string name="block_style_liquid_marble">Mármol líquido</string>
+    <string name="block_style_holographic">Holográfico</string>
+    <string name="block_style_glitch_tech">Tecnología Glitch</string>
+    <string name="block_style_aura_energy">Energía de Aura</string>
+    <string name="block_style_circuit_board">Placa de Circuito</string>
     <string name="block_style_spider_web">Telaraña</string>
     <string name="block_style_cosmic">Cósmico</string>
-    <string name="block_style_stone_texture">Textura de piedra</string>
-    <string name="block_style_honeycomb_texture">Honeycomb Texture</string>
-    <string name="block_style_light_burst">Destello de luz</string>
-    <string name="block_style_liquid_marble">Mármol líquido</string>
+    <string name="block_style_flame">Llama</string>
+    <string name="block_style_gears">Engranajes</string>
+    <string name="block_style_pixel">Píxel</string>
+    <string name="block_style_cyberpunk">Cyberpunk</string>
     <string name="board_block_style_always_flat">Siempre plano</string>
     <string name="board_block_style_match_selected">Usar el estilo seleccionado</string>
     <string name="hold">Reserva</string>
@@ -82,7 +87,7 @@
     <string name="launch_label">Lanzar</string>
     <string name="launch_bar">Barra de lanzamiento</string>
     <string name="launch_boost_active">Impulso activo • %1$s turnos</string>
-    <string name="launch_special_chance">Probabilidad de bloque especial +%1$s%%</string>
+    <string name="launch_special_chance">Probabilidad de bloque especial +%1$s%</string>
     <string name="launch_soft_lock_message">Bloqueo suave activo • microajuste habilitado</string>
     <string name="launch_chain_message">Fila + Columna • +%2$s</string>
     <string name="launch_paused">En pausa</string>
@@ -298,10 +303,6 @@
 
     <string name="settings_color_palette">Paleta de colores</string>
     <string name="block_style_electric">Eléctrico</string>
-    <string name="block_style_flame">Llama</string>
-    <string name="block_style_gears">Engranajes</string>
-    <string name="block_style_pixel">Píxel</string>
-    <string name="block_style_cyberpunk">Cyberpunk</string>
     <string name="ad_reward_blockwise_refresh">Refrescar bandeja</string>
     <string name="ad_reward_mergeshift_swap">Cambiar número</string>
     <string name="ad_reward_boomblocks_clear">Limpiar color</string>
@@ -341,7 +342,7 @@
     <string name="selection_boomblocks_desc">Toca grupos de 3 o más bloques para hacerlos explotar.</string>
     <string name="selection_switch_game">Cambiar Juego</string>
     <string name="selection_active_game_badge">ACTIVO</string>
-    <string name="game_message_ad_reward_blocksort">Board remixed! Fresh routes are open.</string>
+    <string name="game_message_ad_reward_blocksort">¡Tablero reorganizado! Nuevas rutas abiertas.</string>
     <string name="tutorial_blocksort_intro_title">Mueve pilas superiores del mismo tamaño entre columnas</string>
     <string name="tutorial_blocksort_intro_body">Cada ronda usa un tamaño de casilla compartido para todas las columnas. Toca una columna mixta no vacía para tomar su pila superior de color y muévela a una columna vacía o a una columna cuya parte superior tenga el mismo color.</string>
     <string name="tutorial_blocksort_rules_title">Solo los colores iguales pueden apilarse juntos</string>

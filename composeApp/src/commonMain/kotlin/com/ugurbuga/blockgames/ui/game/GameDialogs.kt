@@ -54,6 +54,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -143,15 +144,21 @@ import blockgames.composeapp.generated.resources.special_ghost
 import blockgames.composeapp.generated.resources.special_heavy
 import blockgames.composeapp.generated.resources.special_row_clearer
 import blockgames.composeapp.generated.resources.time_minutes_seconds_format
+import blockgames.composeapp.generated.resources.time_remaining
 import blockgames.composeapp.generated.resources.tutorial_back
 import blockgames.composeapp.generated.resources.tutorial_finish
 import blockgames.composeapp.generated.resources.tutorial_ready_body
 import blockgames.composeapp.generated.resources.tutorial_ready_title
+import com.ugurbuga.blockgames.BlockGamesTheme
+import com.ugurbuga.blockgames.game.logic.GameLogic
 import com.ugurbuga.blockgames.game.model.BlockVisualStyle
 import com.ugurbuga.blockgames.game.model.CellTone
+import com.ugurbuga.blockgames.game.model.GameConfig
 import com.ugurbuga.blockgames.game.model.GameState
+import com.ugurbuga.blockgames.game.model.GameStatus
 import com.ugurbuga.blockgames.game.model.GameText
 import com.ugurbuga.blockgames.game.model.GameTextKey
+import com.ugurbuga.blockgames.game.model.GameplayStyle
 import com.ugurbuga.blockgames.game.model.SpecialBlockType
 import com.ugurbuga.blockgames.game.model.gameText
 import com.ugurbuga.blockgames.game.model.paletteColor
@@ -159,6 +166,7 @@ import com.ugurbuga.blockgames.game.model.resolveBoardBlockStyle
 import com.ugurbuga.blockgames.localization.LocalAppSettings
 import com.ugurbuga.blockgames.localization.appNameResourceId
 import com.ugurbuga.blockgames.localization.formatAppString
+import com.ugurbuga.blockgames.settings.AppSettings
 import com.ugurbuga.blockgames.ui.theme.BlockGamesThemeTokens
 import com.ugurbuga.blockgames.ui.theme.BlockGamesUiColors
 import com.ugurbuga.blockgames.ui.theme.GameUiShapeTokens
@@ -600,8 +608,7 @@ internal fun GameEventDialogCard(
                         modifier = Modifier.fillMaxWidth(),
                         emphasized = false,
                         icon = secondaryButtonIcon,
-                        contentColor = secondaryButtonContentColor
-                            ?: MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f),
+                        contentColor = secondaryButtonContentColor,
                     )
                 }
             }
@@ -744,12 +751,6 @@ internal fun BlockStyleActionButton(
                 pulse = effectivePulse,
             )
         }
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(uiColors.gameSurface.copy(alpha = 0.35f))
-        )
 
         Row(
             modifier = Modifier
@@ -1009,7 +1010,6 @@ internal fun InteractiveOnboardingCompletionDialog(
             secondaryButtonLabel = stringResource(Res.string.return_home),
             primaryButtonIcon = Icons.Filled.PlayArrow,
             secondaryButtonIcon = Icons.AutoMirrored.Filled.ArrowBack,
-            secondaryButtonContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.78f),
             onSecondaryAction = onReturnHome,
         )
     }
@@ -1298,12 +1298,6 @@ internal fun TopBarActionBlockButton(
             )
         }
 
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .background(BlockGamesThemeTokens.uiColors.gameSurface.copy(alpha = 0.35f))
-        )
-
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
@@ -1325,6 +1319,122 @@ internal fun TopBarActionBlockButton(
                     modifier = Modifier.size(12.dp)
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun PreviewDialogContainer(content: @Composable () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.4f))
+            .padding(24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        content()
+    }
+}
+
+@Preview
+@Composable
+private fun GameOverDialogPreview() {
+    val settings = AppSettings()
+    val logic = GameLogic.create()
+    val gameState = logic.newGame(config = GameConfig.default(GameplayStyle.StackShift))
+        .copy(score = 1250, status = GameStatus.GameOver)
+
+    BlockGamesTheme(settings = settings) {
+        PreviewDialogContainer {
+            GameOverDialogContent(
+                gameState = gameState,
+                highestScore = 2500,
+                showNewHighScoreMessage = false,
+                canUseExtraLife = true,
+                isExtraLifeLoading = false,
+                showExtraLifeButton = true,
+                onPlayAgain = {},
+                onUseExtraLife = {},
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun NewHighScoreDialogPreview() {
+    val settings = AppSettings()
+    val logic = GameLogic.create()
+    val gameState = logic.newGame(config = GameConfig.default(GameplayStyle.StackShift))
+        .copy(score = 3200, status = GameStatus.GameOver)
+
+    BlockGamesTheme(settings = settings) {
+        PreviewDialogContainer {
+            GameOverDialogContent(
+                gameState = gameState,
+                highestScore = 3200,
+                showNewHighScoreMessage = true,
+                canUseExtraLife = true,
+                isExtraLifeLoading = false,
+                showExtraLifeButton = true,
+                onPlayAgain = {},
+                onUseExtraLife = {},
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun RestartConfirmDialogPreview() {
+    val settings = AppSettings()
+    BlockGamesTheme(settings = settings) {
+        PreviewDialogContainer {
+            RestartConfirmDialog(
+                onDismissRequest = {},
+                title = stringResource(Res.string.restart_confirm_title),
+                message = stringResource(Res.string.restart_confirm_body),
+                confirmLabel = stringResource(Res.string.restart_confirm),
+                dismissLabel = stringResource(Res.string.restart_cancel),
+                onConfirm = {},
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun InteractiveOnboardingCompletionDialogPreview() {
+    val settings = AppSettings()
+    BlockGamesTheme(settings = settings) {
+        PreviewDialogContainer {
+            InteractiveOnboardingCompletionDialog(
+                onStartGame = {},
+                onReturnHome = {},
+            )
+        }
+    }
+}
+
+
+@Preview
+@Composable
+private fun MinimalTopBarPreview() {
+    val settings = AppSettings()
+    val logic = GameLogic.create()
+    val gameState = logic.newGame(config = GameConfig.default(GameplayStyle.StackShift))
+        .copy(score = 450)
+
+    BlockGamesTheme(settings = settings) {
+        Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+            MinimalTopBar(
+                gameState = gameState,
+                scoreHighlightStrengthProvider = { 0f },
+                scoreHighlightScaleProvider = { 1f },
+                remainingTimeLabel = stringResource(Res.string.time_remaining),
+                onBack = {},
+                onRestart = {},
+            )
         }
     }
 }

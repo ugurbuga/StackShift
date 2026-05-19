@@ -57,12 +57,17 @@
     <string name="block_style_honeycomb_texture">허니콤</string>
     <string name="block_style_light_burst">라이트 버스트</string>
     <string name="block_style_liquid_marble">리퀴드 마블</string>
+    <string name="block_style_holographic">홀로그래픽</string>
+    <string name="block_style_glitch_tech">글리치 테크</string>
+    <string name="block_style_aura_energy">오라 에너지</string>
+    <string name="block_style_circuit_board">회로 기판</string>
     <string name="block_style_spider_web">거미줄</string>
     <string name="block_style_cosmic">코스믹</string>
     <string name="block_style_electric">일렉트릭</string>
     <string name="block_style_flame">플레임</string>
     <string name="block_style_gears">기어</string>
     <string name="block_style_pixel">픽셀</string>
+    <string name="block_style_cyberpunk">사이버펑크</string>
     <string name="block_style_lava">용암</string>
     <string name="board_block_style_always_flat">항상 플랫</string>
     <string name="board_block_style_match_selected">선택한 블록 스타일과 동일하게</string>
@@ -91,7 +96,7 @@
     <string name="launch_label">발사</string>
     <string name="launch_bar">발사 바</string>
     <string name="launch_boost_active">부스트 활성화 • %1$s턴 남음</string>
-    <string name="launch_special_chance">특수 블록 확률 +%1$s%%</string>
+    <string name="launch_special_chance">특수 블록 확률 +%1$s%</string>
     <string name="launch_soft_lock_message">목표를 확인한 뒤 놓아서 배치하세요</string>
     <string name="launch_chain_message">행 + 열 • +%2$s</string>
     <string name="launch_paused">일시정지됨</string>

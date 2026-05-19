@@ -57,12 +57,17 @@
     <string name="block_style_honeycomb_texture">Honingraat</string>
     <string name="block_style_light_burst">Lichtflits</string>
     <string name="block_style_liquid_marble">Vloeibaar marmer</string>
+    <string name="block_style_holographic">Holografisch</string>
+    <string name="block_style_glitch_tech">Glitch-technologie</string>
+    <string name="block_style_aura_energy">Aura-energie</string>
+    <string name="block_style_circuit_board">Printplaat</string>
     <string name="block_style_spider_web">Spinnenweb</string>
     <string name="block_style_cosmic">Kosmisch</string>
     <string name="block_style_electric">Elektrisch</string>
     <string name="block_style_flame">Vlam</string>
     <string name="block_style_gears">Tandwielen</string>
     <string name="block_style_pixel">Pixel</string>
+    <string name="block_style_cyberpunk">Cyberpunk</string>
     <string name="block_style_lava">Lava</string>
     <string name="board_block_style_always_flat">Altijd vlak</string>
     <string name="board_block_style_match_selected">Volg geselecteerde blokstijl</string>
@@ -91,7 +96,7 @@
     <string name="launch_label">Lanceer</string>
     <string name="launch_bar">Lanceerbalk</string>
     <string name="launch_boost_active">Boost actief • %1$s beurten</string>
-    <string name="launch_special_chance">Kans op speciaal blok +%1$s%%</string>
+    <string name="launch_special_chance">Kans op speciaal blok +%1$s%</string>
     <string name="launch_soft_lock_message">Bekijk het doel en laat dan los om te plaatsen</string>
     <string name="launch_chain_message">Rij + Kolom • +%2$s</string>
     <string name="launch_paused">Gepauzeerd</string>

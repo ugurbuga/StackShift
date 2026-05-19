@@ -55,9 +55,16 @@
     <string name="block_style_spider_web">Spider Web</string>
     <string name="block_style_cosmic">Cosmic</string>
     <string name="block_style_flame">Flame</string>
+    <string name="block_style_neon_glow">Neon Glow</string>
+    <string name="block_style_liquid_marble">Liquid Marble</string>
+    <string name="block_style_holographic">Holographic</string>
+    <string name="block_style_glitch_tech">Glitch Tech</string>
+    <string name="block_style_aura_energy">Aura Energy</string>
+    <string name="block_style_circuit_board">Circuit Board</string>
     <string name="block_style_gears">Gears</string>
     <string name="block_style_pixel">Pixel</string>
     <string name="block_style_cyberpunk">Cyberpunk</string>
+    <string name="block_style_electric">Electric</string>
     <string name="board_block_style_always_flat">Always flat</string>
     <string name="board_block_style_match_selected">Match selected block style</string>
     <string name="hold">Hold</string>
@@ -85,7 +92,7 @@
     <string name="launch_label">Launch</string>
     <string name="launch_bar">Launch bar</string>
     <string name="launch_boost_active">Boost active • %1$s turns</string>
-    <string name="launch_special_chance">Special block chance +%1$s%%</string>
+    <string name="launch_special_chance">Special block chance +%1$s%</string>
     <string name="launch_soft_lock_message">Preview the target, then release to place</string>
     <string name="launch_chain_message">Row + Column • +%2$s</string>
     <string name="launch_paused">Paused</string>

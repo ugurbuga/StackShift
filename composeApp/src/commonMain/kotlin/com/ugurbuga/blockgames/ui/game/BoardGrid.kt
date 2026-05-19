@@ -2182,6 +2182,72 @@ internal fun DrawScope.drawCellBody(
                 pulse = pulse,
             )
         }
+
+        BlockVisualStyle.NeonGlow -> {
+            drawNeonGlowPattern(
+                topLeft = topLeft,
+                size = size,
+                toneColor = rawBaseColor,
+                alpha = constrainedAlpha,
+                cornerRadius = cornerRadius,
+                pulse = pulse,
+            )
+        }
+
+        BlockVisualStyle.LiquidMarble -> {
+            drawLiquidMarblePattern(
+                topLeft = topLeft,
+                size = size,
+                toneColor = rawBaseColor,
+                alpha = constrainedAlpha,
+                cornerRadius = cornerRadius,
+                pulse = pulse,
+            )
+        }
+
+        BlockVisualStyle.Holographic -> {
+            drawHolographicPattern(
+                topLeft = topLeft,
+                size = size,
+                toneColor = rawBaseColor,
+                alpha = constrainedAlpha,
+                cornerRadius = cornerRadius,
+                pulse = pulse,
+            )
+        }
+
+        BlockVisualStyle.GlitchTech -> {
+            drawGlitchTechPattern(
+                topLeft = topLeft,
+                size = size,
+                toneColor = rawBaseColor,
+                alpha = constrainedAlpha,
+                cornerRadius = cornerRadius,
+                pulse = pulse,
+            )
+        }
+
+        BlockVisualStyle.AuraEnergy -> {
+            drawAuraEnergyPattern(
+                topLeft = topLeft,
+                size = size,
+                toneColor = rawBaseColor,
+                alpha = constrainedAlpha,
+                cornerRadius = cornerRadius,
+                pulse = pulse,
+            )
+        }
+
+        BlockVisualStyle.CircuitBoard -> {
+            drawCircuitBoardPattern(
+                topLeft = topLeft,
+                size = size,
+                toneColor = rawBaseColor,
+                alpha = constrainedAlpha,
+                cornerRadius = cornerRadius,
+                pulse = pulse,
+            )
+        }
     }
 }
 
@@ -2541,7 +2607,7 @@ private fun DrawScope.drawGearsPattern(
 internal fun BlockCellPreviewPreview() {
     BlockCellPreview(
         baseColor = Color.Red,
-        style = BlockVisualStyle.Cyberpunk,
+        style = BlockVisualStyle.NeonGlow,
         size = 100.dp,
         modifier = Modifier,
         alpha = 1f,
@@ -3660,8 +3726,436 @@ private fun boardCellVisual(
             BlockVisualStyle.Gears -> 0.18f
             BlockVisualStyle.Pixel -> 0.08f
             BlockVisualStyle.Cyberpunk -> 0.68f
+            BlockVisualStyle.NeonGlow -> 0.82f
+            BlockVisualStyle.LiquidMarble -> 0.90f
+            BlockVisualStyle.Holographic -> 0.44f
+            BlockVisualStyle.GlitchTech -> 0.18f
+            BlockVisualStyle.AuraEnergy -> 0.96f
+            BlockVisualStyle.CircuitBoard -> 0.54f
         },
     )
+}
+
+private fun DrawScope.drawNeonGlowPattern(
+    topLeft: Offset,
+    size: Size,
+    toneColor: Color,
+    alpha: Float,
+    cornerRadius: CornerRadius,
+    pulse: Float,
+) {
+    val glowPulse = (0.7f + 0.3f * sin(pulse * PI.toFloat() * 2f)).coerceIn(0f, 1f)
+    val minDim = minOf(size.width, size.height)
+
+    // Outer glow layers
+    for (i in 1..3) {
+        val glowSize = Size(
+            size.width + (i * minDim * 0.08f),
+            size.height + (i * minDim * 0.08f)
+        )
+        val glowTopLeft = Offset(
+            topLeft.x - (glowSize.width - size.width) / 2f,
+            topLeft.y - (glowSize.height - size.height) / 2f
+        )
+        drawRoundRect(
+            color = toneColor.copy(alpha = 0.08f * (4 - i) * glowPulse * alpha),
+            topLeft = glowTopLeft,
+            size = glowSize,
+            cornerRadius = CornerRadius(cornerRadius.x * 1.4f, cornerRadius.y * 1.4f),
+        )
+    }
+
+    // Inner Wiring
+    clipPath(roundedClipPath(topLeft, size, cornerRadius)) {
+        // Multiple Neon Tubes
+        neonGlowTubeSpecs().forEach { spec ->
+            val insetFactor = spec.insetFactor
+            val tubeSize = Size(
+                (size.width * (1f - insetFactor * 2)).coerceAtLeast(0f),
+                (size.height * (1f - insetFactor * 2)).coerceAtLeast(0f)
+            )
+            val tubeTopLeft = topLeft + Offset(size.width * insetFactor, size.height * insetFactor)
+            val tubeCorner = CornerRadius(
+                (cornerRadius.x * spec.cornerScale).coerceAtLeast(0f),
+                (cornerRadius.y * spec.cornerScale).coerceAtLeast(0f)
+            )
+
+            drawRoundRect(
+                color = toneColor.copy(alpha = spec.tubeAlpha * alpha),
+                topLeft = tubeTopLeft,
+                size = tubeSize,
+                cornerRadius = tubeCorner,
+                style = Stroke(width = spec.strokeWidthDp.dp.toPx())
+            )
+
+            // Brighter center for each tube
+            drawRoundRect(
+                color = Color.White.copy(alpha = spec.coreAlpha * alpha),
+                topLeft = tubeTopLeft,
+                size = tubeSize,
+                cornerRadius = tubeCorner,
+                style = Stroke(width = 1.dp.toPx())
+            )
+        }
+    }
+}
+
+internal data class NeonGlowTubeSpec(
+    val insetFactor: Float,
+    val strokeWidthDp: Float,
+    val tubeAlpha: Float,
+    val coreAlpha: Float,
+    val cornerScale: Float,
+)
+
+internal fun neonGlowTubeSpecs(): List<NeonGlowTubeSpec> = listOf(
+    NeonGlowTubeSpec(
+        insetFactor = 0.09f,
+        strokeWidthDp = 4.0f,
+        tubeAlpha = 0.95f,
+        coreAlpha = 0.90f,
+        cornerScale = 0.85f,
+    ),
+    NeonGlowTubeSpec(
+        insetFactor = 0.18f,
+        strokeWidthDp = 4.0f,
+        tubeAlpha = 0.70f,
+        coreAlpha = 0.65f,
+        cornerScale = 0.70f,
+    ),
+    NeonGlowTubeSpec(
+        insetFactor = 0.27f,
+        strokeWidthDp = 4.0f,
+        tubeAlpha = 0.45f,
+        coreAlpha = 0.40f,
+        cornerScale = 0.55f,
+    ),
+)
+
+private fun DrawScope.drawLiquidMarblePattern(
+    topLeft: Offset,
+    size: Size,
+    toneColor: Color,
+    alpha: Float,
+    cornerRadius: CornerRadius,
+    pulse: Float,
+) {
+    val phase = pulse * PI.toFloat() * 2f
+    val minDim = minOf(size.width, size.height)
+
+    clipPath(roundedClipPath(topLeft, size, cornerRadius)) {
+        // Base gradient
+        drawRect(
+            brush = Brush.linearGradient(
+                colors = listOf(
+                    shadeColor(toneColor, 0.45f).copy(alpha = alpha),
+                    toneColor.copy(alpha = alpha),
+                    tintColor(toneColor, 0.25f).copy(alpha = alpha),
+                ),
+                start = topLeft + Offset(size.width * 0.5f * sin(phase * 0.4f), 0f),
+                end = topLeft + Offset(size.width * (1f - 0.5f * sin(phase * 0.4f)), size.height)
+            ),
+            topLeft = topLeft,
+            size = size
+        )
+
+        // Swirling veins
+        repeat(5) { i ->
+            val veinPhase = phase * (1.1f + i * 0.15f) + (i * PI.toFloat() * 0.4f)
+            val veinPath = Path().apply {
+                moveTo(topLeft.x + size.width * (i * 0.2f), topLeft.y)
+                cubicTo(
+                    topLeft.x + size.width * (0.5f + 0.5f * cos(veinPhase)),
+                    topLeft.y + size.height * (0.2f + 0.3f * sin(veinPhase * 0.7f)),
+                    topLeft.x + size.width * (0.5f + 0.5f * sin(veinPhase * 1.3f)),
+                    topLeft.y + size.height * (0.8f + 0.2f * cos(veinPhase)),
+                    topLeft.x + size.width * (1f - i * 0.2f),
+                    topLeft.y + size.height
+                )
+            }
+            drawPath(
+                path = veinPath,
+                color = Color.White.copy(alpha = (0.22f + 0.12f * sin(phase + i)) * alpha),
+                style = Stroke(width = minDim * (0.04f + 0.06f * i / 5f), cap = StrokeCap.Round)
+            )
+            drawPath(
+                path = veinPath,
+                color = tintColor(toneColor, 0.2f).copy(alpha = 0.12f * alpha),
+                style = Stroke(width = minDim * 0.14f, cap = StrokeCap.Round)
+            )
+        }
+
+        // Reflective sheen
+        val sheenPos = Offset(
+            size.width * (0.35f + 0.15f * cos(phase * 0.6f)),
+            size.height * (0.35f + 0.15f * sin(phase * 0.6f))
+        )
+        drawOval(
+            brush = Brush.radialGradient(
+                colors = listOf(Color.White.copy(alpha = 0.35f * alpha), Color.Transparent),
+                center = topLeft + sheenPos,
+                radius = minDim * 0.75f
+            ),
+            topLeft = topLeft + sheenPos - Offset(minDim * 0.375f, minDim * 0.375f),
+            size = Size(minDim * 0.75f, minDim * 0.75f)
+        )
+    }
+}
+
+private fun DrawScope.drawHolographicPattern(
+    topLeft: Offset,
+    size: Size,
+    toneColor: Color,
+    alpha: Float,
+    cornerRadius: CornerRadius,
+    pulse: Float,
+) {
+    val phase = pulse * PI.toFloat() * 2f
+    
+    clipPath(roundedClipPath(topLeft, size, cornerRadius)) {
+        // Shifting holographic gradient using tone color variations
+        val colors = listOf(
+            tintColor(toneColor, 0.7f),
+            tintColor(toneColor, 0.35f),
+            toneColor,
+            shadeColor(toneColor, 0.35f),
+            shadeColor(toneColor, 0.7f),
+            shadeColor(toneColor, 0.35f),
+            toneColor,
+            tintColor(toneColor, 0.35f)
+        )
+        
+        val shiftedColors = colors.indices.map { i ->
+            val offsetIndex = (i + (pulse * colors.size).toInt()) % colors.size
+            colors[offsetIndex].copy(alpha = 0.75f * alpha)
+        }
+
+        drawRect(
+            brush = Brush.linearGradient(
+                colors = shiftedColors,
+                start = topLeft + Offset(size.width * cos(phase), size.height * sin(phase)),
+                end = topLeft + Offset(size.width * cos(phase + PI.toFloat()), size.height * sin(phase + PI.toFloat()))
+            ),
+            topLeft = topLeft,
+            size = size
+        )
+        
+        // Glassy overlay
+        drawRect(
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    Color.White.copy(alpha = 0.45f * alpha),
+                    Color.White.copy(alpha = 0.15f * alpha),
+                    Color.Transparent,
+                    Color.Black.copy(alpha = 0.15f * alpha)
+                ),
+                startY = topLeft.y,
+                endY = topLeft.y + size.height
+            ),
+            topLeft = topLeft,
+            size = size
+        )
+        
+        // Edge highlights
+        drawRoundRect(
+            color = Color.White.copy(alpha = 0.65f * alpha),
+            topLeft = topLeft,
+            size = size,
+            cornerRadius = cornerRadius,
+            style = Stroke(width = 1.dp.toPx())
+        )
+    }
+}
+
+private fun DrawScope.drawGlitchTechPattern(
+    topLeft: Offset,
+    size: Size,
+    toneColor: Color,
+    alpha: Float,
+    cornerRadius: CornerRadius,
+    pulse: Float,
+) {
+    val rand = kotlin.random.Random((pulse * 20).toInt())
+    val isGlitching = rand.nextFloat() > 0.85f
+    val glitchOffset = if (isGlitching) Offset(rand.nextFloat() * 4f - 2f, rand.nextFloat() * 4f - 2f) else Offset.Zero
+
+    clipPath(roundedClipPath(topLeft, size, cornerRadius)) {
+        // Tech background
+        drawRect(color = Color(0xFF1A1A1A).copy(alpha = alpha), topLeft = topLeft, size = size)
+        
+        // Digital segments
+        repeat(5) { i ->
+            val rectTop = topLeft.y + (i * size.height / 5f)
+            val rectHeight = size.height / 5f
+            val rectWidth = size.width * (0.4f + 0.5f * rand.nextFloat())
+            drawRect(
+                color = toneColor.copy(alpha = 0.15f * alpha),
+                topLeft = Offset(topLeft.x, rectTop),
+                size = Size(rectWidth, rectHeight)
+            )
+        }
+
+        // Glitch layers
+        if (isGlitching) {
+            drawRect(
+                color = Color.Cyan.copy(alpha = 0.4f * alpha),
+                topLeft = topLeft + glitchOffset,
+                size = size
+            )
+            drawRect(
+                color = Color.Magenta.copy(alpha = 0.4f * alpha),
+                topLeft = topLeft - glitchOffset,
+                size = size
+            )
+        }
+        
+        // Main block color
+        drawRect(
+            color = toneColor.copy(alpha = 0.6f * alpha),
+            topLeft = topLeft,
+            size = size
+        )
+        
+        // Scanlines
+        repeat(10) { i ->
+            drawLine(
+                color = Color.Black.copy(alpha = 0.2f * alpha),
+                start = Offset(topLeft.x, topLeft.y + (i * size.height / 10f)),
+                end = Offset(topLeft.x + size.width, topLeft.y + (i * size.height / 10f)),
+                strokeWidth = 1f
+            )
+        }
+    }
+}
+
+private fun DrawScope.drawAuraEnergyPattern(
+    topLeft: Offset,
+    size: Size,
+    toneColor: Color,
+    alpha: Float,
+    cornerRadius: CornerRadius,
+    pulse: Float,
+) {
+    val phase = pulse * PI.toFloat() * 2f
+    val minDim = minOf(size.width, size.height)
+    val center = topLeft + Offset(size.width / 2f, size.height / 2f)
+
+    // Animated Aura particles/rays
+    repeat(16) { i ->
+        val angle = (i * (360f / 16f)) * (PI / 180f).toFloat() + (phase * 0.5f)
+        val rayLength = minDim * (0.7f + 0.35f * sin(phase * 2.5f + i))
+        val end = center + Offset(cos(angle) * rayLength, sin(angle) * rayLength)
+        
+        drawLine(
+            brush = Brush.radialGradient(
+                colors = listOf(toneColor.copy(alpha = 0.85f * alpha), Color.Transparent),
+                center = center,
+                radius = rayLength
+            ),
+            start = center,
+            end = end,
+            strokeWidth = minDim * 0.18f,
+            cap = StrokeCap.Round
+        )
+
+        // Add prominent energy sparks at ray ends
+        if (i % 2 == 0) {
+            val sparkPos = center + Offset(cos(angle) * rayLength * 0.85f, sin(angle) * rayLength * 0.85f)
+            drawCircle(
+                color = Color.White.copy(alpha = (0.5f + 0.5f * sin(phase + i)) * alpha),
+                center = sparkPos,
+                radius = minDim * 0.04f
+            )
+        }
+    }
+
+    // Core block
+    drawRoundRect(
+        brush = Brush.radialGradient(
+            colors = listOf(
+                tintColor(toneColor, 0.45f).copy(alpha = alpha),
+                toneColor.copy(alpha = alpha),
+                shadeColor(toneColor, 0.45f).copy(alpha = alpha)
+            ),
+            center = center,
+            radius = minDim * 0.52f
+        ),
+        topLeft = topLeft,
+        size = size,
+        cornerRadius = cornerRadius
+    )
+    
+    // Bright center pulse
+    drawCircle(
+        color = Color.White.copy(alpha = (0.35f + 0.35f * sin(phase)) * alpha),
+        center = center,
+        radius = minDim * 0.38f
+    )
+}
+
+private fun DrawScope.drawCircuitBoardPattern(
+    topLeft: Offset,
+    size: Size,
+    toneColor: Color,
+    alpha: Float,
+    cornerRadius: CornerRadius,
+    pulse: Float,
+) {
+    val techColor = shadeColor(toneColor, 0.4f)
+    
+    clipPath(roundedClipPath(topLeft, size, cornerRadius)) {
+        drawRect(color = techColor.copy(alpha = alpha), topLeft = topLeft, size = size)
+        
+        val pathColor = toneColor.copy(alpha = 0.6f * alpha)
+        val dataColor = Color.White.copy(alpha = 0.8f * alpha)
+        
+        // Static circuit paths
+        val paths = listOf(
+            listOf(Offset(0.1f, 0.1f), Offset(0.4f, 0.1f), Offset(0.5f, 0.2f), Offset(0.5f, 0.5f)),
+            listOf(Offset(0.9f, 0.9f), Offset(0.6f, 0.9f), Offset(0.5f, 0.8f), Offset(0.5f, 0.5f)),
+            listOf(Offset(0.1f, 0.9f), Offset(0.1f, 0.6f), Offset(0.2f, 0.5f), Offset(0.5f, 0.5f)),
+            listOf(Offset(0.9f, 0.1f), Offset(0.9f, 0.4f), Offset(0.8f, 0.5f), Offset(0.5f, 0.5f))
+        )
+        
+        paths.forEach { points ->
+            val p = Path().apply {
+                moveTo(topLeft.x + size.width * points[0].x, topLeft.y + size.height * points[0].y)
+                for (i in 1 until points.size) {
+                    lineTo(topLeft.x + size.width * points[i].x, topLeft.y + size.height * points[i].y)
+                }
+            }
+            drawPath(path = p, color = pathColor, style = Stroke(width = 1.5.dp.toPx()))
+            
+            // Nodes
+            drawCircle(color = pathColor, center = topLeft + Offset(size.width * points[0].x, size.height * points[0].y), radius = 2.dp.toPx())
+        }
+        
+        // Animated "data" pulses
+        val dataProgress = (pulse * 2f) % 1f
+        paths.forEach { points ->
+            val pointIndex = (dataProgress * (points.size - 1)).toInt()
+            val segmentProgress = (dataProgress * (points.size - 1)) % 1f
+            val start = points[pointIndex]
+            val end = points[pointIndex + 1]
+            val currentPos = Offset(
+                lerp(start.x, end.x, segmentProgress),
+                lerp(start.y, end.y, segmentProgress)
+            )
+            drawCircle(color = dataColor, center = topLeft + Offset(size.width * currentPos.x, size.height * currentPos.y), radius = 2.5.dp.toPx())
+        }
+        
+        // Center Chip
+        drawRoundRect(
+            color = toneColor.copy(alpha = alpha),
+            topLeft = topLeft + Offset(size.width * 0.35f, size.height * 0.35f),
+            size = Size(size.width * 0.3f, size.height * 0.3f),
+            cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
+        )
+    }
+}
+
+private fun lerp(start: Float, stop: Float, fraction: Float): Float {
+    return (1 - fraction) * start + fraction * stop
 }
 
 @Composable
